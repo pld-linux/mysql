@@ -12,7 +12,7 @@ Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	AplicaГУes/Banco_de_Dados
 Version:	3.23.47
-Release:	1
+Release:	2
 License:	GPL/LGPL
 Source0:	ftp://ftp1.sourceforge.net/pub/mirrors/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -179,6 +179,7 @@ Summary(pl):	Biblioteki dzielone MySQL
 Group:		Applications/Databases
 Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
+Obsoletes:	libmysql10
 
 %description libs
 Shared libraries for MySQL.
@@ -200,6 +201,7 @@ Group(ru):	Разработка/Библиотеки
 Group(uk):	Розробка/Б╕бл╕отеки
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
+Obsoletes:	libmysql10-devel
 
 %description devel
 This package contains the development header files and libraries
