@@ -1,28 +1,15 @@
-diff -burN mysql-4.0.14.orig/acinclude.m4 mysql-4.0.14/acinclude.m4
---- mysql-4.0.14.orig/acinclude.m4	Fri Jul 18 16:57:40 2003
-+++ mysql-4.0.14/acinclude.m4	Thu Jul 24 23:22:42 2003
-@@ -722,6 +722,9 @@
-   if test -f $d/libssl.a ; then
-     OPENSSL_LIB=$d
-   fi
-+  if test -f $d/libssl.so ; then
-+    OPENSSL_LIB=$d
-+  fi
-  done
- 
-   # On RedHat 9 we need kerberos to compile openssl
-diff -burN mysql-4.0.14.orig/configure.in mysql-4.0.14/configure.in
---- mysql-4.0.14.orig/configure.in	Fri Jul 18 16:57:46 2003
-+++ mysql-4.0.14/configure.in	Thu Jul 24 23:29:00 2003
-@@ -742,19 +742,21 @@
+--- mysql-4.0.15/configure.in.orig	2003-10-04 13:29:18.000000000 +0200
++++ mysql-4.0.15/configure.in	2003-10-04 13:46:50.506700624 +0200
+@@ -746,19 +746,21 @@
  
  AC_CHECK_LIB(m, floor, [], AC_CHECK_LIB(m, __infinity))
  
-+AC_CHECK_FUNC(gethostbyname_r, , [
- AC_CHECK_LIB(nsl_r, gethostbyname_r, [],
+-AC_CHECK_LIB(nsl_r, gethostbyname_r, [],
 -  AC_CHECK_LIB(nsl, gethostbyname_r))
 -AC_CHECK_FUNC(gethostbyname_r)
-+  AC_CHECK_LIB(nsl, gethostbyname_r))])
++AC_CHECK_FUNC(gethostbyname_r, [],
++[AC_CHECK_LIB(nsl_r, gethostbyname_r, [],
++  [AC_CHECK_LIB(nsl, gethostbyname_r)])])
  
  AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt))
 -AC_CHECK_FUNC(yp_get_default_domain, ,
@@ -41,9 +28,8 @@ diff -burN mysql-4.0.14.orig/configure.in mysql-4.0.14/configure.in
  
  # For sem_xxx functions on Solaris 2.6
  AC_CHECK_FUNC(sem_init, , AC_CHECK_LIB(posix4, sem_init))
-diff -burN mysql-4.0.14.orig/libmysql_r/Makefile.am mysql-4.0.14/libmysql_r/Makefile.am
---- mysql-4.0.14.orig/libmysql_r/Makefile.am	Fri Jul 18 16:57:47 2003
-+++ mysql-4.0.14/libmysql_r/Makefile.am	Thu Jul 24 23:30:25 2003
+--- mysql-4.0.15/libmysql_r/Makefile.am.orig	2003-10-04 13:29:16.000000000 +0200
++++ mysql-4.0.15/libmysql_r/Makefile.am	2003-10-04 13:47:15.957831464 +0200
 @@ -30,7 +30,7 @@
  libmysql_dir = $(top_srcdir)/libmysql
  
@@ -53,9 +39,8 @@ diff -burN mysql-4.0.14.orig/libmysql_r/Makefile.am mysql-4.0.14/libmysql_r/Make
  libmysqlclient_r_la_LDFLAGS = $(target_ldflags)
  
  # This is called from the toplevel makefile
-diff -burN mysql-4.0.14.orig/sql/Makefile.am mysql-4.0.14/sql/Makefile.am
---- mysql-4.0.14.orig/sql/Makefile.am	Fri Jul 18 16:57:41 2003
-+++ mysql-4.0.14/sql/Makefile.am	Thu Jul 24 23:29:27 2003
+--- mysql-4.0.15/sql/Makefile.am.orig	2003-09-06 08:35:50.000000000 +0200
++++ mysql-4.0.15/sql/Makefile.am	2003-10-04 13:47:34.660988152 +0200
 @@ -43,7 +43,7 @@
  mysqld_LDADD =		@MYSQLD_EXTRA_LDFLAGS@ \
  			@bdb_libs@ @innodb_libs@ @pstack_libs@ \
@@ -65,25 +50,3 @@ diff -burN mysql-4.0.14.orig/sql/Makefile.am mysql-4.0.14/sql/Makefile.am
  noinst_HEADERS =	item.h item_func.h item_sum.h item_cmpfunc.h \
  			item_strfunc.h item_timefunc.h item_uniq.h \
  			item_create.h mysql_priv.h \
-diff -burN mysql-4.0.14.orig/vio/Makefile.am mysql-4.0.14/vio/Makefile.am
---- mysql-4.0.14.orig/vio/Makefile.am	Fri Jul 18 16:57:50 2003
-+++ mysql-4.0.14/vio/Makefile.am	Thu Jul 24 23:24:27 2003
-@@ -22,15 +22,15 @@
- test_ssl_SOURCES=	test-ssl.c
- test_ssl_LDADD=   	@CLIENT_EXTRA_LDFLAGS@ ../dbug/libdbug.a libvio.a \
- 			../mysys/libmysys.a ../strings/libmystrings.a \
--			$(openssl_libs)
-+			$(openssl_libs) ../libmysql_r/libmysqlclient_r.la
- test_sslserver_SOURCES=	test-sslserver.c
- test_sslserver_LDADD=   @CLIENT_EXTRA_LDFLAGS@	../dbug/libdbug.a libvio.a \
- 			../mysys/libmysys.a ../strings/libmystrings.a \
--			$(openssl_libs)
-+			$(openssl_libs) ../libmysql_r/libmysqlclient_r.la
- test_sslclient_SOURCES=   test-sslclient.c
- test_sslclient_LDADD=   @CLIENT_EXTRA_LDFLAGS@	../dbug/libdbug.a libvio.a \
- 			../mysys/libmysys.a ../strings/libmystrings.a \
--			$(openssl_libs)
-+			$(openssl_libs) ../libmysql_r/libmysqlclient_r.la
- libvio_a_SOURCES=	vio.c viosocket.c viossl.c viosslfactories.c
- 
- # Don't update the files from bitkeeper
