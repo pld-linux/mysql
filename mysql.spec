@@ -1,4 +1,5 @@
 %include	/usr/lib/rpm/macros.perl
+%define		__find_requires	%{_builddir}/mysql-%{version}/find-perl-requires
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybki i niezawodna baza danych (SQL)
@@ -9,13 +10,14 @@ Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Version:	3.22.30
 Release:	1
-Copyright:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
+License:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	mysql.init
 Source2:	mysql.sysconfig
 Source3:	mysql.logrotate
 Patch0:		mysql-info.patch
 Patch1:		mysql-no_libbind.patch
+Patch2:		mysql-perldep.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -188,6 +190,9 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %setup  -q
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
+
+chmod +x find-perl-requires
 
 %build
 automake
