@@ -1,0 +1,358 @@
+#!/bin/sh
+#
+# mysql		A very fast and reliable SQL database engine
+#
+# chkconfig:	2345 84 25
+#
+# description:	A very fast and reliable SQL database engine.
+#
+# pidfile:	/var/lib/mysql/mysqld.pid
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+# Get network config
+. /etc/sysconfig/network
+
+# Check that networking is up
+if is_yes "${NETWORKING}"; then
+	if [ ! -f /var/lock/subsys/network -a "$1" != stop -a "$1" != status -a "$1" != init ]; then
+		msg_network_down MySQL
+		exit 1
+	fi
+else
+	exit 0
+fi
+
+MYSQLD_ERRLOG=/var/log/mysql/err
+MYSQLD_CONFIG=/etc/mysqld.conf 
+
+# Get service config
+if [ -f /etc/sysconfig/mysql ]; then
+	. /etc/sysconfig/mysql
+fi
+
+# Daemon doesn't die if config doesn't exist
+if [ ! -f $MYSQLD_CONFIG ]; then 
+	nls "%s config %s does not exist." MySQL "$MYSQLD_CONFIG" >&2
+	exit 6
+fi
+
+eval `awk '
+/^[ \t]*\[.*\][ \t]*$/ {
+	match($0,/\[.*\]/)
+	section=substr($0,RSTART+1,RSTART+RLENGTH-3)
+}
+section=="mysqld" && $2~"=" {
+	if ($1=="datadir") {
+		printf("MYSQL_DATA_DIR=%s;", $3)
+	} else if ($1=="user") {
+		printf("MYSQL_USER=%s;", $3)
+	} else if ($1=="pid-file") {
+		printf("MYSQL_PIDFILE=%s;", $3)
+	}
+}
+END {
+	print "export MYSQL_DATA_DIR MYSQL_USER MYSQL_PIDFILE"
+}
+' /etc/mysqld.conf`
+
+if [ -z $MYSQL_DATA_DIR ]; then 
+	echo "$(nls 'MySQL datadir %s not configured properly' "$MYSQL_DATA_DIR")"'!' >&2
+	nls "Edit %s and configure it." "$MYSQLD_CONFIG" >&2
+	exit 6
+fi
+
+if [ -z $MYSQL_USER ]; then 
+	echo "$(nls 'MySQL user not configured properly')"'!' >&2
+	nls "Edit %s and configure it." "$MYSQLD_CONFIG" >&2
+	exit 6
+fi
+
+RETVAL=0
+case "$1" in
+  start)
+	if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
+		nls "MySQL database not initialized. Try \"%s init\" before start." "$0" >&2
+		exit 6
+	fi
+
+	# Check if the service is already running?		
+	if [ ! -f /var/lock/subsys/mysql ]; then
+		msg_starting MySQL
+		busy
+
+		if [ ! -f $MYSQLD_ERRLOG ]; then 
+			touch $MYSQLD_ERRLOG
+		fi
+		chown mysql.mysql $MYSQLD_ERRLOG
+		chmod 640 $MYSQLD_ERRLOG
+
+		[ -z "$DEFAULT_SERVICE_RUN_NICE_LEVEL" ] && DEFAULT_SERVICE_RUN_NICE_LEVEL=0
+		TMPDIR=/tmp nice -n ${SERVICE_RUN_NICE_LEVEL:-$DEFAULT_SERVICE_RUN_NICE_LEVEL} /usr/sbin/mysqld --defaults-file=$MYSQLD_CONFIG >>$MYSQLD_ERRLOG 2>&1 &
+		sleep 1
+		if ps -C mysqld >/dev/null 2>&1; then
+			ok
+		else
+			RETVAL=1
+			fail
+		fi
+		[ $RETVAL -eq 0 ] && touch /var/lock/subsys/mysql
+	else 	
+		msg_already_running MySQL
+	fi
+	;;
+  stop)
+	if [ -f /var/lock/subsys/mysql ]; then
+		msg_stopping MySQL
+		killproc mysqld
+		sleep 1
+		rm -f /var/lock/subsys/mysql $MYSQLD_PIDFILE >/dev/null 2>&1
+	else
+		msg_not_running MySQL
+	fi
+	;;
+  status)
+	status mysqld
+	exit $?
+	;;
+  restart|force-reload)
+	$0 stop
+	$0 start
+	exit $?
+	;;
+  init)
+	# Check if not exist init database
+	if [ -d "$MYSQL_DATA_DIR/mysql" ]; then
+		nls "Seems that database is initialized now. Remove by hand %s" "$MYSQL_DATA_DIR/mysql"
+		nls "before initializing database."
+		exit 1;
+	fi
+
+	show "Creating privilege mysql tables"
+	busy
+	TMP=/tmp TMPDIR=/tmp 
+	
+	# Install this in the user table, too
+	hostname="`hostname --fqdn | tr -d '[:space:]'`"
+		
+	# Check if hostname is valid
+	if [ -z "$hostname" ]; then
+		deltext
+		fail
+		nls "Sorry, the host name is not configured."
+		nls "Please configure the 'hostname' command to return a hostname."
+		exit 1
+	elif ! hostname -i >/dev/null 2>&1; then 
+		deltext
+		fail
+		nls "Sorry, the host '%s' could not be looked up." "$hostname"
+		nls "Please configure the 'hostname' command to return a correct hostname."
+		exit 1
+	fi
+
+	# Initialize variables
+	c_d="" i_d=""
+	c_h="" i_h=""
+	c_u="" i_u=""
+	c_f="" i_f=""
+	c_t="" c_c=""
+
+	# Check for old tables
+	if test ! -f $mdata/db.frm
+	then
+	  # mysqld --bootstrap wants one command/line
+	  c_d="$c_d CREATE TABLE db ("
+	  c_d="$c_d   Host char(60) DEFAULT '' NOT NULL,"
+	  c_d="$c_d   Db char(64) DEFAULT '' NOT NULL,"
+	  c_d="$c_d   User char(16) DEFAULT '' NOT NULL,"
+	  c_d="$c_d   Select_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Insert_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Update_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Delete_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Create_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Drop_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Grant_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   References_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Index_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Alter_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d PRIMARY KEY Host (Host,Db,User),"
+	  c_d="$c_d KEY User (User)"
+	  c_d="$c_d )"
+	  c_d="$c_d comment='Database privileges';"
+
+	  i_d="INSERT INTO db VALUES ('%','test','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y');
+	  INSERT INTO db VALUES ('%','test\_%','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y');"
+	fi
+
+	if test ! -f $mdata/host.frm
+	then
+	  c_h="$c_h CREATE TABLE host ("
+	  c_h="$c_h  Host char(60) DEFAULT '' NOT NULL,"
+	  c_h="$c_h  Db char(64) DEFAULT '' NOT NULL,"
+	  c_h="$c_h  Select_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Insert_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Update_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Delete_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Create_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Drop_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Grant_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  References_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Index_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Alter_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  PRIMARY KEY Host (Host,Db)"
+	  c_h="$c_h )"
+	  c_h="$c_h comment='Host privileges;  Merged with database privileges';"
+	fi
+
+	if test ! -f $mdata/user.frm
+	then
+	  c_u="$c_u CREATE TABLE user ("
+	  c_u="$c_u   Host char(60) DEFAULT '' NOT NULL,"
+	  c_u="$c_u   User char(16) DEFAULT '' NOT NULL,"
+	  c_u="$c_u   Password char(16) DEFAULT '' NOT NULL,"
+	  c_u="$c_u   Select_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Insert_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Update_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Delete_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Create_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Drop_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Reload_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Shutdown_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Process_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   File_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Grant_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   References_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Index_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Alter_priv enum('N','Y') DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   PRIMARY KEY Host (Host,User)"
+	  c_u="$c_u )"
+	  c_u="$c_u comment='Users and global privileges';"
+
+	  i_u="INSERT INTO user VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
+	  INSERT INTO user VALUES ('$hostname','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
+	  
+	  REPLACE INTO user VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
+	  REPLACE INTO user VALUES ('$hostname','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
+	  
+	  INSERT INTO user VALUES ('localhost','mysql_logrotate','','N','N','N','N','N','N','Y','N','N','N','N','N','N','N');"
+	fi
+
+	if test ! -f $mdata/func.frm
+	then
+	  c_f="$c_f CREATE TABLE func ("
+	  c_f="$c_f   name char(64) DEFAULT '' NOT NULL,"
+	  c_f="$c_f   ret tinyint(1) DEFAULT '0' NOT NULL,"
+	  c_f="$c_f   dl char(128) DEFAULT '' NOT NULL,"
+	  c_f="$c_f   type enum ('function','aggregate') NOT NULL,"
+	  c_f="$c_f   PRIMARY KEY (name)"
+	  c_f="$c_f )"
+	  c_f="$c_f   comment='User defined functions';"
+	fi
+
+	if test ! -f $mdata/tables_priv.frm
+	then
+	  c_t="$c_t CREATE TABLE tables_priv ("
+	  c_t="$c_t   Host char(60) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Db char(64) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   User char(16) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Table_name char(60) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Grantor char(77) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Timestamp timestamp(14),"
+	  c_t="$c_t   Table_priv set('Select','Insert','Update','Delete','Create','Drop','Grant','References','Index','Alter') DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Column_priv set('Select','Insert','Update','References') DEFAULT '' NOT NULL,"
+	  c_t="$c_t   PRIMARY KEY (Host,Db,User,Table_name),"
+	  c_t="$c_t   KEY Grantor (Grantor)"
+	  c_t="$c_t )"
+	  c_t="$c_t   comment='Table privileges';"
+	fi
+
+	if test ! -f $mdata/columns_priv.frm
+	then
+	  c_c="$c_c CREATE TABLE columns_priv ("
+	  c_c="$c_c   Host char(60) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   Db char(60) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   User char(16) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   Table_name char(60) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   Column_name char(60) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   Timestamp timestamp(14),"
+	  c_c="$c_c   Column_priv set('Select','Insert','Update','References') DEFAULT '' NOT NULL,"
+	  c_c="$c_c   PRIMARY KEY (Host,Db,User,Table_name,Column_name)"
+	  c_c="$c_c )"
+	  c_c="$c_c   comment='Column privileges';"
+	fi
+
+	if /usr/sbin/mysqld --bootstrap --skip-grant-tables \
+	    --datadir=$MYSQL_DATA_DIR --user=$MYSQL_USER << END_OF_DATA
+CREATE DATABASE mysql;
+use mysql;
+$c_d
+$i_d
+
+$c_h
+$i_h
+
+$c_u
+$i_u
+
+$c_f
+$i_f
+
+$c_t
+$c_c
+END_OF_DATA
+	then 
+	    ok
+	    cat << END_OF_MSG
+
+PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL USERS!
+This is done with:
+
+/usr/bin/mysqladmin -u mysql password 'password'
+/usr/bin/mysqladmin -h $hostname -u mysql password 'password'
+/usr/bin/mysqladmin -u mysql_logrotate password 'password'
+
+NOTE: mysql_logrotate password should be placed to /etc/mysqld.conf in
+mysqladmin section. See the manual for more instructions.
+
+END_OF_MSG
+      else  
+	    fail
+	    cat << END_OF_MSG
+Installation of grant tables FAILED!
+
+Examine the logs in $MYSQL_DATA_DIR for more information.  You can
+also try to start the mysqld demon with:
+
+/usr/sbin/mysqld --skip-grant &
+
+You can use the command line tool /usr/bin/mysql to connect to the mysql
+database and look at the grant tables:
+
+shell> /usr/bin/mysql -u mysql mysql
+mysql> show tables
+
+Try 'mysqld --help' if you have problems with paths. Setting on
+logging in /etc/mysqld.conf gives you a log in /var/log/mysql/log that
+may be helpful. The latest information about MySQL is available on the
+web at http://www.mysql.com/.
+
+Please check PLD ftp site for newer versions of this package.
+
+Please consult the MySQL manual section: 'Problems running
+mysql_install_db', and the manual section that describes problems on
+your OS.  Another information source is the MySQL email archive.
+Please check all of the above before mailing us!  And if you do mail
+us, you MUST use the /usr/bin/mysqlbug script!  
+
+END_OF_MSG
+
+	exit 1 
+	fi
+	;;
+  *)
+	msg_usage "$0 {start|stop|init|restart|force-reload|status}"
+	exit 3
+esac
+
+exit $RETVAL
