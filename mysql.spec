@@ -5,7 +5,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável.
 Group(pt_BR):	Aplicações/Banco_de_Dados
-Version:	3.22.22
+Version:	3.22.23b
 Release:	1
 Copyright:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
 Source:		http://www.mysql.com/Downloads/MySQL-3.22/mysql-%{version}.tar.gz
