@@ -105,11 +105,23 @@ plusieurs annees. Meme si MySQL est encore en developpement, il offre
 deja une riche et utile serie de fonctions.
 
 %description -l pl
-MySQL to wielow±tkowy serwer baz danych SQL.
+MySQL to prawdziwie wielou¿ytkownikowy, wielow±tkowy serwer baz danych
+SQL. SQL jest najpopularniejszym na ¶wiecie jêzykiem u¿ywanym do baz
+danych. MySQL to implementacja klient/serwer sk³adaj±ca siê z demona
+mysqld i wielu ró¿nych programów i bibliotek klienckich.
 
-G³ówne zalety MySQL to szybko¶æ, potêga i ³atwo¶æ u¿ytkowania. MySQL
-jest wykorzystywany m.in. do obs³ugi 40 baz danych, 10 000 tabel,
-gdzie ka¿da tabela zawiera 7 milionów pozycji. To ok 50GB danych.
+G³ównymi celami MySQL-a s± szybko¶æ, potêga i ³atwo¶æ u¿ytkowania.
+MySQL oryginalnie by³ tworzony, poniewa¿ autorzy w Tcx potrzebowali
+serwera SQL do obs³ugi bardzo du¿ych baz danych z szybko¶ci± o wiele
+wiêksz±, ni¿ mogli zaoferowaæ inni producenci baz danych. U¿ywaj± go
+od 1996 roku w drodowisku z ponad 40 bazami danych, 10 000 tabel,
+z których ponad 500 zawiera ponad 7 milionów rekordów - w sumie oko³o
+50GB krytycznych danych.
+
+Baza, na której oparty jest MySQL, sk³ada siê ze zbioru procedur,
+które by³y u¿ywane w bardzo wymagaj±cym ¶rodowisku produkcyjnym przez
+wiele lat. Pomimo, ¿e MySQL jest ci±gle rozwijany, ju¿ oferuje bogaty
+i u¿yteczny zbiór funkcji.
 
 %description -l pt_BR
 O MySQL é um servidor de banco de dados SQL realmente multiusuário e
@@ -358,7 +370,12 @@ install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
 
 # Make install
-%{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
+%{__make} install \
+	DESTDIR=$RPM_BUILD_ROOT \
+	benchdir=%{_datadir}/sql-bench \
+	libsdir=/tmp
+# libsdir is to avoid installing innodb static libs in $RPM_BUILD_ROOT../libs
+
 install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
