@@ -7,7 +7,6 @@
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
 %bcond_without	innodb	# Without InnoDB support
-%bcond_without	isam	# Without ISAM table format (used in mysql 3.22)
 %bcond_without	raid	# Without raid
 %bcond_without	ssl	# Without OpenSSL
 %bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
@@ -23,10 +22,10 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.1.10a
-Release:	1
+Version:	5.0.3
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
-Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
+Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-5.0/%{name}-%{version}-beta.tar.gz
 # Source0-md5:	6a4a6a5b3d0a42a9a271b2b8867bde82
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -410,7 +409,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}-beta
 %patch0 -p1
 %{?with_tcpd:%patch1 -p1}
 %patch2 -p1
@@ -447,7 +446,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--enable-thread-safe-client \
 	--with%{!?with_bdb:out}-berkeley-db \
 	--with%{!?with_innodb:out}-innodb \
-	--with%{!?with_isam:out}-isam \
 	--with%{!?with_raid:out}-raid \
 	--with%{!?with_ssl:out}-openssl \
 	--with%{!?with_tcpd:out}-libwrap \
@@ -475,6 +473,8 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %{__make} \
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
+# workaround for missing files
+(cd Docs; touch Images/cluster-components-1.txt Images/multi-comp-1.txt errmsg-table.texi cl-errmsg-table.texi)
 %{__make} -C Docs mysql.info
 
 %install
@@ -503,7 +503,7 @@ install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 install %{SOURCE4} mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
 install %{SOURCE6} $RPM_BUILD_ROOT%{_sysconfdir}/monit
-touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
+touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
@@ -655,16 +655,11 @@ fi
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
 %attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
-%attr(755,root,root) %{_bindir}/isamchk
-%attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
-%attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_sbindir}/mysqld
-%{_mandir}/man1/isamchk.1*
-%{_mandir}/man1/isamlog.1*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 
@@ -738,6 +733,7 @@ fi
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqltest
+%attr(755,root,root) %{_sbindir}/mysqlmanager*
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
