@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.14
-Release:	1
+Release:	2
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	9764f09c89692345d3b7800ab014f822
@@ -68,6 +68,8 @@ Obsoletes:	mysql-server
 %define		_mysqlhome	/home/services/mysql
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
+# workaround for buggy gcc 3.3.1
+%define 	specflags_alpha "-mno-explicit-relocs"
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
