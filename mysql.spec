@@ -27,6 +27,7 @@ Patch2:		%{name}-c++.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
 Patch5:		%{name}-dump_quote_db_names.patch
+Patch6:		%{name}-manfixes.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -316,6 +317,7 @@ MySQL.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
 
 %build
 rm -f missing
