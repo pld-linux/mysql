@@ -298,6 +298,7 @@ Summary(uk):	MySQL - бенчмарки
 Group:		Applications/Databases
 Requires:	%{name} = %{version}
 Requires:	%{name}-client
+Requires:	perl(DBD::mysql)
 Obsoletes:	MySQL-bench
 
 %description bench
