@@ -9,7 +9,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.49
-Release:	2
+Release:	3
 License:	GPL/LGPL
 Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -134,6 +134,7 @@ Summary:	MySQL additional utilities written in Perl
 Summary(pl):	Dodatkowe narz阣zia do MySQL napisane w Perlu
 Group:		Applications/Databases
 Requires:	%{name}-extras = %{version}
+Requires:	perl-Msql-Mysql-modules
 
 %description extras-perl
 MySQL additional utilities written in Perl.
