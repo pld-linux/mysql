@@ -479,8 +479,8 @@ fi
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
-# For clusters in /etc/mysql/clusters.conf
 %triggerpostun -- mysql <= 4.0.20-2
+# For clusters in /etc/mysql/clusters.conf
 if [ -f "/etc/sysconfig/mysql" ]; then
 	. /etc/sysconfig/mysql
 	if [ "$MYSQL_DB_CLUSTERS" ]; then
