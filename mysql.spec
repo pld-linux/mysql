@@ -1,9 +1,5 @@
 # TODO:
-# - NDB subpackages:
-#	- ndb (sbin/ndbd)
-#	- ndb-client (ndb_*)
-#	- ndb-mgm (ndb_mgmd)
-#	- ndb-cpc (ndb_cpcd, what's that?)
+# - init/sysconfig for NDB subpackages
 # - fix ndb linking with static libstdc++
 #
 # - trigger that prepares system from pre-cluster into cluster
@@ -34,6 +30,12 @@ Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Source5:	%{name}-clusters.conf
 Source6:	%{name}.monitrc
+Source7:	%{name}-ndb.init
+Source8:	%{name}-ndb.sysconfig
+Source9:	%{name}-ndb-mgm.init
+Source10:	%{name}-ndb-mgm.sysconfig
+Source11:	%{name}-ndb-cpc.init
+Source12:	%{name}-ndb-cpc.sysconfig
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -346,6 +348,38 @@ This package contains manual in HTML format.
 %description doc -l pl
 Podrêcznik MySQL-a w formacie HTML.
 
+%package ndb
+Summary:	MySQL - NDB Storage Engine Daemon
+Group:		Applications/Databases
+Requires:	%{name}-libs = %{version}-%{release}
+
+%description ndb
+This package contains the standard MySQL NDB Storage Engine Daemon.
+
+%package ndb-client
+Summary:	MySQL - NDB Clients
+Group:		Applications/Databases
+Requires:	%{name}-libs = %{version}-%{release}
+
+%description ndb-client
+This package contains the standard MySQL NDB Clients.
+
+%package ndb-mgm
+Summary:	MySQL - NDB Management Daemon
+Group:		Applications/Databases
+Requires:	%{name}-libs = %{version}-%{release}
+
+%description ndb-mgm
+This package contains the standard MySQL NDB Management Daemon.
+
+%package ndb-cpc
+Summary:	MySQL - NDB CPC Daemon
+Group:		Applications/Databases
+Requires:	%{name}-libs = %{version}-%{release}
+
+%description ndb-cpc
+This package contains the standard MySQL NDB CPC Daemon.
+
 %prep
 %setup -q
 %patch0 -p1
@@ -438,6 +472,14 @@ install %{SOURCE5} $RPM_BUILD_ROOT/etc/mysql/clusters.conf
 install %{SOURCE6} $RPM_BUILD_ROOT/etc/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 
+# NDB
+install %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
+install %{SOURCE8} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb
+install %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
+install %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
+install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
+install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
+
 # remove mysqld's *.po files
 find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
@@ -490,6 +532,54 @@ fi
 if [ "$1" = "0" ]; then
 	%userremove mysql
 	%groupremove mysql
+fi
+
+%post ndb
+/sbin/chkconfig --add mysql-ndb
+if [ -f /var/lock/subsys/mysql-ndb ]; then
+        /etc/rc.d/init.d/mysql-ndb restart >&2
+else
+        echo "Run \"/etc/rc.d/init.d/mysql-ndb start\" to start mysql NDB engine." >&2
+fi
+
+%preun ndb
+if [ "$1" = "0" ]; then
+        if [ -f /var/lock/subsys/mysql-ndb ]; then
+                /etc/rc.d/init.d/mysql-ndb stop
+        fi
+        /sbin/chkconfig --del mysql-ndb
+fi
+
+%post ndb-mgm
+/sbin/chkconfig --add mysql-ndb-mgm
+if [ -f /var/lock/subsys/mysql-ndb-mgm ]; then
+        /etc/rc.d/init.d/mysql-ndb-mgm restart >&2
+else
+        echo "Run \"/etc/rc.d/init.d/mysql-ndb-mgm start\" to start mysql NDB management node." >&2
+fi
+
+%preun ndb-mgm
+if [ "$1" = "0" ]; then
+        if [ -f /var/lock/subsys/mysql-ndb-mgm ]; then
+                /etc/rc.d/init.d/mysql-ndb-mgm stop
+        fi
+        /sbin/chkconfig --del mysql-ndb-mgm
+fi
+
+%post ndb-cpc
+/sbin/chkconfig --add mysql-ndb-cpc
+if [ -f /var/lock/subsys/mysql-ndb-cpc ]; then
+        /etc/rc.d/init.d/mysql-ndb-cpc restart >&2
+else
+        echo "Run \"/etc/rc.d/init.d/mysql-ndb-cpc start\" to start mysql NDB CPC." >&2
+fi
+
+%preun ndb-cpc
+if [ "$1" = "0" ]; then
+        if [ -f /var/lock/subsys/mysql-ndb-cpc ]; then
+                /etc/rc.d/init.d/mysql-ndb-cpc stop
+        fi
+        /sbin/chkconfig --del mysql-ndb-cpc
 fi
 
 %post   libs -p /sbin/ldconfig
@@ -631,3 +721,26 @@ fi
 %files doc
 %defattr(644,root,root,755)
 %doc Docs/manual.html Docs/manual_toc.html
+
+%files ndb
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_sbindir}/ndbd
+%attr(754,root,root) /etc/rc.d/init.d/mysql-ndb
+%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql-ndb
+
+%files ndb-client
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/ndb_*
+
+%files ndb-mgm
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_sbindir}/ndb_mgmd
+%attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-mgm
+%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql-ndb-mgm
+
+
+%files ndb-cpc
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_sbindir}/ndb_cpcd
+%attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-cpc
+%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql-ndb-cpc
