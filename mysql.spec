@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.18
-Release:	0.1
+Release:	1
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	702151a3e21d9e5f32e8850032aefdad
