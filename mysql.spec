@@ -1,6 +1,6 @@
 #
 # Conditional build:
-#
+# _with_bdb - Berkeley DB support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -12,22 +12,24 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.9
+Version:	4.0.10
 Release:	1
 License:	GPL/LGPL
-Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-4.0.9-gamma.tar.gz
+Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}-gamma.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Patch0:		%{name}-libs.patch
+Patch1:		%{name}-libwrap.patch
+Patch2:		%{name}-lang.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
 BuildRequires:	ORBit-devel
 BuildRequires:	autoconf
 BuildRequires:	automake
-BuildRequires:	gcc-c++
+BuildRequires:	libstdc++-devel
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
 BuildRequires:	ncurses-devel >= 4.2
@@ -38,6 +40,7 @@ BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
+{?_with_bdb:BuildRequires:	db3-devel}
 PreReq:		rc-scripts >= 0.2.0
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/bin/id
@@ -54,11 +57,6 @@ Obsoletes:	mysql-server
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
-
-%define		_gcc_ver	%(%{__cc} -dumpversion | cut -b 1)
-%if %{_gcc_ver} == 2
-%define		__cxx		"%{__cc}"
-%endif
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -296,6 +294,8 @@ MySQL.
 %prep
 %setup -q -n %{name}-%{version}-gamma
 %patch0 -p1
+%patch1 -p1
+%patch2 -p1
 
 %build
 rm -f missing
@@ -313,6 +313,7 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 	--with-mysqld-user=mysql \
 	--with-libwrap \
 	--with%{!?debug:out}-debug \
+	{?_with_bdb:--with-berkeley-db} \	
 	--with-embedded-server \
 	--with-mysqlfs \
 	--with-vio \
@@ -339,7 +340,9 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT/home/services/mysql
 
 install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
+%if %{?_with_bdb:1}%{!?_with_bdb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
+%endif
 
 # Make install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
