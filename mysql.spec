@@ -21,6 +21,7 @@ Patch1:		%{name}-no_libnsl.patch
 Patch2:		%{name}-opt.patch
 Patch3:		%{name}-moreincludes.patch
 Patch4:		%{name}-amfix.patch
+Patch5:		%{name}-acfix.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -249,16 +250,18 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 %build
-#rm -f missing 
-#libtoolize --copy --force
-#aclocal
-#automake -a -c
-#autoconf
+rm -f missing 
+libtoolize --copy --force
+aclocal
+automake -a -c
+autoconf
 CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{rpmcflags} -fomit-frame-pointer"
-%configure2_13 \
+%configure \
+	-C \
 	%{?_with_innodb:--with-innodb}  \
 	%{?_with_bdb:--with-berkeley-db} \
 	--without-debug \
