@@ -317,6 +317,17 @@ MySQL.
 %description bench -l uk
 Цей пакет м╕стить скрипти та дан╕ для оц╕нки продуктивност╕ MySQL.
 
+%package doc
+Summary:	MySQL manual
+Summary(pl):	PodrЙcznik u©ytkownika MySQL
+Group:	Applications/Databases
+
+%description doc
+This package contains manual in HTML format.
+
+%description doc -l pl
+PodrЙcznik MySQL-a w formacie HTML. 
+
 %prep
 %setup -q
 %patch0 -p1
@@ -564,3 +575,6 @@ fi
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgrst]*
+
+%files doc
+%doc Docs/manual.html Docs/manual_toc.html
