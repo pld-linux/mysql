@@ -241,26 +241,3 @@ chown -R mysql /var/state/mysql
 
 %files bench
 %attr(-,root,root) %{_datadir}/sql-bench
-
-%changelog
-* Mon May 31 1999 Arkadiusz Mi¶kiewicz <misiek@pld.org.pl>
-- PLDized (spec rewrited)
-
-* Mon Feb 22 1999 David Axmark <david@detron.se>
-- Removed unportable cc switches from the spec file. The defaults can
-  now be overridden with environment variables. This feature is used
-  to compile the official RPM with optimal (but compiler version
-  specific) switches.
-- Removed the repetitive description parts for the sub rpms. Maybe add
-  again if RPM gets a multiline macro capability.
-- Added support for a pt_BR translation. Translation contributed by
-  Jorge Godoy <jorge@bestway.com.br>.
-
-* Wed Nov 4 1998 David Axmark <david@detron.se>
-- A lot of changes in all the rpm and install scripts. This may even
-  be a working RPM :-)
-
-* Sun Aug 16 1998 David Axmark <david@detron.se>
-- A developers changelog for MySQL is available in the source RPM. And
-  there is a history of major user visible changed in the Reference
-  Manual.  Only RPM specific changes will be documented here.
