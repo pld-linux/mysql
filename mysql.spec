@@ -35,6 +35,7 @@ Patch4:		%{name}-info-res.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fulltext-small.patch
 Patch7:		%{name}-c++.patch
+Patch8:		%{name}-lang.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -316,6 +317,7 @@ MySQL.
 %if %{_gcc_ver} > 2
 %patch7 -p1
 %endif
+%patch8 -p1
 
 %build
 rm -f missing
