@@ -17,7 +17,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.20
-Release:	2.5
+Release:	2.6
 License:	GPL
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
@@ -485,14 +485,14 @@ fi
 # For clusters in /etc/mysql/clusters.conf
 if [ -f "/etc/sysconfig/mysql" ]; then
 	. /etc/sysconfig/mysql
-	if [ "$MYSQL_DB_CLUSTERS" ]; then
+	if [ -n "$MYSQL_DB_CLUSTERS" ]; then
 		for i in "$MYSQL_DB_CLUSTERS"; do
 			echo "$i/mysqld.conf=$i" >> /etc/mysql/clusters.conf
 		done
 		echo "# Do not use **obsolete** option MYSQL_DB_CLUSTERS" >> /etc/sysconfig/mysql
 		echo "# USE /etc/mysql/clusters.conf instead" >> /etc/sysconfig/mysql
-		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/mysql/clusters.conf"
-		echo "Take a look at that"
+		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/mysql/clusters.conf."
+		echo "Take a look at that."
 	fi
 fi
 
