@@ -30,6 +30,7 @@ Patch5:		%{name}-dump_quote_db_names.patch
 Patch7:		%{name}-sql-cxx-pic.patch
 Patch8:		%{name}-noproc.patch
 Patch9:		%{name}-fix_privilege_tables.patch
+Patch10:	%{name}-nptl.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -345,6 +346,7 @@ Podrêcznik MySQL-a w formacie HTML.
 %endif
 %patch8 -p1
 %patch9 -p1
+%patch10 -p1
 
 %build
 %{__libtoolize}
