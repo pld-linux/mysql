@@ -1,7 +1,4 @@
 #
-# TODO: fix security hole created by storing mysqld.conf in directory(-ies)
-#	writable by mysql user
-#
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
 #
