@@ -418,7 +418,8 @@ install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
-install %{SOURCE4} $RPM_BUILD_ROOT/etc/mysql/mysqld.conf
+# This is template for configuration file which is created after 'service mysql init'
+install %{SOURCE4} $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT/etc/mysql/clusters.conf
 install %{SOURCE6} $RPM_BUILD_ROOT/etc/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
@@ -501,7 +502,6 @@ fi
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
 %attr(751,root,root) %dir /etc/mysql
-%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/mysqld.conf
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/clusters.conf
 %attr(750,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/isamchk
@@ -524,8 +524,8 @@ fi
 
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
-# not needed?
-#%{_datadir}/mysql/mysqld.conf
+# This is template for configuration file which is created after 'service mysql init'
+%{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/charsets
 %{_datadir}/mysql/english
 %lang(cs) %{_datadir}/mysql/czech
