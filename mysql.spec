@@ -2,6 +2,8 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
+# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1011008.html
+# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1010979.html
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
