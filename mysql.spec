@@ -9,7 +9,7 @@ Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.23.42
-Release:	1
+Release:	2
 License:	GPL/LGPL
 Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -39,6 +39,7 @@ BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 Prereq:		rc-scripts >= 0.2.0
 Prereq:		shadow
+Prereq:		/sbin/chkconfig
 Provides:	msqlormysql MySQL-server
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 Obsoletes:	MySQL
@@ -325,6 +326,9 @@ find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 perl -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
 
+%clean
+rm -rf $RPM_BUILD_ROOT
+
 %pre
 if [ -n "`getgid mysql`" ]; then
 	if [ "`getgid mysql`" != "89" ]; then
@@ -369,9 +373,6 @@ fi
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
-
-%clean
-rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
