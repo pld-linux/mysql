@@ -9,7 +9,7 @@ Name:		mysql
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.23.25
+Version:	3.23.26
 Release:	1
 License:	GPL/LGPL
 Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}-beta.tar.gz
