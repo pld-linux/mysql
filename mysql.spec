@@ -42,7 +42,7 @@ BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
 BuildRequires:	ncurses-devel >= 4.2
-BuildRequires:	openssl-devel
+BuildRequires:	openssl-devel >= 0.9.7d
 BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 5.6.1
 BuildRequires:	readline-devel >= 4.2
