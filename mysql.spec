@@ -2,9 +2,15 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
+# - what's the libwrapper constistent name, i see in specs 'libwrap', 'tcpd', 'tcp_wrappers'
 #
 # Conditional build:
-%bcond_with	bdb	# Berkeley DB support
+%bcond_with		bdb		# Berkeley DB support
+%bcond_without	innodb	# Without InnoDB support
+%bcond_without	isam	# Without ISAM table format (used in mysql 3.22)
+%bcond_without	raid	# Without raid
+%bcond_without	ssl		# Without OpenSSL
+%bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -17,7 +23,7 @@ Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.22
-Release:	1
+Release:	1.2
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mainseek.com/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	fab53259c3ba9f729a319bf271fc8587
@@ -45,9 +51,9 @@ BuildRequires:	automake
 %{?with_bdb:BuildRequires:	db3-devel}
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
-BuildRequires:	libwrap-devel
+%{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
-BuildRequires:	openssl-devel >= 0.9.7d
+%{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
 BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
@@ -246,7 +252,7 @@ Summary(ru):	MySQL - хедеры и библиотеки разработчика
 Summary(uk):	MySQL - хедери та б╕бл╕отеки програм╕ста
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
-Requires:	openssl-devel
+%{?with_ssl:Requires:	openssl-devel}
 Requires:	zlib-devel
 Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
@@ -341,7 +347,7 @@ PodrЙcznik MySQL-a w formacie HTML.
 %prep
 %setup -q
 %patch0 -p1
-%patch1 -p1
+%{?with_tcpd:%patch1 -p1}
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
@@ -374,18 +380,20 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--enable-shared \
 	--enable-static \
 	--enable-thread-safe-client \
-	%{?with_bdb:--with-berkeley-db} \
+	--with%{!?with_bdb:out}-berkeley-db \
+	--with%{!?with_innodb:out}-innodb \
+	--with%{!?with_isam:out}-isam \
+	--with%{!?with_raid:out}-raid \
+	--with%{!?with_ssl:out}-openssl \
+	--with%{!?with_tcpd:out}-libwrap \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--with%{!?debug:out}-debug \
 	--with-embedded-server \
 	--with-extra-charsets=all \
-	--with-libwrap \
 	--with-low-memory \
 	--with-mysqld-user=mysql \
 	--with-named-curses-libs="-lncurses" \
-	--with-openssl \
 	--with-pthread \
-	--with-raid \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-vio \
 	--without-readline \
@@ -425,9 +433,24 @@ install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'
 install %{SOURCE4} $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
+install %{SOURCE4} mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT/etc/mysql/clusters.conf
 install %{SOURCE6} $RPM_BUILD_ROOT/etc/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
+
+# remove innodb directives from mysqld.conf if mysqld is configured without
+%if !%{with innodb}
+	cp mysqld.conf mysqld.tmp
+	awk 'BEGIN { RS="\n\n" } !/innodb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
+%endif
+
+# remove berkeley-db directives from mysqld.conf if mysqld is configured without
+%if !%{with bdb}
+	cp mysqld.conf mysqld.tmp
+	awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
+%endif
+
+install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
 
 # remove mysqld's *.po files
 find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
