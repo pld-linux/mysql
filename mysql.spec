@@ -16,6 +16,7 @@
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
+Summary(de):	MySQL: ist eine SQL-Datenbank
 Summary(pt_BR):	MySQL: Um servidor SQL rápido e confiável
 Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
 Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
@@ -149,6 +150,17 @@ Baza, na której oparty jest MySQL, sk³ada siê ze zbioru procedur,
 które by³y u¿ywane w bardzo wymagaj±cym ¶rodowisku produkcyjnym przez
 wiele lat. Pomimo, ¿e MySQL jest ci±gle rozwijany, ju¿ oferuje bogaty
 i u¿yteczny zbiór funkcji.
+
+%description -l de
+MySQL ist eine SQL-Datenbank. Allerdings ist sie im Gegensatz zu
+Oracle, DB2 oder PostgreSQL keine relationale Datenbank. Die Daten
+werden zwar in zweidimensionalen Tabellen gespeichert und können mit
+einem Primärschlüssel versehen werden. Es ist aber keine Definition
+eines Fremdschlüssels möglich. Der Benutzer ist somit bei einer
+MySQL-Datenbank völlig allein für die (referenzielle) Integrität der
+Daten verantwortlich. Allein durch die Nutzung externer
+Tabellenformate, wie InnoDB bzw Berkeley DB wird eine Relationalität
+ermöglicht. Diese Projekte sind aber getrennt von MySQL zu betrachten.
 
 %description -l pt_BR
 O MySQL é um servidor de banco de dados SQL realmente multiusuário e
@@ -489,8 +501,8 @@ install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'
 install %{SOURCE4} mysqld.conf
-install %{SOURCE5} $RPM_BUILD_ROOT/etc/mysql/clusters.conf
-install %{SOURCE6} $RPM_BUILD_ROOT/etc/monit
+install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
+install %{SOURCE6} $RPM_BUILD_ROOT%{_sysconfdir}/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
@@ -640,9 +652,9 @@ fi
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
-%attr(751,root,root) %dir /etc/mysql
-%attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) /etc/mysql/clusters.conf
-%attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/monit/*.monitrc
+%attr(751,root,root) %dir %{_sysconfdir}/mysql
+%attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
+%attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
