@@ -19,7 +19,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.20
-Release:	3.1
+Release:	4
 License:	GPL
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
@@ -39,6 +39,7 @@ Patch7:		%{name}-sql-cxx-pic.patch
 Patch8:		%{name}-noproc.patch
 Patch9:		%{name}-fix_privilege_tables.patch
 Patch10:	%{name}-nptl.patch
+Patch11:	%{name}-sec-hotcopy.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -355,6 +356,7 @@ Podr阠znik MySQL-a w formacie HTML.
 %patch8 -p1
 %patch9 -p1
 %patch10 -p1
+%patch11 -p2
 
 %{__perl} -pi -e 's@/lib/libpthread@/%{_lib}/libpthread@' configure.in
 
