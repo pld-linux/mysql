@@ -1,5 +1,5 @@
 %include	/usr/lib/rpm/macros.perl
-%define		__find_requires	%{_builddir}/mysql-%{version}-beta/find-perl-requires
+%define		__find_requires %{_builddir}/mysql-%{version}-gamma/find-perl-requires
 
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
@@ -9,10 +9,10 @@ Name:		mysql
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.23.27
+Version:	3.23.28
 Release:	1
 License:	GPL/LGPL
-Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}-beta.tar.gz
+Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}-gamma.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -219,7 +219,7 @@ Programy testuj±ce szybko¶æ serwera MySQL.
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
 %prep
-%setup -q -n %{name}-%{version}-beta
+%setup -q -n %{name}-%{version}-gamma
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
