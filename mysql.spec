@@ -50,6 +50,10 @@ Obsoletes:	mysql-server
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
+%define		_gcc_ver	%(%{__cc} --version | cut -b 1)
+%if %{_gcc_ver} == 2
+%define		__cxx		"%{__cc}"
+%endif
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
