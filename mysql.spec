@@ -2,7 +2,8 @@
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
-Summary(pt):	MySQL: Um servidor SQL rápido e confiável
+Summary(pt_BR): MySQL: Um servidor SQL r.ANapido e confiNavel.*B
+Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
 Group(de):	Applikationen/Dateibanken
