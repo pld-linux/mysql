@@ -9,7 +9,10 @@ Group(pt_BR):	Aplicações/Banco_de_Dados
 Version:	3.22.27
 Release:	1
 Copyright:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
-Source:		http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
+Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
+Source1:	mysql.init
+Source2:	mysql.sysconfig
+Source3:	mysql.logrotate
 Patch0:		mysql-info.patch
 Patch1:		mysql-no_libbind.patch
 Icon:		mysql.gif
@@ -212,14 +215,14 @@ make benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d}
+install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig}
 
 # Make install
 make install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
 
-# Install logrotate and autostart
-install support-files/mysql-log-rotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/mysql
-install support-files/mysql.server     $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/mysql
+install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
+install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
+install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 
 find Docs -type f ! -name *.gif ! -name *.html -exec rm {} \;
 find . -name ./CVS -exec rm -rf {} \;
@@ -237,9 +240,10 @@ echo "Creating system user mysql with UID 89"
 %{_sbindir}/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql 2> /dev/null
 
 %post
+/usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+
 mysql_install_db -IN-RPM
 chown -R mysql /var/state/mysql
-/usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 
 %postun
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
@@ -259,6 +263,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/mysql_install_db
 %attr(755,root,root) %{_bindir}/mysql_setpermission
 %attr(755,root,root) %{_bindir}/mysql_zap
+%attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/replace
@@ -294,8 +299,8 @@ rm -rf $RPM_BUILD_ROOT
 %files client
 %attr(755,root,root) %{_bindir}/msql2mysql
 %attr(755,root,root) %{_bindir}/mysql
+%attr(755,root,root) %{_bindir}/mysql_find_rows
 %attr(755,root,root) %{_bindir}/mysqlaccess
-%attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
