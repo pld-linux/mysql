@@ -4,9 +4,9 @@
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
-Summary(pt_BR):	MySQL: Um servidor SQL r.ANapido e confiNavel.*B
-Summary(ru):	MySQL -- ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
-Summary(uk):	MySQL -- Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
+Summary(pt_BR):	MySQL: Um servidor SQL rápido e confiável
+Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
+Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊı¾İ¿â·şÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
@@ -146,7 +146,7 @@ Requires:	%{name}-libs = %{version}
 
 %description extras
 MySQL additional utilities except Perl scripts (they may be found in
-%{name}-extras-perl package)
+%{name}-extras-perl package).
 
 %description extras -l pl
 Dodatkowe narzêdzia do MySQL - z wyj±tkiem skryptów Perla (które s± w
@@ -253,7 +253,7 @@ Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
 
 %description static
-MySQL static libraris.
+MySQL static libraries.
 
 %description static -l pl
 Biblioteki statyczne MySQL.
