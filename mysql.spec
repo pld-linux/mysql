@@ -1,4 +1,11 @@
 # TODO:
+# - NDB subpackages:
+#	- ndb (sbin/ndbd)
+#	- ndb-client (ndb_*)
+#	- ndb-mgm (ndb_mgmd)
+#	- ndb-cpc (ndb_cpcd, what's that?)
+# - fix ndb linking with static libstdc++
+#
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
@@ -371,7 +378,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	FIND_PROC='/bin/ps p $$PID' \
 	KILL='/bin/kill' \
 	CHECK_PID='/bin/kill -0 $$PID' \
-	-C \
 	--enable-assembler \
 	--enable-shared \
 	--enable-static \
@@ -390,6 +396,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-raid \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-vio \
+	--with-ndbcluster \
 	--without-readline \
 	--without-docs
 #	--with-mysqlfs
@@ -553,6 +560,7 @@ fi
 %lang(pt) %{_datadir}/mysql/portuguese
 %lang(ro) %{_datadir}/mysql/romanian
 %lang(ru) %{_datadir}/mysql/russian
+%lang(yu) %{_datadir}/mysql/serbian
 %lang(sk) %{_datadir}/mysql/slovak
 %lang(sv) %{_datadir}/mysql/swedish
 %lang(uk) %{_datadir}/mysql/ukrainian
