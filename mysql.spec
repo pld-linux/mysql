@@ -81,7 +81,7 @@ deja une riche et utile serie de fonctions.
 MySQL to wielow±tkowy serwer baz danych SQL.
 
 G³ówne zalety MySQL to szybko¶æ, potêga i ³atwo¶æ u¿ytkowania. MySQL
-jes wykorzystywany m.in. do obs³ugi 40 baz danych, 10 000 tabeli,
+jest wykorzystywany m.in. do obs³ugi 40 baz danych, 10 000 tabeli,
 gdzie ka¿da tabela zawiera 7 milionów pozycji. To ok 50GB danych.
 
 %description -l pt_BR
@@ -230,7 +230,7 @@ export LDFLAGS CXXFLAGS
 	--with-mysqld-user=mysql \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-comment='Polish Linux Distribution MySQL RPM' \
-	--without-readline
+	--without-readline \
 	--with-low-memory
 # If you have much RAM you can remove --with-low-memory
 
