@@ -51,7 +51,7 @@ Obsoletes:	mysql-server
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
-%define		_gcc_ver	%(%{__cc} --version | cut -b 1)
+%define		_gcc_ver	%(%{__cc} -dumpversion | cut -b 1)
 %if %{_gcc_ver} == 2
 %define		__cxx		"%{__cc}"
 %endif
