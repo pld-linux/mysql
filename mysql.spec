@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.14
-Release:	4
+Release:	5
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	9764f09c89692345d3b7800ab014f822
@@ -297,6 +297,8 @@ Group:		Applications/Databases
 Requires:	%{name} = %{version}
 Requires:	%{name}-client
 Obsoletes:	MySQL-bench
+
+%define		_noautoreq	'perl(this)'
 
 %description bench
 This package contains MySQL benchmark scripts and data.
