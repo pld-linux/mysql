@@ -1,5 +1,5 @@
---- mysql-3.23.41/acinclude.m4.orig	Sat Aug 11 13:12:15 2001
-+++ mysql-3.23.41/acinclude.m4	Tue Aug 14 00:24:18 2001
+--- mysql-3.23.43/acinclude.m4.orig	Wed Oct  3 18:08:29 2001
++++ mysql-3.23.43/acinclude.m4	Sat Oct  6 19:06:30 2001
 @@ -2,7 +2,7 @@
  
  # A local version of AC_CHECK_SIZEOF that includes sys/types.h
@@ -307,10 +307,11 @@
  [
  AC_MSG_CHECKING(if conversion of longlong to float works)
  AC_CACHE_VAL(ac_cv_conv_longlong_to_float,
-@@ -1022,567 +932,3 @@
+@@ -1020,568 +930,3 @@
+ dnl ---------------------------------------------------------------------------
  dnl END OF MYSQL_CHECK_GEMINI SECTION
  dnl ---------------------------------------------------------------------------
- 
+-
 -dnl ---------------------------------------------------------------------------
 -dnl Got this from the GNU tar 1.13.11 distribution
 -dnl by Paul Eggert <eggert@twinsun.com>
@@ -396,7 +397,7 @@
 -AC_DEFUN(AC_SYS_LARGEFILE,
 -  [AC_REQUIRE([AC_CANONICAL_HOST])
 -   AC_ARG_ENABLE(largefile,
--     [  --disable-large-files   Omit support for large files])
+-     [  --disable-largefile    Omit support for large files])
 -   if test "$enable_largefile" != no; then
 -     AC_CHECK_TOOL(GETCONF, getconf)
 -     AC_SYS_LARGEFILE_FLAGS(CFLAGS)
