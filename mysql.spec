@@ -247,10 +247,9 @@ echo "Creating system user mysql with UID 89"
 %post
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 
-echo Don\'t forget to run mysql_install_db, before starting mysqld!
-
-#mysql_install_db -IN-RPM
-#chown -R mysql /var/state/mysql
+TMP=/tmp TMPDIR=/tmp mysql_install_db
+# -IN-RPM
+chown -R mysql /var/state/mysql
 
 %postun
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
