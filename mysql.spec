@@ -1,6 +1,5 @@
 # TODO:
 # - init/sysconfig for NDB subpackages
-# - fix ndb linking with static libstdc++
 #
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
@@ -20,7 +19,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.8
-Release:	0.1
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/mysql-%{version}.tar.gz
 # Source0-md5:	d1b3e84d1d49366e2692f453e7bf8879
