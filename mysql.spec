@@ -41,11 +41,10 @@ Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
-Patch5:		%{name}-dump_quote_db_names.patch
-Patch7:		%{name}-sql-cxx-pic.patch
-Patch8:		%{name}-noproc.patch
-Patch9:		%{name}-fix_privilege_tables.patch
-Patch10:	%{name}-nptl.patch
+Patch5:		%{name}-sql-cxx-pic.patch
+Patch6:		%{name}-noproc.patch
+Patch7:		%{name}-fix_privilege_tables.patch
+Patch8:		%{name}-nptl.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -404,16 +403,15 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-#%patch5 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
-%patch7 -p1
+%patch5 -p1
 %endif
+%patch6 -p1
+%patch7 -p1
 %patch8 -p1
-%patch9 -p1
-%patch10 -p1
 
 %{__perl} -pi -e 's@/lib/libpthread@/%{_lib}/libpthread@' configure.in
 
