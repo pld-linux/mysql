@@ -1,6 +1,4 @@
 # TODO:
-# - init/sysconfig for NDB subpackages
-#
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
@@ -19,7 +17,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.9
-Release:	0.1
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/mysql-%{version}.tar.gz
 # Source0-md5:	7bc44befe155d619c4e4705f68874278
