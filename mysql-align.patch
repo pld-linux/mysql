@@ -1,0 +1,27 @@
+--- mysql-4.1.10/mysys/my_getopt.c.orig	2005-02-12 21:37:32.000000000 +0100
++++ mysql-4.1.10/mysys/my_getopt.c	2005-03-04 10:52:33.000000000 +0100
+@@ -738,7 +738,7 @@
+     value		Pointer to variable
+ */
+ 
+-static void init_one_value(const struct my_option *option, gptr *variable,
++static void init_one_value(const struct my_option *option, gptr variable,
+ 			   longlong value)
+ {
+   switch ((option->var_type & GET_TYPE_MASK)) {
+@@ -793,12 +793,12 @@
+       set the value to default value.
+     */
+     if (options->u_max_value)
+-      init_one_value(options, options->u_max_value, options->max_value);
++      init_one_value(options, (gptr)(options->u_max_value), options->max_value);
+     if (options->value)
+-      init_one_value(options, options->value, options->def_value);
++      init_one_value(options, (gptr)(options->value), options->def_value);
+     if (options->var_type & GET_ASK_ADDR &&
+ 	(variable= (*getopt_get_addr)("", 0, options)))
+-      init_one_value(options, variable, options->def_value);
++      init_one_value(options, (gptr)variable, options->def_value);
+   }
+ }
+ 
