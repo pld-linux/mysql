@@ -378,11 +378,9 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
-	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
-	   $RPM_BUILD_ROOT%{_infodir} \
-	   $RPM_BUILD_ROOT%{_mysqlhome}
+	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/{db,innodb/{data,log}}} \
+	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
-install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
 %if %{?_with_bdb:1}%{!?_with_bdb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
