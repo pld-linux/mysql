@@ -385,7 +385,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-openssl \
 	--with-pthread \
 	--with-raid \
-	--with-unix-socket-path=/var/lib/mysql/mysqldb/mysql.sock \
+	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-vio \
 	--without-readline \
 	--without-docs
