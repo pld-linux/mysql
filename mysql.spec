@@ -242,7 +242,7 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %patch7 -p1
 
 %build
-rm -f missing 
+rm -f missing
 libtoolize --copy --force
 aclocal
 automake -a -c
