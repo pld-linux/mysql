@@ -57,7 +57,7 @@ CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" \
 	--localstatedir=/var/lib/mysql
 
 # benchdir does not fit in above model. Fix when we make a separate package
-make benchdir=$RPM_BUILD_ROOT/usr/share/sql-bench
+make benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
 %install
 
@@ -65,12 +65,12 @@ make benchdir=$RPM_BUILD_ROOT/usr/share/sql-bench
 
 # Ensure that needed directories exists
 install -d $DESTDIR/var/lib/mysql/mysql
-install -d $DESTDIR/usr/share/sql-bench
+install -d $DESTDIR%{_datadir}/sql-bench
 install -d $DESTDIR/usr/{sbin,share,man,include}
 install -d $DESTDIR/usr/doc/MySQL-%{mysql-version}
 
 # Make install
-make install-strip DESTDIR=$DESTDIR benchdir=/usr/share/sql-bench
+make install-strip DESTDIR=$DESTDIR benchdir=%{_datadir}/sql-bench
 
 # fixme: can´t this be done via configure?
 mv $DESTDIR%{_libdir}/mysql/*.so* $DESTDIR/usr/lib
@@ -192,7 +192,7 @@ lisa --SysV-init remove mysql $1
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %config /etc/sysconfig/daemons/mysql
 
-%attr(755,root,root) /usr/share/mysql/
+%attr(755,root,root) %{_datadir}/mysql/
 
 %Files client
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
