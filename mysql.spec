@@ -11,7 +11,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.49
-Release:	6
+Release:	7
 License:	GPL/LGPL
 Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -26,6 +26,7 @@ Patch4:		%{name}-amfix.patch
 Patch5:		%{name}-acfix.patch
 Patch6:		%{name}-am15.patch
 Patch7:		%{name}-c++.patch
+Patch8:		%{name}-noproc.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -296,6 +297,7 @@ MySQL.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 %build
 rm -f missing
