@@ -1,3 +1,6 @@
+# TODO:
+# - trigger that prepares system from pre-cluster into cluster
+# - trigger to new cluster scheme
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -13,7 +16,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.20
-Release:	2
+Release:	2.1
 License:	GPL/LGPL
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
@@ -21,6 +24,7 @@ Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
+Source5:	%{name}-clusters.conf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -392,7 +396,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
@@ -412,7 +416,8 @@ install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
-install %{SOURCE4} $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
+install %{SOURCE4} $RPM_BUILD_ROOT/etc/mysql/mysqld.conf
+install %{SOURCE5} $RPM_BUILD_ROOT/etc/mysql/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 
 # remove mysqld's *.po files
@@ -477,6 +482,9 @@ fi
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
+%attr(751,root,root) %dir /etc/mysql
+%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/mysqld.conf
+%attr(640,root,,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/clusters.conf
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
@@ -496,7 +504,8 @@ fi
 
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
-%{_datadir}/mysql/mysqld.conf
+# not needed?
+#%{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/charsets
 %{_datadir}/mysql/english
 %lang(cs) %{_datadir}/mysql/czech
