@@ -67,6 +67,7 @@ Obsoletes:	mysql-server
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
+%define		_mysqlhome	/home/services/mysql
 
 %define		_gcc_ver	%(%{__cc} -dumpversion | cut -b 1)
 %if %{_gcc_ver} == 2
@@ -358,7 +359,7 @@ rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
 	   $RPM_BUILD_ROOT%{_infodir} \
-	   $RPM_BUILD_ROOT/home/services/mysql
+	   $RPM_BUILD_ROOT%{_mysqlhome}
 
 %if %{?_with_innodb:1}%{!?_with_innodb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
@@ -405,7 +406,7 @@ if [ -n "`id -u mysql 2>/dev/null`" ]; then
 	fi
 else
 	/usr/sbin/useradd -M -o -r -u 89 \
-	                -d /home/services/mysql -s /bin/sh -g mysql \
+	                -d %{_mysqlhome} -s /bin/sh -g mysql \
 	                -c "MySQL Server" mysql 1>&2
 fi
 
@@ -453,7 +454,7 @@ fi
 %{_mandir}/man1/isamlog.1*
 %{_mandir}/man1/mysqld.1*
 
-%attr(700,mysql,mysql) /home/services/mysql
+%attr(700,mysql,mysql) %{_mysqlhome}
 %attr(751,mysql,mysql) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archiv/mysql
