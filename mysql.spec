@@ -1,5 +1,13 @@
-# _with_innodb	- with InnoDB backend
-# _with_bdb	- with Berkeley DB backend
+#
+# Conditional build:
+# _with_innodb	       - with InnoDB backend
+# _with_bdb	       - with Berkeley DB backend
+# _with_small_fulltext - with fulltext indexes lowered from 4 to 3 characters
+#
+#%define	_with_innodb	1
+#%define	_with_bdb	1
+#%define	_with_small_fulltext	1
+#
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
@@ -11,7 +19,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.54a
-Release:	1
+Release:	2
 License:	GPL/LGPL
 #http://www.mysql.com/Downloads/MySQL-3.23/mysql-3.23.54a.tar.gz shows mirrors list
 Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
@@ -25,6 +33,7 @@ Patch2:		%{name}-opt.patch
 Patch3:		%{name}-moreincludes.patch
 Patch4:		%{name}-info-res.patch
 Patch5:		%{name}-noproc.patch
+Patch6:		%{name}-fulltext-small.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -298,6 +307,7 @@ MySQL.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%{?_with_small_fulltext:%patch6 -p0}
 
 %build
 rm -f missing
