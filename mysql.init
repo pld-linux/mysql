@@ -75,7 +75,7 @@ MYSQL_ERRLOG=/var/log/mysql/err
 # $1 - db cluster
 #
 # sets variables:
-# MYSQL_STATUS = running | not running
+# MYSQL_STATUS = running | not running | died
 # MYSQL_PID    = pid of mysqld process
 #
 mysqlstatus() {
