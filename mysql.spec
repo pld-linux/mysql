@@ -331,9 +331,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_sbindir}/mysqld
 
-%attr(751,mysql,mysql) %dir /var/lib/mysql
-%attr(750,mysql,mysql) %dir /var/log/mysql
-%attr(750,mysql,mysql) %dir /var/log/archiv/mysql
+%attr(771,root,mysql) %dir /var/lib/mysql
+%attr(770,root,mysql) %dir /var/log/mysql
+%attr(770,root,mysql) %dir /var/log/archiv/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/mysql/*
 
 %{_infodir}/mysql.info*
