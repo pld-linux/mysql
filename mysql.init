@@ -6,7 +6,6 @@
 #
 # description:  A very fast and reliable SQL database engine.
 #
-
 # Source function library
 . /etc/rc.d/init.d/functions
 
@@ -208,6 +207,20 @@ mysqlstop() {
 	mysqlstatus "$clusterdir"
 	msg_stopping "MySQL $clusterdir"
 	busy
+
+# TODO
+#  graceful mysql shutdown with mysqladmin shutdown requires 'shutdown'
+#  privilege. create new user mysqlctl or rename mysql_logrotate to mysqlctl
+#  and give it both privs (flush-logs and shutdown)?
+
+	# try graceful shutdown -- send shutdown command
+	/usr/bin/mysqladmin --defaults-file=$MYSQL_CONFIG ${MYSQL_SOCKET:+--socket=$MYSQL_SOCKET} shutdown
+	# 3 seconds
+	for nr in 1 2 3; do
+		[ -d "/proc/$MYSQL_PID" ] && sleep 1
+	done
+	mysqlstatus "$clusterdir"
+
 	[ "$MYSQL_PID" != "unknown" ] && kill -TERM "$MYSQL_PID" 2> /dev/null
 	# 3 seconds
 	for nr in 1 2 3; do
@@ -221,6 +234,8 @@ mysqlstop() {
 	else
 		ok
 	fi
+
+	# FIXME: should let mysqld remove pid by itself?
 	rm -f "$MYSQL_PIDFILE"
 }
 
@@ -495,7 +510,7 @@ This is done (after starting database) with:
 NOTE: mysql_logrotate password should be placed to $MYSQL_CONFIG in
 mysqladmin section. See the manual for more instructions.
 
-IMPORTANT: The configuration file is mysqld.conf in MYSQ_DB_CLUSTERS directories.
+IMPORTANT: The configuration file is mysqld.conf in MYSQL_DB_CLUSTERS directories.
 
 END_OF_MSG
       else  
