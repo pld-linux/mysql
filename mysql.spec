@@ -6,19 +6,20 @@ Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
 Summary(pt):	MySQL: Um servidor SQL rápido e confiável
 Name:		mysql
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy Danych
+Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.22.32
 Release:	7
 License:	MySQL FREE PUBLIC LICENSE (See the manual)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
-Source1:	mysql.init
-Source2:	mysql.sysconfig
-Source3:	mysql.logrotate
-Source4:	mysqld.conf
-Patch0:		mysql-info.patch
-Patch1:		mysql-no_libbind.patch
-Patch2:		mysql-perldep.patch
+Source1:	%{name}.init
+Source2:	%{name}.sysconfig
+Source3:	%{name}.logrotate
+Source4:	%{name}d.conf
+Patch0:		%{name}-info.patch
+Patch1:		%{name}-no_libbind.patch
+Patch2:		%{name}-perldep.patch
+Patch3:		%{name}-gethostbyname_r_is_in_libc_aka_no_libnsl.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -106,7 +107,7 @@ informações.
 %package extras
 Summary:	MySQL additional utilities 
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy Danych
+Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-libs = %{version}
 
@@ -117,7 +118,7 @@ MySQL additional utilities except Perl scripts (they may be found in
 %package extras-perl
 Summary:	MySQL additional utilities written in Perl
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy Danych
+Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-extras = %{version}
 
@@ -129,7 +130,7 @@ Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
 Summary(pt):	MySQL - Cliente
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy Danych
+Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-client
@@ -149,6 +150,7 @@ Este pacote contém os clientes padrão para o MySQL.
 %package libs
 Summary:	Shared libraries for MySQL
 Group:		Applications/Databases
+Group(pl):	Aplikacje/Bazy danych
 
 %description libs
 Shared libraries for MySQL.
@@ -158,8 +160,8 @@ Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla programistów
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Development/Libraries
-Group(fr):	Development/Librairies
 Group(pl):	Programowanie/Biblioteki
+Group(fr):	Development/Librairies
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
 
@@ -184,8 +186,8 @@ MySQL.
 Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
-Group(fr):	Development/Librairies
 Group(pl):	Programowanie/Biblioteki
+Group(fr):	Development/Librairies
 Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
 
@@ -200,7 +202,7 @@ Summary:	MySQL - Benchmarks
 Summary(pl):	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy Danych
+Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name} = %{version}
 Requires:	%{name}-client
@@ -220,6 +222,7 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 chmod +x find-perl-requires
 
@@ -262,7 +265,7 @@ install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
-install %{SOURCE4} $RPM_BUILD_ROOT/etc/mysqld.conf
+install %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/mysqld.conf
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog}
 
 find Docs -type f ! -name \*.gif ! -name \*.html -exec rm -f {} \;
@@ -340,7 +343,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/mysqld.conf
+%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/mysqld.conf
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/mysqladmin
