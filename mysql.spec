@@ -30,7 +30,7 @@ BuildRequires:	rpm-perlprov
 Prereq:		shadow
 Provides:	msqlormysql MySQL-server
 Obsoletes:	MySQL
-BuildRoot:	/tmp/%{name}-%{version}
+BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_prefix}/sbin
 %define		_sysconfdir	/etc
