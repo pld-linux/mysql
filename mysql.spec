@@ -12,11 +12,11 @@ Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.12
-Release:	1.1
+Version:	4.0.13
+Release:	1
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	7d7696ecad5018939735049c0e87132f
+# Source0-md5:	4bad6dae73f53c16bfcf41c704681059
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
