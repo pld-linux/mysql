@@ -2,7 +2,7 @@ Name:		MySQL
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(pl):	MySQL: bardzo szybki i niezawodna baza danych (SQL)
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
+Group(pl):	Aplikacje/Bazy Danych
 Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável.
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Version:	3.22.23b
@@ -66,7 +66,7 @@ Requires:	%{name} = %{version}-%{release}
 Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
+Group(pl):	Aplikacje/Bazy Danych
 Summary(pt_BR):	MySQL - Cliente
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Obsoletes:	mysql-client
@@ -87,7 +87,7 @@ Requires:	perl
 Summary:	MySQL - Benchmarks
 Summary:	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
+Group(pl):	Aplikacje/Bazy Danych
 Summary(pt_BR):	MySQL - Medições de desempenho
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Obsoletes:	mysql-bench
@@ -107,7 +107,7 @@ Requires:	MySQL-client
 Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla developerów
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
+Group(pl):	Aplikacje/Bazy Danych
 Summary(pt_BR):	MySQL - Medições de desempenho
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Obsoletes:	mysql-devel
