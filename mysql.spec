@@ -2,6 +2,8 @@
 # Conditional build:
 # _with_bdb - Berkeley DB support
 #
+# NOTE: requires mounted /proc to build
+#
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
