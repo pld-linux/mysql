@@ -415,6 +415,8 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %{__perl} -pi -e 's@/lib/libpthread@/%{_lib}/libpthread@' configure.in
 
+%{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
+
 %build
 %{__libtoolize}
 %{__aclocal}
@@ -456,7 +458,9 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
-%{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
+%{__make} \
+	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
+
 %{__make} -C Docs mysql.info
 
 %install
