@@ -485,7 +485,7 @@ fi
 %{_mandir}/man1/mysqld.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
-%attr(751,mysql,mysql) /var/lib/mysql
+%attr(751,root,root) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archiv/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/mysql/*
