@@ -413,8 +413,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch7 -p1
 %patch8 -p1
 
-%{__perl} -pi -e 's@/lib/libpthread@/%{_lib}/libpthread@' configure.in
-
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
 %build
