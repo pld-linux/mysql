@@ -1,12 +1,12 @@
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybki i niezawodna baza danych (SQL)
-Name:		mysql
 Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável.
+Name:           mysql
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
-Version:	3.22.27
+Version:	3.22.30
 Release:	1
 Copyright:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
@@ -22,6 +22,7 @@ BuildRequires:	libstdc++-devel
 BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
 BuildRequires:	readline-devel
+BuildRequires:	texinfo
 Provides:	msqlormysql MySQL-server
 Obsoletes:	MySQL
 BuildRoot:	/tmp/%{name}-%{version}
@@ -183,6 +184,19 @@ Programy testuj±ce szybko¶æ serwera MySQL.
 %description -l pt_BR bench
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
+%package doc
+Summary:        MySQL - Documentation
+Summary(pl):    mySQL - Dokumentacja
+Group:          Applications/Databases
+Group(pl):      Aplikacje/Bazy Danych
+Conflicts:	mysql <= 3.22.27
+
+%description doc
+This package contains documentation for MySQL.
+
+%description -l pl doc
+Dokumentacja do MySQL.
+
 %prep
 %setup  -q
 %patch0 -p1
@@ -216,6 +230,7 @@ make benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig}
+install -d $RPM_BUILD_ROOT/var/log
 
 # Make install
 make install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
@@ -223,6 +238,7 @@ make install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
+touch $RPM_BUILD_ROOT/var/log/mysqld.log
 
 find Docs -type f ! -name *.gif ! -name *.html -exec rm {} \;
 find . -name ./CVS -exec rm -rf {} \;
@@ -237,16 +253,23 @@ gzip -9nf $RPM_BUILD_ROOT{%{_mandir}/man1/*,%{_infodir}/mysql.info*}
 echo "Creating system group mysql with GID 89"
 %{_sbindir}/groupadd -f -g 89 mysql
 echo "Creating system user mysql with UID 89"
-%{_sbindir}/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql 2> /dev/null
+%{_sbindir}/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql > /dev/null
 
 %post
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 
-mysql_install_db -IN-RPM
-chown -R mysql /var/state/mysql
+echo Don\'t forget to run mysql_install_db, before starting mysqld!
+
+#mysql_install_db -IN-RPM
+#chown -R mysql /var/state/mysql
 
 %postun
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+
+echo Removing user mysql
+userdel mysql
+echo Removing group mysql
+groupdel mysql
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
@@ -256,7 +279,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc Docs
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
@@ -274,6 +296,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(754,mysql,mysql) %{_sysconfdir}/rc.d/init.d/mysql
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
+
+%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/*
 
 %{_datadir}/mysql/english
 %lang(cs) %{_datadir}/mysql/czech
@@ -322,3 +346,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files bench
 %attr(-,root,root) %{_datadir}/sql-bench
+
+%files doc
+%doc Docs/*
