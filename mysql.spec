@@ -9,7 +9,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Version:	3.22.32
-Release:	4
+Release:	5
 License:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	mysql.init
@@ -35,7 +35,7 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_prefix}/sbin
 %define		_sysconfdir	/etc
-%define		_localstatedir	/var/state/mysql
+%define		_localstatedir	/var/lib/mysql
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query Language)
@@ -211,7 +211,7 @@ export LDFLAGS CXXFLAGS
 	--enable-assembler \
 	--with-charset=latin2 \
 	--with-mysqld-user=mysql \
-	--with-unix-socket-path=/var/state/mysql/mysql.sock \
+	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-comment='Polish Linux Distribution MySQL RPM' \
 	--with-readline \
 	--with-low-memory
@@ -224,7 +224,7 @@ make benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
-	$RPM_BUILD_ROOT/var/{log,state/mysql}
+	$RPM_BUILD_ROOT/var/{log,lib/mysql}
 
 # Make install
 make install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
@@ -261,7 +261,7 @@ if [ -n "`id -u mysql 2>/dev/null`" ]; then
 		exit 1
 	fi
 else
-	/usr/sbin/useradd -u 89 -r -m -d /var/state/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
+	/usr/sbin/useradd -u 89 -r -m -d /var/lib/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
 	if [ -f /var/db/passwd.db ]; then
 		/usr/bin/update-db 1>&2
 	fi
@@ -322,7 +322,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
 
-%attr(750,mysql,mysql) %dir /var/state/mysql
+%attr(750,mysql,mysql) %dir /var/lib/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/*
 
 %{_datadir}/mysql/english
