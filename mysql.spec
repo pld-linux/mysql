@@ -11,7 +11,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.49
-Release:	7
+Release:	8
 License:	GPL/LGPL
 Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -416,7 +416,6 @@ fi
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/mysqld.conf
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
-%attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
@@ -476,7 +475,6 @@ fi
 %files client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql
-%attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
 %attr(755,root,root) %{_bindir}/mysqlshow
@@ -487,6 +485,7 @@ fi
 %files libs
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
+%attr(755,root,root) %{_bindir}/mysqlbug
 
 %files devel
 %defattr(644,root,root,755)
