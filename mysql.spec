@@ -12,23 +12,19 @@ Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.11a
-Release:	2
+Version:	4.0.12
+Release:	1
 License:	GPL/LGPL
-Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}-gamma.tar.gz
+Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
-Patch2:		%{name}-lang.patch
-Patch3:		%{name}-c++.patch
-Patch4:		%{name}-no-my_inet_ntoa.patch
-Patch5:		%{name}-my_dir.patch
-Patch6:		%{name}-errno.patch
-Patch7:		%{name}-_r-link.patch
-Patch8:		%{name}-info.patch
+Patch2:		%{name}-c++.patch
+Patch3:		%{name}-_r-link.patch
+Patch4:		%{name}-info.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -311,16 +307,12 @@ MySQL.
 Цей пакет м╕стить скрипти та дан╕ для оц╕нки продуктивност╕ MySQL.
 
 %prep
-%setup -q -n %{name}-%{version}-gamma
+%setup -q
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
 
 %build
 rm -f missing
@@ -520,6 +512,7 @@ fi
 %attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
+%attr(755,root,root) %{_bindir}/mysqlmanager*
 %attr(755,root,root) %{_bindir}/mysqlshow
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
