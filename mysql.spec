@@ -247,7 +247,7 @@ MySQL static libraris.
 %description static -l pl
 Biblioteki statyczne MySQL.
 
-%description tatic -l ru
+%description static -l ru
 Этот пакет содержит статические библиотеки разработчика, необходимые
 для разработки клиентских приложений.
 
