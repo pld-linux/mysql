@@ -1,6 +1,6 @@
 #
 # Conditional build:
-# _with_bdb - Berkeley DB support
+%bcond_with	bdb	# Berkeley DB support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -12,38 +12,35 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.14
-Release:	2
-License:	GPL/LGPL
-Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	9764f09c89692345d3b7800ab014f822
+Version:	4.0.21
+Release:	1.2
+License:	GPL + MySQL FLOSS Exception
+Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
+# Source0-md5:	0a3dae16519afa5e59d8b9e252181243
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
-Patch2:		%{name}-c++.patch
+Patch2:		%{name}-noproc.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
-Patch5:		%{name}-dump_quote_db_names.patch
-Patch6:		%{name}-manfixes.patch
-Patch7:		%{name}-sql-cxx-pic.patch
-Patch8:		%{name}-noproc.patch
+Patch5:		%{name}-sql-cxx-pic.patch
+Patch6:		%{name}-fix_privilege_tables.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
-#BuildRequires:	ORBit-devel
 BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
-%{?_with_bdb:BuildRequires:	db3-devel}
-BuildRequires:	libstdc++-devel >= 5:3.0
+%{?with_bdb:BuildRequires:	db3-devel}
+BuildRequires:	libstdc++-devel
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
 BuildRequires:	ncurses-devel >= 4.2
-BuildRequires:	openssl-devel
+BuildRequires:	openssl-devel >= 0.9.6m
 BuildRequires:	perl-DBI
-BuildRequires:	perl-devel >= 5.6.1
+BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov
 BuildRequires:	texinfo
@@ -56,12 +53,13 @@ Requires(pre):	/usr/sbin/useradd
 Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
 Requires(post,preun):	/sbin/chkconfig
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
+Requires:	/usr/bin/setsid
 Provides:	MySQL-server
 Provides:	msqlormysql
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
+BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
@@ -69,7 +67,7 @@ Obsoletes:	mysql-server
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
 # workaround for buggy gcc 3.3.1
-%define 	specflags_alpha "-mno-explicit-relocs"
+%define 	specflags_alpha -mno-explicit-relocs
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -121,7 +119,7 @@ G³ównymi celami MySQL-a s± szybko¶æ, potêga i ³atwo¶æ u¿ytkowania.
 MySQL oryginalnie by³ tworzony, poniewa¿ autorzy w Tcx potrzebowali
 serwera SQL do obs³ugi bardzo du¿ych baz danych z szybko¶ci± o wiele
 wiêksz±, ni¿ mogli zaoferowaæ inni producenci baz danych. U¿ywaj± go
-od 1996 roku w drodowisku z ponad 40 bazami danych, 10 000 tabel,
+od 1996 roku w ¶rodowisku z ponad 40 bazami danych, 10 000 tabel,
 z których ponad 500 zawiera ponad 7 milionów rekordów - w sumie oko³o
 50GB krytycznych danych.
 
@@ -165,7 +163,7 @@ MySQL - ÃÅ SQL (Structured Query Language) ÓÅÒ×ÅÒ ÂÁÚÉ ÄÁÎÉÈ. MySQL
 Summary:	MySQL additional utilities
 Summary(pl):	Dodatkowe narzêdzia do MySQL
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 
 %description extras
 MySQL additional utilities except Perl scripts (they may be found in
@@ -179,7 +177,7 @@ pakiecie %{name}-extras-perl).
 Summary:	MySQL additional utilities written in Perl
 Summary(pl):	Dodatkowe narzêdzia do MySQL napisane w Perlu
 Group:		Applications/Databases
-Requires:	%{name}-extras = %{version}
+Requires:	%{name}-extras = %{version}-%{release}
 Requires:	perl(DBD::mysql)
 
 %description extras-perl
@@ -195,7 +193,7 @@ Summary(pt):	MySQL - Cliente
 Summary(ru):	MySQL ËÌÉÅÎÔ
 Summary(uk):	MySQL ËÌ¦¤ÎÔ
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 Obsoletes:	MySQL-client
 
 %description client
@@ -235,8 +233,9 @@ Summary(pt):	MySQL - Medições de desempenho
 Summary(ru):	MySQL - ÈÅÄÅÒÙ É ÂÉÂÌÉÏÔÅËÉ ÒÁÚÒÁÂÏÔÞÉËÁ
 Summary(uk):	MySQL - ÈÅÄÅÒÉ ÔÁ Â¦ÂÌ¦ÏÔÅËÉ ÐÒÏÇÒÁÍ¦ÓÔÁ
 Group:		Development/Libraries
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 Requires:	openssl-devel
+Requires:	zlib-devel
 Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
 
@@ -266,12 +265,12 @@ bibliotecas necessárias para desenvolver aplicações clientes do MySQL.
 ÒÏÚÒÏÂËÉ ÐÒÏÇÒÁÍ-ËÌ¦¤ÎÔ¦×.
 
 %package static
-Summary:	MySQL staic libraris
+Summary:	MySQL static libraries
 Summary(pl):	Biblioteki statyczne MySQL
 Summary(ru):	MySQL - ÓÔÁÔÉÞÅÓËÉÅ ÂÉÂÌÉÏÔÅËÉ
 Summary(uk):	MySQL - ÓÔÁÔÉÞÎ¦ Â¦ÂÌ¦ÏÔÅËÉ
 Group:		Development/Libraries
-Requires:	%{name}-devel = %{version}
+Requires:	%{name}-devel = %{version}-%{release}
 Obsoletes:	MySQL-static
 
 %description static
@@ -295,9 +294,12 @@ Summary(pt):	MySQL - Medições de desempenho
 Summary(ru):	MySQL - ÂÅÎÞÍÁÒËÉ
 Summary(uk):	MySQL - ÂÅÎÞÍÁÒËÉ
 Group:		Applications/Databases
-Requires:	%{name} = %{version}
+Requires:	%{name} = %{version}-%{release}
 Requires:	%{name}-client
+Requires:	perl(DBD::mysql)
 Obsoletes:	MySQL-bench
+
+%define		_noautoreq	'perl(this)'
 
 %description bench
 This package contains MySQL benchmark scripts and data.
@@ -315,6 +317,17 @@ MySQL.
 %description bench -l uk
 ãÅÊ ÐÁËÅÔ Í¦ÓÔÉÔØ ÓËÒÉÐÔÉ ÔÁ ÄÁÎ¦ ÄÌÑ ÏÃ¦ÎËÉ ÐÒÏÄÕËÔÉ×ÎÏÓÔ¦ MySQL.
 
+%package doc
+Summary:	MySQL manual
+Summary(pl):	Podrêcznik u¿ytkownika MySQL
+Group:		Applications/Databases
+
+%description doc
+This package contains manual in HTML format.
+
+%description doc -l pl
+Podrêcznik MySQL-a w formacie HTML.
+
 %prep
 %setup -q
 %patch0 -p1
@@ -322,50 +335,47 @@ MySQL.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
-%patch6 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
-%patch7 -p1
+%patch5 -p1
 %endif
-%patch8 -p1
+%patch6 -p1
 
 %build
-rm -f missing
 %{__libtoolize}
 %{__aclocal}
 %{__automake}
 %{__autoconf}
 CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
-CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
+CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer} -DUSE_OLD_FUNCTIONS"
 %configure \
 	PS='/bin/ps' \
 	FIND_PROC='/bin/ps p $$PID' \
 	KILL='/bin/kill' \
 	CHECK_PID='/bin/kill -0 $$PID' \
 	-C \
+	--enable-assembler \
+	--enable-shared \
+	--enable-static \
+	--enable-thread-safe-client \
+	%{?with_bdb:--with-berkeley-db} \
+	--with-comment="PLD Linux Distribution MySQL RPM" \
+	--with%{!?debug:out}-debug \
+	--with-embedded-server \
+	--with-extra-charsets=all \
+	--with-libwrap \
+	--with-low-memory \
+	--with-mysqld-user=mysql \
+	--with-named-curses-libs="-lncurses" \
+	--with-openssl \
 	--with-pthread \
 	--with-raid \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
-	--with-mysqld-user=mysql \
-	--with-libwrap \
-	--with%{!?debug:out}-debug \
-	%{?_with_bdb:--with-berkeley-db} \
-	--with-embedded-server \
 	--with-vio \
-	--with-openssl \
-	--with-extra-charsets=all \
-	--enable-shared \
-	--enable-static \
-	--with-named-curses-libs="-lncurses" \
-	--enable-assembler \
 	--without-readline \
-	--without-docs \
-	--with-low-memory  \
-	--with-comment="PLD Linux Distribution MySQL RPM" \
-	--enable-thread-safe-client
+	--without-docs
 #	--with-mysqlfs
 
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
@@ -376,12 +386,10 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
-	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
-	   $RPM_BUILD_ROOT%{_infodir} \
-	   $RPM_BUILD_ROOT%{_mysqlhome}
+	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/{db,innodb/{data,log}}} \
+	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
-install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
-%if %{?_with_bdb:1}%{!?_with_bdb:0}
+%if %{with bdb}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
 
@@ -405,25 +413,27 @@ find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 %{__perl} -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
 
+rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %pre
-if [ -n "`getgid mysql`" ]; then
-	if [ "`getgid mysql`" != "89" ]; then
+if [ -n "`/usr/bin/getgid mysql`" ]; then
+	if [ "`/usr/bin/getgid mysql`" != "89" ]; then
 		echo "Error: group mysql doesn't have gid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/groupadd -g 89 -r -f mysql
+	/usr/sbin/groupadd -g 89 mysql
 fi
-if [ -n "`id -u mysql 2>/dev/null`" ]; then
-	if [ "`id -u mysql`" != "89" ]; then
+if [ -n "`/bin/id -u mysql 2>/dev/null`" ]; then
+	if [ "`/bin/id -u mysql`" != "89" ]; then
 		echo "Error: user mysql doesn't have uid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/useradd -M -o -r -u 89 \
+	/usr/sbin/useradd -u 89 \
 			-d %{_mysqlhome} -s /bin/sh -g mysql \
 			-c "MySQL Server" mysql 1>&2
 fi
@@ -452,8 +462,8 @@ if [ "$1" = "0" ]; then
 	/usr/sbin/groupdel mysql
 fi
 
-%post   libs -p /sbin/ldconfig
-%postun libs -p /sbin/ldconfig
+%post	libs -p /sbin/ldconfig
+%postun	libs -p /sbin/ldconfig
 
 %files
 %defattr(644,root,root,755)
@@ -466,10 +476,12 @@ fi
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
+%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/isamchk.1*
 %{_mandir}/man1/isamlog.1*
+%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
@@ -482,6 +494,7 @@ fi
 %dir %{_datadir}/mysql
 %{_datadir}/mysql/charsets
 %{_datadir}/mysql/english
+#%{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
 %lang(de) %{_datadir}/mysql/german
@@ -494,8 +507,8 @@ fi
 %lang(ja) %{_datadir}/mysql/japanese
 %lang(ko) %{_datadir}/mysql/korean
 %lang(nl) %{_datadir}/mysql/dutch
-%lang(nn) %{_datadir}/mysql/norwegian-ny
 %lang(no) %{_datadir}/mysql/norwegian
+%lang(nn) %{_datadir}/mysql/norwegian-ny
 %lang(pl) %{_datadir}/mysql/polish
 %lang(pt) %{_datadir}/mysql/portuguese
 %lang(ro) %{_datadir}/mysql/romanian
@@ -507,8 +520,6 @@ fi
 %files extras
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
-%attr(755,root,root) %{_bindir}/mysql_config
-%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/replace
@@ -546,13 +557,15 @@ fi
 
 %files libs
 %defattr(644,root,root,755)
+%doc EXCEPTIONS-CLIENT
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
 
 %files devel
 %defattr(644,root,root,755)
-%{_libdir}/lib*.la
+%attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/lib*.so
-%{_libdir}/lib*[^tr].a
+%{_libdir}/lib*.la
+%{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
 
 %files static
@@ -564,3 +577,7 @@ fi
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgrst]*
+
+%files doc
+%defattr(644,root,root,755)
+%doc Docs/manual.html Docs/manual_toc.html

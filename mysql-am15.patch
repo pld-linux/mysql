@@ -1,0 +1,816 @@
+diff -Nru mysql-3.23.49/Docs/Makefile.am mysql-3.23.49.new/Docs/Makefile.am
+--- mysql-3.23.49/Docs/Makefile.am	Tue Sep 11 14:28:23 2001
++++ mysql-3.23.49.new/Docs/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -11,7 +11,6 @@
+ 
+ TEXI2HTML_FLAGS =	-iso -number
+ DVIPS =			dvips
+-MAKEINFO =		@MAKEINFO@
+ TEXINFO_TEX =		Support/texinfo.tex
+ 
+ noinst_SCRIPTS =	Support/texi2html Support/generate-text-files.pl \
+@@ -55,7 +55,7 @@
+ 	$(MAKEINFO) -I $(srcdir) --no-headers --no-split --output $@ $<
+ 
+ manual.html:	manual.texi include.texi $(srcdir)/Support/texi2html
+-	cd $(srcdir) && @PERL@ $(srcdir)/Support/texi2html $(TEXI2HTML_FLAGS) $<
++	cd $(srcdir) && $(PERL) $(srcdir)/Support/texi2html $(TEXI2HTML_FLAGS) $<
+ 
+ manual_toc.html: manual.html
+ 
+--- mysql-3.23.51/Makefile.am.orig	Mon Jun  3 12:39:02 2002
++++ mysql-3.23.51/Makefile.am	Thu Jun 13 00:38:01 2002
+@@ -21,10 +21,10 @@
+ # These are built from source in the Docs directory
+ EXTRA_DIST =		INSTALL-SOURCE README \
+ 			COPYING COPYING.LIB MIRRORS
+-SUBDIRS =		include @docs_dirs@ @readline_dir@ \
+-			@thread_dirs@ @sql_client_dirs@ \
+-			@sql_server_dirs@ scripts tests man \
+-			@bench_dirs@ support-files os2
++SUBDIRS =		include $(docs_dirs) $(readline_dir) \
++			$(thread_dirs) $(sql_client_dirs) \
++			$(sql_server_dirs) scripts tests man \
++			$(bench_dirs) support-files os2
+ 
+ # Relink after clean
+ CLEANFILES =		linked_client_sources linked_server_sources linked_libmysql_sources linked_libmysql_r_sources linked_include_sources
+@@ -36,7 +36,7 @@
+ 	cd include; $(MAKE) link_sources
+ 	echo timestamp > linked_include_sources
+ 
+-linked_client_sources:  @linked_client_targets@
++linked_client_sources:  $(linked_client_targets)
+ 	cd client; $(MAKE) link_sources
+ 	echo timestamp > linked_client_sources
+ 
+@@ -50,7 +50,7 @@
+ 
+ #avoid recursive make calls in sql directory
+ linked_server_sources:
+-	cd sql; rm -f mini_client_errors.c;@LN_CP_F@ ../libmysql/errmsg.c mini_client_errors.c
++	cd sql; rm -f mini_client_errors.c;$(LN_CP_F) ../libmysql/errmsg.c mini_client_errors.c
+ 	echo timestamp > linked_server_sources
+ 
+ # Create permission databases
+--- mysql-3.23.48/client/Makefile.am.orig	Thu Feb  7 21:46:47 2002
++++ mysql-3.23.48/client/Makefile.am	Wed Feb 13 20:19:00 2002
+@@ -19,28 +19,18 @@
+ INCLUDES =			-I$(srcdir)/../include \
+ 				-I../include -I$(srcdir)/.. -I$(top_srcdir) \
+ 				-I..
+-LIBS =				@CLIENT_LIBS@
+-LDADD =				@CLIENT_EXTRA_LDFLAGS@ ../libmysql/libmysqlclient.la
++LIBS =				$(CLIENT_LIBS)
++LDADD =				$(CLIENT_EXTRA_LDFLAGS) ../libmysql/libmysqlclient.la
+ bin_PROGRAMS =			mysql mysqladmin mysqlcheck mysqlshow \
+  mysqldump mysqlimport mysqltest mysqlbinlog
+ noinst_PROGRAMS =		insert_test select_test thread_test
+ noinst_HEADERS =		sql_string.h completion_hash.h my_readline.h \
+ 				client_priv.h
+ mysql_SOURCES =			mysql.cc readline.cc sql_string.cc completion_hash.cc
+-mysql_LDADD =			@readline_link@ @TERMCAP_LIB@ $(LDADD) $(CXXLDFLAGS)
++mysql_LDADD =			$(readline_link) $(TERMCAP_LIB) $(LDADD) $(CXXLDFLAGS)
+ mysqlbinlog_LDADD =		$(LDADD) $(CXXLDFLAGS)
+-mysql_DEPENDENCIES=		$(LIBRARIES) $(pkglib_LTLIBRARIES)
+-mysqladmin_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
+-mysqlcheck_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
+-mysqlshow_DEPENDENCIES=		$(LIBRARIES) $(pkglib_LTLIBRARIES)
+-mysqldump_DEPENDENCIES=		$(LIBRARIES) $(pkglib_LTLIBRARIES)
+-mysqlimport_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
+-insert_test_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
+-select_test_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
+ mysqltest_SOURCES=			mysqltest.c
+-mysqltest_DEPENDENCIES=   	$(LIBRARIES) $(pkglib_LTLIBRARIES)
+ mysqlbinlog_SOURCES =   mysqlbinlog.cc 
+-mysqlbinlog_DEPENDENCIES=   	$(LIBRARIES) $(pkglib_LTLIBRARIES)
+ sql_src=log_event.h log_event.cc
+ 
+ # Fix for mit-threads
+@@ -49,11 +39,11 @@
+ link_sources:
+ 	for f in $(sql_src) ; do \
+ 	  rm -f $(srcdir)/$$f; \
+-	  @LN_CP_F@ $(top_srcdir)/sql/$$f $(srcdir)/$$f; \
++	  $(LN_CP_F) $(top_srcdir)/sql/$$f $(srcdir)/$$f; \
+         done;
+ 
+ thread_test.o:		thread_test.c
+-			$(COMPILE) -c @MT_INCLUDES@ $(INCLUDES) $<
++			$(COMPILE) -c $(MT_INCLUDES) $(INCLUDES) $<
+ 
+ # Don't update the files from bitkeeper
+ %::SCCS/s.%
+diff -Nru mysql-3.23.49/configure.in mysql-3.23.49.new/configure.in
+--- mysql-3.23.49/configure.in	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/configure.in	Tue Sep 11 14:19:11 2001
+@@ -83,6 +83,7 @@
+ AC_SUBST(SAVE_LDFLAGS)
+ AC_SUBST(SAVE_CXXLDFLAGS)
+ AC_SUBST(CXXLDFLAGS)
++AM_PROG_AS
+ 
+ AC_PREREQ(2.12)dnl		Minimum Autoconf version required.
+ 
+diff -Nru mysql-3.23.49/dbug/Makefile.am mysql-3.23.49.new/dbug/Makefile.am
+--- mysql-3.23.49/dbug/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/dbug/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -15,8 +15,8 @@
+ # Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+ # MA 02111-1307, USA
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include
+-LDADD =			libdbug.a ../strings/libmystrings.a
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include
++LDADD =			libdbug.a $(top_builddir)/strings/libmystrings.a
+ pkglib_LIBRARIES =	libdbug.a
+ noinst_HEADERS =	dbug_long.h
+ libdbug_a_SOURCES =	dbug.c sanity.c
+diff -Nru mysql-3.23.49/extra/Makefile.am mysql-3.23.49.new/extra/Makefile.am
+--- mysql-3.23.49/extra/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/extra/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -14,9 +14,11 @@
+ # along with this program; if not, write to the Free Software
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include -I..
+-LDADD =			@CLIENT_EXTRA_LDFLAGS@ ../mysys/libmysys.a \
+-			../dbug/libdbug.a ../strings/libmystrings.a
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include -I..
++LDADD =			$(CLIENT_EXTRA_LDFLAGS) \
++			$(top_builddir)/mysys/libmysys.a \
++			$(top_builddir)/dbug/libdbug.a \
++			$(top_builddir)/strings/libmystrings.a
+ bin_PROGRAMS =		replace comp_err perror resolveip my_print_defaults \
+ resolve_stack_dump
+ 
+diff -Nru mysql-3.23.49/heap/Makefile.am mysql-3.23.49.new/heap/Makefile.am
+--- mysql-3.23.49/heap/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/heap/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -14,13 +14,14 @@
+ # along with this program; if not, write to the Free Software
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include 
+-LDADD =			libheap.a ../mysys/libmysys.a ../dbug/libdbug.a \
+-			../strings/libmystrings.a
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include 
++LDADD =			libheap.a $(top_builddir)/mysys/libmysys.a \
++			$(top_builddir)/dbug/libdbug.a \
++			$(top_builddir)/strings/libmystrings.a
+ pkglib_LIBRARIES =	libheap.a
+ noinst_PROGRAMS	=	hp_test1 hp_test2
+-hp_test1_LDFLAGS = @NOINST_LDFLAGS@
+-hp_test2_LDFLAGS = @NOINST_LDFLAGS@
++hp_test1_LDFLAGS = $(NOINST_LDFLAGS)
++hp_test2_LDFLAGS = $(NOINST_LDFLAGS)
+ noinst_HEADERS =	heapdef.h
+ libheap_a_SOURCES =	hp_open.c hp_extra.c hp_close.c hp_panic.c hp_info.c \
+ 			hp_rrnd.c hp_scan.c hp_update.c hp_write.c hp_delete.c \
+diff -Nru mysql-3.23.49/isam/Makefile.am mysql-3.23.49.new/isam/Makefile.am
+--- mysql-3.23.49/isam/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/isam/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -14,9 +14,11 @@
+ # along with this program; if not, write to the Free Software
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include 
+-LDADD =			@CLIENT_EXTRA_LDFLAGS@ libnisam.a ../mysys/libmysys.a \
+-			../dbug/libdbug.a ../strings/libmystrings.a
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include 
++LDADD =			$(CLIENT_EXTRA_LDFLAGS) libnisam.a \
++			$(top_builddir)/mysys/libmysys.a \
++			$(top_builddir)/dbug/libdbug.a \
++			$(top_builddir)/strings/libmystrings.a
+ pkglib_LIBRARIES =	libnisam.a
+ bin_PROGRAMS =		isamchk isamlog pack_isam
+ isamchk_DEPENDENCIES=	$(LIBRARIES)
+--- mysql-3.23.52/libmysql/Makefile.am.orig	Wed Aug 14 00:08:14 2002
++++ mysql-3.23.52/libmysql/Makefile.am	Sat Aug 17 09:20:46 2002
+@@ -18,8 +18,8 @@
+ # This file is public domain and comes with NO WARRANTY of any kind
+ 
+ target = libmysqlclient.la
+-target_defs = -DUNDEF_THREADS_HACK -DDONT_USE_RAID @LIB_EXTRA_CCFLAGS@
+-LIBS   = @CLIENT_LIBS@
++target_defs = -DUNDEF_THREADS_HACK -DDONT_USE_RAID $(LIB_EXTRA_CCFLAGS)
++LIBS   = $(CLIENT_LIBS)
+ INCLUDES =	-I$(srcdir)/../include -I../include \
+ 		-I$(srcdir)/.. -I$(top_srcdir) -I..
+ 
+@@ -38,23 +38,23 @@
+ 	  ms=`echo $(mysysobjects) | sed "s;\.lo;.c;g"`; \
+ 	  for f in $$ss; do \
+ 	    rm -f $(srcdir)/$$f; \
+-	    @LN_CP_F@ $(srcdir)/../strings/$$f $(srcdir)/$$f; \
++	    $(LN_CP_F) $(srcdir)/../strings/$$f $(srcdir)/$$f; \
+ 	  done; \
+ 	  for f in $(mystringsextra); do \
+ 	    rm -f $(srcdir)/$$f; \
+-	    @LN_CP_F@ $(srcdir)/../strings/$$f $(srcdir)/$$f; \
++	    $(LN_CP_F) $(srcdir)/../strings/$$f $(srcdir)/$$f; \
+ 	  done; \
+ 	  for f in $(mystringsgen); do \
+ 	    rm -f $(srcdir)/$$f; \
+-	    @LN_CP_F@ ../strings/$$f $(srcdir)/$$f; \
++	    $(LN_CP_F) ../strings/$$f $(srcdir)/$$f; \
+ 	  done; \
+ 	  for f in $$ds; do \
+ 	    rm -f $(srcdir)/$$f; \
+-	    @LN_CP_F@ $(srcdir)/../dbug/$$f $(srcdir)/$$f; \
++	    $(LN_CP_F) $(srcdir)/../dbug/$$f $(srcdir)/$$f; \
+ 	  done; \
+ 	  for f in $$ms $(mysysheaders); do \
+ 	    rm -f $(srcdir)/$$f; \
+-	    @LN_CP_F@ $(srcdir)/../mysys/$$f $(srcdir)/$$f; \
++	    $(LN_CP_F) $(srcdir)/../mysys/$$f $(srcdir)/$$f; \
+ 	  done;
+ 
+ # This part requires GNUmake
+--- mysql-3.23.49/libmysql_r/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/libmysql_r/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -19,9 +19,8 @@
+ 
+ target = libmysqlclient_r.la
+ target_defs = -DDONT_USE_RAID @LIB_EXTRA_CCFLAGS@
+-## LIBS = @LIBS@
+ 
+-INCLUDES =	@MT_INCLUDES@ -I$(srcdir)/../include -I../include \
++INCLUDES =	$(MT_INCLUDES) -I$(srcdir)/../include -I../include \
+ 		-I$(srcdir)/.. -I$(top_srcdir) -I..
+
+ ## automake barfs if you don't use $(srcdir) or $(top_srcdir) in include
+@@ -38,5 +37,5 @@
+ 	set -x; \
+ 	for f in `cd $(libmysql_dir) && echo *.[ch]`; do \
+ 	  rm -f $(srcdir)/$$f; \
+-	  @LN_CP_F@ $(libmysql_dir)/$$f $(srcdir)/$$f; \
++	  $(LN_CP_F) $(libmysql_dir)/$$f $(srcdir)/$$f; \
+ 	done
+diff -Nru mysql-3.23.49/merge/Makefile.am mysql-3.23.49.new/merge/Makefile.am
+--- mysql-3.23.49/merge/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/merge/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -14,7 +14,7 @@
+ # along with this program; if not, write to the Free Software
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include
+ pkglib_LIBRARIES =	libmerge.a
+ noinst_HEADERS =	mrgdef.h
+ libmerge_a_SOURCES =	open.c extra.c info.c _locking.c \
+diff -Nru mysql-3.23.49/myisam/Makefile.am mysql-3.23.49.new/myisam/Makefile.am
+--- mysql-3.23.49/myisam/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/myisam/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -17,9 +17,11 @@
+ EXTRA_DIST =		mi_test_all.sh mi_test_all.res
+ pkgdata_DATA =		mi_test_all mi_test_all.res
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include 
+-LDADD =			@CLIENT_EXTRA_LDFLAGS@ libmyisam.a ../mysys/libmysys.a \
+-			../dbug/libdbug.a ../strings/libmystrings.a
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include 
++LDADD =			$(CLIENT_EXTRA_LDFLAGS) libmyisam.a \
++			$(top_builddir)/mysys/libmysys.a \
++			$(top_builddir)/dbug/libdbug.a \
++			$(top_builddir)/strings/libmystrings.a
+ pkglib_LIBRARIES =	libmyisam.a
+ bin_PROGRAMS =		myisamchk myisamlog myisampack
+ myisamchk_DEPENDENCIES=	$(LIBRARIES)
+@@ -56,46 +58,46 @@
+ SUFFIXES = .sh
+ 
+ .sh:
+-	@RM@ -f $@ $@-t
+-	@SED@ \
++	$(RM) -f $@ $@-t
++	$(SED) \
+ 	  -e 's!@''bindir''@!$(bindir)!g' \
+ 	  -e 's!@''scriptdir''@!$(bindir)!g' \
+ 	  -e 's!@''prefix''@!$(prefix)!g' \
+ 	  -e 's!@''datadir''@!$(datadir)!g' \
+ 	  -e 's!@''localstatedir''@!$(localstatedir)!g' \
+ 	  -e 's!@''libexecdir''@!$(libexecdir)!g' \
+-	  -e 's!@''CC''@!@CC@!'\
+-	  -e 's!@''CXX''@!@CXX@!'\
+-	  -e 's!@''GXX''@!@GXX@!'\
+-	  -e 's!@''PERL''@!@PERL@!' \
+-	  -e 's!@''CFLAGS''@!@SAVE_CFLAGS@!'\
+-	  -e 's!@''CXXFLAGS''@!@SAVE_CXXFLAGS@!'\
+-	  -e 's!@''LDFLAGS''@!@SAVE_LDFLAGS@!'\
+-	  -e 's!@''VERSION''@!@VERSION@!' \
+-	  -e 's!@''MYSQL_SERVER_SUFFIX''@!@MYSQL_SERVER_SUFFIX@!' \
+-	  -e 's!@''COMPILATION_COMMENT''@!@COMPILATION_COMMENT@!' \
+-	  -e 's!@''MACHINE_TYPE''@!@MACHINE_TYPE@!' \
+-	  -e 's!@''HOSTNAME''@!@HOSTNAME@!' \
+-	  -e 's!@''SYSTEM_TYPE''@!@SYSTEM_TYPE@!' \
+-	  -e 's!@''CHECK_PID''@!@CHECK_PID@!' \
+-	  -e 's!@''FIND_PROC''@!@FIND_PROC@!' \
+-	  -e 's!@''MYSQLD_DEFAULT_SWITCHES''@!@MYSQLD_DEFAULT_SWITCHES@!' \
+-	  -e 's!@''MYSQL_UNIX_ADDR''@!@MYSQL_UNIX_ADDR@!' \
+-	  -e 's!@''IS_LINUX''@!@IS_LINUX@!' \
+-	  -e "s!@""CONF_COMMAND""@!@CONF_COMMAND@!" \
+-	  -e 's!@''MYSQLD_USER''@!@MYSQLD_USER@!' \
+-	  -e 's!@''sysconfdir''@!@sysconfdir@!' \
+-	  -e 's!@''SHORT_MYSQL_INTRO''@!@SHORT_MYSQL_INTRO@!' \
+-	  -e 's!@''SHARED_LIB_VERSION''@!@SHARED_LIB_VERSION@!' \
+-	  -e 's!@''MYSQL_BASE_VERSION''@!@MYSQL_BASE_VERSION@!' \
+-	  -e 's!@''MYSQL_NO_DASH_VERSION''@!@MYSQL_NO_DASH_VERSION@!' \
+-	  -e 's!@''MYSQL_TCP_PORT''@!@MYSQL_TCP_PORT@!' \
+-	  -e 's!@''PERL_DBI_VERSION''@!@PERL_DBI_VERSION@!' \
+-	  -e 's!@''PERL_DBD_VERSION''@!@PERL_DBD_VERSION@!' \
+-	  -e 's!@''PERL_DATA_DUMPER''@!@PERL_DATA_DUMPER@!' \
++	  -e 's!@''CC''@!$(CC)!'\
++	  -e 's!@''CXX''@!$(CXX)!'\
++	  -e 's!@''GXX''@!$(GXX)!'\
++	  -e 's!@''PERL''@!$(PERL)!' \
++	  -e 's!@''CFLAGS''@!$(SAVE_CFLAGS)!'\
++	  -e 's!@''CXXFLAGS''@!$(SAVE_CXXFLAGS)!'\
++	  -e 's!@''LDFLAGS''@!$(SAVE_LDFLAGS)!'\
++	  -e 's!@''VERSION''@!$(VERSION)!' \
++	  -e 's!@''MYSQL_SERVER_SUFFIX''@!$(MYSQL_SERVER_SUFFIX)!' \
++	  -e 's!@''COMPILATION_COMMENT''@!$(COMPILATION_COMMENT)!' \
++	  -e 's!@''MACHINE_TYPE''@!$(MACHINE_TYPE)!' \
++	  -e 's!@''HOSTNAME''@!$(HOSTNAME)!' \
++	  -e 's!@''SYSTEM_TYPE''@!$(SYSTEM_TYPE)!' \
++	  -e 's!@''CHECK_PID''@!$(CHECK_PID)!' \
++	  -e 's!@''FIND_PROC''@!$(FIND_PROC)!' \
++	  -e 's!@''MYSQLD_DEFAULT_SWITCHES''@!$(MYSQLD_DEFAULT_SWITCHES)!' \
++	  -e 's!@''MYSQL_UNIX_ADDR''@!$(MYSQL_UNIX_ADDR)!' \
++	  -e 's!@''IS_LINUX''@!$(IS_LINUX)!' \
++	  -e "s!@""CONF_COMMAND""@!$(CONF_COMMAND)!" \
++	  -e 's!@''MYSQLD_USER''@!$(MYSQLD_USER)!' \
++	  -e 's!@''sysconfdir''@!$(sysconfdir)!' \
++	  -e 's!@''SHORT_MYSQL_INTRO''@!$(SHORT_MYSQL_INTRO)!' \
++	  -e 's!@''SHARED_LIB_VERSION''@!$(SHARED_LIB_VERSION)!' \
++	  -e 's!@''MYSQL_BASE_VERSION''@!$(MYSQL_BASE_VERSION)!' \
++	  -e 's!@''MYSQL_NO_DASH_VERSION''@!$(MYSQL_NO_DASH_VERSION)!' \
++	  -e 's!@''MYSQL_TCP_PORT''@!$(MYSQL_TCP_PORT)!' \
++	  -e 's!@''PERL_DBI_VERSION''@!$(PERL_DBI_VERSION)!' \
++	  -e 's!@''PERL_DBD_VERSION''@!$(PERL_DBD_VERSION)!' \
++	  -e 's!@''PERL_DATA_DUMPER''@!$(PERL_DATA_DUMPER)!' \
+ 	$< > $@-t
+-	@CHMOD@ +x $@-t
+-	@MV@ $@-t $@
++	$(CHMOD) +x $@-t
++	$(MV) $@-t $@
+ 
+ # Don't update the files from bitkeeper
+ %::SCCS/s.%
+diff -Nru mysql-3.23.49/myisammrg/Makefile.am mysql-3.23.49.new/myisammrg/Makefile.am
+--- mysql-3.23.49/myisammrg/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/myisammrg/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -14,7 +14,7 @@
+ # along with this program; if not, write to the Free Software
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include
+ pkglib_LIBRARIES =	libmyisammrg.a
+ noinst_HEADERS =	mymrgdef.h
+ libmyisammrg_a_SOURCES = myrg_open.c myrg_extra.c myrg_info.c myrg_locking.c \
+diff -Nru mysql-3.23.49/mysql-test/Makefile.am mysql-3.23.49.new/mysql-test/Makefile.am
+--- mysql-3.23.49/mysql-test/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/mysql-test/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -48,8 +48,8 @@
+ SUFFIXES = .sh
+ 
+ .sh:
+-	@RM@ -f $@ $@-t
+-	@SED@ \
++	$(RM) -f $@ $@-t
++	$(SED) \
+ 	  -e 's!@''testdir''@!$(testdir)!g' \
+ 	  -e 's!@''bindir''@!$(bindir)!g' \
+ 	  -e 's!@''scriptdir''@!$(bindir)!g' \
+@@ -57,12 +57,12 @@
+ 	  -e 's!@''datadir''@!$(datadir)!g' \
+ 	  -e 's!@''localstatedir''@!$(localstatedir)!g' \
+ 	  -e 's!@''libexecdir''@!$(libexecdir)!g' \
+-	  -e 's!@''PERL''@!@PERL@!' \
+-	  -e 's!@''VERSION''@!@VERSION@!' \
+-	  -e 's!@''MYSQL_SERVER_SUFFIX''@!@MYSQL_SERVER_SUFFIX@!' \
++	  -e 's!@''PERL''@!$(PERL)!' \
++	  -e 's!@''VERSION''@!$(VERSION)!' \
++	  -e 's!@''MYSQL_SERVER_SUFFIX''@!$(MYSQL_SERVER_SUFFIX)!' \
+ 	  $< > $@-t
+-	@CHMOD@ +x $@-t
+-	@MV@ $@-t $@
++	$(CHMOD) +x $@-t
++	$(MV) $@-t $@
+ 
+ # Don't update the files from bitkeeper
+ %::SCCS/s.%
+--- mysql-3.23.52/mysys/Makefile.am.orig	Sat Aug 17 09:18:46 2002
++++ mysql-3.23.52/mysys/Makefile.am	Sat Aug 17 09:23:28 2002
+@@ -14,13 +14,10 @@
+ # along with this program; if not, write to the Free Software
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+-MYSQLDATAdir =		$(localstatedir)
+-MYSQLSHAREdir =		$(pkgdatadir)
+-MYSQLBASEdir=		$(prefix)
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include -I.. -I$(srcdir)
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include -I.. -I$(srcdir)
+ pkglib_LIBRARIES =	libmysys.a
+-LDADD =			libmysys.a ../dbug/libdbug.a \
+-			../strings/libmystrings.a
++LDADD =			libmysys.a $(top_builddir)/dbug/libdbug.a \
++			$(top_builddir)/strings/libmystrings.a
+ noinst_HEADERS =	mysys_priv.h my_static.h \
+ 			my_os2cond.c my_os2dirsrch.c my_os2dirsrch.h \
+ 			my_os2dlfcn.c my_os2file64.c my_os2mutex.c \
+@@ -53,53 +50,50 @@
+ 			my_vsnprintf.c charset.c my_bitmap.c my_gethostbyname.c
+ EXTRA_DIST =		thr_alarm.c thr_lock.c my_pthread.c my_thr_init.c \
+ 			thr_mutex.c thr_rwlock.c
+-libmysys_a_LIBADD =	@THREAD_LOBJECTS@
++libmysys_a_LIBADD =	$(THREAD_LOBJECTS)
+ # test_fn removed 980815 since it not upp to date test_dir
+-noinst_PROGRAMS =	test_charset @THREAD_LPROGRAMS@
++noinst_PROGRAMS =	test_charset $(THREAD_LPROGRAMS)
+ # test_dir_DEPENDENCIES=	$(LIBRARIES)
+ # testhash_DEPENDENCIES=	$(LIBRARIES)
+ test_charset_DEPENDENCIES=	$(LIBRARIES)
+ EXTRA_PROGRAMS =	
+ DEFS =			-DDEFAULT_BASEDIR=\"$(prefix)\" \
+-			-DDATADIR="\"$(MYSQLDATAdir)\"" \
+-			-DDEFAULT_CHARSET_HOME="\"$(MYSQLBASEdir)\"" \
+-			-DDATADIR="\"$(MYSQLDATAdir)\"" \
+-			-DSHAREDIR="\"$(MYSQLSHAREdir)\"" \
++			-DDEFAULT_CHARSET_HOME="\"$(prefix)\"" \
++			-DSHAREDIR="\"$(pkgdatadir)\"" \
+                         @DEFS@
+ 
+ libmysys_a_DEPENDENCIES= @THREAD_LOBJECTS@
+ 
+-
+ # I hope this always does the right thing. Otherwise this is only test programs
+-FLAGS=$(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @NOINST_LDFLAGS@
++FLAGS=$(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(NOINST_LDFLAGS)
+ 
+ #
+ # The CP .. RM stuff is to avoid problems with some compilers (like alpha ccc)
+ # which automaticly removes the object files you use to compile a final program
+ #
+ 
+-test_thr_alarm: thr_alarm.c $(LIBRARIES)
++test_thr_alarm$(EXEEXT): thr_alarm.c $(LIBRARIES)
+ 	$(CP) $(srcdir)/thr_alarm.c ./test_thr_alarm.c
+ 	$(LINK) $(FLAGS) -DMAIN  ./test_thr_alarm.c $(LDADD) $(LIBS)
+ 	$(RM) -f ./test_thr_alarm.*
+ 
+-test_thr_lock: thr_lock.c $(LIBRARIES)
++test_thr_lock$(EXEEXT): thr_lock.c $(LIBRARIES)
+ 	$(CP) $(srcdir)/thr_lock.c test_thr_lock.c
+ 	$(LINK) $(FLAGS) -DMAIN  ./test_thr_lock.c $(LDADD) $(LIBS)
+ 	$(RM) -f ./test_thr_lock.*
+ 
+-test_vsnprintf: my_vsnprintf.c $(LIBRARIES)
++test_vsnprintf$(EXEEXT): my_vsnprintf.c $(LIBRARIES)
+ 	$(CP) $(srcdir)/my_vsnprintf.c test_vsnprintf.c
+ 	$(LINK) $(FLAGS) -DMAIN ./test_vsnprintf.c $(LDADD) $(LIBS)
+ 	$(RM) -f test_vsnprintf.*
+ 
+-test_dir: test_dir.c $(LIBRARIES)
++test_dir$(EXEEXT): test_dir.c $(LIBRARIES)
+ 	$(LINK) $(FLAGS) -DMAIN $(srcdir)/test_dir.c $(LDADD) $(LIBS)
+ 
+-test_charset: test_charset.c $(LIBRARIES)
++test_charset$(EXEEXT): test_charset.c $(LIBRARIES)
+ 	$(LINK) $(FLAGS) -DMAIN $(srcdir)/test_charset.c $(LDADD) $(LIBS)
+ 
+-testhash: testhash.c $(LIBRARIES)
++testhash$(EXEEXT): testhash.c $(LIBRARIES)
+ 	$(LINK) $(FLAGS) -DMAIN $(srcdir)/testhash.c $(LDADD) $(LIBS)
+ 
+ # Don't update the files from bitkeeper
+--- mysql-3.23.49/regex/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/regex/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -15,7 +15,7 @@
+ # Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+ # MA 02111-1307, USA
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include
+ noinst_LIBRARIES =	libregex.a
+ LDADD =			libregex.a ../strings/libmystrings.a
+ noinst_HEADERS =	cclass.h cname.h regex2.h utils.h engine.c regex.h
+diff -Nru mysql-3.23.49/scripts/Makefile.am mysql-3.23.49.new/scripts/Makefile.am
+--- mysql-3.23.49/scripts/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/scripts/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -76,8 +76,8 @@
+ SUFFIXES = .sh
+ 
+ .sh:
+-	@RM@ -f $@ $@-t
+-	@SED@ \
++	$(RM) -f $@ $@-t
++	$(SED) \
+ 	  -e 's!@''bindir''@!$(bindir)!g' \
+ 	  -e 's!@''sbindir''@!$(sbindir)!g' \
+ 	  -e 's!@''scriptdir''@!$(bindir)!g' \
+@@ -87,31 +87,31 @@
+ 	  -e 's!@''libexecdir''@!$(libexecdir)!g' \
+ 	  -e 's!@''pkglibdir''@!$(pkglibdir)!g' \
+ 	  -e 's!@''pkgincludedir''@!$(pkgincludedir)!g' \
+-	  -e 's!@''CC''@!@CC@!'\
+-	  -e 's!@''CXX''@!@CXX@!'\
+-	  -e 's!@''GXX''@!@GXX@!'\
+-	  -e 's!@''PERL''@!@PERL@!' \
+-	  -e 's!@''CFLAGS''@!@SAVE_CFLAGS@!'\
+-	  -e 's!@''CXXFLAGS''@!@SAVE_CXXFLAGS@!'\
+-	  -e 's!@''LDFLAGS''@!@SAVE_LDFLAGS@!'\
+-	  -e 's!@''CLIENT_LIBS''@!@CLIENT_LIBS@!' \
+-	  -e 's!@''VERSION''@!@VERSION@!' \
+-	  -e 's!@''MYSQL_SERVER_SUFFIX''@!@MYSQL_SERVER_SUFFIX@!' \
+-	  -e 's!@''COMPILATION_COMMENT''@!@COMPILATION_COMMENT@!' \
+-	  -e 's!@''MACHINE_TYPE''@!@MACHINE_TYPE@!' \
+-	  -e 's!@''HOSTNAME''@!@HOSTNAME@!' \
+-	  -e 's!@''SYSTEM_TYPE''@!@SYSTEM_TYPE@!' \
+-	  -e 's!@''CHECK_PID''@!@CHECK_PID@!' \
+-	  -e 's!@''FIND_PROC''@!@FIND_PROC@!' \
+-	  -e 's!@''MYSQLD_DEFAULT_SWITCHES''@!@MYSQLD_DEFAULT_SWITCHES@!' \
+-	  -e 's!@''MYSQL_UNIX_ADDR''@!@MYSQL_UNIX_ADDR@!' \
+-	  -e 's!@''MYSQL_TCP_PORT''@!@MYSQL_TCP_PORT@!' \
+-	  -e 's!@''IS_LINUX''@!@IS_LINUX@!' \
+-	  -e "s!@""CONF_COMMAND""@!@CONF_COMMAND@!" \
+-	  -e 's!@''MYSQLD_USER''@!@MYSQLD_USER@!' \
++	  -e 's!@''CC''@!$(CC)!'\
++	  -e 's!@''CXX''@!$(CXX)!'\
++	  -e 's!@''GXX''@!$(GXX)!'\
++	  -e 's!@''PERL''@!$(PERL)!' \
++	  -e 's!@''CFLAGS''@!$(SAVE_CFLAGS)!'\
++	  -e 's!@''CXXFLAGS''@!$(SAVE_CXXFLAGS)!'\
++	  -e 's!@''LDFLAGS''@!$(SAVE_LDFLAGS)!'\
++	  -e 's!@''CLIENT_LIBS''@!$(CLIENT_LIBS)!' \
++	  -e 's!@''VERSION''@!$(VERSION)!' \
++	  -e 's!@''MYSQL_SERVER_SUFFIX''@!$(MYSQL_SERVER_SUFFIX)!' \
++	  -e 's!@''COMPILATION_COMMENT''@!$(COMPILATION_COMMENT)!' \
++	  -e 's!@''MACHINE_TYPE''@!$(MACHINE_TYPE)!' \
++	  -e 's!@''HOSTNAME''@!$(HOSTNAME)!' \
++	  -e 's!@''SYSTEM_TYPE''@!$(SYSTEM_TYPE)!' \
++	  -e 's!@''CHECK_PID''@!$(CHECK_PID)!' \
++	  -e 's!@''FIND_PROC''@!$(FIND_PROC)!' \
++	  -e 's!@''MYSQLD_DEFAULT_SWITCHES''@!$(MYSQLD_DEFAULT_SWITCHES)!' \
++	  -e 's!@''MYSQL_UNIX_ADDR''@!$(MYSQL_UNIX_ADDR)!' \
++	  -e 's!@''MYSQL_TCP_PORT''@!$(MYSQL_TCP_PORT)!' \
++	  -e 's!@''IS_LINUX''@!$(IS_LINUX)!' \
++	  -e "s!@""CONF_COMMAND""@!$(CONF_COMMAND)!" \
++	  -e 's!@''MYSQLD_USER''@!$(MYSQLD_USER)!' \
+ 	$< > $@-t
+-	@CHMOD@ +x $@-t
+-	@MV@ $@-t $@
++	$(CHMOD) +x $@-t
++	$(MV) $@-t $@
+ 
+ # Don't update the files from bitkeeper
+ %::SCCS/s.%
+diff -Nru mysql-3.23.49/sql/Makefile.am mysql-3.23.49.new/sql/Makefile.am
+--- mysql-3.23.49/sql/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/sql/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -20,16 +20,15 @@
+ MYSQLDATAdir =		$(localstatedir)
+ MYSQLSHAREdir =		$(pkgdatadir)
+ MYSQLBASEdir=		$(prefix)
+-INCLUDES =		@MT_INCLUDES@ \
+-			@bdb_includes@ @innodb_includes@ @gemini_includes@ \
++INCLUDES =		$(MT_INCLUDES) \
++			$(bdb_includes) $(innodb_includes) $(gemini_includes) \
+ 			-I$(srcdir)/../include \
+ 			-I$(srcdir)/../regex \
+ 			-I$(srcdir) -I../include -I.. -I.
+-WRAPLIBS=		@WRAPLIBS@
+ SUBDIRS =		share
+ libexec_PROGRAMS =	mysqld
+ noinst_PROGRAMS =	gen_lex_hash
+-gen_lex_hash_LDFLAGS =        @NOINST_LDFLAGS@
++gen_lex_hash_LDFLAGS =        $(NOINST_LDFLAGS)
+ LDADD =			../isam/libnisam.a \
+ 			../merge/libmerge.a \
+ 			../myisam/libmyisam.a \
+@@ -39,9 +38,9 @@
+ 			../dbug/libdbug.a \
+ 			../regex/libregex.a \
+ 			../strings/libmystrings.a
+-mysqld_LDADD =		@MYSQLD_EXTRA_LDFLAGS@ \
+-			@bdb_libs@ @innodb_libs@ @gemini_libs@ \
+-			$(LDADD)  $(CXXLDFLAGS) $(WRAPLIBS) @LIBDL@
++mysqld_LDADD =		$(MYSQLD_EXTRA_LDFLAGS) \
++			$(bdb_libs) $(innodb_libs) $(gemini_libs) \
++			$(LDADD)  $(CXXLDFLAGS) $(WRAPLIBS) $(LIBDL)
+ noinst_HEADERS =	item.h item_func.h item_sum.h item_cmpfunc.h \
+ 			item_strfunc.h item_timefunc.h item_uniq.h \
+ 			item_create.h mysql_priv.h \
+@@ -95,7 +94,7 @@
+ 
+ link_sources:
+ 	rm -f mini_client_errors.c
+-	@LN_CP_F@ ../libmysql/errmsg.c mini_client_errors.c
++	$(LN_CP_F) ../libmysql/errmsg.c mini_client_errors.c
+ 
+ gen_lex_hash.o:		gen_lex_hash.cc lex.h
+ 			$(CXXCOMPILE) -c $(INCLUDES) $<
+--- mysql-3.23.51/sql/share/Makefile.am.orig	Mon Jun  3 12:39:02 2002
++++ mysql-3.23.51/sql/share/Makefile.am	Thu Jun 13 00:39:27 2002
+@@ -1,7 +1,7 @@
+ ## Process this file with automake to create Makefile.in
+ 
+ dist-hook:
+-	for dir in charsets @AVAILABLE_LANGUAGES@; do \
++	for dir in charsets $(AVAILABLE_LANGUAGES); do \
+ 	  test -d $(distdir)/$$dir || mkdir $(distdir)/$$dir; \
+ 	  $(INSTALL_DATA) $(srcdir)/$$dir/*.* $(distdir)/$$dir; \
+ 	done; \
+@@ -9,13 +9,13 @@
+ 	$(INSTALL_DATA) $(srcdir)/charsets/README $(distdir)/charsets
+ 	$(INSTALL_DATA) $(srcdir)/charsets/Index $(distdir)/charsets
+ 
+-all: @AVAILABLE_LANGUAGES_ERRORS@
++all: $(AVAILABLE_LANGUAGES_ERRORS)
+ 
+ # this is ugly, but portable
+-@AVAILABLE_LANGUAGES_ERRORS_RULES@
++$(AVAILABLE_LANGUAGES_ERRORS_RULES)
+ 
+ install-data-local:
+-	for lang in @AVAILABLE_LANGUAGES@; \
++	for lang in $(AVAILABLE_LANGUAGES); \
+ 	do \
+ 		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$lang; \
+ 		$(INSTALL_DATA) $(srcdir)/$$lang/errmsg.sys \
+--- mysql-3.23.49/sql-bench/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/sql-bench/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -65,8 +65,8 @@
+ SUFFIXES = .sh
+ 
+ .sh:
+-	@RM@ -f $@ $@-t
+-	@SED@ \
++	$(RM) -f $@ $@-t
++	$(SED) \
+ 	  -e 's!@''benchdir''@!$(benchdir)!g' \
+ 	  -e 's!@''bindir''@!$(bindir)!g' \
+ 	  -e 's!@''scriptdir''@!$(bindir)!g' \
+@@ -74,12 +74,12 @@
+ 	  -e 's!@''datadir''@!$(datadir)!g' \
+ 	  -e 's!@''localstatedir''@!$(localstatedir)!g' \
+ 	  -e 's!@''libexecdir''@!$(libexecdir)!g' \
+-	  -e 's!@''PERL''@!@PERL@!' \
+-	  -e 's!@''VERSION''@!@VERSION@!' \
+-	  -e 's!@''MYSQL_SERVER_SUFFIX''@!@MYSQL_SERVER_SUFFIX@!' \
++	  -e 's!@''PERL''@!$(PERL)!' \
++	  -e 's!@''VERSION''@!$(VERSION)!' \
++	  -e 's!@''MYSQL_SERVER_SUFFIX''@!$(MYSQL_SERVER_SUFFIX)!' \
+ 	  $< > $@-t
+-	@CHMOD@ +x $@-t
+-	@MV@ $@-t $@
++	$(CHMOD) +x $@-t
++	$(MV) $@-t $@
+ 
+ # Don't update the files from bitkeeper
+ %::SCCS/s.%
+diff -Nru mysql-3.23.49/strings/Makefile.am mysql-3.23.49.new/strings/Makefile.am
+--- mysql-3.23.49/strings/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/strings/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -16,7 +16,7 @@
+ 
+ # This file is public domain and comes with NO WARRANTY of any kind
+ 
+-INCLUDES =		@MT_INCLUDES@ -I$(srcdir)/../include -I../include
++INCLUDES =		$(MT_INCLUDES) -I$(srcdir)/../include -I../include
+ pkglib_LIBRARIES =	libmystrings.a
+ 
+ # Exact one of ASSEMBLER_X
+@@ -53,20 +53,20 @@
+ 			strinstr-sparc.s strmake-sparc.s strmov-sparc.s \
+ 			strnmov-sparc.s strstr-sparc.s strxmov-sparc.s
+ 
+-libmystrings_a_LIBADD=	@CHARSET_OBJS@
++libmystrings_a_LIBADD=	$(CHARSET_OBJS)
+ ctype.o:		ctype_extra_sources.c
+ 
+ ctype_extra_sources.c: conf_to_src
+-	./conf_to_src $(top_srcdir) @CHARSETS_NEED_SOURCE@ > \
++	./conf_to_src $(top_srcdir) $(CHARSETS_NEED_SOURCE) > \
+ 	              $(srcdir)/ctype_extra_sources.c
+ conf_to_src_SOURCES = conf_to_src.c
+ conf_to_src_LDADD=
+ #force static linking of conf_to_src - essential when linking against
+ #custom installation of libc
+-conf_to_src_LDFLAGS= @NOINST_LDFLAGS@
++conf_to_src_LDFLAGS= $(NOINST_LDFLAGS)
+ 
+-# This is because the dependency tracking misses @FOO@ vars in sources.
+-strtoull.o:		@CHARSET_OBJS@
++# This is because the dependency tracking misses $(FOO) vars in sources.
++strtoull.o:		$(CHARSET_OBJS)
+ 
+ clean-local:
+ 	rm -f ctype_extra_sources.c
+diff -Nru mysql-3.23.49/support-files/Makefile.am mysql-3.23.49.new/support-files/Makefile.am
+--- mysql-3.23.49/support-files/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/support-files/Makefile.am	Tue Sep 11 14:19:11 2001
+@@ -32,7 +32,7 @@
+ 			my-large.cnf \
+ 			my-huge.cnf \
+ 			mysql-log-rotate \
+-			mysql-@VERSION@.spec \
++			mysql-$(VERSION).spec \
+ 			binary-configure
+ 
+ pkgdata_SCRIPTS =	mysql.server
+@@ -42,21 +42,21 @@
+ 			my-large.cnf \
+ 			my-huge.cnf \
+ 			mysql.spec \
+-			mysql-@VERSION@.spec \
++			mysql-$(VERSION).spec \
+ 			mysql-log-rotate \
+ 			mysql.server \
+ 			binary-configure
+ 			 
+ 
+-mysql-@VERSION@.spec:	mysql.spec
++mysql-$(VERSION).spec:	mysql.spec
+ 			rm -f $@
+ 			cp mysql.spec $@
+ 
+ SUFFIXES = .sh
+ 
+ .sh:
+-	@RM@ -f $@ $@-t
+-	@SED@ \
++	$(RM) -f $@ $@-t
++	$(SED) \
+ 	  -e 's!@''bindir''@!$(bindir)!g' \
+ 	  -e 's!@''sbindir''@!$(sbindir)!g' \
+ 	  -e 's!@''scriptdir''@!$(bindir)!g' \
+@@ -64,37 +64,37 @@
+ 	  -e 's!@''datadir''@!$(datadir)!g' \
+ 	  -e 's!@''localstatedir''@!$(localstatedir)!g' \
+ 	  -e 's!@''libexecdir''@!$(libexecdir)!g' \
+-	  -e 's!@''CC''@!@CC@!'\
+-	  -e 's!@''CXX''@!@CXX@!'\
+-	  -e 's!@''GXX''@!@GXX@!'\
+-	  -e 's!@''PERL''@!@PERL@!' \
+-	  -e 's!@''CFLAGS''@!@SAVE_CFLAGS@!'\
+-	  -e 's!@''CXXFLAGS''@!@SAVE_CXXFLAGS@!'\
+-	  -e 's!@''LDFLAGS''@!@SAVE_LDFLAGS@!'\
+-	  -e 's!@''VERSION''@!@VERSION@!' \
+-	  -e 's!@''MYSQL_SERVER_SUFFIX''@!@MYSQL_SERVER_SUFFIX@!' \
+-	  -e 's!@''COMPILATION_COMMENT''@!@COMPILATION_COMMENT@!' \
+-	  -e 's!@''MACHINE_TYPE''@!@MACHINE_TYPE@!' \
+-	  -e 's!@''HOSTNAME''@!@HOSTNAME@!' \
+-	  -e 's!@''SYSTEM_TYPE''@!@SYSTEM_TYPE@!' \
+-	  -e 's!@''CHECK_PID''@!@CHECK_PID@!' \
+-	  -e 's!@''FIND_PROC''@!@FIND_PROC@!' \
+-	  -e 's!@''MYSQLD_DEFAULT_SWITCHES''@!@MYSQLD_DEFAULT_SWITCHES@!' \
+-	  -e 's!@''MYSQL_UNIX_ADDR''@!@MYSQL_UNIX_ADDR@!' \
+-	  -e 's!@''IS_LINUX''@!@IS_LINUX@!' \
+-	  -e "s!@""CONF_COMMAND""@!@CONF_COMMAND@!" \
+-	  -e 's!@''MYSQLD_USER''@!@MYSQLD_USER@!' \
+-	  -e 's!@''sysconfdir''@!@sysconfdir@!' \
+-	  -e 's!@''SHORT_MYSQL_INTRO''@!@SHORT_MYSQL_INTRO@!' \
+-	  -e 's!@''SHARED_LIB_VERSION''@!@SHARED_LIB_VERSION@!' \
+-	  -e 's!@''MYSQL_BASE_VERSION''@!@MYSQL_BASE_VERSION@!' \
+-	  -e 's!@''MYSQL_NO_DASH_VERSION''@!@MYSQL_NO_DASH_VERSION@!' \
+-	  -e 's!@''MYSQL_TCP_PORT''@!@MYSQL_TCP_PORT@!' \
+-	  -e 's!@''PERL_DBI_VERSION''@!@PERL_DBI_VERSION@!' \
+-	  -e 's!@''PERL_DBD_VERSION''@!@PERL_DBD_VERSION@!' \
+-	  -e 's!@''PERL_DATA_DUMPER''@!@PERL_DATA_DUMPER@!' \
++	  -e 's!@''CC''@!$(CC)!'\
++	  -e 's!@''CXX''@!$(CXX)!'\
++	  -e 's!@''GXX''@!$(GXX)!'\
++	  -e 's!@''PERL''@!$(PERL)!' \
++	  -e 's!@''CFLAGS''@!$(SAVE_CFLAGS)!'\
++	  -e 's!@''CXXFLAGS''@!$(SAVE_CXXFLAGS)!'\
++	  -e 's!@''LDFLAGS''@!$(SAVE_LDFLAGS)!'\
++	  -e 's!@''VERSION''@!$(VERSION)!' \
++	  -e 's!@''MYSQL_SERVER_SUFFIX''@!$(MYSQL_SERVER_SUFFIX)!' \
++	  -e 's!@''COMPILATION_COMMENT''@!$(COMPILATION_COMMENT)!' \
++	  -e 's!@''MACHINE_TYPE''@!$(MACHINE_TYPE)!' \
++	  -e 's!@''HOSTNAME''@!$(HOSTNAME)!' \
++	  -e 's!@''SYSTEM_TYPE''@!$(SYSTEM_TYPE)!' \
++	  -e 's!@''CHECK_PID''@!$(CHECK_PID)!' \
++	  -e 's!@''FIND_PROC''@!$(FIND_PROC)!' \
++	  -e 's!@''MYSQLD_DEFAULT_SWITCHES''@!$(MYSQLD_DEFAULT_SWITCHES)!' \
++	  -e 's!@''MYSQL_UNIX_ADDR''@!$(MYSQL_UNIX_ADDR)!' \
++	  -e 's!@''IS_LINUX''@!$(IS_LINUX)!' \
++	  -e "s!@""CONF_COMMAND""@!$(CONF_COMMAND)!" \
++	  -e 's!@''MYSQLD_USER''@!$(MYSQLD_USER)!' \
++	  -e 's!@''sysconfdir''@!$(sysconfdir)!' \
++	  -e 's!@''SHORT_MYSQL_INTRO''@!$(SHORT_MYSQL_INTRO)!' \
++	  -e 's!@''SHARED_LIB_VERSION''@!$(SHARED_LIB_VERSION)!' \
++	  -e 's!@''MYSQL_BASE_VERSION''@!$(MYSQL_BASE_VERSION)!' \
++	  -e 's!@''MYSQL_NO_DASH_VERSION''@!$(MYSQL_NO_DASH_VERSION)!' \
++	  -e 's!@''MYSQL_TCP_PORT''@!$(MYSQL_TCP_PORT)!' \
++	  -e 's!@''PERL_DBI_VERSION''@!$(PERL_DBI_VERSION)!' \
++	  -e 's!@''PERL_DBD_VERSION''@!$(PERL_DBD_VERSION)!' \
++	  -e 's!@''PERL_DATA_DUMPER''@!$(PERL_DATA_DUMPER)!' \
+ 	$< > $@-t
+-	@MV@ $@-t $@
++	$(MV) $@-t $@
+ 
+ # Don't update the files from bitkeeper
+ %::SCCS/s.%
