@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.14
-Release:	2
+Release:	3
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	9764f09c89692345d3b7800ab014f822
@@ -29,6 +29,7 @@ Patch4:		%{name}-info.patch
 Patch5:		%{name}-dump_quote_db_names.patch
 Patch6:		%{name}-manfixes.patch
 Patch7:		%{name}-sql-cxx-pic.patch
+Patch8:		%{name}-buffer.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	/bin/ps
@@ -328,6 +329,7 @@ MySQL.
 # in objects compiled without -fPIC
 %patch7 -p1
 %endif
+%patch8 -p1
 
 %build
 rm -f missing
@@ -373,11 +375,9 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
-	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
-	   $RPM_BUILD_ROOT%{_infodir} \
-	   $RPM_BUILD_ROOT%{_mysqlhome}
+	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/{db,innodb/{data,log}}} \
+	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
-install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
 %if %{?_without_bdb:0}%{!?_without_bdb:1}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
