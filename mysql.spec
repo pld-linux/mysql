@@ -10,7 +10,7 @@ Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.23.46
-Release:	1
+Release:	2
 License:	GPL/LGPL
 Source0:	ftp://ftp1.sourceforge.net/pub/mirrors/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -24,6 +24,7 @@ Patch3:		%{name}-moreincludes.patch
 Patch4:		%{name}-amfix.patch
 Patch5:		%{name}-acfix.patch
 Patch6:		%{name}-am15.patch
+Patch7:		%{name}-c++.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -265,6 +266,7 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
+%patch7 -p1
 
 %build
 rm -f missing 
