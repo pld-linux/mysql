@@ -56,7 +56,8 @@ Requires(pre):	/usr/sbin/useradd
 Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
 Requires(post,preun):	/sbin/chkconfig
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
+Requires:	/usr/bin/setsid
 Provides:	MySQL-server
 Provides:	msqlormysql
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
@@ -165,7 +166,7 @@ MySQL - це SQL (Structured Query Language) сервер бази даних. MySQL
 Summary:	MySQL additional utilities
 Summary(pl):	Dodatkowe narzЙdzia do MySQL
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 
 %description extras
 MySQL additional utilities except Perl scripts (they may be found in
@@ -179,7 +180,7 @@ pakiecie %{name}-extras-perl).
 Summary:	MySQL additional utilities written in Perl
 Summary(pl):	Dodatkowe narzЙdzia do MySQL napisane w Perlu
 Group:		Applications/Databases
-Requires:	%{name}-extras = %{version}
+Requires:	%{name}-extras = %{version}-%{release}
 Requires:	perl(DBD::mysql)
 
 %description extras-perl
@@ -195,7 +196,7 @@ Summary(pt):	MySQL - Cliente
 Summary(ru):	MySQL клиент
 Summary(uk):	MySQL кл╕╓нт
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 Obsoletes:	MySQL-client
 
 %description client
@@ -235,7 +236,7 @@ Summary(pt):	MySQL - MediГУes de desempenho
 Summary(ru):	MySQL - хедеры и библиотеки разработчика
 Summary(uk):	MySQL - хедери та б╕бл╕отеки програм╕ста
 Group:		Development/Libraries
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 Requires:	openssl-devel
 Requires:	zlib-devel
 Obsoletes:	MySQL-devel
@@ -272,7 +273,7 @@ Summary(pl):	Biblioteki statyczne MySQL
 Summary(ru):	MySQL - статические библиотеки
 Summary(uk):	MySQL - статичн╕ б╕бл╕отеки
 Group:		Development/Libraries
-Requires:	%{name}-devel = %{version}
+Requires:	%{name}-devel = %{version}-%{release}
 Obsoletes:	MySQL-static
 
 %description static
@@ -296,7 +297,7 @@ Summary(pt):	MySQL - MediГУes de desempenho
 Summary(ru):	MySQL - бенчмарки
 Summary(uk):	MySQL - бенчмарки
 Group:		Applications/Databases
-Requires:	%{name} = %{version}
+Requires:	%{name} = %{version}-%{release}
 Requires:	%{name}-client
 Requires:	perl(DBD::mysql)
 Obsoletes:	MySQL-bench
@@ -320,7 +321,7 @@ MySQL.
 %package doc
 Summary:	MySQL manual
 Summary(pl):	PodrЙcznik u©ytkownika MySQL
-Group:	Applications/Databases
+Group:		Applications/Databases
 
 %description doc
 This package contains manual in HTML format.
