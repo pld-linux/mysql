@@ -12,11 +12,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.15
+Version:	4.0.16
 Release:	0.1
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	a6ce917730e8778ef7c9e1f7b5053b2d
+# Source0-md5:	ddc959b9cdc2f5e30dc6a4d3650d3db5
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -325,7 +325,7 @@ MySQL.
 %patch3 -p1
 %patch4 -p1
 #%patch5 -p1
-%patch6 -p1
+#%patch6 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
