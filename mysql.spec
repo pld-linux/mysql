@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.12
-Release:	1
+Release:	1.1
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 Source1:	%{name}.init
@@ -25,6 +25,7 @@ Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
+Patch5:		%{name}-dump_quote_db_names.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -313,6 +314,7 @@ MySQL.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 %build
 rm -f missing
@@ -376,7 +378,7 @@ install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 install %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/mysqld.conf
-touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog}
+touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 
 # remove mysqld's *.po files
 find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
