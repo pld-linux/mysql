@@ -9,7 +9,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.22.32
-Release:	8
+Release:	9
 License:	MySQL FREE PUBLIC LICENSE (See the manual)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -160,8 +160,9 @@ Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla programistów
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Development/Libraries
-Group(pl):	Programowanie/Biblioteki
+Group(de):	Entwicklung/Libraries
 Group(fr):	Development/Librairies
+Group(pl):	Programowanie/Biblioteki
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
 
@@ -186,8 +187,9 @@ MySQL.
 Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
-Group(pl):	Programowanie/Biblioteki
+Group(de):	Entwicklung/Libraries
 Group(fr):	Development/Librairies
+Group(pl):	Programowanie/Biblioteki
 Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
 
@@ -230,9 +232,7 @@ chmod +x find-perl-requires
 automake
 aclocal
 autoconf
-LDFLAGS="-s"
-CXXFLAGS="$RPM_OPT_FLAGS -fno-rtti -fno-exceptions"
-export LDFLAGS CXXFLAGS
+CXXFLAGS="%{!?debug:$RPM_OPT_FLAGS}%{?debug:-O -g} -fno-rtti -fno-exceptions"
 %configure \
 	--without-debug \
 	--enable-shared \
@@ -246,10 +246,6 @@ export LDFLAGS CXXFLAGS
 	--with-comment='Polish Linux Distribution MySQL RPM' \
 	--without-readline \
 	--with-low-memory
-# If you have much RAM you can remove --with-low-memory
-
-# To build mysqld as static binary add option
-#	--with-mysqld-ldflags='-all-static' 
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 (cd Docs; make info manual.texi)
@@ -273,10 +269,7 @@ find . -name ./CVS -exec rm -rf {} \;
 # remove mysqld's *.po files
 find . $RPM_BUILD_ROOT%{_datadir}/mysql -name \*.txt | xargs -n 100 rm -f
 
-mv $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-strip --strip-unneeded $RPM_BUILD_ROOT%{_libdir}/lib*.so*.*
-
-gzip -9nf $RPM_BUILD_ROOT{%{_mandir}/man1/*,%{_infodir}/mysql.info*}
+mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 
 %pre
 if [ -n "`getgid mysql`" ]; then
