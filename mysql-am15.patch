@@ -18,9 +18,8 @@ diff -Nru mysql-3.23.49/Docs/Makefile.am mysql-3.23.49.new/Docs/Makefile.am
  
  manual_toc.html: manual.html
  
-diff -Nru mysql-3.23.49/Makefile.am mysql-3.23.49.new/Makefile.am
---- mysql-3.23.49/Makefile.am	Tue Sep 11 14:28:23 2001
-+++ mysql-3.23.49.new/Makefile.am	Tue Sep 11 14:19:11 2001
+--- mysql-3.23.51/Makefile.am.orig	Mon Jun  3 12:39:02 2002
++++ mysql-3.23.51/Makefile.am	Thu Jun 13 00:38:01 2002
 @@ -21,10 +21,10 @@
  # These are built from source in the Docs directory
  EXTRA_DIST =		INSTALL-SOURCE README \
@@ -28,11 +27,11 @@ diff -Nru mysql-3.23.49/Makefile.am mysql-3.23.49.new/Makefile.am
 -SUBDIRS =		include @docs_dirs@ @readline_dir@ \
 -			@thread_dirs@ @sql_client_dirs@ \
 -			@sql_server_dirs@ scripts tests man \
--			@bench_dirs@ support-files
+-			@bench_dirs@ support-files os2
 +SUBDIRS =		include $(docs_dirs) $(readline_dir) \
 +			$(thread_dirs) $(sql_client_dirs) \
 +			$(sql_server_dirs) scripts tests man \
-+			$(bench_dirs) support-files
++			$(bench_dirs) support-files os2
  
  # Relink after clean
  CLEANFILES =		linked_client_sources linked_server_sources linked_libmysql_sources linked_libmysql_r_sources linked_include_sources
@@ -609,10 +608,9 @@ diff -Nru mysql-3.23.49/sql/Makefile.am mysql-3.23.49.new/sql/Makefile.am
  
  gen_lex_hash.o:		gen_lex_hash.cc lex.h
  			$(CXXCOMPILE) -c $(INCLUDES) $<
-diff -Nru mysql-3.23.49/sql/share/Makefile.am mysql-3.23.49.new/sql/share/Makefile.am
---- mysql-3.23.49/sql/share/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.49.new/sql/share/Makefile.am	Tue Sep 11 14:19:11 2001
-@@ -1,20 +1,20 @@
+--- mysql-3.23.51/sql/share/Makefile.am.orig	Mon Jun  3 12:39:02 2002
++++ mysql-3.23.51/sql/share/Makefile.am	Thu Jun 13 00:39:27 2002
+@@ -1,7 +1,7 @@
  ## Process this file with automake to create Makefile.in
  
  dist-hook:
@@ -621,6 +619,7 @@ diff -Nru mysql-3.23.49/sql/share/Makefile.am mysql-3.23.49.new/sql/share/Makefi
  	  test -d $(distdir)/$$dir || mkdir $(distdir)/$$dir; \
  	  $(INSTALL_DATA) $(srcdir)/$$dir/*.* $(distdir)/$$dir; \
  	done; \
+@@ -9,13 +9,13 @@
  	$(INSTALL_DATA) $(srcdir)/charsets/README $(distdir)/charsets
  	$(INSTALL_DATA) $(srcdir)/charsets/Index $(distdir)/charsets
  
@@ -637,7 +636,6 @@ diff -Nru mysql-3.23.49/sql/share/Makefile.am mysql-3.23.49.new/sql/share/Makefi
  	do \
  		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$lang; \
  		$(INSTALL_DATA) $(srcdir)/$$lang/errmsg.sys \
-diff -Nru mysql-3.23.49/sql-bench/Makefile.am mysql-3.23.49.new/sql-bench/Makefile.am
 --- mysql-3.23.49/sql-bench/Makefile.am	Tue Sep 11 14:28:24 2001
 +++ mysql-3.23.49.new/sql-bench/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -65,8 +65,8 @@

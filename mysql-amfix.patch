@@ -18,8 +18,8 @@
  libmysql_dir = $(top_srcdir)/libmysql
  
  libmysqlclient_r_la_SOURCES = $(target_sources)
---- mysql-3.23.49/strings/Makefile.am.amfix	Fri May 11 13:40:18 2001
-+++ mysql-3.23.49/strings/Makefile.am	Fri May 11 13:40:41 2001
+--- mysql-3.23.51/strings/Makefile.am.orig	Mon Jun  3 12:39:02 2002
++++ mysql-3.23.51/strings/Makefile.am	Thu Jun 13 00:32:58 2002
 @@ -38,7 +38,7 @@
  endif
  endif
@@ -29,11 +29,10 @@
  noinst_PROGRAMS = conf_to_src
  # Default charset definitions
  EXTRA_DIST =		ctype-big5.c ctype-czech.c ctype-euc_kr.c \
-@@ -52,15 +52,6 @@
- 			bmove_upp-sparc.s strappend-sparc.s strend-sparc.s \
- 			strinstr-sparc.s strmake-sparc.s strmov-sparc.s \
- 			strnmov-sparc.s strstr-sparc.s strxmov-sparc.s
--
+@@ -55,15 +55,6 @@
+ 			strnmov-sparc.s strstr-sparc.s strxmov-sparc.s \
+                         t_ctype.h
+ 
 -OMIT_DEPENDENCIES =	pthread.h stdio.h __stdio.h stdlib.h __stdlib.h math.h\
 -			__math.h time.h __time.h unistd.h __unistd.h types.h \
 -			xtypes.h ac-types.h posix.h string.h __string.h \
@@ -42,9 +41,10 @@
 -			prio_queue.h pthread_attr.h pthread_once.h queue.h\
 -			sleep.h specific.h version.h pwd.h timers.h uio.h \
 -			cdefs.h machdep.h signal.h __signal.h util.h
- 
+-
  libmystrings_a_LIBADD=	@CHARSET_OBJS@
  ctype.o:		ctype_extra_sources.c
+ 
 --- mysql-3.23.49/dbug/Makefile.am.amfix	Fri May 11 13:37:18 2001
 +++ mysql-3.23.49/dbug/Makefile.am	Fri May 11 13:37:30 2001
 @@ -23,14 +23,6 @@
