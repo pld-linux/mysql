@@ -8,10 +8,10 @@ Name:		mysql
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.23.25
-Release:	1
+Version:	3.22.32
+Release:	9
 License:	MySQL FREE PUBLIC LICENSE (See the manual)
-Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}-beta.tar.gz
+Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -20,7 +20,6 @@ Patch0:		%{name}-info.patch
 Patch1:		%{name}-no_libbind.patch
 Patch2:		%{name}-perldep.patch
 Patch3:		%{name}-gethostbyname_r_is_in_libc_aka_no_libnsl.patch
-Patch4:		%{name}-docs_make.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -221,17 +220,16 @@ Programy testuj±ce szybko¶æ serwera MySQL.
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
 %prep
-%setup -q -n %{name}-%{version}-beta
+%setup  -q
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
-%patch4 -p1
 
 chmod +x find-perl-requires
 
 %build
-#automake
+automake
 aclocal
 autoconf
 CXXFLAGS="%{!?debug:$RPM_OPT_FLAGS}%{?debug:-O -g} -fno-rtti -fno-exceptions"
@@ -250,7 +248,7 @@ CXXFLAGS="%{!?debug:$RPM_OPT_FLAGS}%{?debug:-O -g} -fno-rtti -fno-exceptions"
 	--with-low-memory
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
-# (cd Docs; make info manual.texi)
+(cd Docs; make info manual.texi)
 
 %install
 rm -rf $RPM_BUILD_ROOT
