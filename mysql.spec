@@ -29,11 +29,11 @@ Patch4:		%{name}-info.patch
 Patch5:		%{name}-dump_quote_db_names.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
-Requires:	%{name}-libs = %{version}
 #BuildRequires:	ORBit-devel
 BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
+%{?_with_bdb:BuildRequires:	db3-devel}
 BuildRequires:	libstdc++-devel
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
@@ -45,7 +45,6 @@ BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-%{?_with_bdb:BuildRequires:	db3-devel}
 PreReq:		rc-scripts >= 0.2.0
 Requires(pre): /usr/bin/getgid
 Requires(pre): /bin/id
@@ -54,6 +53,7 @@ Requires(pre): /usr/sbin/useradd
 Requires(postun):      /usr/sbin/userdel
 Requires(postun):      /usr/sbin/groupdel
 Requires(post,preun):	/sbin/chkconfig
+Requires:	%{name}-libs = %{version}
 Provides:	MySQL-server
 Provides:	msqlormysql
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
