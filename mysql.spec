@@ -268,7 +268,7 @@ else
 fi
 
 %post
-/usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+[ -x /usr/sbin/fix-info-dir ] && /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
 if [ -f /var/lock/subsys/mysql ]; then
 	/etc/rc.d/init.d/mysql restart >&2
@@ -285,7 +285,7 @@ if [ "$1" = "0" ]; then
 fi
 
 %postun
-/usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+[ -x /usr/sbin/fix-info-dir ] && /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 if [ "$1" = "0" ]; then
 	/usr/sbin/userdel mysql
 	if [ -f /var/db/passwd.db ]; then
