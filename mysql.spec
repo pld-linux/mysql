@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.16
-Release:	0.1
+Release:	0.2
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	ddc959b9cdc2f5e30dc6a4d3650d3db5
@@ -395,7 +395,7 @@ install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
-install %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/mysqld.conf
+install %{SOURCE4} $RPM_BUILD_ROOT%{_datadir}/mysqld.conf
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 
 # remove mysqld's *.po files
@@ -458,7 +458,6 @@ fi
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/mysqld.conf
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
@@ -478,6 +477,7 @@ fi
 
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
+%{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/charsets
 %{_datadir}/mysql/english
 %lang(cs) %{_datadir}/mysql/czech
