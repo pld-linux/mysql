@@ -46,7 +46,7 @@ developing applications that use the MySQL database.
 %build
 
 CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" \
-./configure \
+./configure %{_target} \
 	--enable-shared \
 	--enable-static \
 	--enable-assembler \
