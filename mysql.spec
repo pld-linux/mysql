@@ -15,7 +15,7 @@ Patch1:		mysql-no_libbind.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Provides:	msqlormysql MySQL-server
-Obsoletes:	mysql
+Obsoletes:	MySQL
 BuildRoot:	/tmp/%{name}-%{version}
 
 %define		_libexecdir	%{_prefix}/sbin
@@ -93,7 +93,7 @@ Summary(pt_BR):	MySQL - Cliente
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
-Obsoletes:	mysql-client
+Obsoletes:	MySQL-client
 
 %description client
 This package contains the standard MySQL clients. 
@@ -121,6 +121,7 @@ Summary(pt_BR):	MySQL - Medições de desempenho
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
+Obsoletes:	MySQL-devel
 
 %description devel
 This package contains the development header files and libraries
@@ -143,6 +144,8 @@ Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
 Group(pl):	Programowanie/Biblioteki
+Obsoletes:	MySQL-static
+Requires:	%{name}-devel = %{version}
 
 %description static
 MySQL staic libraris.
@@ -160,7 +163,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Summary(pt_BR):	MySQL - Medições de desempenho
 Group(pt_BR):	Aplicações/Banco_de_Dados
-Obsoletes:	mysql-bench
+Obsoletes:	MySQL-bench
 
 %description bench
 This package contains MySQL benchmark scripts and data.
@@ -251,6 +254,28 @@ chown -R mysql /var/state/mysql
 %attr(640,root,root) %{_sysconfdir}/logrotate.d/mysql
 %attr(754,root,root) %{_sysconfdir}/rc.d/init.d/mysql
 %{_infodir}/mysql.info*
+%dir %{_datadir}/mysql
+
+%{_datadir}/mysql/english
+%lang(cs) %{_datadir}/mysql/czech
+%lang(da) %{_datadir}/mysql/danish
+%lang(nl) %{_datadir}/mysql/dutch
+%lang(et) %{_datadir}/mysql/estonia
+%lang(fr) %{_datadir}/mysql/french
+%lang(de) %{_datadir}/mysql/german
+%lang(el) %{_datadir}/mysql/greek
+%lang(hu) %{_datadir}/mysql/hungarian
+%lang(it) %{_datadir}/mysql/italian
+%lang(ja) %{_datadir}/mysql/japanese
+%lang(ko) %{_datadir}/mysql/korean
+%lang(no) %{_datadir}/mysql/norwegian
+%lang(no@nynorsk) %{_datadir}/mysql/norwegian-ny
+%lang(pl) %{_datadir}/mysql/polish
+%lang(pt) %{_datadir}/mysql/portuguese
+%lang(ru) %{_datadir}/mysql/russian
+%lang(sk) %{_datadir}/mysql/slovak
+%lang(es) %{_datadir}/mysql/spanish
+%lang(sv) %{_datadir}/mysql/swedish
 
 %files client
 %attr(755,root,root) %{_bindir}/msql2mysql
