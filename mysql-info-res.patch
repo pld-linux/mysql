@@ -1,0 +1,73 @@
+--- mysql-3.23.54a/Docs/manual.texi.orig	Mon Dec 16 12:40:58 2002
++++ mysql-3.23.54a/Docs/manual.texi	Mon Dec 16 15:04:14 2002
+@@ -29177,7 +29177,69 @@
+ A few are reserved because MySQL needs them and is
+ (currently) using a @code{yacc} parser:
+ 
+-@include reservedwords.texi
++@multitable @columnfractions .33 .33 .33
++@item @strong{Word} @tab @strong{Word} @tab @strong{Word}
++@item @code{ADD} @tab @code{ALL} @tab @code{ALTER}
++@item @code{ANALYZE} @tab @code{AND} @tab @code{AS}
++@item @code{ASC} @tab @code{AUTO_INCREMENT} @tab @code{BDB}
++@item @code{BERKELEYDB} @tab @code{BETWEEN} @tab @code{BIGINT}
++@item @code{BINARY} @tab @code{BLOB} @tab @code{BOTH}
++@item @code{BTREE} @tab @code{BY} @tab @code{CASCADE}
++@item @code{CASE} @tab @code{CHANGE} @tab @code{CHAR}
++@item @code{CHARACTER} @tab @code{COLLATE} @tab @code{COLUMN}
++@item @code{COLUMNS} @tab @code{CONSTRAINT} @tab @code{CREATE}
++@item @code{CROSS} @tab @code{CURRENT_DATE} @tab @code{CURRENT_TIME}
++@item @code{CURRENT_TIMESTAMP} @tab @code{DATABASE} @tab @code{DATABASES}
++@item @code{DAY_HOUR} @tab @code{DAY_MINUTE} @tab @code{DAY_SECOND}
++@item @code{DEC} @tab @code{DECIMAL} @tab @code{DEFAULT}
++@item @code{DELAYED} @tab @code{DELETE} @tab @code{DESC}
++@item @code{DESCRIBE} @tab @code{DISTINCT} @tab @code{DISTINCTROW}
++@item @code{DOUBLE} @tab @code{DROP} @tab @code{ELSE}
++@item @code{ENCLOSED} @tab @code{ERRORS} @tab @code{ESCAPED}
++@item @code{EXISTS} @tab @code{EXPLAIN} @tab @code{FIELDS}
++@item @code{FLOAT} @tab @code{FOR} @tab @code{FOREIGN}
++@item @code{FROM} @tab @code{FULLTEXT} @tab @code{FUNCTION}
++@item @code{GEOMETRY} @tab @code{GRANT} @tab @code{GROUP}
++@item @code{HASH} @tab @code{HAVING} @tab @code{HELP}
++@item @code{HIGH_PRIORITY} @tab @code{HOUR_MINUTE} @tab @code{HOUR_SECOND}
++@item @code{IF} @tab @code{IGNORE} @tab @code{IN}
++@item @code{INDEX} @tab @code{INFILE} @tab @code{INNER}
++@item @code{INNODB} @tab @code{INSERT} @tab @code{INT}
++@item @code{INTEGER} @tab @code{INTERVAL} @tab @code{INTO}
++@item @code{IS} @tab @code{JOIN} @tab @code{KEY}
++@item @code{KEYS} @tab @code{KILL} @tab @code{LEADING}
++@item @code{LEFT} @tab @code{LIKE} @tab @code{LIMIT}
++@item @code{LINES} @tab @code{LOAD} @tab @code{LOCK}
++@item @code{LONG} @tab @code{LONGBLOB} @tab @code{LONGTEXT}
++@item @code{LOW_PRIORITY} @tab @code{MASTER_SERVER_ID} @tab @code{MATCH}
++@item @code{MEDIUMBLOB} @tab @code{MEDIUMINT} @tab @code{MEDIUMTEXT}
++@item @code{MIDDLEINT} @tab @code{MINUTE_SECOND} @tab @code{MRG_MYISAM}
++@item @code{NATURAL} @tab @code{NOT} @tab @code{NULL}
++@item @code{NUMERIC} @tab @code{ON} @tab @code{OPTIMIZE}
++@item @code{OPTION} @tab @code{OPTIONALLY} @tab @code{OR}
++@item @code{ORDER} @tab @code{OUTER} @tab @code{OUTFILE}
++@item @code{PRECISION} @tab @code{PRIMARY} @tab @code{PRIVILEGES}
++@item @code{PROCEDURE} @tab @code{PURGE} @tab @code{READ}
++@item @code{REAL} @tab @code{REFERENCES} @tab @code{REGEXP}
++@item @code{RENAME} @tab @code{REPLACE} @tab @code{REQUIRE}
++@item @code{RESTRICT} @tab @code{RETURNS} @tab @code{REVOKE}
++@item @code{RIGHT} @tab @code{RLIKE} @tab @code{RTREE}
++@item @code{SELECT} @tab @code{SET} @tab @code{SHOW}
++@item @code{SMALLINT} @tab @code{SONAME} @tab @code{SPATIAL}
++@item @code{SQL_BIG_RESULT} @tab @code{SQL_CALC_FOUND_ROWS} @tab @code{SQL_SMALL_RESULT}
++@item @code{SSL} @tab @code{STARTING} @tab @code{STRAIGHT_JOIN}
++@item @code{STRIPED} @tab @code{TABLE} @tab @code{TABLES}
++@item @code{TERMINATED} @tab @code{THEN} @tab @code{TINYBLOB}
++@item @code{TINYINT} @tab @code{TINYTEXT} @tab @code{TO}
++@item @code{TRAILING} @tab @code{TYPES} @tab @code{UNION}
++@item @code{UNIQUE} @tab @code{UNLOCK} @tab @code{UNSIGNED}
++@item @code{UPDATE} @tab @code{USAGE} @tab @code{USE}
++@item @code{USER_RESOURCES} @tab @code{USING} @tab @code{VALUES}
++@item @code{VARBINARY} @tab @code{VARCHAR} @tab @code{VARYING}
++@item @code{WARNINGS} @tab @code{WHEN} @tab @code{WHERE}
++@item @code{WITH} @tab @code{WRITE} @tab @code{XOR}
++@item @code{YEAR_MONTH} @tab @code{ZEROFILL}
++@end multitable
+ 
+ The following symbols (from the table above) are disallowed by ANSI SQL
+ but allowed by MySQL as column/table names. This is because some
