@@ -2,8 +2,6 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
-# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1011008.html
-# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1010979.html
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -18,11 +16,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.20
-Release:	4
-License:	GPL
+Version:	4.0.21
+Release:	1
+License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
+# Source0-md5:	0a3dae16519afa5e59d8b9e252181243
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -598,6 +596,7 @@ fi
 
 %files libs
 %defattr(644,root,root,755)
+%doc EXCEPTIONS-CLIENT
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
 
 %files devel
