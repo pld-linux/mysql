@@ -243,29 +243,58 @@ strip --strip-unneeded $RPM_BUILD_ROOT%{_libdir}/lib*.so*.*
 gzip -9nf $RPM_BUILD_ROOT{%{_mandir}/man1/*,%{_infodir}/mysql.info*}
 
 %pre
-grep -l mysql /etc/group &>/dev/null || (
-    echo "Creating system group mysql with GID 89"
-    /usr/sbin/groupadd -f -g 89 mysql
-)
-grep -l mysql /etc/passwd &>/dev/null || (
-    echo "Creating system user mysql with UID 89"
-    /usr/sbin/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql > /dev/null
-)
+if [ -n "`getgid mysql`" ]; then
+	if [ "`getgid mysql`" != "89" ]; then
+		echo "Warning: group mysql haven't gid=89. Corect this before install mysql" 1>&2
+		exit 1
+	fi
+else
+	/usr/sbin/groupadd -g 89 -r -f mysql
+	if [ -f /var/db/group.db ]; then
+		/usr/bin/update-db 1>&2
+	fi
+fi
+if [ -n "`id -u mysql 2>/dev/null`" ]; then
+	if [ "`id -u mysql`" != "89" ]; then
+		echo "Warning: user mysql haven't uid=89. Corect this before install mysql" 1>&2
+		exit 1
+	fi
+else
+	/usr/sbin/useradd -u 89 -r -m -d /var/state/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
+	if [ -f /var/db/passwd.db ]; then
+		/usr/bin/update-db 1>&2
+	fi
+fi
 
 %post
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
+if [ -f /var/lock/subsys/mysql ]; then
+	/etc/rc.d/init.d/mysql restart >&2
+else
+	echo "Run \"/etc/rc.d/init.d/mysql start\" to start mysql." >&2
+fi
 
 %preun
 if [ "$1" = "0" ]; then
-    if [ -f /var/lock/subsys/mysql ]; then
-	/etc/rc.d/init.d/mysql stop
-    fi
-    /sbin/chkconfig --del mysql
+	if [ -f /var/lock/subsys/mysql ]; then
+		/etc/rc.d/init.d/mysql stop
+	fi
+	/sbin/chkconfig --del mysql
 fi
 
 %postun
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+if [ "$1" = "0" ]; then
+	/usr/sbin/userdel mysql
+	if [ -f /var/db/passwd.db ]; then
+		/usr/bin/update-db
+	fi
+	/usr/sbin/groupdel mysql
+	if [ -f /var/db/group.db ]; then
+		/usr/bin/update-db
+	fi
+fi
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
@@ -285,7 +314,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
-%attr(755,root,root) %{_bindir}/safe_mysqld
 %attr(755,root,root) %{_sbindir}/mysqld
 %attr(640,root,root) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
@@ -293,7 +321,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
 
-%attr(751,mysql,mysql) %dir /var/state/mysql
+%attr(750,mysql,mysql) %dir /var/state/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/*
 
 %{_datadir}/mysql/english
