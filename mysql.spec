@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.11a
-Release:	1
+Release:	2
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}-gamma.tar.gz
 Source1:	%{name}.init
@@ -28,6 +28,7 @@ Patch4:		%{name}-no-my_inet_ntoa.patch
 Patch5:		%{name}-my_dir.patch
 Patch6:		%{name}-errno.patch
 Patch7:		%{name}-_r-link.patch
+Patch8:		%{name}-info.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -319,6 +320,7 @@ MySQL.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 %build
 rm -f missing
