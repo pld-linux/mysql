@@ -576,8 +576,8 @@ case "$action" in
 	exit $?
 	;;
   restart|force-reload)
-	$0 stop
-	$0 start
+	$0 stop $DB_CLUSTERS
+	$0 start $DB_CLUSTERS
 	exit $?
 	;;
   init)
