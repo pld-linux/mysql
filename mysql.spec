@@ -9,7 +9,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Version:	3.22.30
-Release:	1
+Release:	2
 License:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	mysql.init
@@ -207,7 +207,6 @@ export LDFLAGS CXXFLAGS
 	--enable-static \
 	--with-pthread \
 	--with-named-curses-libs="-lncurses" \
-	--enable-thread-safe-client \
 	--enable-assembler \
 	--with-charset=latin2 \
 	--with-mysqld-user=mysql \
