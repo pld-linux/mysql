@@ -1,0 +1,32 @@
+--- mysql-3.22.32/configure.in~	Mon Dec 25 03:02:53 2000
++++ mysql-3.22.32/configure.in	Mon Dec 25 03:04:54 2000
+@@ -879,27 +879,8 @@
+ AC_SYS_RESTARTABLE_SYSCALLS
+ 
+ # Build optimized or debug version ?
+-# First check for gcc and g++
+-if test "$ac_cv_prog_gcc" = "yes"
+-then
+-  DEBUG_CFLAGS="-g"
+-  DEBUG_OPTIMIZE_CC="-O"
+-  OPTIMIZE_CFLAGS="-O6"
+-else
+-  DEBUG_CFLAGS="-g"
+-  DEBUG_OPTIMIZE_CC=""
+-  OPTIMIZE_CFLAGS="-O"
+-fi
+-if test "$ac_cv_prog_cxx_g" = "yes"
+-then
+-  DEBUG_CXXFLAGS="-g"
+-  DEBUG_OPTIMIZE_CXX="-O"
+-  OPTIMIZE_CXXFLAGS="-O3"
+-else
+-  DEBUG_CXXFLAGS="-g"
+-  DEBUG_OPTIMIZE_CXX=""
+-  OPTIMIZE_CXXFLAGS="-O"
+-fi
++DEBUG_CFLAGS="-g"
++DEBUG_CXXFLAGS="-g"
+ AC_ARG_WITH(debug,
+     [  --without-debug          Build a production version without debugging code],
+     [with_debug=$withval],
