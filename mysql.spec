@@ -493,8 +493,8 @@ fi
 %lang(ja) %{_datadir}/mysql/japanese
 %lang(ko) %{_datadir}/mysql/korean
 %lang(nl) %{_datadir}/mysql/dutch
+%lang(nb) %{_datadir}/mysql/norwegian
 %lang(nn) %{_datadir}/mysql/norwegian-ny
-%lang(no) %{_datadir}/mysql/norwegian
 %lang(pl) %{_datadir}/mysql/polish
 %lang(pt) %{_datadir}/mysql/portuguese
 %lang(ro) %{_datadir}/mysql/romanian
