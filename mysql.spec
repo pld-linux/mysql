@@ -1,5 +1,6 @@
 %include	/usr/lib/rpm/macros.perl
-%define		__find_requires	%{_builddir}/mysql-%{version}/find-perl-requires
+%define		__find_requires	%{_builddir}/mysql-%{version}-beta/find-perl-requires
+
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
@@ -8,10 +9,10 @@ Name:		mysql
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.22.32
-Release:	10
-License:	MySQL FREE PUBLIC LICENSE (See the manual)
-Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
+Version:	3.23.27
+Release:	1
+License:	GPL/LGPL
+Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}-beta.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -160,9 +161,8 @@ Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla programistów
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Development/Libraries
-Group(de):	Entwicklung/Libraries
-Group(fr):	Development/Librairies
 Group(pl):	Programowanie/Biblioteki
+Group(fr):	Development/Librairies
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
 
@@ -187,9 +187,8 @@ MySQL.
 Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
-Group(de):	Entwicklung/Libraries
-Group(fr):	Development/Librairies
 Group(pl):	Programowanie/Biblioteki
+Group(fr):	Development/Librairies
 Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
 
@@ -220,19 +219,21 @@ Programy testuj±ce szybko¶æ serwera MySQL.
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
 %prep
-%setup  -q
+%setup -q -n %{name}-%{version}-beta
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
+#%patch3 -p1
 
 chmod +x find-perl-requires
 
 %build
-automake
-aclocal
-autoconf
-CXXFLAGS="%{!?debug:$RPM_OPT_FLAGS}%{?debug:-O -g} -fno-rtti -fno-exceptions"
+#automake
+#aclocal
+#autoconf
+CXXFLAGS="$RPM_OPT_FLAGS -fno-rtti -fno-exceptions -fomit-frame-pointer"
+CFLAGS="$RPM_OPT_FLAGS -fomit-frame-pointer"
+export LDFLAGS CXXFLAGS CFLAGS
 %configure \
 	--without-debug \
 	--enable-shared \
@@ -240,23 +241,32 @@ CXXFLAGS="%{!?debug:$RPM_OPT_FLAGS}%{?debug:-O -g} -fno-rtti -fno-exceptions"
 	--with-pthread \
 	--with-named-curses-libs="-lncurses" \
 	--enable-assembler \
+	--with-raid \
 	--with-charset=latin2 \
 	--with-mysqld-user=mysql \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
-	--with-comment='Polish Linux Distribution MySQL RPM' \
 	--without-readline \
-	--with-low-memory
+	--without-berkeley-db \
+	--without-docs \
+	--with-low-memory  \
+	--with-comment="Polish Linux Distribution MySQL RPM"
+# If you have much RAM you can remove --with-low-memory
+
+# To build mysqld as static binary add option
+#	--with-mysqld-ldflags='-all-static' 
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
-(cd Docs; make info manual.texi)
+%{__make} -C Docs mysql.info
 
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
-	$RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql}
+	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
+	   $RPM_BUILD_ROOT%{_infodir}
 
 # Make install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
+install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
@@ -264,12 +274,9 @@ install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 install %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/mysqld.conf
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog}
 
-find Docs -type f ! -name \*.gif ! -name \*.html -exec rm -f {} \;
-find . -name ./CVS -exec rm -rf {} \;
 # remove mysqld's *.po files
-find . $RPM_BUILD_ROOT%{_datadir}/mysql -name \*.txt | xargs -n 100 rm -f
-
-mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
+find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
+mv $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 
 %pre
 if [ -n "`getgid mysql`" ]; then
@@ -341,6 +348,10 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbug
+%attr(755,root,root) %{_bindir}/pack_isam
+%attr(755,root,root) %{_bindir}/myisamchk
+%attr(755,root,root) %{_bindir}/myisamlog
+%attr(755,root,root) %{_bindir}/myisampack
 %attr(755,root,root) %{_sbindir}/mysqld
 
 %attr(751,mysql,mysql) %dir /var/lib/mysql
@@ -350,11 +361,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
+%{_datadir}/mysql/charsets
 %{_datadir}/mysql/english
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
 %lang(nl) %{_datadir}/mysql/dutch
-%lang(et) %{_datadir}/mysql/estonia
+%lang(et) %{_datadir}/mysql/estonian
 %lang(fr) %{_datadir}/mysql/french
 %lang(de) %{_datadir}/mysql/german
 %lang(el) %{_datadir}/mysql/greek
@@ -374,14 +386,17 @@ rm -rf $RPM_BUILD_ROOT
 %files extras
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
+%attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/perror
-%attr(755,root,root) %{_bindir}/print_defaults
+%attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
 
 %files extras-perl
 %defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/mysql_convert_table_format
+%attr(755,root,root) %{_bindir}/mysqlhotcopy
 %attr(755,root,root) %{_bindir}/mysql_setpermission
 %attr(755,root,root) %{_bindir}/mysql_zap
 %attr(755,root,root) %{_bindir}/mysql_find_rows
@@ -394,6 +409,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
 %attr(755,root,root) %{_bindir}/mysqlshow
+%attr(755,root,root) %{_bindir}/mysqlbinlog
 %{_mandir}/man1/mysql.1*
 
 %files libs
