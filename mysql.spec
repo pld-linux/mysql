@@ -322,7 +322,7 @@ MySQL.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
+#%patch5 -p1
 %patch6 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
