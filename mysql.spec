@@ -8,7 +8,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.23.36
-Release:	2
+Release:	3
 License:	GPL/LGPL
 Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -22,10 +22,10 @@ Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
 BuildRequires:	libstdc++-devel
-BuildRequires:	ncurses-devel
+BuildRequires:	ncurses-devel >= 4.2
 BuildRequires:	perl
 BuildRequires:	perl-DBI
-BuildRequires:	readline-devel
+BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
