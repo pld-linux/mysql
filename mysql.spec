@@ -326,7 +326,7 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 	--without-readline \
 	--without-docs \
 	--with-low-memory  \
-	--with-comment="Polish Linux Distribution MySQL RPM"
+	--with-comment="PLD Linux Distribution MySQL RPM"
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 %{__make} -C Docs mysql.info
