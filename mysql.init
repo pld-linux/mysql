@@ -73,7 +73,7 @@ RETVAL=0
 case "$1" in
   start)
 	if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
-		nls "MySQL database not initialized. Try \"%s init\" before start." "$0" >&2
+		nls "MySQL database not initialized. Try '%s init' before start." "$0" >&2
 		exit 6
 	fi
 
@@ -247,13 +247,13 @@ case "$1" in
 	  c_u="$c_u )"
 	  c_u="$c_u comment='Users and global privileges';"
 
-	  i_u="INSERT INTO user VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
-	  INSERT INTO user VALUES ('$hostname','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
+	  i_u="INSERT INTO user VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0);
+	  INSERT INTO user VALUES ('$hostname','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0);
 
-	  REPLACE INTO user VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
-	  REPLACE INTO user VALUES ('$hostname','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');
+	  REPLACE INTO user VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0);
+	  REPLACE INTO user VALUES ('$hostname','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0);
 
-	  INSERT INTO user VALUES ('localhost','mysql_logrotate','','N','N','N','N','N','N','Y','N','N','N','N','N','N','N');"
+	  INSERT INTO user VALUES ('localhost','mysql_logrotate','','N','N','N','N','N','N','Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','','','','',0,0,0);"
 	fi
 
 	if test ! -f $mdata/func.frm
@@ -301,7 +301,7 @@ case "$1" in
 	fi
 
 	if /usr/sbin/mysqld --bootstrap --skip-grant-tables \
-	    --datadir=$MYSQL_DATA_DIR --user=$MYSQL_USER << END_OF_DATA
+	    --datadir=$MYSQL_DATA_DIR --user=$MYSQL_USER >/dev/null 2>&1 << END_OF_DATA
 CREATE DATABASE mysql;
 use mysql;
 $c_d
