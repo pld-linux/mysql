@@ -500,7 +500,7 @@ fi
 %attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
 %attr(751,root,root) %dir /etc/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/mysqld.conf
-%attr(640,root,,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/clusters.conf
+%attr(640,root,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/clusters.conf
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
