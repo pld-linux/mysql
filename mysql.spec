@@ -1,6 +1,6 @@
 #
 # Conditional build:
-# _with_bdb - Berkeley DB support
+# _without_bdb - without Berkeley DB support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.14
-Release:	2
+Release:	3
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	9764f09c89692345d3b7800ab014f822
@@ -23,21 +23,20 @@ Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
-Patch2:		%{name}-c++.patch
+Patch2:		%{name}-noproc.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
 Patch5:		%{name}-dump_quote_db_names.patch
 Patch6:		%{name}-manfixes.patch
 Patch7:		%{name}-sql-cxx-pic.patch
-Patch8:		%{name}-noproc.patch
+Patch8:		%{name}-buffer.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
-#BuildRequires:	ORBit-devel
 BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
-%{?_with_bdb:BuildRequires:	db3-devel}
-BuildRequires:	libstdc++-devel >= 5:3.0
+%{!?_without_bdb:BuildRequires:	db3-devel}
+BuildRequires:	libstdc++-devel
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
 BuildRequires:	ncurses-devel >= 4.2
@@ -352,7 +351,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-mysqld-user=mysql \
 	--with-libwrap \
 	--with%{!?debug:out}-debug \
-	%{?_with_bdb:--with-berkeley-db} \
+	%{!?_without_bdb:--with-berkeley-db} \
 	--with-embedded-server \
 	--with-vio \
 	--with-openssl \
@@ -376,12 +375,10 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
-	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
-	   $RPM_BUILD_ROOT%{_infodir} \
-	   $RPM_BUILD_ROOT%{_mysqlhome}
+	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/{db,innodb/{data,log}}} \
+	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
-install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
-%if %{?_with_bdb:1}%{!?_with_bdb:0}
+%if %{?_without_bdb:0}%{!?_without_bdb:1}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
 
