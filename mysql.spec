@@ -130,11 +130,11 @@ lisa --SysV-init install  mysql S35 3:4:5 K65 0:1:2:6
 # exists.
 echo "Creating system group mysql with GID 83"
 #lisa --group create mysql :sys:
-/usr/sbin/groupadd -g 83 mysql
+%{_sbindir}/groupadd -g 83 mysql
 
 echo "Creating system user mysql with UID 83"
 #lisa --user create mysql :sys: mysql "MySQL Database" $mysql_datadir /bin/bash
-/usr/sbin/useradd -u 83 -g mysql -d $mysql_datadir -s /bin/bash mysql
+%{_sbindir}/useradd -u 83 -g mysql -d $mysql_datadir -s /bin/bash mysql
 
 # Change permissions so that the user that will run the MySQL daemon
 # owns all database files.
@@ -186,7 +186,7 @@ lisa --SysV-init remove mysql $1
 
 %attr(644,root,root) %{_infodir}/mysql.info
 
-%attr(755,root,root) /usr/sbin/mysqld
+%attr(755,root,root) %{_sbindir}/mysqld
 
 %attr(644,root,root) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
@@ -210,9 +210,9 @@ lisa --SysV-init remove mysql $1
 
 
 %Files devel
-%dir /usr/include/mysql
+%dir %{_includedir}/mysql
 %dir %{_libdir}/mysql
-%attr(644,root,root) /usr/include/mysql/*
+%attr(644,root,root) %{_includedir}/mysql/*
 %attr(644,root,root) %{_libdir}/mysql/*
 %attr(644,root,root) %{_libdir}/libmysqlclient.so
 %attr(755,root,root) %{_bindir}/comp_err
