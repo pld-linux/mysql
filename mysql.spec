@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.14
-Release:	3
+Release:	4
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	9764f09c89692345d3b7800ab014f822
@@ -338,7 +338,7 @@ rm -f missing
 %{__automake}
 %{__autoconf}
 CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
-CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
+CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer} -DUSE_OLD_FUNCTIONS"
 %configure \
 	PS='/bin/ps' \
 	FIND_PROC='/bin/ps p $$PID' \
