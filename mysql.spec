@@ -5,6 +5,7 @@ Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
 Summary(pt):	MySQL: Um servidor SQL rápido e confiável
 Name:		mysql
 Group:		Applications/Databases
+Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.23.37
@@ -110,6 +111,7 @@ informações.
 Summary:	MySQL additional utilities
 Summary(pl):	Dodatkowe narzêdzia do MySQL
 Group:		Applications/Databases
+Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-libs = %{version}
@@ -119,13 +121,14 @@ MySQL additional utilities except Perl scripts (they may be found in
 %{name}-extras-perl package)
 
 %description -l pl extras
-Dodatkowe narzêdzia do MySQL - z wyj±tkiem skryptów Perla (które s±
-w pakiecie %{name}-extras-perl).
+Dodatkowe narzêdzia do MySQL - z wyj±tkiem skryptów Perla (które s± w
+pakiecie %{name}-extras-perl).
 
 %package extras-perl
 Summary:	MySQL additional utilities written in Perl
 Summary(pl):	Dodatkowe narzêdzia do MySQL napisane w Perlu
 Group:		Applications/Databases
+Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-extras = %{version}
@@ -141,6 +144,7 @@ Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
 Summary(pt):	MySQL - Cliente
 Group:		Applications/Databases
+Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-libs = %{version}
@@ -162,6 +166,7 @@ Este pacote contém os clientes padrão para o MySQL.
 Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
 Group:		Applications/Databases
+Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 
 %description libs
@@ -219,6 +224,7 @@ Summary:	MySQL - Benchmarks
 Summary(pl):	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Applications/Databases
+Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name} = %{version}
@@ -288,7 +294,7 @@ mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 %pre
 if [ -n "`getgid mysql`" ]; then
 	if [ "`getgid mysql`" != "89" ]; then
-		echo "Warning:group mysql haven't gid=89. Corect this before install mysql" 1>&2
+		echo "Warning: group mysql haven't gid=89. Correct this before installing mysql" 1>&2
 		exit 1
 	fi
 else
@@ -296,7 +302,7 @@ else
 fi
 if [ -n "`id -u mysql 2>/dev/null`" ]; then
 	if [ "`id -u mysql`" != "89" ]; then
-		echo "Warning:user mysql haven't uid=89. Corect this before install mysql" 1>&2
+		echo "Warning: user mysql haven't uid=89. Correct this before installing mysql" 1>&2
 		exit 1
 	fi
 else
