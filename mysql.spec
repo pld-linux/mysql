@@ -37,7 +37,7 @@ BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
 %{?_with_bdb:BuildRequires:	db3-devel}
-BuildRequires:	libstdc++-devel
+BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
 BuildRequires:	ncurses-devel >= 4.2
