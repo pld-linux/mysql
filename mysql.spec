@@ -10,8 +10,8 @@ Summary(uk):	MySQL -- Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	3.23.51
-Release:	4
+Version:	3.23.52
+Release:	1
 License:	GPL/LGPL
 Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -423,6 +423,9 @@ fi
 %attr(755,root,root) %{_bindir}/myisampack
 %attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_sbindir}/mysqld
+%{_mandir}/man1/isamchk.1*
+%{_mandir}/man1/isamlog.1*
+%{_mandir}/man1/mysqld.1*
 
 %attr(751,mysql,mysql) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
@@ -435,24 +438,25 @@ fi
 %{_datadir}/mysql/english
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
-%lang(nl) %{_datadir}/mysql/dutch
-%lang(et) %{_datadir}/mysql/estonian
-%lang(fr) %{_datadir}/mysql/french
 %lang(de) %{_datadir}/mysql/german
 %lang(el) %{_datadir}/mysql/greek
+%lang(es) %{_datadir}/mysql/spanish
+%lang(et) %{_datadir}/mysql/estonian
+%lang(fr) %{_datadir}/mysql/french
 %lang(hu) %{_datadir}/mysql/hungarian
 %lang(it) %{_datadir}/mysql/italian
 %lang(ja) %{_datadir}/mysql/japanese
 %lang(ko) %{_datadir}/mysql/korean
-%lang(no) %{_datadir}/mysql/norwegian
+%lang(nl) %{_datadir}/mysql/dutch
 %lang(nn) %{_datadir}/mysql/norwegian-ny
+%lang(no) %{_datadir}/mysql/norwegian
 %lang(pl) %{_datadir}/mysql/polish
 %lang(pt) %{_datadir}/mysql/portuguese
 %lang(ro) %{_datadir}/mysql/romanian
 %lang(ru) %{_datadir}/mysql/russian
 %lang(sk) %{_datadir}/mysql/slovak
-%lang(es) %{_datadir}/mysql/spanish
 %lang(sv) %{_datadir}/mysql/swedish
+%lang(uk) %{_datadir}/mysql/ukrainian
 
 %files extras
 %defattr(644,root,root,755)
@@ -463,6 +467,8 @@ fi
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
+%{_mandir}/man1/perror.1*
+%{_mandir}/man1/replace.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -473,6 +479,8 @@ fi
 %attr(755,root,root) %{_bindir}/mysql_zap
 %attr(755,root,root) %{_bindir}/mysql_find_rows
 %attr(755,root,root) %{_bindir}/mysqlaccess
+%{_mandir}/man1/mysql_zap.1*
+%{_mandir}/man1/mysqlaccess.1*
 
 %files client
 %defattr(644,root,root,755)
@@ -483,6 +491,9 @@ fi
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
 %{_mandir}/man1/mysql.1*
+%{_mandir}/man1/mysqladmin.1*
+%{_mandir}/man1/mysqldump.1*
+%{_mandir}/man1/mysqlshow.1*
 
 %files libs
 %defattr(644,root,root,755)
