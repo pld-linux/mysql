@@ -19,7 +19,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.8a
-Release:	0.1
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/mysql-%{version}.tar.gz
 # Source0-md5:	2886edbe5cc826727fbb79a79d41145c
@@ -44,6 +44,7 @@ Patch5:		%{name}-sql-cxx-pic.patch
 Patch6:		%{name}-noproc.patch
 Patch7:		%{name}-fix_privilege_tables.patch
 Patch8:		%{name}-nptl.patch
+Patch9:		%{name}-mysqlaccess.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -411,6 +412,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
+%patch9	-p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
