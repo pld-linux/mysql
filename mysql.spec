@@ -22,18 +22,21 @@ Patch2:		%{name}-opt.patch
 Patch3:		%{name}-moreincludes.patch
 Patch4:		%{name}-amfix.patch
 Patch5:		%{name}-acfix.patch
+Patch6:		%{name}-am15.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
+BuildRequires:	autoconf
+BuildRequires:	automake
 BuildRequires:	libstdc++-devel
+BuildRequires:	libtool
 BuildRequires:	ncurses-devel >= 4.2
-BuildRequires:	perl-devel >= 5.6.1
 BuildRequires:	perl-DBI
+BuildRequires:	perl-devel >= 5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-BuildRequires:	autoconf
 Prereq:		rc-scripts >= 0.2.0
 Prereq:		shadow
 Provides:	msqlormysql MySQL-server
@@ -259,6 +262,7 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
 
 %build
 rm -f missing 
