@@ -2,8 +2,6 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
-# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1011008.html
-# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1010979.html
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -18,11 +16,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.20
-Release:	4
-License:	GPL
+Version:	4.0.21
+Release:	3
+License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
+# Source0-md5:	0a3dae16519afa5e59d8b9e252181243
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -55,6 +53,7 @@ BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
+BuildRequires:	rpmbuild(macros) >= 1.159
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 PreReq:		rc-scripts >= 0.2.0
@@ -68,10 +67,12 @@ Requires(post,preun):	/sbin/chkconfig
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
+Provides:	group(mysql)
 Provides:	msqlormysql
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
+BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
@@ -441,21 +442,21 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 rm -rf $RPM_BUILD_ROOT
 
 %pre
-if [ -n "`getgid mysql`" ]; then
-	if [ "`getgid mysql`" != "89" ]; then
+if [ -n "`/usr/bin/getgid mysql`" ]; then
+	if [ "`/usr/bin/getgid mysql`" != "89" ]; then
 		echo "Error: group mysql doesn't have gid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/groupadd -g 89 -r -f mysql
+	/usr/sbin/groupadd -g 89 mysql
 fi
-if [ -n "`id -u mysql 2>/dev/null`" ]; then
-	if [ "`id -u mysql`" != "89" ]; then
+if [ -n "`/bin/id -u mysql 2>/dev/null`" ]; then
+	if [ "`/bin/id -u mysql`" != "89" ]; then
 		echo "Error: user mysql doesn't have uid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/useradd -M -o -r -u 89 \
+	/usr/sbin/useradd -u 89 \
 			-d %{_mysqlhome} -s /bin/sh -g mysql \
 			-c "MySQL Server" mysql 1>&2
 fi
@@ -480,8 +481,8 @@ fi
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 if [ "$1" = "0" ]; then
-	/usr/sbin/userdel mysql
-	/usr/sbin/groupdel mysql
+	%userremove mysql
+	%groupremove mysql
 fi
 
 %post   libs -p /sbin/ldconfig
@@ -598,6 +599,7 @@ fi
 
 %files libs
 %defattr(644,root,root,755)
+%doc EXCEPTIONS-CLIENT
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
 
 %files devel
