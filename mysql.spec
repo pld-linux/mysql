@@ -259,6 +259,8 @@ autoconf
 CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 %configure \
+	%{?bcond_on_innodb:--with-innodb}  \
+	%{?bcond_on_bdb:--with-berkeley-db} \
 	--without-debug \
 	--enable-shared \
 	--enable-static \
@@ -271,7 +273,6 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 	--with-mysqld-user=mysql \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--without-readline \
-	--without-berkeley-db \
 	--without-docs \
 	--with-low-memory  \
 	--with-comment="Polish Linux Distribution MySQL RPM"
@@ -282,8 +283,16 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
-	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
+	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
 	   $RPM_BUILD_ROOT%{_infodir}
+
+%if %{?bcond_on_innodb:1}%{!?bcond_on_innodb:0}
+install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
+%endif
+
+%if %{?bcond_on_bdb:1}%{!?bcond_on_bdb:0}
+install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
+%endif
 
 # Make install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
@@ -364,7 +373,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_sbindir}/mysqld
 
-%attr(751,mysql,mysql) %dir /var/lib/mysql
+%attr(751,mysql,mysql) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archiv/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/mysql/*
