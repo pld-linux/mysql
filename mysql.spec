@@ -124,9 +124,8 @@ Shared libraries for MySQL
 Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla developerów
 Summary(pt_BR):	MySQL - Medições de desempenho
-Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy Danych
-Group(pt_BR):	Aplicações/Banco_de_Dados
+Group:		Development/Libraries
+Group(pl):	Programowanie/Biblioteki
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
 
@@ -164,13 +163,13 @@ Biblioteki statyczne MySQL.
 Summary:	MySQL - Benchmarks
 Summary(pl):	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
 Summary(pt_BR):	MySQL - Medições de desempenho
-Requires:	mysql-client
-Requires:	perl-MySQL-DBI
-Requires:	perl
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Requires:	%{name} = %{version}
+Requires:	%{name}-client
+Requires:	perl-MySQL-DBI
+Requires:	perl
 Obsoletes:	MySQL-bench
 
 %description bench
