@@ -663,6 +663,8 @@ fi
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
+%dir %{_datadir}/mysql
+%{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
