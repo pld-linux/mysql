@@ -8,7 +8,7 @@ Group:		Applications/Databases
 Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	AplicaГУes/Banco_de_Dados
-Version:	3.23.40
+Version:	3.23.41
 Release:	1
 License:	GPL/LGPL
 Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
@@ -184,8 +184,12 @@ Summary(pl):	MySQL - Pliki nagЁСwkowe i biblioteki dla programistСw
 Summary(pt):	MySQL - MediГУes de desempenho
 Group:		Development/Libraries
 Group(de):	Entwicklung/Libraries
+Group(es):	Desarrollo/Bibliotecas
 Group(fr):	Development/Librairies
 Group(pl):	Programowanie/Biblioteki
+Group(pt_BR):	Desenvolvimento/Bibliotecas
+Group(ru):	Разработка/Библиотеки
+Group(uk):	Розробка/Б╕бл╕отеки
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
 
@@ -211,8 +215,12 @@ Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
 Group(de):	Entwicklung/Libraries
+Group(es):	Desarrollo/Bibliotecas
 Group(fr):	Development/Librairies
 Group(pl):	Programowanie/Biblioteki
+Group(pt_BR):	Desenvolvimento/Bibliotecas
+Group(ru):	Разработка/Библиотеки
+Group(uk):	Розробка/Б╕бл╕отеки
 Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
 
