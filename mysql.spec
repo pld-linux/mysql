@@ -231,10 +231,10 @@ strip --strip-unneeded $RPM_BUILD_ROOT%{_libdir}/lib*.so*.*
 gzip -9nf $RPM_BUILD_ROOT{%{_mandir}/man1/*,%{_infodir}/mysql.info*}
 
 %pre
-echo "Creating system group mysql with GID 83"
-%{_sbindir}/groupadd -f -g 83 mysql
-echo "Creating system user mysql with UID 83"
-%{_sbindir}/useradd -u 83 -g mysql -d /var/state/mysql -s /bin/sh mysql 2> /dev/null
+echo "Creating system group mysql with GID 89"
+%{_sbindir}/groupadd -f -g 89 mysql
+echo "Creating system user mysql with UID 89"
+%{_sbindir}/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql 2> /dev/null
 
 %post
 mysql_install_db -IN-RPM
