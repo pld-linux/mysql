@@ -368,7 +368,8 @@ Podrêcznik MySQL-a w formacie HTML.
 %{__aclocal}
 %{__automake}
 %{__autoconf}
-CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
+# The compiler flags are as per their "official" spec ;)
+CXXFLAGS="%{rpmcflags} -felide-constructors -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
 CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 %configure \
 	PS='/bin/ps' \
