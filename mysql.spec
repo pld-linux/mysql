@@ -73,7 +73,7 @@ install -d $DESTDIR/usr/doc/MySQL-%{mysql-version}
 make install-strip DESTDIR=$DESTDIR benchdir=/usr/share/sql-bench
 
 # fixme: can´t this be done via configure?
-mv $DESTDIR/usr/lib/mysql/*.so* $DESTDIR/usr/lib
+mv $DESTDIR%{_libdir}/mysql/*.so* $DESTDIR/usr/lib
 
 # Install logrotate and autostart
 MBD=$RPM_BUILD_DIR/mysql-%{mysql-version}
@@ -195,7 +195,7 @@ lisa --SysV-init remove mysql $1
 %attr(755,root,root) /usr/share/mysql/
 
 %Files client
-%attr(755,root,root) /usr/lib/libmysqlclient.so.*.*
+%attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
 
 %attr(755,root,root) /usr/bin/msql2mysql
 %attr(755,root,root) /usr/bin/mysql
@@ -211,10 +211,10 @@ lisa --SysV-init remove mysql $1
 
 %Files devel
 %dir /usr/include/mysql
-%dir /usr/lib/mysql
+%dir %{_libdir}/mysql
 %attr(644,root,root) /usr/include/mysql/*
-%attr(644,root,root) /usr/lib/mysql/*
-%attr(644,root,root) /usr/lib/libmysqlclient.so
+%attr(644,root,root) %{_libdir}/mysql/*
+%attr(644,root,root) %{_libdir}/libmysqlclient.so
 %attr(755,root,root) /usr/bin/comp_err
 
 %ChangeLog
