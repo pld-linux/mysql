@@ -30,6 +30,7 @@ Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
 Patch5:		%{name}-dump_quote_db_names.patch
 Patch6:		%{name}-manfixes.patch
+Patch7:		%{name}-sql-cxx-pic.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -320,6 +321,12 @@ MySQL.
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
+%ifarch alpha
+# this is strange: mysqld functions for UDF modules are not explicitly defined,
+# so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
+# in objects compiled without -fPIC
+%patch7 -p1
+%endif
 
 %build
 rm -f missing
@@ -327,8 +334,8 @@ rm -f missing
 %{__aclocal}
 %{__automake}
 %{__autoconf}
-CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
-CFLAGS="%{rpmcflags} -fomit-frame-pointer"
+CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
+CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 %configure \
 	-C \
 	--with-pthread \
