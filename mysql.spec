@@ -577,4 +577,5 @@ fi
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgrst]*
 
 %files doc
+%defattr(644,root,root,755)
 %doc Docs/manual.html Docs/manual_toc.html
