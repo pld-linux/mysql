@@ -271,7 +271,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/safe_mysqld
 %attr(755,root,root) %{_sbindir}/mysqld
 %attr(640,root,root) %{_sysconfdir}/logrotate.d/mysql
-%attr(754,root,root) %{_sysconfdir}/rc.d/init.d/mysql
+%attr(754,mysql,mysql) %{_sysconfdir}/rc.d/init.d/mysql
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
 
