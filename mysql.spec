@@ -630,10 +630,12 @@ fi
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
+%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/isamchk.1*
 %{_mandir}/man1/isamlog.1*
+%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
@@ -649,6 +651,7 @@ fi
 %{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/charsets
 %{_datadir}/mysql/english
+%{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
 %lang(de) %{_datadir}/mysql/german
@@ -675,14 +678,10 @@ fi
 %files extras
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
-%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
-%dir %{_datadir}/mysql
-%{_datadir}/mysql/mysql_fix_privilege_tables.sql
-%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 
