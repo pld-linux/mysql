@@ -322,7 +322,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
 
-%attr(750,mysql,mysql) %dir /var/lib/mysql
+%attr(751,mysql,mysql) %dir /var/lib/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/*
 
 %{_datadir}/mysql/english
