@@ -23,6 +23,7 @@ Release:	1
 License:	GPL/LGPL
 #http://www.mysql.com/Downloads/MySQL-3.23/mysql-3.23.54a.tar.gz shows mirrors list
 Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
+# Source0-md5:	892f7d97af1ce7502e89d824031abd05
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
