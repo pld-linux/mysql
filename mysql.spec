@@ -23,6 +23,7 @@ Source4:	%{name}d.conf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-lang.patch
+Patch3:		%{name}-c++.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -40,7 +41,7 @@ BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-{?_with_bdb:BuildRequires:	db3-devel}
+%{?_with_bdb:BuildRequires:	db3-devel}
 PreReq:		rc-scripts >= 0.2.0
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/bin/id
@@ -296,6 +297,7 @@ MySQL.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 rm -f missing
@@ -313,9 +315,8 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 	--with-mysqld-user=mysql \
 	--with-libwrap \
 	--with%{!?debug:out}-debug \
-	{?_with_bdb:--with-berkeley-db} \	
+	%{?_with_bdb:--with-berkeley-db} \
 	--with-embedded-server \
-	--with-mysqlfs \
 	--with-vio \
 	--with-openssl \
 	--with-extra-charsets=all \
@@ -328,8 +329,12 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 	--with-low-memory  \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--enable-thread-safe-client
+#	--with-mysqlfs
 
-%{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
+echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
+
+%{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench \
+	CC="%{__cxx}"
 %{__make} -C Docs mysql.info
 
 %install
