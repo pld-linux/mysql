@@ -22,11 +22,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.23
-Release:	3
+Version:	4.0.24
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mainseek.com/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	8b3a40434348f961b71715ed45fe540e
+# Source0-md5:	408d3001ed715ddc90009c247e548638
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -347,7 +347,7 @@ Podrêcznik MySQL-a w formacie HTML.
 %prep
 %setup -q
 %patch0 -p1
-%{?with_tcpd:%patch1 -p1}
+%patch1 -p1
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
@@ -406,6 +406,8 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
+# workaround for missing files
+(cd Docs; touch Images/cluster-components-1.txt Images/multi-comp-1.txt errmsg-table.texi cl-errmsg-table.texi)
 %{__make} -C Docs mysql.info
 
 %install
