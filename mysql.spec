@@ -27,6 +27,8 @@ BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
 BuildRequires:	readline-devel
 BuildRequires:	texinfo
+BuildRequires:	perl
+BuildRequires:	perl-DBI
 BuildRequires:	rpm-perlprov
 Prereq:		rc-scripts >= 0.2.0
 Prereq:		shadow
@@ -334,7 +336,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbug
-%attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
