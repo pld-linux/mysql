@@ -1,0 +1,13 @@
+diff -Nru mysql-3.22.32/configure.in mysql-3.22.32.new/configure.in
+--- mysql-3.22.32/configure.in	Tue Aug 22 02:58:51 2000
++++ mysql-3.22.32.new/configure.in	Tue Aug 22 03:02:15 2000
+@@ -482,7 +482,8 @@
+ AC_CHECK_LIB(nsl_r, gethostbyname_r)
+ if test "$ac_cv_lib_nsl_r_gethostbyname_r" = "no"
+ then
+-  AC_CHECK_LIB(nsl, gethostbyname_r)
++	AC_CHECK_FUNC(gethostbyname_r, ,
++		AC_CHECK_LIB(nsl, gethostbyname_r) )
+ fi
+ LIBS_BEFORE_SOCKET=$LIBS
+ LIBS=
