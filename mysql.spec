@@ -1,6 +1,6 @@
 #
 # Conditional build:
-%bcond_with	bdb	# Berkeley DB backend
+%bcond_with	bdb	# Berkeley DB support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -53,7 +53,7 @@ Requires(pre):	/usr/sbin/useradd
 Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
 Requires(post,preun):	/sbin/chkconfig
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
 Provides:	msqlormysql
@@ -163,7 +163,7 @@ MySQL - це SQL (Structured Query Language) сервер бази даних. MySQL
 Summary:	MySQL additional utilities
 Summary(pl):	Dodatkowe narzЙdzia do MySQL
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 
 %description extras
 MySQL additional utilities except Perl scripts (they may be found in
@@ -177,7 +177,7 @@ pakiecie %{name}-extras-perl).
 Summary:	MySQL additional utilities written in Perl
 Summary(pl):	Dodatkowe narzЙdzia do MySQL napisane w Perlu
 Group:		Applications/Databases
-Requires:	%{name}-extras = %{version}
+Requires:	%{name}-extras = %{version}-%{release}
 Requires:	perl(DBD::mysql)
 
 %description extras-perl
@@ -193,7 +193,7 @@ Summary(pt):	MySQL - Cliente
 Summary(ru):	MySQL клиент
 Summary(uk):	MySQL кл╕╓нт
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 Obsoletes:	MySQL-client
 
 %description client
@@ -233,7 +233,7 @@ Summary(pt):	MySQL - MediГУes de desempenho
 Summary(ru):	MySQL - хедеры и библиотеки разработчика
 Summary(uk):	MySQL - хедери та б╕бл╕отеки програм╕ста
 Group:		Development/Libraries
-Requires:	%{name}-libs = %{version}
+Requires:	%{name}-libs = %{version}-%{release}
 Requires:	openssl-devel
 Requires:	zlib-devel
 Obsoletes:	MySQL-devel
@@ -270,7 +270,7 @@ Summary(pl):	Biblioteki statyczne MySQL
 Summary(ru):	MySQL - статические библиотеки
 Summary(uk):	MySQL - статичн╕ б╕бл╕отеки
 Group:		Development/Libraries
-Requires:	%{name}-devel = %{version}
+Requires:	%{name}-devel = %{version}-%{release}
 Obsoletes:	MySQL-static
 
 %description static
@@ -294,7 +294,7 @@ Summary(pt):	MySQL - MediГУes de desempenho
 Summary(ru):	MySQL - бенчмарки
 Summary(uk):	MySQL - бенчмарки
 Group:		Applications/Databases
-Requires:	%{name} = %{version}
+Requires:	%{name} = %{version}-%{release}
 Requires:	%{name}-client
 Requires:	perl(DBD::mysql)
 Obsoletes:	MySQL-bench
@@ -476,10 +476,12 @@ fi
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
+%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/isamchk.1*
 %{_mandir}/man1/isamlog.1*
+%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
@@ -492,6 +494,7 @@ fi
 %dir %{_datadir}/mysql
 %{_datadir}/mysql/charsets
 %{_datadir}/mysql/english
+%{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
 %lang(de) %{_datadir}/mysql/german
@@ -504,8 +507,8 @@ fi
 %lang(ja) %{_datadir}/mysql/japanese
 %lang(ko) %{_datadir}/mysql/korean
 %lang(nl) %{_datadir}/mysql/dutch
-%lang(nn) %{_datadir}/mysql/norwegian-ny
 %lang(no) %{_datadir}/mysql/norwegian
+%lang(nn) %{_datadir}/mysql/norwegian-ny
 %lang(pl) %{_datadir}/mysql/polish
 %lang(pt) %{_datadir}/mysql/portuguese
 %lang(ro) %{_datadir}/mysql/romanian
@@ -517,12 +520,10 @@ fi
 %files extras
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
-%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
-%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 
