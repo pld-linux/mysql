@@ -123,7 +123,7 @@ G³ównymi celami MySQL-a s± szybko¶æ, potêga i ³atwo¶æ u¿ytkowania.
 MySQL oryginalnie by³ tworzony, poniewa¿ autorzy w Tcx potrzebowali
 serwera SQL do obs³ugi bardzo du¿ych baz danych z szybko¶ci± o wiele
 wiêksz±, ni¿ mogli zaoferowaæ inni producenci baz danych. U¿ywaj± go
-od 1996 roku w drodowisku z ponad 40 bazami danych, 10 000 tabel,
+od 1996 roku w ¶rodowisku z ponad 40 bazami danych, 10 000 tabel,
 z których ponad 500 zawiera ponad 7 milionów rekordów - w sumie oko³o
 50GB krytycznych danych.
 
