@@ -395,7 +395,7 @@ install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
-install %{SOURCE4} $RPM_BUILD_ROOT%{_datadir}/mysqld.conf
+install %{SOURCE4} $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 
 # remove mysqld's *.po files
