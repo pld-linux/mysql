@@ -16,6 +16,7 @@ Version:	4.0.12
 Release:	1.1
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
+# Source0-md5:	7d7696ecad5018939735049c0e87132f
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
