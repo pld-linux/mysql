@@ -18,8 +18,8 @@ Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Group:		Applications/Databases
-Version:	3.23.54a
-Release:	2
+Version:	3.23.55
+Release:	1
 License:	GPL/LGPL
 #http://www.mysql.com/Downloads/MySQL-3.23/mysql-3.23.54a.tar.gz shows mirrors list
 Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
