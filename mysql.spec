@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.10a
-Release:	1
+Release:	1.1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	6a4a6a5b3d0a42a9a271b2b8867bde82
@@ -646,6 +646,22 @@ if [ -f "/etc/sysconfig/mysql" ]; then
 		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/mysql/clusters.conf."
 	fi
 fi
+
+%triggerpostun -- mysql <= 4.1.1
+# For better compatibility with prevoius versions:
+for config in `grep -v "^#" /etc/mysql/clusters.conf | cut -d"=" -f 1`; do
+	if echo "$config" | grep -q '^/'; then
+		config_file="$config"
+	elif [ -f "/etc/mysql/$config" ]; then
+		config_file=/etc/mysql/$config
+	else
+		config_file="$clusterdir/mysqld.conf"
+	fi
+	echo "Adding option old-passwords to config: $config_file"
+	echo "If you want to use new, better passwords - remove it"
+	echo "# Compatibility options:" >> $config_file
+	echo "old-passwords" >> $config_file
+done
 
 %files
 %defattr(644,root,root,755)
