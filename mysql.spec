@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.10
-Release:	1
+Release:	0.1
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}-gamma.tar.gz
 Source1:	%{name}.init
@@ -24,10 +24,11 @@ Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-lang.patch
 Patch3:		%{name}-c++.patch
+Patch4:		%{name}-no-my_inet_ntoa.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
-BuildRequires:	ORBit-devel
+#BuildRequires:	ORBit-devel
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	libstdc++-devel
@@ -298,6 +299,7 @@ MySQL.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 %build
 rm -f missing
@@ -333,8 +335,7 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
-%{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench \
-	CC="%{__cxx}"
+%{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 %{__make} -C Docs mysql.info
 
 %install
@@ -495,6 +496,7 @@ fi
 %attr(755,root,root) %{_bindir}/mysqlshow
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
+%attr(755,root,root) %{_bindir}/mysqltest
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
