@@ -343,7 +343,8 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
-	   $RPM_BUILD_ROOT%{_infodir}
+	   $RPM_BUILD_ROOT%{_infodir} \
+	   $RPM_BUILD_ROOT/home/services/mysql
 
 %if %{?_with_innodb:1}%{!?_with_innodb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
@@ -386,7 +387,9 @@ if [ -n "`id -u mysql 2>/dev/null`" ]; then
 		exit 1
 	fi
 else
-	/usr/sbin/useradd -u 89 -r -d /var/lib/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
+	/usr/sbin/useradd -M -o -r -u 89 \
+	                -d /home/services/mysql -s /bin/sh -g mysql \
+	                -c "MySQL Server" mysql 1>&2
 fi
 
 %post
@@ -433,6 +436,7 @@ fi
 %{_mandir}/man1/isamlog.1*
 %{_mandir}/man1/mysqld.1*
 
+%attr(700,mysql,mysql) /home/services/mysql
 %attr(751,mysql,mysql) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archiv/mysql
