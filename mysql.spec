@@ -30,6 +30,7 @@ Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
 #BuildRequires:	ORBit-devel
+BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	libstdc++-devel
@@ -365,7 +366,7 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog}
 # remove mysqld's *.po files
 find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-perl -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
+%{__perl} -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
 
 %clean
 rm -rf $RPM_BUILD_ROOT
