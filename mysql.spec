@@ -225,7 +225,7 @@ export LDFLAGS CXXFLAGS
 	
 # If you have much RAM you can remove --with-low-memory
 
-make benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
+%{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 (cd Docs; make info manual.texi)
 
 %install
@@ -234,7 +234,7 @@ install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
 	$RPM_BUILD_ROOT/var/{log,lib/mysql}
 
 # Make install
-make install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
+%{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
 
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
