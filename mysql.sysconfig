@@ -1,4 +1,0 @@
-# Customized settings for mysql
-
-# Define nice level for mysql
-SERVICE_RUN_NICE_LEVEL="+0"
