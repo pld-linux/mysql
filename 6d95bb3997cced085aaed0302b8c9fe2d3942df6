@@ -1,0 +1,3 @@
+- added requirement for perl-Msql-Mysql-modules to pkg extras-perl
+  (doesn't work without it)
+- release 3
