@@ -1,13 +1,12 @@
-diff -uNr old-mysql-4.0.14/scripts/mysql_fix_privilege_tables.sh mysql-4.0.14/scripts/mysql_fix_privilege_tables.sh
---- old-mysql-4.0.14/scripts/mysql_fix_privilege_tables.sh	Fri Jul 18 14:57:48 2003
-+++ mysql-4.0.14/scripts/mysql_fix_privilege_tables.sh	Wed Oct  1 07:03:28 2003
-@@ -2,7 +2,7 @@
- 
- root_password="$1"
+diff -ur mysql-4.1.7.org/scripts/mysql_fix_privilege_tables.sh mysql-4.1.7/scripts/mysql_fix_privilege_tables.sh
+--- mysql-4.1.7.org/scripts/mysql_fix_privilege_tables.sh	2004-10-27 01:35:56.000000000 +0200
++++ mysql-4.1.7/scripts/mysql_fix_privilege_tables.sh	2004-10-27 01:43:24.251864776 +0200
+@@ -5,7 +5,7 @@
+ # Default values (Can be changed in my.cnf)
+ password=""
  host="localhost"
 -user="root"
 +user="mysql"
- port=""
- socket=""
- comment=""
- database="mysql"
+ sql_only=0
+ basedir=""
+ verbose=0
