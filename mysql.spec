@@ -8,8 +8,8 @@ Group:		Applications/Databases
 Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.23.42
-Release:	2
+Version:	3.23.43
+Release:	1
 License:	GPL/LGPL
 Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
