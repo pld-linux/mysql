@@ -222,10 +222,6 @@ mysqlstop() {
 
 	# try graceful shutdown -- send shutdown command
 	/usr/bin/mysqladmin --defaults-file=$MYSQL_CONFIG ${MYSQL_SOCKET:+--socket=$MYSQL_SOCKET} shutdown
-	# 3 seconds
-	for nr in 1 2 3; do
-		[ -d "/proc/$MYSQL_PID" ] && sleep 1
-	done
 	mysqlstatus "$clusterdir"
 
 	[ "$MYSQL_PID" != "unknown" ] && kill -TERM "$MYSQL_PID" 2> /dev/null
