@@ -1,20 +1,24 @@
-Name:		MySQL
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(pl):	MySQL: bardzo szybki i niezawodna baza danych (SQL)
+Name:		mysql
+Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável.
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
-Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável.
 Group(pt_BR):	Aplicações/Banco_de_Dados
-Version:	3.22.23b
+Version:	3.22.27
 Release:	1
 Copyright:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
-Source:		http://www.mysql.com/Downloads/MySQL-3.22/mysql-%{version}.tar.gz
-Patch:		mysql-optimization.patch
+Source:		http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
+Patch:		mysql-info.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Provides:	msqlormysql MySQL-server
 Obsoletes:	mysql
 BuildRoot:	/tmp/%{name}-%{version}
+
+%define		_libexec	%{_prefix}/sbin
+%define		_sysconfdir	/etc
+%define		_localstatedir	/var/state/mysql
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -35,6 +39,26 @@ used in a highly demanding production environment for many
 years. While MySQL is still in development, it already offers a rich
 and highly useful function set.
 
+%description -l fr
+MySQL est un serveur de bases de donnees SQL vraiment multi-usagers et
+multi-taches. Le langage SQL est le langage de bases de donnees le plus
+populaire au monde. MySQL est une implementation client/serveur qui consiste
+en un serveur (mysqld) et differents programmes/bibliotheques clientes.
+
+Les objectifs principaux de MySQL sont: vitesse, robustesse et facilite
+d'utilisation. MySQL fut originalement developpe parce que nous, chez Tcx,
+avions besoin d'un serveur SQL qui pouvait gerer de tres grandes bases de
+donnees avec une vitesse d'un ordre de magnitude superieur a ce que
+n'importe quel vendeur pouvait nous offrir. Nous utilisons MySQL depuis 1996
+dans un environnement avec plus de 40 bases de donnees, 10000 tables,
+desquelles plus de 500 ont plus de 7 millions de lignes. Ceci represente
+environ 50G de donnees critiques.
+
+A la base de la conception de MySQL, on retrouve une serie de routines qui
+ont ete utilisees dans un environnement de production pendant plusieurs
+annees. Meme si MySQL est encore en developpement, il offre deja une riche
+et utile serie de fonctions.
+
 %description -l pl
 MySQL to wielow±tkowy serwer baz danych SQL.
 
@@ -43,42 +67,86 @@ jes wykorzystywany m.in. do obs³ugi 40 baz danych, 10 000 tabeli,
 gdzie ka¿da tabela zawiera 7 milionów pozycji. To ok 50GB danych.
 
 %description -l pt_BR
-O MySQL é um servidor de banco de dados SQL realmente multiusuário e\
-multi-tarefa. A linguagem SQL é a mais popular linguagem para banco de\
-dados no mundo. O MySQL é uma implementação cliente/servidor que\
-consiste de um servidor chamado mysqld e diversos\
-programas/bibliotecas clientes. Os principais objetivos do MySQL são:\
-velocidade, robustez e facilidade de uso.  O MySQL foi originalmente\
-desenvolvido porque nós na Tcx precisávamos de um servidor SQL que\
-pudesse lidar com grandes bases de dados e com uma velocidade muito\
-maior do que a que qualquer vendedor podia nos oferecer. Estamos\
-usando\
-o MySQL desde 1996 em um ambiente com mais de 40 bases de dados com 10.000\
-tabelas, das quais mais de 500 têm mais de 7 milhões de linhas. Isto é o\
-equivalente a aproximadamente 50G de dados críticos. A base da construção do\
-MySQL é uma série de rotinas que foram usadas em um ambiente de produção com\
-alta demanda por muitos anos. Mesmo o MySQL estando ainda em desenvolvimento,\
-ele já oferece um conjunto de funções muito ricas e úteis. Veja a documentação\
-para maiores informações.
+O MySQL é um servidor de banco de dados SQL realmente multiusuário e
+multi-tarefa. A linguagem SQL é a mais popular linguagem para banco de dados
+no mundo. O MySQL é uma implementação cliente/servidor que consiste de um
+servidor chamado mysqld e diversos programas/bibliotecas clientes. Os
+principais objetivos do MySQL são: velocidade, robustez e facilidade de uso. 
+O MySQL foi originalmente desenvolvido porque nós na Tcx precisávamos de um
+servidor SQL que pudesse lidar com grandes bases de dados e com uma
+velocidade muito maior do que a que qualquer vendedor podia nos oferecer.
+Estamos usando o MySQL desde 1996 em um ambiente com mais de 40 bases de
+dados com 10.000 tabelas, das quais mais de 500 têm mais de 7 milhões de
+linhas. Isto é o equivalente a aproximadamente 50G de dados críticos. A base
+da construção do MySQL é uma série de rotinas que foram usadas em um
+ambiente de produção com alta demanda por muitos anos. Mesmo o MySQL estando
+ainda em desenvolvimento, ele já oferece um conjunto de funções muito ricas
+e úteis. Veja a documentação para maiores informações.
 
 %package client
 Requires:	%{name} = %{version}-%{release}
 Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
+Summary(pt_BR):	MySQL - Cliente
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
-Summary(pt_BR):	MySQL - Cliente
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Obsoletes:	mysql-client
 
 %description client
 This package contains the standard MySQL clients. 
 
-%description client -l pl
+%description -l fr client
+Ce package contient les clients MySQL standards.
+
+%description -l pl client
 Standardowe programy klienckie MySQL.
 
-%description client -l pt_BR
+%description -l pt_BR client
 Este pacote contém os clientes padrão para o MySQL.
+
+%package libs
+Summary:	Shared libraries for MySQL
+Group:		Applications/Databases
+
+%description libs
+Shared libraries for MySQL
+
+%package devel
+Summary:	MySQL - Development header files and libraries
+Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla developerów
+Summary(pt_BR):	MySQL - Medições de desempenho
+Group:		Applications/Databases
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt_BR):	Aplicações/Banco_de_Dados
+
+%description devel
+This package contains the development header files and libraries
+necessary to develop MySQL client applications.
+
+%description -l pl devel
+Pliki nag³ówkowe i biblioteki konieczne do rozwijania aplikacji
+klienckich MySQL.
+
+%description devel -l pt_BR
+Este pacote contém os arquivos de cabeçalho (header files) e bibliotecas 
+necessárias para desenvolver aplicações clientes do MySQL. 
+
+%description -l fr devel
+Ce package contient les fichiers entetes et les librairies de developpement
+necessaires pour developper des applications clientes MySQL.
+
+%package static
+Summary:	MySQL staic libraris
+Summary(pl):	Biblioteki statyczne MySQL
+Group:		Development/Libraries
+Group(pl):	Programowanie/Biblioteki
+
+%description static
+MySQL staic libraris.
+
+%description -l pl static
+Biblioteki statyczne MySQL.
 
 %package bench
 Requires:	MySQL-client
@@ -95,42 +163,20 @@ Obsoletes:	mysql-bench
 %description bench
 This package contains MySQL benchmark scripts and data.
 
-%description -l pl
+%description -l pl bench
 Programy testuj±ce szybko¶æ serwera MySQL.
 
-%description bench -l pt_BR
+%description -l pt_BR bench
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
-%package devel
-Requires:	%{name} = %{version}-%{release}
-Requires:	MySQL-client
-Summary:	MySQL - Development header files and libraries
-Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla developerów
-Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy Danych
-Summary(pt_BR):	MySQL - Medições de desempenho
-Group(pt_BR):	Aplicações/Banco_de_Dados
-Obsoletes:	mysql-devel
-
-%description devel
-This package contains the development header files and libraries
-necessary to develop MySQL client applications.
-
-%description -l pl
-Pliki nag³ówkowe i biblioteki konieczne do rozwijania aplikacji
-klienckich MySQL.
-
-%description devel -l pt_BR
-Este pacote contém os arquivos de cabeçalho (header files) e bibliotecas 
-necessárias para desenvolver aplicações clientes do MySQL. 
-
 %prep
-%setup -q -n mysql-%{version}
+%setup -q
 %patch -p1
 
 %build
-CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" LDFLAGS="-s" \
-./configure \
+automake
+LDFLAGS="-s"; export LDFLAGS
+%configure \
 	    --without-debug \
             --enable-shared \
 	    --enable-static \
@@ -140,46 +186,33 @@ CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" LDFLAGS="-s" \
 	    --with-charset=latin2 \
             --with-mysqld-user=mysql \
             --with-unix-socket-path=/var/state/mysql/mysql.sock \
-            --prefix=/ \
-            --exec-prefix=%{_exec_prefix} \
-            --libexecdir=%{_sbindir} \
-            --sysconfdir=%{_sysconfdir} \
-            --datadir=%{_datadir} \
-            --localstatedir=/var/state/mysql \
-            --infodir=%{_infodir} \
-            --includedir=%{_includedir} \
-            --mandir=%{_mandir} \
 	    --with-comment='Polish Linux Distribution MySQL RPM' \
 	    --without-readline \
 	    --with-low-memory
 # If you have much RAM you can remove --with-low-memory
 
 make benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
-
+(cd Docs; make info manual.texi)
 
 %install
+rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d}
-install -d $RPM_BUILD_ROOT/var/state/mysql/{mysql,test}
-install -d $RPM_BUILD_ROOT%{_datadir}/sql-bench
-install -d $RPM_BUILD_ROOT%{_sbindir}
-install -d $RPM_BUILD_ROOT%{_mandir}
-install -d $RPM_BUILD_ROOT%{_includedir}
 
 # Make install
-make install-strip DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
+make install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
 
 # Install logrotate and autostart
-install -m644 support-files/mysql-log-rotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/mysql
-install -m755 support-files/mysql.server     $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/mysql
+install support-files/mysql-log-rotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/mysql
+install support-files/mysql.server     $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/mysql
 
 find Docs -type f ! -name *.gif ! -name *.html -exec rm {} \;
 find . -name ./CVS -exec rm -rf {} \;
 
-mv $RPM_BUILD_ROOT%{_libdir}/mysql/*.so* $RPM_BUILD_ROOT%{_libdir}
+mv $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 
-strip $RPM_BUILD_ROOT%{_bindir}/*  || true
-strip $RPM_BUILD_ROOT%{_sbindir}/* || true
-strip $RPM_BUILD_ROOT%{_libdir}/*.so* || true
+strip --strip-unneeded $RPM_BUILD_ROOT%{_libdir}/lib*.so*.*
+
+gzip -9nf $RPM_BUILD_ROOT{%{_mandir}/man1/*,%{_infodir}/mysql.info*}
 
 %pre
 echo "Creating system group mysql with GID 83"
@@ -192,9 +225,8 @@ echo "Creating system user mysql with UID 83"
 mysql_install_db -IN-RPM
 chown -R mysql /var/state/mysql
 
-%postun
-# We do not remove the mysql user since it may still own a lot of
-# database files.
+%post   libs -p /sbin/ldconfig
+%postun libs -p /sbin/ldconfig
 
 %files
 %defattr(644,root,root,755)
@@ -210,11 +242,10 @@ chown -R mysql /var/state/mysql
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
 %attr(755,root,root) %{_bindir}/safe_mysqld
-%attr(644,root,root) %{_infodir}/mysql.info
 %attr(755,root,root) %{_sbindir}/mysqld
-%attr(644,root,root) %{_sysconfdir}/logrotate.d/mysql
-%attr(755,root,root) %{_sysconfdir}/rc.d/init.d/mysql
-%attr(755,root,root) %{_libdir}/mysql/
+%attr(640,root,root) %{_sysconfdir}/logrotate.d/mysql
+%attr(754,root,root) %{_sysconfdir}/rc.d/init.d/mysql
+%{_infodir}/mysql.info*
 
 %files client
 %attr(755,root,root) %{_bindir}/msql2mysql
@@ -225,19 +256,21 @@ chown -R mysql /var/state/mysql
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
 %attr(755,root,root) %{_bindir}/mysqlshow
-%attr(755,root,root) %{_libdir}/*.so*
-%attr(644,root,root) %{_mandir}/man1/mysql.1
+%attr(644,root,root) %{_mandir}/man1/mysql.1*
 
-%post client
-/sbin/ldconfig
-
-%postun client
-/sbin/ldconfig
+%files libs
+%attr(755,root,root) %{_libdir}/lib*.so.*.*
 
 %files devel
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_libdir}/lib*.la
+%attr(755,root,root) %{_libdir}/lib*.so
 %attr(755,root,root) %{_bindir}/comp_err
-%attr(755,root,root) %{_includedir}/mysql/
-%attr(755,root,root) %{_libdir}/mysql/
+%attr(755,root,root) %{_libdir}/mysql
+%{_includedir}/mysql
+
+%files static
+%attr(644,root,root) %{_libdir}/lib*.a
 
 %files bench
 %attr(-,root,root) %{_datadir}/sql-bench
