@@ -232,8 +232,8 @@ chmod +x find-perl-requires
 #automake
 #aclocal
 #autoconf
-CXXFLAGS="%{?debug:-O -g}%{!?debug:$RPM_OPT_FLAGS} -fno-rtti -fno-exceptions -fomit-frame-pointer"
-CFLAGS="%{?debug:-O -g}%{!?debug:$RPM_OPT_FLAGS} -fomit-frame-pointer"
+CXXFLAGS="%{?debug:-O0 -g}%{!?debug:$RPM_OPT_FLAGS} -fno-rtti -fno-exceptions -fomit-frame-pointer"
+CFLAGS="%{?debug:-O0 -g}%{!?debug:$RPM_OPT_FLAGS} -fomit-frame-pointer"
 %configure \
 	--without-debug \
 	--enable-shared \
