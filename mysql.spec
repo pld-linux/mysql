@@ -27,6 +27,7 @@ Patch3:		%{name}-c++.patch
 Patch4:		%{name}-no-my_inet_ntoa.patch
 Patch5:		%{name}-my_dir.patch
 Patch6:		%{name}-errno.patch
+Patch7:		%{name}-_r-link.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -305,6 +306,7 @@ MySQL.
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
+%patch7 -p1
 
 %build
 rm -f missing
