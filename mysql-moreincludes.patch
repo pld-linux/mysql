@@ -1,13 +1,13 @@
---- mysql-3.23.37/include/Makefile.am.wiget	Fri May 11 13:23:37 2001
-+++ mysql-3.23.37/include/Makefile.am	Fri May 11 13:24:18 2001
+--- mysql-3.23.52/include/Makefile.am.orig	Wed Aug 14 00:08:16 2002
++++ mysql-3.23.52/include/Makefile.am	Sat Aug 17 09:09:22 2002
 @@ -20,12 +20,13 @@
  			mysqld_error.h my_list.h \
- 		        my_pthread.h my_no_pthread.h raid.h errmsg.h \
+ 			my_pthread.h my_no_pthread.h raid.h errmsg.h \
  			my_global.h my_net.h \
 +			my_dir.h \
  			sslopt-case.h sslopt-longopts.h sslopt-usage.h \
  			sslopt-vars.h $(BUILT_SOURCES)
- noinst_HEADERS =	global.h config-win.h \
+ noinst_HEADERS =	global.h config-win.h config-os2.h\
  			nisam.h heap.h merge.h my_bitmap.h\
  			myisam.h myisampack.h myisammrg.h ft_global.h\
 -			my_dir.h mysys_err.h my_base.h \
