@@ -67,6 +67,8 @@ Obsoletes:	mysql-server
 %define		_localstatedir	/var/lib/mysql
 %define		_mysqlhome	/home/services/mysql
 
+%define		_noautoreqdep	'perl(DBD::mysql)'
+
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
 Language) database server. SQL is the most popular database language
@@ -177,8 +179,6 @@ Summary(pl):	Dodatkowe narzêdzia do MySQL napisane w Perlu
 Group:		Applications/Databases
 Requires:	%{name}-extras = %{version}
 Requires:	perl(DBD::mysql)
-
-%define		_noautoreqdep	"perl(DBD::mysql)"
 
 %description extras-perl
 MySQL additional utilities written in Perl.
