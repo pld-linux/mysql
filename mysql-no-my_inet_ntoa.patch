@@ -1,0 +1,15 @@
+diff -urN mysql-4.0.10-gamma.org/vio/viosocket.c mysql-4.0.10-gamma/vio/viosocket.c
+--- mysql-4.0.10-gamma.org/vio/viosocket.c	Thu Feb 13 18:28:22 2003
++++ mysql-4.0.10-gamma/vio/viosocket.c	Thu Feb 13 18:28:35 2003
+@@ -294,9 +294,9 @@
+       DBUG_PRINT("exit", ("getpeername gave error: %d", socket_errno));
+       DBUG_RETURN(1);
+     }
+-    my_inet_ntoa(vio->remote.sin_addr,buf);
++/*    my_inet_ntoa(vio->remote.sin_addr,buf); */
+   }
+-  DBUG_PRINT("exit", ("addr: %s", buf));
++/*  DBUG_PRINT("exit", ("addr: %s", buf)); */
+   DBUG_RETURN(0);
+ }
+ 
