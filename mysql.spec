@@ -16,11 +16,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.1.9
-Release:	1
+Version:	4.1.10
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
-Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/mysql-%{version}.tar.gz
-# Source0-md5:	7bc44befe155d619c4e4705f68874278
+Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
+# Source0-md5:	27b27b74f430aaeb77fb8d4e6f32ac4d
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -41,7 +41,6 @@ Patch4:		%{name}-sql-cxx-pic.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fix_privilege_tables.patch
 Patch7:		%{name}-nptl.patch
-Patch8:		%{name}-mysqlaccess.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -137,8 +136,8 @@ G³ównymi celami MySQL-a s± szybko¶æ, potêga i ³atwo¶æ u¿ytkowania.
 MySQL oryginalnie by³ tworzony, poniewa¿ autorzy w Tcx potrzebowali
 serwera SQL do obs³ugi bardzo du¿ych baz danych z szybko¶ci± o wiele
 wiêksz±, ni¿ mogli zaoferowaæ inni producenci baz danych. U¿ywaj± go
-od 1996 roku w ¶rodowisku z ponad 40 bazami danych, 10 000 tabel,
-z których ponad 500 zawiera ponad 7 milionów rekordów - w sumie oko³o
+od 1996 roku w ¶rodowisku z ponad 40 bazami danych, 10 000 tabel, z
+których ponad 500 zawiera ponad 7 milionów rekordów - w sumie oko³o
 50GB krytycznych danych.
 
 Baza, na której oparty jest MySQL, sk³ada siê ze zbioru procedur,
@@ -354,8 +353,8 @@ Requires:	%{name}-libs = %{version}-%{release}
 This package contains the standard MySQL NDB Storage Engine Daemon.
 
 %description ndb -l pl
-Ten pakiet zawiera standardowego demona silnika przechowywania
-danych NDB.
+Ten pakiet zawiera standardowego demona silnika przechowywania danych
+NDB.
 
 %package ndb-client
 Summary:	MySQL - NDB Clients
@@ -408,7 +407,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
-%patch8	-p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
@@ -616,12 +614,12 @@ fi
 
 %files
 %defattr(644,root,root,755)
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/logrotate.d/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
 %attr(751,root,root) %dir /etc/mysql
-%attr(640,root,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/clusters.conf
-%attr(750,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/monit/*.monitrc
+%attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) /etc/mysql/clusters.conf
+%attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
@@ -640,7 +638,7 @@ fi
 %attr(751,root,root) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archiv/mysql
-%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/mysql/*
+%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 mtime size) /var/log/mysql/*
 
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
@@ -741,7 +739,7 @@ fi
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_sbindir}/ndbd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql-ndb
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb
 
 %files ndb-client
 %defattr(644,root,root,755)
@@ -751,11 +749,11 @@ fi
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_sbindir}/ndb_mgmd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-mgm
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql-ndb-mgm
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-mgm
 
 
 %files ndb-cpc
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_sbindir}/ndb_cpcd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-cpc
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql-ndb-cpc
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-cpc
