@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.18
-Release:	1
+Release:	2
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	702151a3e21d9e5f32e8850032aefdad
@@ -348,6 +348,8 @@ Podr阠znik MySQL-a w formacie HTML.
 %patch9 -p1
 %patch10 -p1
 
+%{__perl} -pi -e 's@/lib/libpthread@/%{_lib}/libpthread@' configure.in
+
 %build
 %{__libtoolize}
 %{__aclocal}
@@ -361,26 +363,26 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	KILL='/bin/kill' \
 	CHECK_PID='/bin/kill -0 $$PID' \
 	-C \
+	--enable-assembler \
+	--enable-shared \
+	--enable-static \
+	--enable-thread-safe-client \
+	%{?with_bdb:--with-berkeley-db} \
+	--with-comment="PLD Linux Distribution MySQL RPM" \
+	--with%{!?debug:out}-debug \
+	--with-embedded-server \
+	--with-extra-charsets=all \
+	--with-libwrap \
+	--with-low-memory \
+	--with-mysqld-user=mysql \
+	--with-named-curses-libs="-lncurses" \
+	--with-openssl \
 	--with-pthread \
 	--with-raid \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
-	--with-mysqld-user=mysql \
-	--with-libwrap \
-	--with%{!?debug:out}-debug \
-	%{?with_bdb:--with-berkeley-db} \
-	--with-embedded-server \
 	--with-vio \
-	--with-openssl \
-	--with-extra-charsets=all \
-	--enable-shared \
-	--enable-static \
-	--with-named-curses-libs="-lncurses" \
-	--enable-assembler \
 	--without-readline \
-	--without-docs \
-	--with-low-memory  \
-	--with-comment="PLD Linux Distribution MySQL RPM" \
-	--enable-thread-safe-client
+	--without-docs
 #	--with-mysqlfs
 
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
