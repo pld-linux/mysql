@@ -23,13 +23,12 @@ Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
-Patch2:		%{name}-c++.patch
+Patch2:		%{name}-noproc.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
 Patch5:		%{name}-dump_quote_db_names.patch
 Patch6:		%{name}-manfixes.patch
 Patch7:		%{name}-sql-cxx-pic.patch
-Patch8:		%{name}-noproc.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -37,7 +36,7 @@ BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
 %{?_with_bdb:BuildRequires:	db3-devel}
-BuildRequires:	libstdc++-devel >= 5:3.0
+BuildRequires:	libstdc++-devel
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
 BuildRequires:	ncurses-devel >= 4.2
@@ -330,7 +329,6 @@ MySQL.
 # in objects compiled without -fPIC
 %patch7 -p1
 %endif
-%patch8 -p1
 
 %build
 rm -f missing
