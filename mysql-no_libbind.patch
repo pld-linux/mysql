@@ -1,0 +1,12 @@
+diff -Nru mysql-3.22.27/configure.in mysql-3.22.27.new/configure.in
+--- mysql-3.22.27/configure.in	Wed Oct  6 00:07:44 1999
++++ mysql-3.22.27.new/configure.in	Thu Oct 28 22:19:39 1999
+@@ -488,8 +488,6 @@
+ LIBS_SOCKET=$LIBS
+ LIBS=
+ AC_CHECK_LIB(gen, p2open)
+-# This may get things to compile even if bind-8 is installed
+-AC_CHECK_LIB(bind, bind)
+ # For crypt() on Linux
+ AC_CHECK_LIB(crypt,crypt)
+ # For compress in zlib
