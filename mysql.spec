@@ -18,11 +18,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.1.8a
-Release:	0.2
+Version:	4.1.9
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/mysql-%{version}.tar.gz
-# Source0-md5:	2886edbe5cc826727fbb79a79d41145c
+# Source0-md5:	7bc44befe155d619c4e4705f68874278
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -38,13 +38,12 @@ Source12:	%{name}-ndb-cpc.sysconfig
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
-Patch3:		%{name}-_r-link.patch
-Patch4:		%{name}-info.patch
-Patch5:		%{name}-sql-cxx-pic.patch
-Patch6:		%{name}-noproc.patch
-Patch7:		%{name}-fix_privilege_tables.patch
-Patch8:		%{name}-nptl.patch
-Patch9:		%{name}-mysqlaccess.patch
+Patch3:		%{name}-info.patch
+Patch4:		%{name}-sql-cxx-pic.patch
+Patch5:		%{name}-noproc.patch
+Patch6:		%{name}-fix_privilege_tables.patch
+Patch7:		%{name}-nptl.patch
+Patch8:		%{name}-mysqlaccess.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -402,17 +401,16 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
-%patch4 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
-%patch5 -p1
+%patch4 -p1
 %endif
+%patch5 -p1
 %patch6 -p1
 %patch7 -p1
-%patch8 -p1
-%patch9	-p1
+%patch8	-p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
