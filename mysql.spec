@@ -2,7 +2,7 @@
 %define		__find_requires	%{_builddir}/mysql-%{version}/find-perl-requires
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
-Summary(pl):	MySQL: bardzo szybki i niezawodna baza danych (SQL)
+Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
 Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável.
 Name:           mysql
 Group:		Applications/Databases
@@ -213,7 +213,7 @@ export LDFLAGS CXXFLAGS
 	--with-mysqld-user=mysql \
 	--with-unix-socket-path=/var/state/mysql/mysql.sock \
 	--with-comment='Polish Linux Distribution MySQL RPM' \
-	--without-readline \
+	--with-readline \
 	--with-low-memory
 	
 # If you have much RAM you can remove --with-low-memory
@@ -244,25 +244,29 @@ strip --strip-unneeded $RPM_BUILD_ROOT%{_libdir}/lib*.so*.*
 gzip -9nf $RPM_BUILD_ROOT{%{_mandir}/man1/*,%{_infodir}/mysql.info*}
 
 %pre
-echo "Creating system group mysql with GID 89"
-/usr/sbin/groupadd -f -g 89 mysql
-echo "Creating system user mysql with UID 89"
-/usr/sbin/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql > /dev/null
+grep -l mysql /etc/group &>/dev/null || (
+    echo "Creating system group mysql with GID 89"
+    /usr/sbin/groupadd -f -g 89 mysql
+)
+grep -l mysql /etc/passwd &>/dev/null || (
+    echo "Creating system user mysql with UID 89"
+    /usr/sbin/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql > /dev/null
+)
 
 %post
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+/sbin/chkconfig --add mysql
 
-TMP=/tmp TMPDIR=/tmp mysql_install_db
-# -IN-RPM
-chown -R mysql /var/state/mysql
+%preun
+if [ "$1" = "0" ]; then
+    if [ -f /var/lock/subsys/mysql ]; then
+	/etc/rc.d/init.d/mysql stop
+    fi
+    /sbin/chkconfig --del mysql
+fi
 
 %postun
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
-
-echo Removing user mysql
-/usr/sbin/userdel mysql
-echo Removing group mysql
-/usr/sbin/groupdel mysql
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
