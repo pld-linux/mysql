@@ -1,0 +1,12 @@
+- updated to 3.23.47
+- InnoDB now supports NULL in keys.
+- Added 'DO expression' command.
+- Fixed core-dump bug in replication when using SELECT RELEASE_LOCK();
+- Added new statement DO expression,[expression].
+- Added slave-skip-errors option
+- Added statistics variables for all MySQL commands. (SHOW STATUS is now much
+  longer).
+- Fixed default values for InnoDB tables.
+- Fixed that GROUP BY expr DESC works.
+- Fixed bug when using t1 LEFT JOIN t2 ON t2.key=constant.
+- mysql_config now also work with binary (relocated) distributions.
