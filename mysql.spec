@@ -19,7 +19,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.57
-Release:	2
+Release:	3
 License:	GPL/LGPL
 #http://www.mysql.com/Downloads/MySQL-3.23/mysql-3.23.54a.tar.gz shows mirrors list
 Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
@@ -37,6 +37,7 @@ Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fulltext-small.patch
 Patch7:		%{name}-c++.patch
 Patch8:		%{name}-manfixes.patch
+Patch9:		%{name}-buffer.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -320,6 +321,7 @@ MySQL.
 %patch7 -p1
 %endif
 %patch8 -p1
+%patch9 -p1
 
 %build
 rm -f missing
@@ -358,8 +360,7 @@ CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
-	   $RPM_BUILD_ROOT%{_infodir} \
-	   $RPM_BUILD_ROOT%{_mysqlhome}
+	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
 %if %{?_with_innodb:1}%{!?_with_innodb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
