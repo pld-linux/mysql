@@ -30,6 +30,7 @@ Patch5:		%{name}-dump_quote_db_names.patch
 Patch6:		%{name}-manfixes.patch
 Patch7:		%{name}-sql-cxx-pic.patch
 Patch8:		%{name}-noproc.patch
+Patch9:		%{name}-fix_privilege_tables.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -331,6 +332,7 @@ MySQL.
 %patch7 -p1
 %endif
 %patch8 -p1
+%patch9 -p1
 
 %build
 rm -f missing
