@@ -361,8 +361,6 @@ Podrêcznik MySQL-a w formacie HTML.
 %patch7 -p1
 %patch8 -p1
 
-%{__perl} -pi -e 's@/lib/libpthread@/%{_lib}/libpthread@' configure.in
-
 %build
 %{__libtoolize}
 %{__aclocal}
