@@ -4,17 +4,30 @@
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
-Summary(pt_BR): MySQL: Um servidor SQL r.ANapido e confiNavel.*B
+Summary(pt_BR):	MySQL: Um servidor SQL r.ANapido e confiNavel.*B
 Summary(zh_CN):	MySQLÊı¾İ¿â·şÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Group(de):	Applikationen/Dateibanken
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.23.47
-Release:	2
+Group(cs):	Aplikace/Databáze
+Group(da):	Programmer/Databaser
+Group(de):	Applikationen/Datenbanken
+Group(es):	Aplicaciones/Bases de Datos
+Group(fr):	Applications/Bases de Données
+Group(id):	Aplikasi/Database
+Group(is):	Forrit/Gagnagrunnar
+Group(it):	Applicazioni/Database
+Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
+Group(no):	Applikasjoner/Databaser
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt):	Aplicações/Bases de Dados
+Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
+Group(sl):	Programi/Zbirke podatkov
+Group(sv):	Tillämpningar/Databaser
+Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
+Version:	3.23.48
+Release:	1
 License:	GPL/LGPL
-Source0:	ftp://ftp1.sourceforge.net/pub/mirrors/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
+Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -122,16 +135,29 @@ informações.
 Summary:	MySQL additional utilities
 Summary(pl):	Dodatkowe narzêdzia do MySQL
 Group:		Applications/Databases
-Group(de):	Applikationen/Dateibanken
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
+Group(cs):	Aplikace/Databáze
+Group(da):	Programmer/Databaser
+Group(de):	Applikationen/Datenbanken
+Group(es):	Aplicaciones/Bases de Datos
+Group(fr):	Applications/Bases de Données
+Group(id):	Aplikasi/Database
+Group(is):	Forrit/Gagnagrunnar
+Group(it):	Applicazioni/Database
+Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
+Group(no):	Applikasjoner/Databaser
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt):	Aplicações/Bases de Dados
+Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
+Group(sl):	Programi/Zbirke podatkov
+Group(sv):	Tillämpningar/Databaser
+Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Requires:	%{name}-libs = %{version}
 
 %description extras
 MySQL additional utilities except Perl scripts (they may be found in
 %{name}-extras-perl package)
 
-%description -l pl extras
+%description extras -l pl
 Dodatkowe narzêdzia do MySQL - z wyj±tkiem skryptów Perla (które s± w
 pakiecie %{name}-extras-perl).
 
@@ -139,15 +165,28 @@ pakiecie %{name}-extras-perl).
 Summary:	MySQL additional utilities written in Perl
 Summary(pl):	Dodatkowe narzêdzia do MySQL napisane w Perlu
 Group:		Applications/Databases
-Group(de):	Applikationen/Dateibanken
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
+Group(cs):	Aplikace/Databáze
+Group(da):	Programmer/Databaser
+Group(de):	Applikationen/Datenbanken
+Group(es):	Aplicaciones/Bases de Datos
+Group(fr):	Applications/Bases de Données
+Group(id):	Aplikasi/Database
+Group(is):	Forrit/Gagnagrunnar
+Group(it):	Applicazioni/Database
+Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
+Group(no):	Applikasjoner/Databaser
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt):	Aplicações/Bases de Dados
+Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
+Group(sl):	Programi/Zbirke podatkov
+Group(sv):	Tillämpningar/Databaser
+Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Requires:	%{name}-extras = %{version}
 
 %description extras-perl
 MySQL additional utilities written in Perl.
 
-%description -l pl extras-perl
+%description extras-perl -l pl
 Dodatkowe narzêdzia do MySQL napisane w Perlu.
 
 %package client
@@ -155,36 +194,63 @@ Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
 Summary(pt):	MySQL - Cliente
 Group:		Applications/Databases
-Group(de):	Applikationen/Dateibanken
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
+Group(cs):	Aplikace/Databáze
+Group(da):	Programmer/Databaser
+Group(de):	Applikationen/Datenbanken
+Group(es):	Aplicaciones/Bases de Datos
+Group(fr):	Applications/Bases de Données
+Group(id):	Aplikasi/Database
+Group(is):	Forrit/Gagnagrunnar
+Group(it):	Applicazioni/Database
+Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
+Group(no):	Applikasjoner/Databaser
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt):	Aplicações/Bases de Dados
+Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
+Group(sl):	Programi/Zbirke podatkov
+Group(sv):	Tillämpningar/Databaser
+Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-client
 
 %description client
 This package contains the standard MySQL clients.
 
-%description -l fr client
+%description client -l fr
 Ce package contient les clients MySQL standards.
 
-%description -l pl client
+%description client -l pl
 Standardowe programy klienckie MySQL.
 
-%description -l pt_BR client
+%description client -l pt_BR
 Este pacote contém os clientes padrão para o MySQL.
 
 %package libs
 Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
 Group:		Applications/Databases
-Group(de):	Applikationen/Dateibanken
-Group(pl):	Aplikacje/Bazy danych
+Group(cs):	Aplikace/Databáze
+Group(da):	Programmer/Databaser
+Group(de):	Applikationen/Datenbanken
+Group(es):	Aplicaciones/Bases de Datos
+Group(fr):	Applications/Bases de Données
+Group(id):	Aplikasi/Database
+Group(is):	Forrit/Gagnagrunnar
+Group(it):	Applicazioni/Database
+Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
+Group(no):	Applikasjoner/Databaser
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt):	Aplicações/Bases de Dados
+Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
+Group(sl):	Programi/Zbirke podatkov
+Group(sv):	Tillämpningar/Databaser
+Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Obsoletes:	libmysql10
 
 %description libs
 Shared libraries for MySQL.
 
-%description -l pl libs
+%description libs -l pl
 Biblioteki dzielone MySQL.
 
 %package devel
@@ -192,12 +258,21 @@ Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla programistów
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Development/Libraries
-Group(de):	Entwicklung/Libraries
+Group(cs):	Vıvojové prostøedky/Knihovny
+Group(da):	Udvikling/Biblioteker
+Group(de):	Entwicklung/Bibliotheken
 Group(es):	Desarrollo/Bibliotecas
 Group(fr):	Development/Librairies
+Group(is):	Şróunartól/Ağgerğasöfn
+Group(it):	Sviluppo/Librerie
+Group(ja):	³«È¯/¥é¥¤¥Ö¥é¥ê
+Group(no):	Utvikling/Bibliotek
 Group(pl):	Programowanie/Biblioteki
 Group(pt_BR):	Desenvolvimento/Bibliotecas
+Group(pt):	Desenvolvimento/Bibliotecas
 Group(ru):	òÁÚÒÁÂÏÔËÁ/âÉÂÌÉÏÔÅËÉ
+Group(sl):	Razvoj/Knji¾nice
+Group(sv):	Utveckling/Bibliotek
 Group(uk):	òÏÚÒÏÂËÁ/â¦ÂÌ¦ÏÔÅËÉ
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
@@ -207,7 +282,7 @@ Obsoletes:	libmysql10-devel
 This package contains the development header files and libraries
 necessary to develop MySQL client applications.
 
-%description -l pl devel
+%description devel -l pl
 Pliki nag³ówkowe i biblioteki konieczne do kompilacji aplikacji
 klienckich MySQL.
 
@@ -215,7 +290,7 @@ klienckich MySQL.
 Este pacote contém os arquivos de cabeçalho (header files) e
 bibliotecas necessárias para desenvolver aplicações clientes do MySQL.
 
-%description -l fr devel
+%description devel -l fr
 Ce package contient les fichiers entetes et les librairies de
 developpement necessaires pour developper des applications clientes
 MySQL.
@@ -224,12 +299,21 @@ MySQL.
 Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
-Group(de):	Entwicklung/Libraries
+Group(cs):	Vıvojové prostøedky/Knihovny
+Group(da):	Udvikling/Biblioteker
+Group(de):	Entwicklung/Bibliotheken
 Group(es):	Desarrollo/Bibliotecas
 Group(fr):	Development/Librairies
+Group(is):	Şróunartól/Ağgerğasöfn
+Group(it):	Sviluppo/Librerie
+Group(ja):	³«È¯/¥é¥¤¥Ö¥é¥ê
+Group(no):	Utvikling/Bibliotek
 Group(pl):	Programowanie/Biblioteki
 Group(pt_BR):	Desenvolvimento/Bibliotecas
+Group(pt):	Desenvolvimento/Bibliotecas
 Group(ru):	òÁÚÒÁÂÏÔËÁ/âÉÂÌÉÏÔÅËÉ
+Group(sl):	Razvoj/Knji¾nice
+Group(sv):	Utveckling/Bibliotek
 Group(uk):	òÏÚÒÏÂËÁ/â¦ÂÌ¦ÏÔÅËÉ
 Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
@@ -237,7 +321,7 @@ Obsoletes:	MySQL-static
 %description static
 MySQL static libraris.
 
-%description -l pl static
+%description static -l pl
 Biblioteki statyczne MySQL.
 
 %package bench
@@ -245,9 +329,22 @@ Summary:	MySQL - Benchmarks
 Summary(pl):	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Applications/Databases
-Group(de):	Applikationen/Dateibanken
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
+Group(cs):	Aplikace/Databáze
+Group(da):	Programmer/Databaser
+Group(de):	Applikationen/Datenbanken
+Group(es):	Aplicaciones/Bases de Datos
+Group(fr):	Applications/Bases de Données
+Group(id):	Aplikasi/Database
+Group(is):	Forrit/Gagnagrunnar
+Group(it):	Applicazioni/Database
+Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
+Group(no):	Applikasjoner/Databaser
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt):	Aplicações/Bases de Dados
+Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
+Group(sl):	Programi/Zbirke podatkov
+Group(sv):	Tillämpningar/Databaser
+Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Requires:	%{name} = %{version}
 Requires:	%{name}-client
 Obsoletes:	MySQL-bench
@@ -255,10 +352,10 @@ Obsoletes:	MySQL-bench
 %description bench
 This package contains MySQL benchmark scripts and data.
 
-%description -l pl bench
+%description bench -l pl
 Programy testuj±ce szybko¶æ serwera MySQL.
 
-%description -l pt_BR bench
+%description bench -l pt_BR
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
 %prep
