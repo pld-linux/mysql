@@ -4,9 +4,9 @@
 # _with_bdb	       - with Berkeley DB backend
 # _with_small_fulltext - with fulltext indexes lowered from 4 to 3 characters
 #
-#%define	_with_innodb	1
-#%define	_with_bdb	1
-#%define	_with_small_fulltext	1
+#%%define	_with_innodb	1
+#%%define	_with_bdb	1
+#%%define	_with_small_fulltext	1
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -34,6 +34,7 @@ Patch3:		%{name}-moreincludes.patch
 Patch4:		%{name}-info-res.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fulltext-small.patch
+Patch7:		%{name}-c++.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -64,7 +65,11 @@ Obsoletes:	mysql-server
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
+
+%define		_gcc_ver	%(%{__cc} -dumpversion | cut -b 1)
+%if %{_gcc_ver} == 2
 %define		__cxx		"%{__cc}"
+%endif
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -308,6 +313,9 @@ MySQL.
 %patch4 -p1
 %patch5 -p1
 %{?_with_small_fulltext:%patch6 -p0}
+%if %{_gcc_ver} > 2
+%patch7 -p1
+%endif
 
 %build
 rm -f missing
