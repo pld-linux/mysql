@@ -279,9 +279,6 @@ if [ -n "`getgid mysql`" ]; then
 	fi
 else
 	/usr/sbin/groupadd -g 89 -r -f mysql
-	if [ -f /var/db/group.db ]; then
-		/usr/bin/update-db 1>&2
-	fi
 fi
 if [ -n "`id -u mysql 2>/dev/null`" ]; then
 	if [ "`id -u mysql`" != "89" ]; then
@@ -290,9 +287,6 @@ if [ -n "`id -u mysql 2>/dev/null`" ]; then
 	fi
 else
 	/usr/sbin/useradd -u 89 -r -d /var/lib/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
-	if [ -f /var/db/passwd.db ]; then
-		/usr/bin/update-db 1>&2
-	fi
 fi
 
 %post
@@ -316,13 +310,7 @@ fi
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 if [ "$1" = "0" ]; then
 	/usr/sbin/userdel mysql
-	if [ -f /var/db/passwd.db ]; then
-		/usr/bin/update-db
-	fi
 	/usr/sbin/groupdel mysql
-	if [ -f /var/db/group.db ]; then
-		/usr/bin/update-db
-	fi
 fi
 
 %post   libs -p /sbin/ldconfig
