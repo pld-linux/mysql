@@ -38,7 +38,6 @@ Patch6:		%{name}-fulltext-small.patch
 Patch7:		%{name}-c++.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
-Requires:	%{name}-libs = %{version}
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	gcc-c++
@@ -58,6 +57,7 @@ Requires(pre):	/usr/sbin/useradd
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
+Requires:	%{name}-libs = %{version}
 Provides:	MySQL-server
 Provides:	msqlormysql
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
@@ -306,7 +306,7 @@ MySQL.
 Цей пакет м╕стить скрипти та дан╕ для оц╕нки продуктивност╕ MySQL.
 
 %prep
-%setup -q -n %{name}-%{version}
+%setup -q
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
@@ -367,7 +367,10 @@ install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
 
 # Make install
-%{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
+%{__make} install \
+	DESTDIR=$RPM_BUILD_ROOT \
+	benchdir=%{_datadir}/sql-bench
+
 install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
