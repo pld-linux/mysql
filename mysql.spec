@@ -298,6 +298,7 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog}
 # remove mysqld's *.po files
 find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
+perl -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
 
 %pre
 if [ -n "`getgid mysql`" ]; then
