@@ -12,11 +12,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.18
-Release:	3
+Version:	4.0.20
+Release:	1
 License:	GPL/LGPL
-Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	702151a3e21d9e5f32e8850032aefdad
+Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
+# Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -419,6 +419,8 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 %{__perl} -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
+
+rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 
 %clean
 rm -rf $RPM_BUILD_ROOT
