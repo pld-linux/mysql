@@ -9,7 +9,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.49
-Release:	3
+Release:	4
 License:	GPL/LGPL
 Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -435,11 +435,12 @@ fi
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_libdir}/lib*.la
 %attr(755,root,root) %{_libdir}/lib*.so
+%{_libdir}/lib*[^t].a
 %{_includedir}/mysql
 
 %files static
 %defattr(644,root,root,755)
-%{_libdir}/lib*.a
+%{_libdir}/lib*t.a
 
 %files bench
 %defattr(644,root,root,755)
