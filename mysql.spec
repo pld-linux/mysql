@@ -19,7 +19,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.57
-Release:	1
+Release:	2
 License:	GPL/LGPL
 #http://www.mysql.com/Downloads/MySQL-3.23/mysql-3.23.54a.tar.gz shows mirrors list
 Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
@@ -36,6 +36,7 @@ Patch4:		%{name}-info-res.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fulltext-small.patch
 Patch7:		%{name}-c++.patch
+Patch8:		%{name}-manfixes.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -317,6 +318,7 @@ MySQL.
 %if %{_gcc_ver} > 2
 %patch7 -p1
 %endif
+%patch8 -p1
 
 %build
 rm -f missing
