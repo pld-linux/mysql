@@ -1,12 +1,6 @@
 #
 # Conditional build:
-# _with_innodb	       - with InnoDB backend
-# _with_bdb	       - with Berkeley DB backend
-# _with_small_fulltext - with fulltext indexes lowered from 4 to 3 characters
 #
-#%%define	_with_innodb	1
-#%%define	_with_bdb	1
-#%%define	_with_small_fulltext	1
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -18,31 +12,26 @@ Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Group:		Applications/Databases
-Version:	3.23.55
-Release:	2
+Version:	4.0.9
+Release:	1
 License:	GPL/LGPL
-#http://www.mysql.com/Downloads/MySQL-3.23/mysql-3.23.54a.tar.gz shows mirrors list
-Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
+Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-4.0.9-gamma.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
-Patch0:		%{name}-info.patch
-Patch1:		%{name}-no_libnsl.patch
-Patch2:		%{name}-opt.patch
-Patch3:		%{name}-moreincludes.patch
-Patch4:		%{name}-info-res.patch
-Patch5:		%{name}-noproc.patch
-Patch6:		%{name}-fulltext-small.patch
-Patch7:		%{name}-c++.patch
+Patch0:		%{name}-libs.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
+BuildRequires:	ORBit-devel
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	gcc-c++
 BuildRequires:	libtool
+BuildRequires:	libwrap-devel
 BuildRequires:	ncurses-devel >= 4.2
+BuildRequires:	openssl-devel
 BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 5.6.1
 BuildRequires:	readline-devel >= 4.2
@@ -305,17 +294,8 @@ MySQL.
 Цей пакет м╕стить скрипти та дан╕ для оц╕нки продуктивност╕ MySQL.
 
 %prep
-%setup -q -n %{name}-%{version}
+%setup -q -n %{name}-%{version}-gamma
 %patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%{?_with_small_fulltext:%patch6 -p0}
-%if %{_gcc_ver} > 2
-%patch7 -p1
-%endif
 
 %build
 rm -f missing
@@ -327,20 +307,21 @@ CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 %configure \
 	-C \
-	%{!?debug:--without-debug} \
-	%{?_with_innodb:--with-innodb}  \
-	%{?_with_bdb:--with-berkeley-db} \
-	--without-debug \
+	--with-pthread \
+	--with-raid \
+	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
+	--with-mysqld-user=mysql \
+	--with-libwrap \
+	--with%{!?debug:out}-debug \
+	--with-embedded-server \
+	--with-mysqlfs \
+	--with-vio \
+	--with-openssl \
+	--with-extra-charsets=all \
 	--enable-shared \
 	--enable-static \
-	--enable-assembler \
-	--with-pthread \
 	--with-named-curses-libs="-lncurses" \
 	--enable-assembler \
-	--with-raid \
-	--with-extra-charsets=all \
-	--with-mysqld-user=mysql \
-	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--without-readline \
 	--without-docs \
 	--with-low-memory  \
@@ -357,13 +338,8 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT%{_infodir} \
 	   $RPM_BUILD_ROOT/home/services/mysql
 
-%if %{?_with_innodb:1}%{!?_with_innodb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
-%endif
-
-%if %{?_with_bdb:1}%{!?_with_bdb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
-%endif
 
 # Make install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
