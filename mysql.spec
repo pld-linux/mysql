@@ -111,7 +111,18 @@ Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-libs = %{version}
 
 %description extras
-MySQL additional utilities 
+MySQL additional utilities except Perl scripts (they may be found in
+%{name}-extras-perl package)
+
+%package extras-perl
+Summary:	MySQL additional utilities written in Perl
+Group:		Applications/Databases
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt):	Aplicações/Banco_de_Dados
+Requires:	%{name}-extras = %{version}
+
+%description extras-perl
+MySQL additional utilities written in Perl.
 
 %package client
 Summary:	MySQL - Client
@@ -367,14 +378,17 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
-%attr(755,root,root) %{_bindir}/mysql_setpermission
-%attr(755,root,root) %{_bindir}/mysql_zap
-%attr(755,root,root) %{_bindir}/mysql_find_rows
-%attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/print_defaults
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
+
+%files extras-perl
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/mysql_setpermission
+%attr(755,root,root) %{_bindir}/mysql_zap
+%attr(755,root,root) %{_bindir}/mysql_find_rows
+%attr(755,root,root) %{_bindir}/mysqlaccess
 
 %files client
 %defattr(644,root,root,755)
