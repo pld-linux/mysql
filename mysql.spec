@@ -8,7 +8,7 @@ Group:		Applications/Databases
 Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.23.39
+Version:	3.23.40
 Release:	1
 License:	GPL/LGPL
 Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
@@ -251,14 +251,14 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %patch4 -p1
 
 %build
-rm -f missing 
-libtoolize --copy --force
-aclocal
-automake -a -c
-autoconf
+#rm -f missing 
+#libtoolize --copy --force
+#aclocal
+#automake -a -c
+#autoconf
 CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{rpmcflags} -fomit-frame-pointer"
-%configure \
+%configure2_13 \
 	%{?_with_innodb:--with-innodb}  \
 	%{?_with_bdb:--with-berkeley-db} \
 	--without-debug \
