@@ -1,0 +1,1 @@
+- added no_libbind patch for not linking mysqld against libbind.
