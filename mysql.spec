@@ -2,11 +2,15 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
-# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1011008.html
-# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1010979.html
+# - what's the libwrapper constistent name, i see in specs 'libwrap', 'tcpd', 'tcp_wrappers'
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
+%bcond_without	innodb	# Without InnoDB support
+%bcond_without	isam	# Without ISAM table format (used in mysql 3.22)
+%bcond_without	raid	# Without raid
+%bcond_without	ssl	# Without OpenSSL
+%bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -18,11 +22,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.20
-Release:	4
-License:	GPL
-Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
+Version:	4.0.24
+Release:	1
+License:	GPL + MySQL FLOSS Exception
+Source0:	http://mysql.mainseek.com/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
+# Source0-md5:	408d3001ed715ddc90009c247e548638
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -34,11 +38,10 @@ Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
-Patch5:		%{name}-dump_quote_db_names.patch
-Patch7:		%{name}-sql-cxx-pic.patch
-Patch8:		%{name}-noproc.patch
-Patch9:		%{name}-fix_privilege_tables.patch
-Patch10:	%{name}-nptl.patch
+Patch5:		%{name}-sql-cxx-pic.patch
+Patch6:		%{name}-noproc.patch
+Patch7:		%{name}-fix_privilege_tables.patch
+Patch8:		%{name}-nptl.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -48,13 +51,14 @@ BuildRequires:	automake
 %{?with_bdb:BuildRequires:	db3-devel}
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
-BuildRequires:	libwrap-devel
+%{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
-BuildRequires:	openssl-devel >= 0.9.7d
+%{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
 BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
+BuildRequires:	rpmbuild(macros) >= 1.159
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 PreReq:		rc-scripts >= 0.2.0
@@ -68,10 +72,12 @@ Requires(post,preun):	/sbin/chkconfig
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
+Provides:	group(mysql)
 Provides:	msqlormysql
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
+BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
@@ -246,7 +252,7 @@ Summary(ru):	MySQL - ÈÅÄÅÒÙ É ÂÉÂÌÉÏÔÅËÉ ÒÁÚÒÁÂÏÔÞÉËÁ
 Summary(uk):	MySQL - ÈÅÄÅÒÉ ÔÁ Â¦ÂÌ¦ÏÔÅËÉ ÐÒÏÇÒÁÍ¦ÓÔÁ
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
-Requires:	openssl-devel
+%{?with_ssl:Requires:	openssl-devel}
 Requires:	zlib-devel
 Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
@@ -345,25 +351,23 @@ Podrêcznik MySQL-a w formacie HTML.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-#%patch5 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
-%patch7 -p1
+%patch5 -p1
 %endif
+%patch6 -p1
+%patch7 -p1
 %patch8 -p1
-%patch9 -p1
-%patch10 -p1
-
-%{__perl} -pi -e 's@/lib/libpthread@/%{_lib}/libpthread@' configure.in
 
 %build
 %{__libtoolize}
 %{__aclocal}
 %{__automake}
 %{__autoconf}
-CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
+# The compiler flags are as per their "official" spec ;)
+CXXFLAGS="%{rpmcflags} -felide-constructors -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
 CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 %configure \
 	PS='/bin/ps' \
@@ -375,18 +379,20 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--enable-shared \
 	--enable-static \
 	--enable-thread-safe-client \
-	%{?with_bdb:--with-berkeley-db} \
+	--with%{!?with_bdb:out}-berkeley-db \
+	--with%{!?with_innodb:out}-innodb \
+	--with%{!?with_isam:out}-isam \
+	--with%{!?with_raid:out}-raid \
+	--with%{!?with_ssl:out}-openssl \
+	--with%{!?with_tcpd:out}-libwrap \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--with%{!?debug:out}-debug \
 	--with-embedded-server \
 	--with-extra-charsets=all \
-	--with-libwrap \
 	--with-low-memory \
 	--with-mysqld-user=mysql \
 	--with-named-curses-libs="-lncurses" \
-	--with-openssl \
 	--with-pthread \
-	--with-raid \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-vio \
 	--without-readline \
@@ -400,6 +406,8 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
+# workaround for missing files
+(cd Docs; touch Images/cluster-components-1.txt Images/multi-comp-1.txt errmsg-table.texi cl-errmsg-table.texi)
 %{__make} -C Docs mysql.info
 
 %install
@@ -426,9 +434,24 @@ install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'
 install %{SOURCE4} $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
+install %{SOURCE4} mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT/etc/mysql/clusters.conf
 install %{SOURCE6} $RPM_BUILD_ROOT/etc/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
+
+# remove innodb directives from mysqld.conf if mysqld is configured without
+%if !%{with innodb}
+	cp mysqld.conf mysqld.tmp
+	awk 'BEGIN { RS="\n\n" } !/innodb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
+%endif
+
+# remove berkeley-db directives from mysqld.conf if mysqld is configured without
+%if !%{with bdb}
+	cp mysqld.conf mysqld.tmp
+	awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
+%endif
+
+install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
 
 # remove mysqld's *.po files
 find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
@@ -441,21 +464,21 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 rm -rf $RPM_BUILD_ROOT
 
 %pre
-if [ -n "`getgid mysql`" ]; then
-	if [ "`getgid mysql`" != "89" ]; then
+if [ -n "`/usr/bin/getgid mysql`" ]; then
+	if [ "`/usr/bin/getgid mysql`" != "89" ]; then
 		echo "Error: group mysql doesn't have gid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/groupadd -g 89 -r -f mysql
+	/usr/sbin/groupadd -g 89 mysql
 fi
-if [ -n "`id -u mysql 2>/dev/null`" ]; then
-	if [ "`id -u mysql`" != "89" ]; then
+if [ -n "`/bin/id -u mysql 2>/dev/null`" ]; then
+	if [ "`/bin/id -u mysql`" != "89" ]; then
 		echo "Error: user mysql doesn't have uid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/useradd -M -o -r -u 89 \
+	/usr/sbin/useradd -u 89 \
 			-d %{_mysqlhome} -s /bin/sh -g mysql \
 			-c "MySQL Server" mysql 1>&2
 fi
@@ -480,8 +503,8 @@ fi
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 if [ "$1" = "0" ]; then
-	/usr/sbin/userdel mysql
-	/usr/sbin/groupdel mysql
+	%userremove mysql
+	%groupremove mysql
 fi
 
 %post   libs -p /sbin/ldconfig
@@ -598,6 +621,7 @@ fi
 
 %files libs
 %defattr(644,root,root,755)
+%doc EXCEPTIONS-CLIENT
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
 
 %files devel
