@@ -1,6 +1,9 @@
 #
+# TODO: fix security hole created by storing mysqld.conf in directory(-ies)
+#	writable by mysql user
+#
 # Conditional build:
-# _with_bdb - Berkeley DB support
+%bcond_with	bdb	# Berkeley DB support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -33,10 +36,11 @@ Patch9:		%{name}-fix_privilege_tables.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
+BuildRequires:	SECURITY-FIX
 BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
-%{?_with_bdb:BuildRequires:	db3-devel}
+%{?with_bdb:BuildRequires:	db3-devel}
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
@@ -364,7 +368,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-mysqld-user=mysql \
 	--with-libwrap \
 	--with%{!?debug:out}-debug \
-	%{?_with_bdb:--with-berkeley-db} \
+	%{?with_bdb:--with-berkeley-db} \
 	--with-embedded-server \
 	--with-vio \
 	--with-openssl \
@@ -391,7 +395,7 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/{db,innodb/{data,log}}} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
-%if 0%{?_with_bdb:1}
+%if %{with bdb}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
 
