@@ -9,12 +9,13 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.22.32
-Release:	6
-License:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
+Release:	7
+License:	MySQL FREE PUBLIC LICENSE (See the manual)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	mysql.init
 Source2:	mysql.sysconfig
 Source3:	mysql.logrotate
+Source4:	mysqld.conf
 Patch0:		mysql-info.patch
 Patch1:		mysql-no_libbind.patch
 Patch2:		mysql-perldep.patch
@@ -33,8 +34,7 @@ Provides:	msqlormysql MySQL-server
 Obsoletes:	MySQL
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
-%define		_libexecdir	%{_prefix}/sbin
-%define		_sysconfdir	/etc
+%define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
 
 %description
@@ -102,6 +102,16 @@ em um ambiente de produção com alta demanda por muitos anos. Mesmo o
 MySQL estando ainda em desenvolvimento, ele já oferece um conjunto de
 funções muito ricas e úteis. Veja a documentação para maiores
 informações.
+
+%package extras
+Summary:	MySQL additional utilities 
+Group:		Applications/Databases
+Group(pl):	Aplikacje/Bazy Danych
+Group(pt):	Aplicações/Banco_de_Dados
+Requires:	%{name}-libs = %{version}
+
+%description extras
+MySQL additional utilities 
 
 %package client
 Summary:	MySQL - Client
@@ -220,10 +230,12 @@ export LDFLAGS CXXFLAGS
 	--with-mysqld-user=mysql \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-comment='Polish Linux Distribution MySQL RPM' \
-	--with-readline \
+	--without-readline
 	--with-low-memory
-	
 # If you have much RAM you can remove --with-low-memory
+
+# To build mysqld as static binary add option
+#	--with-mysqld-ldflags='-all-static' 
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 (cd Docs; make info manual.texi)
@@ -231,7 +243,7 @@ export LDFLAGS CXXFLAGS
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
-	$RPM_BUILD_ROOT/var/{log,lib/mysql}
+	$RPM_BUILD_ROOT/var/{log/mysql,lib/mysql}
 
 # Make install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
@@ -239,13 +251,15 @@ install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
-touch $RPM_BUILD_ROOT/var/log/mysqld.log
+install %{SOURCE4} $RPM_BUILD_ROOT/etc/mysqld.conf
+touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog}
 
-find Docs -type f ! -name *.gif ! -name *.html -exec rm {} \;
+find Docs -type f ! -name \*.gif ! -name \*.html -exec rm -f {} \;
 find . -name ./CVS -exec rm -rf {} \;
+# remove mysqld's *.po files
+find . $RPM_BUILD_ROOT%{_datadir}/mysql -name \*.txt | xargs -n 100 rm -f
 
 mv $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-
 strip --strip-unneeded $RPM_BUILD_ROOT%{_libdir}/lib*.so*.*
 
 gzip -9nf $RPM_BUILD_ROOT{%{_mandir}/man1/*,%{_infodir}/mysql.info*}
@@ -268,7 +282,7 @@ if [ -n "`id -u mysql 2>/dev/null`" ]; then
 		exit 1
 	fi
 else
-	/usr/sbin/useradd -u 89 -r -m -d /var/lib/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
+	/usr/sbin/useradd -u 89 -r -d /var/lib/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
 	if [ -f /var/db/passwd.db ]; then
 		/usr/bin/update-db 1>&2
 	fi
@@ -312,26 +326,22 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
+%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/logrotate.d/mysql
+%attr(754,root,root) /etc/rc.d/init.d/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/mysqld.conf
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
-%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
-%attr(755,root,root) %{_bindir}/mysql_setpermission
-%attr(755,root,root) %{_bindir}/mysql_zap
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbug
-%attr(755,root,root) %{_bindir}/perror
-%attr(755,root,root) %{_bindir}/replace
-%attr(755,root,root) %{_bindir}/resolveip
 %attr(755,root,root) %{_sbindir}/mysqld
-%attr(640,root,root) /etc/logrotate.d/mysql
-%attr(754,root,root) /etc/rc.d/init.d/mysql
-%attr(640,root,root) %config(noreplace) /etc/sysconfig/mysql
-%{_infodir}/mysql.info*
-%dir %{_datadir}/mysql
 
 %attr(751,mysql,mysql) %dir /var/lib/mysql
-%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/*
+%attr(750,mysql,mysql) %dir /var/log/mysql
+%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/mysql/*
 
+%{_infodir}/mysql.info*
+%dir %{_datadir}/mysql
 %{_datadir}/mysql/english
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
@@ -353,6 +363,16 @@ rm -rf $RPM_BUILD_ROOT
 %lang(es) %{_datadir}/mysql/spanish
 %lang(sv) %{_datadir}/mysql/swedish
 
+%files extras
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
+%attr(755,root,root) %{_bindir}/mysql_setpermission
+%attr(755,root,root) %{_bindir}/mysql_zap
+%attr(755,root,root) %{_bindir}/perror
+%attr(755,root,root) %{_bindir}/print_defaults
+%attr(755,root,root) %{_bindir}/replace
+%attr(755,root,root) %{_bindir}/resolveip
+
 %files client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
@@ -373,7 +393,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_libdir}/lib*.la
 %attr(755,root,root) %{_libdir}/lib*.so
-%attr(755,root,root) %{_bindir}/comp_err
 %{_includedir}/mysql
 
 %files static
