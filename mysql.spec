@@ -107,7 +107,8 @@ funções muito ricas e úteis. Veja a documentação para maiores
 informações.
 
 %package extras
-Summary:	MySQL additional utilities 
+Summary:	MySQL additional utilities
+Summary(pl):	Dodatkowe narzêdzia do MySQL
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
@@ -117,8 +118,13 @@ Requires:	%{name}-libs = %{version}
 MySQL additional utilities except Perl scripts (they may be found in
 %{name}-extras-perl package)
 
+%description -l pl extras
+Dodatkowe narzêdzia do MySQL - z wyj±tkiem skryptów Perla (które s±
+w pakiecie %{name}-extras-perl).
+
 %package extras-perl
 Summary:	MySQL additional utilities written in Perl
+Summary(pl):	Dodatkowe narzêdzia do MySQL napisane w Perlu
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
@@ -126,6 +132,9 @@ Requires:	%{name}-extras = %{version}
 
 %description extras-perl
 MySQL additional utilities written in Perl.
+
+%description -l pl extras-perl
+Dodatkowe narzêdzia do MySQL napisane w Perlu.
 
 %package client
 Summary:	MySQL - Client
@@ -151,11 +160,15 @@ Este pacote contém os clientes padrão para o MySQL.
 
 %package libs
 Summary:	Shared libraries for MySQL
+Summary(pl):	Biblioteki dzielone MySQL
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 
 %description libs
 Shared libraries for MySQL.
+
+%description -l pl libs
+Biblioteki dzielone MySQL.
 
 %package devel
 Summary:	MySQL - Development header files and libraries
@@ -196,7 +209,7 @@ Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
 
 %description static
-MySQL staic libraris.
+MySQL static libraris.
 
 %description -l pl static
 Biblioteki statyczne MySQL.
