@@ -16,11 +16,11 @@ Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.21
-Release:	3
+Version:	4.0.22
+Release:	1
 License:	GPL + MySQL FLOSS Exception
-Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	0a3dae16519afa5e59d8b9e252181243
+Source0:	http://mysql.mainseek.com/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
+# Source0-md5:	fab53259c3ba9f729a319bf271fc8587
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
