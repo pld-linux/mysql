@@ -1,6 +1,5 @@
 %include	/usr/lib/rpm/macros.perl
-%define		__find_requires %{_builddir}/mysql-%{version}-gamma/find-perl-requires
-
+%define		__find_requires %{_builddir}/mysql-%{version}a-gamma/find-perl-requires
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
@@ -9,10 +8,10 @@ Name:		mysql
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.23.28
+Version:	3.23.29
 Release:	1
 License:	GPL/LGPL
-Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}-gamma.tar.gz
+Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}a-gamma.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -20,7 +19,6 @@ Source4:	%{name}d.conf
 Patch0:		%{name}-info.patch
 Patch1:		%{name}-no_libbind.patch
 Patch2:		%{name}-perldep.patch
-Patch3:		%{name}-gethostbyname_r_is_in_libc_aka_no_libnsl.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -219,11 +217,10 @@ Programy testuj±ce szybko¶æ serwera MySQL.
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
 %prep
-%setup -q -n %{name}-%{version}-gamma
+%setup -q -n %{name}-%{version}a-gamma
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-#%patch3 -p1
 
 chmod +x find-perl-requires
 
