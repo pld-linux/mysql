@@ -267,7 +267,7 @@ bibliotecas necessАrias para desenvolver aplicaГУes clientes do MySQL.
 розробки програм-кл╕╓нт╕в.
 
 %package static
-Summary:	MySQL staic libraris
+Summary:	MySQL static libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Summary(ru):	MySQL - статические библиотеки
 Summary(uk):	MySQL - статичн╕ б╕бл╕отеки
