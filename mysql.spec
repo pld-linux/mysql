@@ -31,6 +31,7 @@ BuildRequires:	readline-devel
 BuildRequires:	rpm-perlprov
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
+BuildRequires:	autoconf
 Prereq:		rc-scripts >= 0.2.0
 Prereq:		shadow
 Provides:	msqlormysql MySQL-server
