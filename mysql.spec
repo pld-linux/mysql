@@ -26,9 +26,8 @@ Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-noproc.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
-Patch5:		%{name}-dump_quote_db_names.patch
-Patch6:		%{name}-sql-cxx-pic.patch
-Patch7:		%{name}-fix_privilege_tables.patch
+Patch5:		%{name}-sql-cxx-pic.patch
+Patch6:		%{name}-fix_privilege_tables.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	/bin/ps
@@ -336,14 +335,13 @@ Podrêcznik MySQL-a w formacie HTML.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
-%patch6 -p1
+%patch5 -p1
 %endif
-%patch7 -p1
+%patch6 -p1
 
 %build
 %{__libtoolize}
