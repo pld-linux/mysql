@@ -1,6 +1,6 @@
 # TODO:
 # - trigger that prepares system from pre-cluster into cluster
-# - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible 
+# - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
 #
 # Conditional build:
@@ -77,7 +77,7 @@ Obsoletes:	mysql-server
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
 # workaround for buggy gcc 3.3.1
-%define 	specflags_alpha  -mno-explicit-relocs 
+%define 	specflags_alpha  -mno-explicit-relocs
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -334,7 +334,7 @@ Group:		Applications/Databases
 This package contains manual in HTML format.
 
 %description doc -l pl
-Podrêcznik MySQL-a w formacie HTML. 
+Podrêcznik MySQL-a w formacie HTML.
 
 %prep
 %setup -q
@@ -385,7 +385,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-openssl \
 	--with-pthread \
 	--with-raid \
-	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
+	--with-unix-socket-path=/var/lib/mysql/mysqldb/mysql.sock \
 	--with-vio \
 	--without-readline \
 	--without-docs
