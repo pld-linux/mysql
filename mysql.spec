@@ -2,6 +2,7 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible 
 #   conflict with /var/lib/mysql/mysqld.conf
+# - fix mysql.init
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -17,7 +18,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.20
-Release:	2.2
+Release:	2.3
 License:	GPL/LGPL
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
