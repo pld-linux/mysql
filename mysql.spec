@@ -338,6 +338,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
+%attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_sbindir}/mysqld
 
 %attr(751,mysql,mysql) %dir /var/lib/mysql
@@ -364,6 +365,7 @@ rm -rf $RPM_BUILD_ROOT
 %lang(no@nynorsk) %{_datadir}/mysql/norwegian-ny
 %lang(pl) %{_datadir}/mysql/polish
 %lang(pt) %{_datadir}/mysql/portuguese
+%lang(ro) %{_datadir}/mysql/romanian
 %lang(ru) %{_datadir}/mysql/russian
 %lang(sk) %{_datadir}/mysql/slovak
 %lang(es) %{_datadir}/mysql/spanish
@@ -382,6 +384,7 @@ rm -rf $RPM_BUILD_ROOT
 %files extras-perl
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_convert_table_format
+%attr(755,root,root) %{_bindir}/mysqldumpslow
 %attr(755,root,root) %{_bindir}/mysqlhotcopy
 %attr(755,root,root) %{_bindir}/mysql_setpermission
 %attr(755,root,root) %{_bindir}/mysql_zap
