@@ -2,8 +2,6 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
-# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1011008.html
-# - SECURITY: http://securitytracker.com/alerts/2004/Aug/1010979.html
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -18,11 +16,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.20
-Release:	4
-License:	GPL
-Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
+Version:	4.0.22
+Release:	1
+License:	GPL + MySQL FLOSS Exception
+Source0:	http://mysql.mainseek.com/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
+# Source0-md5:	fab53259c3ba9f729a319bf271fc8587
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -34,11 +32,10 @@ Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
-Patch5:		%{name}-dump_quote_db_names.patch
-Patch7:		%{name}-sql-cxx-pic.patch
-Patch8:		%{name}-noproc.patch
-Patch9:		%{name}-fix_privilege_tables.patch
-Patch10:	%{name}-nptl.patch
+Patch5:		%{name}-sql-cxx-pic.patch
+Patch6:		%{name}-noproc.patch
+Patch7:		%{name}-fix_privilege_tables.patch
+Patch8:		%{name}-nptl.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -55,6 +52,7 @@ BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
+BuildRequires:	rpmbuild(macros) >= 1.159
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 PreReq:		rc-scripts >= 0.2.0
@@ -68,10 +66,12 @@ Requires(post,preun):	/sbin/chkconfig
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
+Provides:	group(mysql)
 Provides:	msqlormysql
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
+BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
@@ -345,16 +345,15 @@ Podrêcznik MySQL-a w formacie HTML.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-#%patch5 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
-%patch7 -p1
+%patch5 -p1
 %endif
+%patch6 -p1
+%patch7 -p1
 %patch8 -p1
-%patch9 -p1
-%patch10 -p1
 
 %{__perl} -pi -e 's@/lib/libpthread@/%{_lib}/libpthread@' configure.in
 
@@ -441,21 +440,21 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 rm -rf $RPM_BUILD_ROOT
 
 %pre
-if [ -n "`getgid mysql`" ]; then
-	if [ "`getgid mysql`" != "89" ]; then
+if [ -n "`/usr/bin/getgid mysql`" ]; then
+	if [ "`/usr/bin/getgid mysql`" != "89" ]; then
 		echo "Error: group mysql doesn't have gid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/groupadd -g 89 -r -f mysql
+	/usr/sbin/groupadd -g 89 mysql
 fi
-if [ -n "`id -u mysql 2>/dev/null`" ]; then
-	if [ "`id -u mysql`" != "89" ]; then
+if [ -n "`/bin/id -u mysql 2>/dev/null`" ]; then
+	if [ "`/bin/id -u mysql`" != "89" ]; then
 		echo "Error: user mysql doesn't have uid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/useradd -M -o -r -u 89 \
+	/usr/sbin/useradd -u 89 \
 			-d %{_mysqlhome} -s /bin/sh -g mysql \
 			-c "MySQL Server" mysql 1>&2
 fi
@@ -480,8 +479,8 @@ fi
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 if [ "$1" = "0" ]; then
-	/usr/sbin/userdel mysql
-	/usr/sbin/groupdel mysql
+	%userremove mysql
+	%groupremove mysql
 fi
 
 %post   libs -p /sbin/ldconfig
@@ -598,6 +597,7 @@ fi
 
 %files libs
 %defattr(644,root,root,755)
+%doc EXCEPTIONS-CLIENT
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
 
 %files devel
