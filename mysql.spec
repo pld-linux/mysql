@@ -5,11 +5,11 @@
 # - what's the libwrapper constistent name, i see in specs 'libwrap', 'tcpd', 'tcp_wrappers'
 #
 # Conditional build:
-%bcond_with		bdb		# Berkeley DB support
+%bcond_with	bdb	# Berkeley DB support
 %bcond_without	innodb	# Without InnoDB support
 %bcond_without	isam	# Without ISAM table format (used in mysql 3.22)
 %bcond_without	raid	# Without raid
-%bcond_without	ssl		# Without OpenSSL
+%bcond_without	ssl	# Without OpenSSL
 %bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
 #
 %include	/usr/lib/rpm/macros.perl
