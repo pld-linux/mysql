@@ -18,12 +18,12 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	3.23.57
-Release:	3
+Version:	3.23.58
+Release:	1
 License:	GPL/LGPL
 #http://www.mysql.com/Downloads/MySQL-3.23/mysql-3.23.54a.tar.gz shows mirrors list
 Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
-# Source0-md5:	892f7d97af1ce7502e89d824031abd05
+# Source0-md5:	835a96c86132fbde0db36db60c5b34cd
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -37,7 +37,6 @@ Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fulltext-small.patch
 Patch7:		%{name}-c++.patch
 Patch8:		%{name}-manfixes.patch
-Patch9:		%{name}-buffer.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -321,10 +320,8 @@ MySQL.
 %patch7 -p1
 %endif
 %patch8 -p1
-%patch9 -p1
 
 %build
-rm -f missing
 %{__libtoolize}
 %{__aclocal}
 %{__automake}
