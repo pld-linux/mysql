@@ -492,7 +492,7 @@ if [ -f "/etc/sysconfig/mysql" ]; then
 		echo "# Do not use **obsolete** option MYSQL_DB_CLUSTERS" >> /etc/sysconfig/mysql
 		echo "# USE /etc/mysql/clusters.conf instead" >> /etc/sysconfig/mysql
 		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/mysql/clusters.conf."
-		echo "Take a look at that."
+		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/mysql/clusters.conf."
 	fi
 fi
 
