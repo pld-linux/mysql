@@ -54,9 +54,9 @@ diff -Nru mysql-3.23.42/Makefile.am mysql-3.23.42.new/Makefile.am
  	echo timestamp > linked_server_sources
  
  # Create permission databases
---- mysql-3.23.43/client/Makefile.am.orig	Wed Oct  3 18:08:29 2001
-+++ mysql-3.23.43/client/Makefile.am	Sat Oct  6 19:17:48 2001
-@@ -19,27 +19,17 @@
+--- mysql-3.23.48/client/Makefile.am.orig	Thu Feb  7 21:46:47 2002
++++ mysql-3.23.48/client/Makefile.am	Wed Feb 13 20:19:00 2002
+@@ -19,28 +19,18 @@
  INCLUDES =			-I$(srcdir)/../include \
  				-I../include -I$(srcdir)/.. -I$(top_srcdir) \
  				-I..
@@ -71,6 +71,8 @@ diff -Nru mysql-3.23.42/Makefile.am mysql-3.23.42.new/Makefile.am
  				client_priv.h
  mysql_SOURCES =			mysql.cc readline.cc sql_string.cc completion_hash.cc
 -mysql_LDADD =			@readline_link@ @TERMCAP_LIB@ $(LDADD) $(CXXLDFLAGS)
++mysql_LDADD =			$(readline_link) $(TERMCAP_LIB) $(LDADD) $(CXXLDFLAGS)
+ mysqlbinlog_LDADD =		$(LDADD) $(CXXLDFLAGS)
 -mysql_DEPENDENCIES=		$(LIBRARIES) $(pkglib_LTLIBRARIES)
 -mysqladmin_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
 -mysqlcheck_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
@@ -79,7 +81,6 @@ diff -Nru mysql-3.23.42/Makefile.am mysql-3.23.42.new/Makefile.am
 -mysqlimport_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
 -insert_test_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
 -select_test_DEPENDENCIES=	$(LIBRARIES) $(pkglib_LTLIBRARIES)
-+mysql_LDADD =			$(readline_link) $(TERMCAP_LIB) $(LDADD) $(CXXLDFLAGS)
  mysqltest_SOURCES=			mysqltest.c
 -mysqltest_DEPENDENCIES=   	$(LIBRARIES) $(pkglib_LTLIBRARIES)
  mysqlbinlog_SOURCES =   mysqlbinlog.cc 
@@ -87,7 +88,7 @@ diff -Nru mysql-3.23.42/Makefile.am mysql-3.23.42.new/Makefile.am
  sql_src=log_event.h log_event.cc
  
  # Fix for mit-threads
-@@ -48,11 +38,11 @@
+@@ -49,11 +39,11 @@
  link_sources:
  	for f in $(sql_src) ; do \
  	  rm -f $(srcdir)/$$f; \
