@@ -10,12 +10,3 @@ diff -urN mysql-4.1.7.org/scripts/mysql_fix_privilege_tables.sh mysql-4.1.7/scri
  sql_only=0
  basedir=""
  verbose=0
-@@ -15,7 +15,7 @@
- database="mysql"
- bindir=""
- 
--file=mysql_fix_privilege_tables.sql
-+file=/usr/share/mysql/mysql_fix_privilege_tables.sql
- 
- # The following test is to make this script compatible with the 4.0 where
- # the single argument could be a password
