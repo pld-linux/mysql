@@ -15,11 +15,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.17
+Version:	4.0.18
 Release:	0.1
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	141511e1b7cab3a886fb68bbb507a1ab
+# Source0-md5:	702151a3e21d9e5f32e8850032aefdad
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -36,7 +36,6 @@ Patch9:		%{name}-fix_privilege_tables.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
-BuildRequires:	SECURITY-FIX
 BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
