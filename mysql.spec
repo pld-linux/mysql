@@ -303,8 +303,8 @@ MySQL.
 rm -f missing
 libtoolize --copy --force
 aclocal
-automake -a -c -f
-autoconf
+%{__automake}
+%{__autoconf}
 CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 %configure \
