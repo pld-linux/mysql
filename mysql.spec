@@ -234,6 +234,7 @@ Summary(ru):	MySQL - хедеры и библиотеки разработчика
 Summary(uk):	MySQL - хедери та б╕бл╕отеки програм╕ста
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}
+Requires:	openssl-devel
 Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
 
