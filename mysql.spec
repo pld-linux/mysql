@@ -11,7 +11,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.51
-Release:	3
+Release:	4
 License:	GPL/LGPL
 Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -153,7 +153,9 @@ Summary:	MySQL additional utilities written in Perl
 Summary(pl):	Dodatkowe narz阣zia do MySQL napisane w Perlu
 Group:		Applications/Databases
 Requires:	%{name}-extras = %{version}
-Requires:	perl-Msql-Mysql-modules
+Requires:	perl(DBD::mysql)
+
+%define		_noautoreqdep	"perl(DBD::mysql)"
 
 %description extras-perl
 MySQL additional utilities written in Perl.
