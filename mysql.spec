@@ -53,6 +53,7 @@ BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
+BuildRequires:	rpmbuild(macros) >= 1.159
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 PreReq:		rc-scripts >= 0.2.0
@@ -66,10 +67,12 @@ Requires(post,preun):	/sbin/chkconfig
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
+Provides:	group(mysql)
 Provides:	msqlormysql
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
+BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
@@ -439,21 +442,21 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 rm -rf $RPM_BUILD_ROOT
 
 %pre
-if [ -n "`getgid mysql`" ]; then
-	if [ "`getgid mysql`" != "89" ]; then
+if [ -n "`/usr/bin/getgid mysql`" ]; then
+	if [ "`/usr/bin/getgid mysql`" != "89" ]; then
 		echo "Error: group mysql doesn't have gid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/groupadd -g 89 -r -f mysql
+	/usr/sbin/groupadd -g 89 mysql
 fi
-if [ -n "`id -u mysql 2>/dev/null`" ]; then
-	if [ "`id -u mysql`" != "89" ]; then
+if [ -n "`/bin/id -u mysql 2>/dev/null`" ]; then
+	if [ "`/bin/id -u mysql`" != "89" ]; then
 		echo "Error: user mysql doesn't have uid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
-	/usr/sbin/useradd -M -o -r -u 89 \
+	/usr/sbin/useradd -u 89 \
 			-d %{_mysqlhome} -s /bin/sh -g mysql \
 			-c "MySQL Server" mysql 1>&2
 fi
@@ -478,8 +481,8 @@ fi
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 if [ "$1" = "0" ]; then
-	/usr/sbin/userdel mysql
-	/usr/sbin/groupdel mysql
+	%userremove mysql
+	%groupremove mysql
 fi
 
 %post   libs -p /sbin/ldconfig
