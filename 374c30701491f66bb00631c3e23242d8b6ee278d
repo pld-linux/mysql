@@ -1,0 +1,2 @@
+- added am15 patch (fixes for allow use automake 1.5 on regenerate am suit),
+- added automake, libtool to BuildRequires list.
