@@ -20,7 +20,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.7
-Release:	0.1
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/mysql-%{version}.tar.gz
 # Source0-md5:	04c08d2a5cc39050d9fa4727f8f197e8
