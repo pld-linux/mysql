@@ -1,3 +1,4 @@
+%include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybki i niezawodna baza danych (SQL)
@@ -23,6 +24,8 @@ BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
 BuildRequires:	readline-devel
 BuildRequires:	texinfo
+BuildRequires:	rpm-perlprov
+Prereq:		shadow
 Provides:	msqlormysql MySQL-server
 Obsoletes:	MySQL
 BuildRoot:	/tmp/%{name}-%{version}
@@ -32,23 +35,22 @@ BuildRoot:	/tmp/%{name}-%{version}
 %define		_localstatedir	/var/state/mysql
 
 %description
-MySQL is a true multi-user, multi-threaded SQL (Structured Query
-Language) database server. SQL is the most popular database language
-in the world. MySQL is a client/server implementation that consists of
-a server daemon mysqld and many different client programs/libraries.
+MySQL is a true multi-user, multi-threaded SQL (Structured Query Language)
+database server. SQL is the most popular database language in the world.
+MySQL is a client/server implementation that consists of a server daemon
+mysqld and many different client programs/libraries.
 
-The main goals of MySQL are speed, robustness and easy to use.  MySQL
-was originally developed because we at Tcx needed a SQL server that
-could handle very big databases with magnitude higher speed than what
-any database vendor could offer to us. We have now been using MySQL
-since 1996 in a environment with more than 40 databases, 10,000
-tables, of which more than 500 have more than 7 million rows. This is
-about 50G of mission critical data.
+The main goals of MySQL are speed, robustness and easy to use. MySQL was
+originally developed because we at Tcx needed a SQL server that could handle
+very big databases with magnitude higher speed than what any database vendor
+could offer to us. We have now been using MySQL since 1996 in a environment
+with more than 40 databases, 10,000 tables, of which more than 500 have more
+than 7 million rows. This is about 50G of mission critical data.
 
-The base upon which MySQL is built is a set of routines that have been
-used in a highly demanding production environment for many
-years. While MySQL is still in development, it already offers a rich
-and highly useful function set.
+The base upon which MySQL is built is a set of routines that have been used
+in a highly demanding production environment for many years. While MySQL is
+still in development, it already offers a rich and highly useful function
+set.
 
 %description -l fr
 MySQL est un serveur de bases de donnees SQL vraiment multi-usagers et
@@ -73,9 +75,9 @@ et utile serie de fonctions.
 %description -l pl
 MySQL to wielow±tkowy serwer baz danych SQL.
 
-G³ówne zalety MySQL to szybko¶æ, potêga i ³atwo¶æ u¿ytkowania. MySQL
-jes wykorzystywany m.in. do obs³ugi 40 baz danych, 10 000 tabeli,
-gdzie ka¿da tabela zawiera 7 milionów pozycji. To ok 50GB danych.
+G³ówne zalety MySQL to szybko¶æ, potêga i ³atwo¶æ u¿ytkowania. MySQL jes
+wykorzystywany m.in. do obs³ugi 40 baz danych, 10 000 tabeli, gdzie ka¿da
+tabela zawiera 7 milionów pozycji. To ok 50GB danych.
 
 %description -l pt_BR
 O MySQL é um servidor de banco de dados SQL realmente multiusuário e
@@ -121,7 +123,7 @@ Summary:	Shared libraries for MySQL
 Group:		Applications/Databases
 
 %description libs
-Shared libraries for MySQL
+Shared libraries for MySQL.
 
 %package devel
 Summary:	MySQL - Development header files and libraries
@@ -171,8 +173,6 @@ Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Requires:	%{name} = %{version}
 Requires:	%{name}-client
-Requires:	perl-MySQL-DBI
-Requires:	perl
 Obsoletes:	MySQL-bench
 
 %description bench
@@ -184,19 +184,6 @@ Programy testuj±ce szybko¶æ serwera MySQL.
 %description -l pt_BR bench
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
-%package doc
-Summary:        MySQL - Documentation
-Summary(pl):    mySQL - Dokumentacja
-Group:          Applications/Databases
-Group(pl):      Aplikacje/Bazy Danych
-Conflicts:	mysql <= 3.22.27
-
-%description doc
-This package contains documentation for MySQL.
-
-%description -l pl doc
-Dokumentacja do MySQL.
-
 %prep
 %setup  -q
 %patch0 -p1
@@ -206,7 +193,9 @@ Dokumentacja do MySQL.
 automake
 aclocal
 autoconf
-LDFLAGS="-s"; export LDFLAGS
+LDFLAGS="-s"
+CXXFLAGS="$RPM_OPT_FLAGS -fno-rtti -fno-exceptions"
+export LDFLAGS CXXFLAGS
 %configure \
 	--without-debug \
 	--enable-shared \
@@ -229,8 +218,8 @@ make benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig}
-install -d $RPM_BUILD_ROOT/var/log
+install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
+	$RPM_BUILD_ROOT/var/{log,state/mysql}
 
 # Make install
 make install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
@@ -251,9 +240,9 @@ gzip -9nf $RPM_BUILD_ROOT{%{_mandir}/man1/*,%{_infodir}/mysql.info*}
 
 %pre
 echo "Creating system group mysql with GID 89"
-%{_sbindir}/groupadd -f -g 89 mysql
+/usr/sbin/groupadd -f -g 89 mysql
 echo "Creating system user mysql with UID 89"
-%{_sbindir}/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql > /dev/null
+/usr/sbin/useradd -u 89 -g mysql -d /var/state/mysql -s /bin/sh mysql > /dev/null
 
 %post
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
@@ -267,9 +256,9 @@ echo Don\'t forget to run mysql_install_db, before starting mysqld!
 /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 
 echo Removing user mysql
-userdel mysql
+/usr/sbin/userdel mysql
 echo Removing group mysql
-groupdel mysql
+/usr/sbin/groupdel mysql
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
@@ -292,11 +281,13 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/resolveip
 %attr(755,root,root) %{_bindir}/safe_mysqld
 %attr(755,root,root) %{_sbindir}/mysqld
-%attr(640,root,root) %{_sysconfdir}/logrotate.d/mysql
-%attr(754,mysql,mysql) %{_sysconfdir}/rc.d/init.d/mysql
+%attr(640,root,root) /etc/logrotate.d/mysql
+%attr(754,root,root) /etc/rc.d/init.d/mysql
+%attr(640,root,root) %config(noreplace) /etc/sysconfig/mysql
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
 
+%attr(750,mysql,mysql) %dir /var/state/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/*
 
 %{_datadir}/mysql/english
@@ -346,6 +337,3 @@ rm -rf $RPM_BUILD_ROOT
 
 %files bench
 %attr(-,root,root) %{_datadir}/sql-bench
-
-%files doc
-%doc Docs/*
