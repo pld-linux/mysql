@@ -24,14 +24,13 @@ Patch1:		%{name}-no_libnsl.patch
 Patch2:		%{name}-opt.patch
 Patch3:		%{name}-moreincludes.patch
 Patch4:		%{name}-info-res.patch
-Patch5:		%{name}-c++.patch
-Patch6:		%{name}-noproc.patch
+Patch5:		%{name}-noproc.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
 BuildRequires:	autoconf
 BuildRequires:	automake
-BuildRequires:	libstdc++-devel
+BuildRequires:	gcc-c++
 BuildRequires:	libtool
 BuildRequires:	ncurses-devel >= 4.2
 BuildRequires:	perl-DBI
@@ -48,17 +47,15 @@ Requires(pre):	/usr/sbin/useradd
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
-Provides:	msqlormysql MySQL-server
+Provides:	MySQL-server
+Provides:	msqlormysql
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
-%define		_gcc_ver	%(%{__cc} -dumpversion | cut -b 1)
-%if %{_gcc_ver} == 2
 %define		__cxx		"%{__cc}"
-%endif
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -300,9 +297,7 @@ MySQL.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-# not needed for gcc 2.95, need to check if still needed with 3.2 and defines above
-#%patch5 -p1
-%patch6 -p1
+%patch5 -p1
 
 %build
 rm -f missing
