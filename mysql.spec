@@ -365,9 +365,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %files extras
 %defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/msql2mysql
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/mysql_setpermission
 %attr(755,root,root) %{_bindir}/mysql_zap
+%attr(755,root,root) %{_bindir}/mysql_find_rows
+%attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/print_defaults
 %attr(755,root,root) %{_bindir}/replace
@@ -375,10 +378,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files client
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/msql2mysql
 %attr(755,root,root) %{_bindir}/mysql
-%attr(755,root,root) %{_bindir}/mysql_find_rows
-%attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
