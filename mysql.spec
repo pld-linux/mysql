@@ -350,35 +350,52 @@ Podrêcznik MySQL-a w formacie HTML.
 
 %package ndb
 Summary:	MySQL - NDB Storage Engine Daemon
+Summary(pl):	MySQL - demon silnika przechowywania danych NDB
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
 %description ndb
 This package contains the standard MySQL NDB Storage Engine Daemon.
 
+%description ndb -l pl
+Ten pakiet zawiera standardowego demona silnika przechowywania
+danych NDB.
+
 %package ndb-client
 Summary:	MySQL - NDB Clients
+Summary(pl):	MySQL - programy klienckie NDB
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
 %description ndb-client
 This package contains the standard MySQL NDB Clients.
 
+%description ndb-client -l pl
+Ten pakiet zawiera standardowe programy klienckie MySQL NDB.
+
 %package ndb-mgm
 Summary:	MySQL - NDB Management Daemon
+Summary(pl):	MySQL - demon zarz±dzaj±cy NDB
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
 %description ndb-mgm
 This package contains the standard MySQL NDB Management Daemon.
 
+%description ndb-mgm -l pl
+Ten pakiet zawiera standardowego demona zarz±dzaj±cego MySQL NDB.
+
 %package ndb-cpc
 Summary:	MySQL - NDB CPC Daemon
+Summary(pl):	MySQL - demon NDB CPC
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
 %description ndb-cpc
 This package contains the standard MySQL NDB CPC Daemon.
+
+%description ndb-cpc -l pl
+Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
 %setup -q
