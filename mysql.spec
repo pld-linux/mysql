@@ -23,7 +23,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.23
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mainseek.com/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	8b3a40434348f961b71715ed45fe540e
