@@ -91,7 +91,6 @@ ainda em desenvolvimento, ele já oferece um conjunto de funções muito ricas
 e úteis. Veja a documentação para maiores informações.
 
 %package client
-Requires:	%{name} = %{version}-%{release}
 Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
 Summary(pt_BR):	MySQL - Cliente
