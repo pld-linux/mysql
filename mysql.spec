@@ -9,7 +9,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.23.32
-Release:	1
+Release:	6
 License:	GPL/LGPL
 Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -24,18 +24,19 @@ Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
 BuildRequires:	libstdc++-devel
-BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
-BuildRequires:	readline-devel
-BuildRequires:	texinfo
 BuildRequires:	perl
 BuildRequires:	perl-DBI
+BuildRequires:	readline-devel
 BuildRequires:	rpm-perlprov
+BuildRequires:	texinfo
+BuildRequires:	zlib-devel
 Prereq:		rc-scripts >= 0.2.0
 Prereq:		shadow
 Provides:	msqlormysql MySQL-server
-Obsoletes:	MySQL
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+Obsoletes:	MySQL
+Obsoletes:	mysql-server
 
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
@@ -231,8 +232,6 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 chmod +x find-perl-requires
 
 %build
-#automake
-#aclocal
 autoconf
 CXXFLAGS="%{?debug:-O0 -g}%{!?debug:$RPM_OPT_FLAGS} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{?debug:-O0 -g}%{!?debug:$RPM_OPT_FLAGS} -fomit-frame-pointer"
@@ -240,11 +239,12 @@ CFLAGS="%{?debug:-O0 -g}%{!?debug:$RPM_OPT_FLAGS} -fomit-frame-pointer"
 	--without-debug \
 	--enable-shared \
 	--enable-static \
+	--enable-assembler \
 	--with-pthread \
 	--with-named-curses-libs="-lncurses" \
 	--enable-assembler \
 	--with-raid \
-	--with-charset=latin2 \
+	--with-extra-charsets=all \
 	--with-mysqld-user=mysql \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--without-readline \
@@ -252,17 +252,13 @@ CFLAGS="%{?debug:-O0 -g}%{!?debug:$RPM_OPT_FLAGS} -fomit-frame-pointer"
 	--without-docs \
 	--with-low-memory  \
 	--with-comment="Polish Linux Distribution MySQL RPM"
-# If you have much RAM you can remove --with-low-memory
-
-# To build mysqld as static binary add option
-#	--with-mysqld-ldflags='-all-static' 
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 %{__make} -C Docs mysql.info
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT%{_infodir}
 
