@@ -259,8 +259,8 @@ autoconf
 CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 %configure \
-	%{?bcond_on_innodb:--with-innodb}  \
-	%{?bcond_on_bdb:--with-berkeley-db} \
+	%{?_with_innodb:--with-innodb}  \
+	%{?_with_bdb:--with-berkeley-db} \
 	--without-debug \
 	--enable-shared \
 	--enable-static \
@@ -286,11 +286,11 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/db} \
 	   $RPM_BUILD_ROOT%{_infodir}
 
-%if %{?bcond_on_innodb:1}%{!?bcond_on_innodb:0}
+%if %{?_with_innodb:1}%{!?_with_innodb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
 %endif
 
-%if %{?bcond_on_bdb:1}%{!?bcond_on_bdb:0}
+%if %{?_with_bdb:1}%{!?_with_bdb:0}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
 
