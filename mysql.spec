@@ -24,7 +24,7 @@ URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
 BuildRequires:	libstdc++-devel
 BuildRequires:	ncurses-devel >= 4.2
-BuildRequires:	perl-devel > 5.6.1
+BuildRequires:	perl-devel >= 5.6.1
 BuildRequires:	perl-DBI
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov
