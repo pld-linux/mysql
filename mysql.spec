@@ -1,6 +1,6 @@
 #
 # Conditional build:
-# _with_bdb - Berkeley DB support
+# _without_bdb - without Berkeley DB support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -31,11 +31,10 @@ Patch6:		%{name}-manfixes.patch
 Patch7:		%{name}-sql-cxx-pic.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
-#BuildRequires:	ORBit-devel
 BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
-%{?_with_bdb:BuildRequires:	db3-devel}
+%{!?_without_bdb:BuildRequires:	db3-devel}
 BuildRequires:	libstdc++-devel
 BuildRequires:	libtool
 BuildRequires:	libwrap-devel
@@ -350,7 +349,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-mysqld-user=mysql \
 	--with-libwrap \
 	--with%{!?debug:out}-debug \
-	%{?_with_bdb:--with-berkeley-db} \
+	%{!?_without_bdb:--with-berkeley-db} \
 	--with-embedded-server \
 	--with-vio \
 	--with-openssl \
@@ -379,7 +378,7 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT%{_mysqlhome}
 
 install -d $RPM_BUILD_ROOT/var/lib/mysql/innodb/{data,log}
-%if %{?_with_bdb:1}%{!?_with_bdb:0}
+%if %{?_without_bdb:0}%{!?_without_bdb:1}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
 
