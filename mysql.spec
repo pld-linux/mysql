@@ -9,7 +9,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.22.32
-Release:	11
+Release:	12
 License:	MySQL FREE PUBLIC LICENSE (See the manual)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -20,6 +20,7 @@ Patch0:		%{name}-info.patch
 Patch1:		%{name}-no_libbind.patch
 Patch2:		%{name}-perldep.patch
 Patch3:		%{name}-gethostbyname_r_is_in_libc_aka_no_libnsl.patch
+Patch4:		%{name}-opt.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -225,6 +226,7 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 chmod +x find-perl-requires
 
