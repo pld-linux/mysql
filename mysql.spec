@@ -17,8 +17,9 @@ Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Patch0:		%{name}-info.patch
-Patch1:		%{name}-no_libbind.patch
+Patch1:		%{name}-no_libnsl.patch
 Patch2:		%{name}-perldep.patch
+Patch3:		%{name}-opt.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -225,13 +226,14 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 chmod +x find-perl-requires
 
 %build
 #automake
 #aclocal
-#autoconf
+autoconf
 CXXFLAGS="%{?debug:-O0 -g}%{!?debug:$RPM_OPT_FLAGS} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{?debug:-O0 -g}%{!?debug:$RPM_OPT_FLAGS} -fomit-frame-pointer"
 %configure \
