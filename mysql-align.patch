@@ -1,5 +1,40 @@
 --- mysql-4.1.10/mysys/my_getopt.c.orig	2005-02-12 21:37:32.000000000 +0100
 +++ mysql-4.1.10/mysys/my_getopt.c	2005-03-04 10:52:33.000000000 +0100
+@@ -34,7 +34,7 @@
+ static ulonglong getopt_ull(char *arg, const struct my_option *optp,
+ 			    int *err);
+ static void init_variables(const struct my_option *options);
+-static int setval(const struct my_option *opts, gptr *value, char *argument,
++static int setval(const struct my_option *opts, gptr value, char *argument,
+ 		  my_bool set_maximum_value);
+ static char *check_struct_option(char *cur_arg, char *key_name);
+ 
+@@ -96,7 +96,7 @@
+   char **pos, **pos_end, *optend, *prev_found,
+        *opt_str, key_name[FN_REFLEN];
+   const struct my_option *optp;
+-  gptr *value;
++  gptr value;
+   int error;
+ 
+   LINT_INIT(opt_found);
+@@ -537,14 +537,14 @@
+   Will set the option value to given value
+ */
+ 
+-static int setval(const struct my_option *opts, gptr *value, char *argument,
++static int setval(const struct my_option *opts, gptr value, char *argument,
+ 		  my_bool set_maximum_value)
+ {
+   int err= 0;
+ 
+   if (value && argument)
+   {
+-    gptr *result_pos= ((set_maximum_value) ?
++    gptr result_pos= ((set_maximum_value) ?
+ 		       opts->u_max_value : value);
+ 
+     if (!result_pos)
 @@ -738,7 +738,7 @@
      value		Pointer to variable
  */
@@ -25,3 +60,12 @@
    }
  }
  
+@@ -898,7 +898,7 @@
+   printf("--------------------------------- -----------------------------\n");
+   for (optp= options; optp->id; optp++)
+   {
+-    gptr *value= (optp->var_type & GET_ASK_ADDR ?
++    gptr value= (optp->var_type & GET_ASK_ADDR ?
+ 		  (*getopt_get_addr)("", 0, optp) : optp->value);
+     if (value)
+     {
