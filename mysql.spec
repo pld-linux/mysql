@@ -1,3 +1,5 @@
+# _with_innodb	- with InnoDB backend
+# _with_bdb	- with Berkeley DB backend
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
@@ -10,7 +12,7 @@ Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.23.46
-Release:	2
+Release:	3
 License:	GPL/LGPL
 Source0:	ftp://ftp1.sourceforge.net/pub/mirrors/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -414,7 +416,7 @@ fi
 %lang(ja) %{_datadir}/mysql/japanese
 %lang(ko) %{_datadir}/mysql/korean
 %lang(no) %{_datadir}/mysql/norwegian
-%lang(no@nynorsk) %{_datadir}/mysql/norwegian-ny
+%lang(nn) %{_datadir}/mysql/norwegian-ny
 %lang(pl) %{_datadir}/mysql/polish
 %lang(pt) %{_datadir}/mysql/portuguese
 %lang(ro) %{_datadir}/mysql/romanian
@@ -469,4 +471,6 @@ fi
 
 %files bench
 %defattr(644,root,root,755)
-%attr(-,root,root) %{_datadir}/sql-bench
+%dir %{_datadir}/sql-bench
+%{_datadir}/sql-bench/[CDRl]*
+%attr(755,root,root) %{_datadir}/sql-bench/[bcgrst]*
