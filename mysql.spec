@@ -11,7 +11,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	3.23.52
-Release:	1
+Release:	2
 License:	GPL/LGPL
 Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -41,9 +41,14 @@ BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-Prereq:		rc-scripts >= 0.2.0
-Prereq:		shadow
-Prereq:		/sbin/chkconfig
+PreReq:		rc-scripts >= 0.2.0
+Requires(pre):	/usr/bin/getgid
+Requires(pre):	/bin/id
+Requires(pre):	/usr/sbin/groupadd
+Requires(pre):	/usr/sbin/useradd
+Requires(post,preun):	/sbin/chkconfig
+Requires(postun):	/usr/sbin/userdel
+Requires(postun):	/usr/sbin/groupdel
 Provides:	msqlormysql MySQL-server
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 Obsoletes:	MySQL
@@ -100,7 +105,7 @@ deja une riche et utile serie de fonctions.
 MySQL to wielow眛kowy serwer baz danych SQL.
 
 G丑wne zalety MySQL to szybko舵, pot阦a i 砤two舵 u縴tkowania. MySQL
-jest wykorzystywany m.in. do obs硊gi 40 baz danych, 10 000 tabeli,
+jest wykorzystywany m.in. do obs硊gi 40 baz danych, 10 000 tabel,
 gdzie ka縟a tabela zawiera 7 milion體 pozycji. To ok 50GB danych.
 
 %description -l pt_BR
@@ -368,7 +373,7 @@ rm -rf $RPM_BUILD_ROOT
 %pre
 if [ -n "`getgid mysql`" ]; then
 	if [ "`getgid mysql`" != "89" ]; then
-		echo "Warning: group mysql haven't gid=89. Correct this before installing mysql" 1>&2
+		echo "Error: group mysql doesn't have gid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
@@ -376,7 +381,7 @@ else
 fi
 if [ -n "`id -u mysql 2>/dev/null`" ]; then
 	if [ "`id -u mysql`" != "89" ]; then
-		echo "Warning: user mysql haven't uid=89. Correct this before installing mysql" 1>&2
+		echo "Error: user mysql doesn't have uid=89. Correct this before installing mysql." 1>&2
 		exit 1
 	fi
 else
