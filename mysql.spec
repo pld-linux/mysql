@@ -18,7 +18,7 @@ Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.20
 Release:	2.4
-License:	GPL/LGPL
+License:	GPL
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
 Source1:	%{name}.init
