@@ -1,9 +1,0 @@
-/var/log/mysql/err /var/log/mysql/log /var/log/mysql/isamlog.log /var/log/mysql/update* {
-	olddir /var/log/archiv/mysql
-        notifempty
-	create 640 mysql mysql
-	sharedscripts
-	postrotate
-		/etc/rc.d/init.d/mysql flush-logs
-	endscript
-}
