@@ -751,7 +751,6 @@ fi
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-mgm
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-mgm
 
-
 %files ndb-cpc
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_sbindir}/ndb_cpcd
