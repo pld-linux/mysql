@@ -24,7 +24,7 @@ Group(ru):	Приложения/Базы данных
 Group(sl):	Programi/Zbirke podatkov
 Group(sv):	TillДmpningar/Databaser
 Group(uk):	Прикладн╕ Програми/Бази даних
-Version:	3.23.48
+Version:	3.23.49
 Release:	1
 License:	GPL/LGPL
 Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
