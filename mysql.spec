@@ -46,13 +46,8 @@ BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 %{?_with_bdb:BuildRequires:	db3-devel}
 PreReq:		rc-scripts >= 0.2.0
-Requires(pre):	/usr/bin/getgid
-Requires(pre):	/bin/id
-Requires(pre):	/usr/sbin/groupadd
-Requires(pre):	/usr/sbin/useradd
+Requires(pre):	user-mysql
 Requires(post,preun):	/sbin/chkconfig
-Requires(postun):	/usr/sbin/userdel
-Requires(postun):	/usr/sbin/groupdel
 Provides:	MySQL-server
 Provides:	msqlormysql
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
@@ -388,26 +383,6 @@ mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%pre
-if [ -n "`getgid mysql`" ]; then
-	if [ "`getgid mysql`" != "89" ]; then
-		echo "Error: group mysql doesn't have gid=89. Correct this before installing mysql." 1>&2
-		exit 1
-	fi
-else
-	/usr/sbin/groupadd -g 89 -r -f mysql
-fi
-if [ -n "`id -u mysql 2>/dev/null`" ]; then
-	if [ "`id -u mysql`" != "89" ]; then
-		echo "Error: user mysql doesn't have uid=89. Correct this before installing mysql." 1>&2
-		exit 1
-	fi
-else
-	/usr/sbin/useradd -M -o -r -u 89 \
-	                -d /home/services/mysql -s /bin/sh -g mysql \
-	                -c "MySQL Server" mysql 1>&2
-fi
-
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
@@ -427,10 +402,6 @@ fi
 
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
-if [ "$1" = "0" ]; then
-	/usr/sbin/userdel mysql
-	/usr/sbin/groupdel mysql
-fi
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
