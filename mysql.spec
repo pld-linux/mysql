@@ -9,7 +9,7 @@ Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.22.32
-Release:	10
+Release:	11
 License:	MySQL FREE PUBLIC LICENSE (See the manual)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
