@@ -1,6 +1,7 @@
 # TODO:
 # - trigger that prepares system from pre-cluster into cluster
-# - trigger to new cluster scheme
+# - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible 
+#   conflict with /var/lib/mysql/mysqld.conf
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -16,7 +17,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.20
-Release:	2.1
+Release:	2.2
 License:	GPL/LGPL
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
@@ -476,6 +477,21 @@ fi
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
+
+# For clusters in /etc/mysql/clusters.conf
+%triggerpostun -- mysql <= 4.0.20-2
+if [ -f "/etc/sysconfig/mysql" ]; then
+	. /etc/sysconfig/mysql
+	if [ "$MYSQL_DB_CLUSTERS" ]; then
+		for i in "$MYSQL_DB_CLUSTERS"; do
+			echo "$i/mysqld.conf=$i" >> /etc/mysql/clusters.conf
+		done
+		echo "Do not use **obsolete** option MYSQL_DB_CLUSTERS" >> /etc/sysconfig/mysql
+		echo "USE /etc/mysql/clusters.conf instead" >> /etc/sysconfig/mysql
+		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/mysql/clusters.conf"
+		echo "Take a look at that"
+	fi
+fi
 
 %files
 %defattr(644,root,root,755)
