@@ -13,7 +13,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.14
-Release:	2
+Release:	3
 License:	GPL/LGPL
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	9764f09c89692345d3b7800ab014f822
@@ -30,6 +30,7 @@ Patch5:		%{name}-dump_quote_db_names.patch
 Patch6:		%{name}-manfixes.patch
 Patch7:		%{name}-sql-cxx-pic.patch
 Patch8:		%{name}-noproc.patch
+Patch9:		%{name}-buffer.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -331,6 +332,7 @@ MySQL.
 %patch7 -p1
 %endif
 %patch8 -p1
+%patch9 -p1
 
 %build
 rm -f missing
