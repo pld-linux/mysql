@@ -232,7 +232,7 @@ chmod +x find-perl-requires
 automake
 aclocal
 autoconf
-CXXFLAGS="%{!?debug:$RPM_OPT_FLAGS}%{?debug:-O -g} -fno-rtti -fno-exceptions"
+CXXFLAGS="%{?debug:-O -g}%{!?debug:$RPM_OPT_FLAGS} -fno-rtti -fno-exceptions"
 %configure \
 	--without-debug \
 	--enable-shared \
