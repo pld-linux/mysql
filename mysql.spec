@@ -5,6 +5,8 @@ Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
 Summary(pt_BR):	MySQL: Um servidor SQL r.ANapido e confiNavel.*B
+Summary(ru):	Mysql -- быстрый SQL-сервер
+Summary(uk):	Mysql -- швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Group:		Applications/Databases
@@ -115,6 +117,18 @@ MySQL estando ainda em desenvolvimento, ele jА oferece um conjunto de
 funГУes muito ricas e Зteis. Veja a documentaГЦo para maiores
 informaГУes.
 
+%description -l ru
+Mysql - это SQL (Structured Query Language) сервер базы данных. Mysql
+была написана Michael'ом (monty) Widenius'ом. См. файл CREDITS в
+дистрибутиве на предмет других участников проекта и прочей информации
+о Mysql.
+
+%description -l uk
+Mysql - це SQL (Structured Query Language) сервер бази даних. Mysql
+було написано Michael'ом (monty) Widenius'ом. Див. файл CREDITS в
+дистрибутив╕ для ╕нформац╕╖ про ╕нших учасник╕в проекту та ╕ншо╖
+╕нформац╕╖.
+
 %package extras
 Summary:	MySQL additional utilities
 Summary(pl):	Dodatkowe narzЙdzia do MySQL
@@ -146,6 +160,8 @@ Dodatkowe narzЙdzia do MySQL napisane w Perlu.
 Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
 Summary(pt):	MySQL - Cliente
+Summary(ru):	Mysql клиент
+Summary(uk):	Mysql кл╕╓нт
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-client
@@ -161,6 +177,12 @@ Standardowe programy klienckie MySQL.
 
 %description client -l pt_BR
 Este pacote contИm os clientes padrЦo para o MySQL.
+
+%description client -l ru
+Этот пакет содержит только клиент mysql.
+
+%description client -l uk
+Цей пакет м╕стить т╕льки кл╕╓нта mysql.
 
 %package libs
 Summary:	Shared libraries for MySQL
@@ -178,6 +200,8 @@ Biblioteki dzielone MySQL.
 Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nagЁСwkowe i biblioteki dla programistСw
 Summary(pt):	MySQL - MediГУes de desempenho
+Summary(ru):	Mysql - хедеры и библиотеки разработчика
+Summary(uk):	Mysql - хедери та б╕бл╕отеки програм╕ста
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
@@ -187,6 +211,11 @@ Obsoletes:	libmysql10-devel
 This package contains the development header files and libraries
 necessary to develop MySQL client applications.
 
+%description devel -l fr
+Ce package contient les fichiers entetes et les librairies de
+developpement necessaires pour developper des applications clientes
+MySQL.
+
 %description devel -l pl
 Pliki nagЁСwkowe i biblioteki konieczne do kompilacji aplikacji
 klienckich MySQL.
@@ -195,14 +224,19 @@ klienckich MySQL.
 Este pacote contИm os arquivos de cabeГalho (header files) e
 bibliotecas necessАrias para desenvolver aplicaГУes clientes do MySQL.
 
-%description devel -l fr
-Ce package contient les fichiers entetes et les librairies de
-developpement necessaires pour developper des applications clientes
-MySQL.
+%description devel -l ru
+Этот пакет содержит хедеры и библиотеки разработчика, необходимые для
+разработки клиентских приложений.
+
+%description devel -l uk
+Цей пакет м╕стить хедери та б╕бл╕отеки програм╕ста, необх╕дн╕ для
+розробки програм-кл╕╓нт╕в.
 
 %package static
 Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
+Summary(ru):	Mysql - статические библиотеки
+Summary(uk):	Mysql - статичн╕ б╕бл╕отеки
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
@@ -213,10 +247,20 @@ MySQL static libraris.
 %description static -l pl
 Biblioteki statyczne MySQL.
 
+%description tatic -l ru
+Этот пакет содержит статические библиотеки разработчика, необходимые
+для разработки клиентских приложений.
+
+%description static -l uk
+Цей пакет м╕стить статичн╕ б╕бл╕отеки програм╕ста, необх╕дн╕ для
+розробки програм-кл╕╓нт╕в.
+
 %package bench
 Summary:	MySQL - Benchmarks
 Summary(pl):	mySQL - Programy testuj╠ce szybko╤Ф dziaЁania bazy
 Summary(pt):	MySQL - MediГУes de desempenho
+Summary(ru):	Mysql - бенчмарки
+Summary(uk):	Mysql - бенчмарки
 Group:		Applications/Databases
 Requires:	%{name} = %{version}
 Requires:	%{name}-client
@@ -230,6 +274,13 @@ Programy testuj╠ce szybko╤Ф serwera MySQL.
 
 %description bench -l pt_BR
 Este pacote contИm mediГУes de desempenho de scripts e dados do MySQL.
+
+%description bench -l ru
+Этот пакет содержит скрипты и данные для оценки производительности
+Mysql.
+
+%description bench -l uk
+Цей пакет м╕стить скрипти та дан╕ для оц╕нки продуктивност╕ Mysql.
 
 %prep
 %setup -q -n %{name}-%{version}
