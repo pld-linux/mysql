@@ -9,7 +9,7 @@ Group(de):	Applikationen/Dateibanken
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.23.41
-Release:	1
+Release:	2
 License:	GPL/LGPL
 Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
@@ -270,6 +270,7 @@ CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 %configure \
 	-C \
+	%{!?debug:--without-debug} \
 	%{?_with_innodb:--with-innodb}  \
 	%{?_with_bdb:--with-berkeley-db} \
 	--without-debug \
