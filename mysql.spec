@@ -10,7 +10,8 @@ Version:	3.22.27
 Release:	1
 Copyright:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
 Source:		http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
-Patch:		mysql-info.patch
+Patch0:		mysql-info.patch
+Patch1:		mysql-no_libbind.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Provides:	msqlormysql MySQL-server
@@ -171,11 +172,14 @@ Programy testuj±ce szybko¶æ serwera MySQL.
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
 %prep
-%setup -q
-%patch -p1
+%setup  -q
+%patch0 -p1
+%patch1 -p1
 
 %build
 automake
+aclocal
+autoconf
 LDFLAGS="-s"; export LDFLAGS
 %configure \
 	    --without-debug \
@@ -267,7 +271,6 @@ chown -R mysql /var/state/mysql
 %attr(755,root,root) %{_libdir}/lib*.la
 %attr(755,root,root) %{_libdir}/lib*.so
 %attr(755,root,root) %{_bindir}/comp_err
-%attr(755,root,root) %{_libdir}/mysql
 %{_includedir}/mysql
 
 %files static
