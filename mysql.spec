@@ -10,10 +10,11 @@ Summary(uk):	MySQL -- Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	3.23.53
+Version:	3.23.54a
 Release:	1
 License:	GPL/LGPL
-Source0:	http://prdownloads.sourceforge.net/mysql/%{name}-%{version}.tar.gz
+#http://www.mysql.com/Downloads/MySQL-3.23/mysql-3.23.54a.tar.gz shows mirrors list
+Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -22,11 +23,9 @@ Patch0:		%{name}-info.patch
 Patch1:		%{name}-no_libnsl.patch
 Patch2:		%{name}-opt.patch
 Patch3:		%{name}-moreincludes.patch
-Patch4:		%{name}-amfix.patch
-Patch5:		%{name}-acfix.patch
-Patch6:		%{name}-am15.patch
-Patch7:		%{name}-c++.patch
-Patch8:		%{name}-noproc.patch
+Patch4:		%{name}-info-res.patch
+Patch5:		%{name}-c++.patch
+Patch6:		%{name}-noproc.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 Requires:	%{name}-libs = %{version}
@@ -301,10 +300,9 @@ MySQL.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
+# not needed for gcc 2.95, need to check if still needed with 3.2 and defines above
+#%patch5 -p1
 %patch6 -p1
-%patch7 -p1
-%patch8 -p1
 
 %build
 rm -f missing
