@@ -92,7 +92,7 @@ EOF
 
 # Install docs
 install -m644 $RPM_BUILD_DIR/mysql-%{mysql-version}/Docs/mysql.info \
- $DESTDIR/usr/info/mysql.info
+ $DESTDIR%{_infodir}/mysql.info
 for file in README PUBLIC Docs/manual_toc.html Docs/manual.html \
     Docs/manual.txt Docs/manual.texi Docs/manual.ps
 do
@@ -184,7 +184,7 @@ lisa --SysV-init remove mysql $1
 %attr(755,root,root) /usr/bin/resolveip
 %attr(755,root,root) /usr/bin/safe_mysqld
 
-%attr(644,root,root) /usr/info/mysql.info
+%attr(644,root,root) %{_infodir}/mysql.info
 
 %attr(755,root,root) /usr/sbin/mysqld
 
@@ -206,7 +206,7 @@ lisa --SysV-init remove mysql $1
 %attr(755,root,root) /usr/bin/mysqlimport
 %attr(755,root,root) /usr/bin/mysqlshow
 
-/usr/man/man1/mysql.1.*
+%{_mandir}/man1/mysql.1.*
 
 
 %Files devel
