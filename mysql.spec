@@ -8,7 +8,7 @@ Group:		Applications/Databases
 Source0:	http://www.tcx.se/Downloads/MySQL-3.22/mysql-%{mysql-version}.tar.gz
 Icon:		mysql.gif
 URL:		http://www.tcx.se/
-BuildRoot:	/tmp/%{Name}-%{Version}-root
+BuildRoot:	/tmp/%{name}-%{version}-root
 
 %Description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query Language)
