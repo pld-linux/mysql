@@ -238,6 +238,7 @@ Summary(uk):	MySQL - хедери та б╕бл╕отеки програм╕ста
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}
 Requires:	openssl-devel
+Requires:	zlib-devel
 Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
 
@@ -335,7 +336,6 @@ MySQL.
 %patch9 -p1
 
 %build
-rm -f missing
 %{__libtoolize}
 %{__aclocal}
 %{__automake}
@@ -381,7 +381,7 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql/{db,innodb/{data,log}}} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
-%if %{?_with_bdb:1}%{!?_with_bdb:0}
+%if 0%{?_with_bdb:1}
 install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 %endif
 
@@ -507,12 +507,12 @@ fi
 %files extras
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
-%attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
+%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 
@@ -550,9 +550,10 @@ fi
 
 %files devel
 %defattr(644,root,root,755)
-%{_libdir}/lib*.la
+%attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/lib*.so
-%{_libdir}/lib*[^tr].a
+%{_libdir}/lib*.la
+%{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
 
 %files static
