@@ -14,6 +14,11 @@ Patch0:		mysql-info.patch
 Patch1:		mysql-no_libbind.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
+Requires:	%{name}-libs = %{version}
+BuildRequires:	libstdc++-devel
+BuildRequires:	zlib-devel
+BuildRequires:	ncurses-devel
+BuildRequires:	readline-devel
 Provides:	msqlormysql MySQL-server
 Obsoletes:	MySQL
 BuildRoot:	/tmp/%{name}-%{version}
@@ -93,6 +98,7 @@ Summary(pt_BR):	MySQL - Cliente
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
+Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-client
 
 %description client
@@ -121,6 +127,7 @@ Summary(pt_BR):	MySQL - Medições de desempenho
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
+Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
 
 %description devel
@@ -144,8 +151,8 @@ Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
 Group(pl):	Programowanie/Biblioteki
-Obsoletes:	MySQL-static
 Requires:	%{name}-devel = %{version}
+Obsoletes:	MySQL-static
 
 %description static
 MySQL staic libraris.
@@ -154,15 +161,16 @@ MySQL staic libraris.
 Biblioteki statyczne MySQL.
 
 %package bench
-Requires:	MySQL-client
-Requires:	MySQL-DBI-perl-bin
-Requires:	perl
 Summary:	MySQL - Benchmarks
-Summary:	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
+Summary(pl):	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
+Summary(pt_BR):	MySQL - Medições de desempenho
+Requires:	mysql-client
+Requires:	perl-MySQL-DBI
+Requires:	perl
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
-Summary(pt_BR):	MySQL - Medições de desempenho
 Group(pt_BR):	Aplicações/Banco_de_Dados
+Requires:	%{name} = %{version}
 Obsoletes:	MySQL-bench
 
 %description bench
@@ -185,18 +193,20 @@ aclocal
 autoconf
 LDFLAGS="-s"; export LDFLAGS
 %configure \
-	    --without-debug \
-            --enable-shared \
-	    --enable-static \
-	    --with-pthread \
-	    --enable-thread-safe-client \
-	    --enable-assembler \
-	    --with-charset=latin2 \
-            --with-mysqld-user=mysql \
-            --with-unix-socket-path=/var/state/mysql/mysql.sock \
-	    --with-comment='Polish Linux Distribution MySQL RPM' \
-	    --without-readline \
-	    --with-low-memory
+	--without-debug \
+	--enable-shared \
+	--enable-static \
+	--with-pthread \
+	--with-named-curses-libs="-lncurses" \
+	--enable-thread-safe-client \
+	--enable-assembler \
+	--with-charset=latin2 \
+	--with-mysqld-user=mysql \
+	--with-unix-socket-path=/var/state/mysql/mysql.sock \
+	--with-comment='Polish Linux Distribution MySQL RPM' \
+	--without-readline \
+	--with-low-memory
+	
 # If you have much RAM you can remove --with-low-memory
 
 make benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
@@ -229,9 +239,12 @@ echo "Creating system user mysql with UID 83"
 %{_sbindir}/useradd -u 83 -g mysql -d /var/state/mysql -s /bin/sh mysql 2> /dev/null
 
 %post
-/sbin/chkconfig --add mysql
 mysql_install_db -IN-RPM
 chown -R mysql /var/state/mysql
+/usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+
+%postun
+/usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
