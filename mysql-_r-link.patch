@@ -1,0 +1,11 @@
+--- mysql-4.0.11a-gamma/libmysql_r/Makefile.am.wiget	Tue Mar  4 16:57:28 2003
++++ mysql-4.0.11a-gamma/libmysql_r/Makefile.am	Tue Mar  4 17:02:12 2003
+@@ -19,7 +19,7 @@
+ 
+ target = libmysqlclient_r.la
+ target_defs = -DDONT_USE_RAID @LIB_EXTRA_CCFLAGS@
+-## LIBS = @LIBS@
++LIBS = @CLIENT_LIBS@
+ 
+ INCLUDES =	@MT_INCLUDES@ -I$(srcdir)/../include -I../include \
+ 		-I$(srcdir)/.. -I$(top_srcdir) -I.. $(openssl_includes)
