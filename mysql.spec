@@ -391,6 +391,10 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--without-docs
 #	--with-mysqlfs
 
+# NOTE that /var/lib/mysql/mysql.sock is symlink to real sock file
+# (it defaults to first cluster but user may change it to whatever
+#  cluster it wants)
+
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
