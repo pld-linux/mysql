@@ -8,22 +8,6 @@ Summary(pt_BR):	MySQL: Um servidor SQL r.ANapido e confiNavel.*B
 Summary(zh_CN):	MySQLÊı¾İ¿â·şÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Group(cs):	Aplikace/Databáze
-Group(da):	Programmer/Databaser
-Group(de):	Applikationen/Datenbanken
-Group(es):	Aplicaciones/Bases de Datos
-Group(fr):	Applications/Bases de Données
-Group(id):	Aplikasi/Database
-Group(is):	Forrit/Gagnagrunnar
-Group(it):	Applicazioni/Database
-Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
-Group(no):	Applikasjoner/Databaser
-Group(pl):	Aplikacje/Bazy Danych
-Group(pt):	Aplicações/Bases de Dados
-Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
-Group(sl):	Programi/Zbirke podatkov
-Group(sv):	Tillämpningar/Databaser
-Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Version:	3.23.49
 Release:	1
 License:	GPL/LGPL
@@ -135,22 +119,6 @@ informações.
 Summary:	MySQL additional utilities
 Summary(pl):	Dodatkowe narzêdzia do MySQL
 Group:		Applications/Databases
-Group(cs):	Aplikace/Databáze
-Group(da):	Programmer/Databaser
-Group(de):	Applikationen/Datenbanken
-Group(es):	Aplicaciones/Bases de Datos
-Group(fr):	Applications/Bases de Données
-Group(id):	Aplikasi/Database
-Group(is):	Forrit/Gagnagrunnar
-Group(it):	Applicazioni/Database
-Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
-Group(no):	Applikasjoner/Databaser
-Group(pl):	Aplikacje/Bazy Danych
-Group(pt):	Aplicações/Bases de Dados
-Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
-Group(sl):	Programi/Zbirke podatkov
-Group(sv):	Tillämpningar/Databaser
-Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Requires:	%{name}-libs = %{version}
 
 %description extras
@@ -165,22 +133,6 @@ pakiecie %{name}-extras-perl).
 Summary:	MySQL additional utilities written in Perl
 Summary(pl):	Dodatkowe narzêdzia do MySQL napisane w Perlu
 Group:		Applications/Databases
-Group(cs):	Aplikace/Databáze
-Group(da):	Programmer/Databaser
-Group(de):	Applikationen/Datenbanken
-Group(es):	Aplicaciones/Bases de Datos
-Group(fr):	Applications/Bases de Données
-Group(id):	Aplikasi/Database
-Group(is):	Forrit/Gagnagrunnar
-Group(it):	Applicazioni/Database
-Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
-Group(no):	Applikasjoner/Databaser
-Group(pl):	Aplikacje/Bazy Danych
-Group(pt):	Aplicações/Bases de Dados
-Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
-Group(sl):	Programi/Zbirke podatkov
-Group(sv):	Tillämpningar/Databaser
-Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Requires:	%{name}-extras = %{version}
 
 %description extras-perl
@@ -194,22 +146,6 @@ Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
 Summary(pt):	MySQL - Cliente
 Group:		Applications/Databases
-Group(cs):	Aplikace/Databáze
-Group(da):	Programmer/Databaser
-Group(de):	Applikationen/Datenbanken
-Group(es):	Aplicaciones/Bases de Datos
-Group(fr):	Applications/Bases de Données
-Group(id):	Aplikasi/Database
-Group(is):	Forrit/Gagnagrunnar
-Group(it):	Applicazioni/Database
-Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
-Group(no):	Applikasjoner/Databaser
-Group(pl):	Aplikacje/Bazy Danych
-Group(pt):	Aplicações/Bases de Dados
-Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
-Group(sl):	Programi/Zbirke podatkov
-Group(sv):	Tillämpningar/Databaser
-Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-client
 
@@ -229,22 +165,6 @@ Este pacote contém os clientes padrão para o MySQL.
 Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
 Group:		Applications/Databases
-Group(cs):	Aplikace/Databáze
-Group(da):	Programmer/Databaser
-Group(de):	Applikationen/Datenbanken
-Group(es):	Aplicaciones/Bases de Datos
-Group(fr):	Applications/Bases de Données
-Group(id):	Aplikasi/Database
-Group(is):	Forrit/Gagnagrunnar
-Group(it):	Applicazioni/Database
-Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
-Group(no):	Applikasjoner/Databaser
-Group(pl):	Aplikacje/Bazy Danych
-Group(pt):	Aplicações/Bases de Dados
-Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
-Group(sl):	Programi/Zbirke podatkov
-Group(sv):	Tillämpningar/Databaser
-Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Obsoletes:	libmysql10
 
 %description libs
@@ -258,22 +178,6 @@ Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla programistów
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Development/Libraries
-Group(cs):	Vıvojové prostøedky/Knihovny
-Group(da):	Udvikling/Biblioteker
-Group(de):	Entwicklung/Bibliotheken
-Group(es):	Desarrollo/Bibliotecas
-Group(fr):	Development/Librairies
-Group(is):	Şróunartól/Ağgerğasöfn
-Group(it):	Sviluppo/Librerie
-Group(ja):	³«È¯/¥é¥¤¥Ö¥é¥ê
-Group(no):	Utvikling/Bibliotek
-Group(pl):	Programowanie/Biblioteki
-Group(pt_BR):	Desenvolvimento/Bibliotecas
-Group(pt):	Desenvolvimento/Bibliotecas
-Group(ru):	òÁÚÒÁÂÏÔËÁ/âÉÂÌÉÏÔÅËÉ
-Group(sl):	Razvoj/Knji¾nice
-Group(sv):	Utveckling/Bibliotek
-Group(uk):	òÏÚÒÏÂËÁ/â¦ÂÌ¦ÏÔÅËÉ
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
@@ -299,22 +203,6 @@ MySQL.
 Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
-Group(cs):	Vıvojové prostøedky/Knihovny
-Group(da):	Udvikling/Biblioteker
-Group(de):	Entwicklung/Bibliotheken
-Group(es):	Desarrollo/Bibliotecas
-Group(fr):	Development/Librairies
-Group(is):	Şróunartól/Ağgerğasöfn
-Group(it):	Sviluppo/Librerie
-Group(ja):	³«È¯/¥é¥¤¥Ö¥é¥ê
-Group(no):	Utvikling/Bibliotek
-Group(pl):	Programowanie/Biblioteki
-Group(pt_BR):	Desenvolvimento/Bibliotecas
-Group(pt):	Desenvolvimento/Bibliotecas
-Group(ru):	òÁÚÒÁÂÏÔËÁ/âÉÂÌÉÏÔÅËÉ
-Group(sl):	Razvoj/Knji¾nice
-Group(sv):	Utveckling/Bibliotek
-Group(uk):	òÏÚÒÏÂËÁ/â¦ÂÌ¦ÏÔÅËÉ
 Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
 
@@ -329,22 +217,6 @@ Summary:	MySQL - Benchmarks
 Summary(pl):	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Applications/Databases
-Group(cs):	Aplikace/Databáze
-Group(da):	Programmer/Databaser
-Group(de):	Applikationen/Datenbanken
-Group(es):	Aplicaciones/Bases de Datos
-Group(fr):	Applications/Bases de Données
-Group(id):	Aplikasi/Database
-Group(is):	Forrit/Gagnagrunnar
-Group(it):	Applicazioni/Database
-Group(ja):	¥¢¥×¥ê¥±¡¼¥·¥ç¥ó/¥Ç¡¼¥¿¥Ù¡¼¥¹
-Group(no):	Applikasjoner/Databaser
-Group(pl):	Aplikacje/Bazy Danych
-Group(pt):	Aplicações/Bases de Dados
-Group(ru):	ğÒÉÌÏÖÅÎÉÑ/âÁÚÙ ÄÁÎÎÙÈ
-Group(sl):	Programi/Zbirke podatkov
-Group(sv):	Tillämpningar/Databaser
-Group(uk):	ğÒÉËÌÁÄÎ¦ ğÒÏÇÒÁÍÉ/âÁÚÉ ÄÁÎÉÈ
 Requires:	%{name} = %{version}
 Requires:	%{name}-client
 Obsoletes:	MySQL-bench
