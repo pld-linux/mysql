@@ -7,6 +7,7 @@ diff -uNr old-mysql-4.0.14/scripts/mysql_fix_privilege_tables.sh mysql-4.0.14/sc
  host="localhost"
 -user="root"
 +user="mysql"
- 
- if test -z $1 ; then
-   cmd="@bindir@/mysql -f --user=$user --host=$host mysql"
+ port=""
+ socket=""
+ comment=""
+ database="mysql"
