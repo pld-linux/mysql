@@ -668,7 +668,7 @@ fi
 %lang(pt) %{_datadir}/mysql/portuguese
 %lang(ro) %{_datadir}/mysql/romanian
 %lang(ru) %{_datadir}/mysql/russian
-%lang(yu) %{_datadir}/mysql/serbian
+%lang(sr) %{_datadir}/mysql/serbian
 %lang(sk) %{_datadir}/mysql/slovak
 %lang(sv) %{_datadir}/mysql/swedish
 %lang(uk) %{_datadir}/mysql/ukrainian
