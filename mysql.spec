@@ -23,7 +23,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.10
-Release:	0.2
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	27b27b74f430aaeb77fb8d4e6f32ac4d
@@ -47,6 +47,7 @@ Patch4:		%{name}-sql-cxx-pic.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fix_privilege_tables.patch
 Patch7:		%{name}-nptl.patch
+Patch8:		%{name}-align.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -89,8 +90,6 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_mysqlhome	/home/services/mysql
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
-# workaround for buggy gcc 3.3.1
-%define 	specflags_alpha  -mno-explicit-relocs
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -413,6 +412,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
