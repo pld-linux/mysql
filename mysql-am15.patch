@@ -1,6 +1,6 @@
-diff -Nru mysql-3.23.42/Docs/Makefile.am mysql-3.23.42.new/Docs/Makefile.am
---- mysql-3.23.42/Docs/Makefile.am	Tue Sep 11 14:28:23 2001
-+++ mysql-3.23.42.new/Docs/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/Docs/Makefile.am mysql-3.23.49.new/Docs/Makefile.am
+--- mysql-3.23.49/Docs/Makefile.am	Tue Sep 11 14:28:23 2001
++++ mysql-3.23.49.new/Docs/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -11,7 +11,6 @@
  
  TEXI2HTML_FLAGS =	-iso -number
@@ -18,9 +18,9 @@ diff -Nru mysql-3.23.42/Docs/Makefile.am mysql-3.23.42.new/Docs/Makefile.am
  
  manual_toc.html: manual.html
  
-diff -Nru mysql-3.23.42/Makefile.am mysql-3.23.42.new/Makefile.am
---- mysql-3.23.42/Makefile.am	Tue Sep 11 14:28:23 2001
-+++ mysql-3.23.42.new/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/Makefile.am mysql-3.23.49.new/Makefile.am
+--- mysql-3.23.49/Makefile.am	Tue Sep 11 14:28:23 2001
++++ mysql-3.23.49.new/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -21,10 +21,10 @@
  # These are built from source in the Docs directory
  EXTRA_DIST =		INSTALL-SOURCE README \
@@ -102,10 +102,10 @@ diff -Nru mysql-3.23.42/Makefile.am mysql-3.23.42.new/Makefile.am
  
  # Don't update the files from bitkeeper
  %::SCCS/s.%
-diff -Nru mysql-3.23.42/configure.in mysql-3.23.42.new/configure.in
---- mysql-3.23.42/configure.in	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/configure.in	Tue Sep 11 14:19:11 2001
-@@ -77,6 +77,7 @@
+diff -Nru mysql-3.23.49/configure.in mysql-3.23.49.new/configure.in
+--- mysql-3.23.49/configure.in	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/configure.in	Tue Sep 11 14:19:11 2001
+@@ -83,6 +83,7 @@
  AC_SUBST(SAVE_LDFLAGS)
  AC_SUBST(SAVE_CXXLDFLAGS)
  AC_SUBST(CXXLDFLAGS)
@@ -113,9 +113,9 @@ diff -Nru mysql-3.23.42/configure.in mysql-3.23.42.new/configure.in
  
  AC_PREREQ(2.12)dnl		Minimum Autoconf version required.
  
-diff -Nru mysql-3.23.42/dbug/Makefile.am mysql-3.23.42.new/dbug/Makefile.am
---- mysql-3.23.42/dbug/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/dbug/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/dbug/Makefile.am mysql-3.23.49.new/dbug/Makefile.am
+--- mysql-3.23.49/dbug/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/dbug/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -15,8 +15,8 @@
  # Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  # MA 02111-1307, USA
@@ -127,9 +127,9 @@ diff -Nru mysql-3.23.42/dbug/Makefile.am mysql-3.23.42.new/dbug/Makefile.am
  pkglib_LIBRARIES =	libdbug.a
  noinst_HEADERS =	dbug_long.h
  libdbug_a_SOURCES =	dbug.c sanity.c
-diff -Nru mysql-3.23.42/extra/Makefile.am mysql-3.23.42.new/extra/Makefile.am
---- mysql-3.23.42/extra/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/extra/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/extra/Makefile.am mysql-3.23.49.new/extra/Makefile.am
+--- mysql-3.23.49/extra/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/extra/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -14,9 +14,11 @@
  # along with this program; if not, write to the Free Software
  # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -145,9 +145,9 @@ diff -Nru mysql-3.23.42/extra/Makefile.am mysql-3.23.42.new/extra/Makefile.am
  bin_PROGRAMS =		replace comp_err perror resolveip my_print_defaults \
  resolve_stack_dump
  
-diff -Nru mysql-3.23.42/heap/Makefile.am mysql-3.23.42.new/heap/Makefile.am
---- mysql-3.23.42/heap/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/heap/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/heap/Makefile.am mysql-3.23.49.new/heap/Makefile.am
+--- mysql-3.23.49/heap/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/heap/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -14,13 +14,14 @@
  # along with this program; if not, write to the Free Software
  # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -168,9 +168,9 @@ diff -Nru mysql-3.23.42/heap/Makefile.am mysql-3.23.42.new/heap/Makefile.am
  noinst_HEADERS =	heapdef.h
  libheap_a_SOURCES =	hp_open.c hp_extra.c hp_close.c hp_panic.c hp_info.c \
  			hp_rrnd.c hp_scan.c hp_update.c hp_write.c hp_delete.c \
-diff -Nru mysql-3.23.42/isam/Makefile.am mysql-3.23.42.new/isam/Makefile.am
---- mysql-3.23.42/isam/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/isam/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/isam/Makefile.am mysql-3.23.49.new/isam/Makefile.am
+--- mysql-3.23.49/isam/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/isam/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -14,9 +14,11 @@
  # along with this program; if not, write to the Free Software
  # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -186,9 +186,9 @@ diff -Nru mysql-3.23.42/isam/Makefile.am mysql-3.23.42.new/isam/Makefile.am
  pkglib_LIBRARIES =	libnisam.a
  bin_PROGRAMS =		isamchk isamlog pack_isam
  isamchk_DEPENDENCIES=	$(LIBRARIES)
-diff -Nru mysql-3.23.42/libmysql/Makefile.am mysql-3.23.42.new/libmysql/Makefile.am
---- mysql-3.23.42/libmysql/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/libmysql/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/libmysql/Makefile.am mysql-3.23.49.new/libmysql/Makefile.am
+--- mysql-3.23.49/libmysql/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/libmysql/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -19,7 +19,7 @@
  
  target = libmysqlclient.la
@@ -222,9 +222,9 @@ diff -Nru mysql-3.23.42/libmysql/Makefile.am mysql-3.23.42.new/libmysql/Makefile
  	  done;
  
  # This part requires GNUmake
-diff -Nru mysql-3.23.42/libmysql_r/Makefile.am mysql-3.23.42.new/libmysql_r/Makefile.am
---- mysql-3.23.42/libmysql_r/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/libmysql_r/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/libmysql_r/Makefile.am mysql-3.23.49.new/libmysql_r/Makefile.am
+--- mysql-3.23.49/libmysql_r/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/libmysql_r/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -19,9 +19,8 @@
  
  target = libmysqlclient_r.la
@@ -243,9 +243,9 @@ diff -Nru mysql-3.23.42/libmysql_r/Makefile.am mysql-3.23.42.new/libmysql_r/Make
 -	  @LN_CP_F@ $(libmysql_dir)/$$f $(srcdir)/$$f; \
 +	  $(LN_CP_F) $(libmysql_dir)/$$f $(srcdir)/$$f; \
  	done
-diff -Nru mysql-3.23.42/merge/Makefile.am mysql-3.23.42.new/merge/Makefile.am
---- mysql-3.23.42/merge/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/merge/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/merge/Makefile.am mysql-3.23.49.new/merge/Makefile.am
+--- mysql-3.23.49/merge/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/merge/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -14,7 +14,7 @@
  # along with this program; if not, write to the Free Software
  # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -255,9 +255,9 @@ diff -Nru mysql-3.23.42/merge/Makefile.am mysql-3.23.42.new/merge/Makefile.am
  pkglib_LIBRARIES =	libmerge.a
  noinst_HEADERS =	mrgdef.h
  libmerge_a_SOURCES =	open.c extra.c info.c _locking.c \
-diff -Nru mysql-3.23.42/myisam/Makefile.am mysql-3.23.42.new/myisam/Makefile.am
---- mysql-3.23.42/myisam/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/myisam/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/myisam/Makefile.am mysql-3.23.49.new/myisam/Makefile.am
+--- mysql-3.23.49/myisam/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/myisam/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -17,9 +17,11 @@
  EXTRA_DIST =		mi_test_all.sh mi_test_all.res
  pkgdata_DATA =		mi_test_all mi_test_all.res
@@ -353,9 +353,9 @@ diff -Nru mysql-3.23.42/myisam/Makefile.am mysql-3.23.42.new/myisam/Makefile.am
  
  # Don't update the files from bitkeeper
  %::SCCS/s.%
-diff -Nru mysql-3.23.42/myisammrg/Makefile.am mysql-3.23.42.new/myisammrg/Makefile.am
---- mysql-3.23.42/myisammrg/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/myisammrg/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/myisammrg/Makefile.am mysql-3.23.49.new/myisammrg/Makefile.am
+--- mysql-3.23.49/myisammrg/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/myisammrg/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -14,7 +14,7 @@
  # along with this program; if not, write to the Free Software
  # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -365,9 +365,9 @@ diff -Nru mysql-3.23.42/myisammrg/Makefile.am mysql-3.23.42.new/myisammrg/Makefi
  pkglib_LIBRARIES =	libmyisammrg.a
  noinst_HEADERS =	mymrgdef.h
  libmyisammrg_a_SOURCES = myrg_open.c myrg_extra.c myrg_info.c myrg_locking.c \
-diff -Nru mysql-3.23.42/mysql-test/Makefile.am mysql-3.23.42.new/mysql-test/Makefile.am
---- mysql-3.23.42/mysql-test/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/mysql-test/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/mysql-test/Makefile.am mysql-3.23.49.new/mysql-test/Makefile.am
+--- mysql-3.23.49/mysql-test/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/mysql-test/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -48,8 +48,8 @@
  SUFFIXES = .sh
  
@@ -397,9 +397,9 @@ diff -Nru mysql-3.23.42/mysql-test/Makefile.am mysql-3.23.42.new/mysql-test/Make
  
  # Don't update the files from bitkeeper
  %::SCCS/s.%
-diff -Nru mysql-3.23.42/mysys/Makefile.am mysql-3.23.42.new/mysys/Makefile.am
---- mysql-3.23.42/mysys/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/mysys/Makefile.am	Tue Sep 11 14:29:50 2001
+diff -Nru mysql-3.23.49/mysys/Makefile.am mysql-3.23.49.new/mysys/Makefile.am
+--- mysql-3.23.49/mysys/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/mysys/Makefile.am	Tue Sep 11 14:29:50 2001
 @@ -14,13 +14,10 @@
  # along with this program; if not, write to the Free Software
  # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -417,7 +417,7 @@ diff -Nru mysql-3.23.42/mysys/Makefile.am mysql-3.23.42.new/mysys/Makefile.am
  noinst_HEADERS =	mysys_priv.h my_static.h
  libmysys_a_SOURCES =	my_init.c my_getwd.c mf_getdate.c\
  			mf_path.c mf_loadpath.c\
-@@ -48,53 +45,50 @@
+@@ -49,53 +46,50 @@
  			my_vsnprintf.c charset.c my_bitmap.c
  EXTRA_DIST =		thr_alarm.c thr_lock.c my_pthread.c my_thr_init.c \
  			thr_mutex.c thr_rwlock.c
@@ -482,9 +482,9 @@ diff -Nru mysql-3.23.42/mysys/Makefile.am mysql-3.23.42.new/mysys/Makefile.am
  	$(LINK) $(FLAGS) -DMAIN $(srcdir)/testhash.c $(LDADD) $(LIBS)
  
  # Don't update the files from bitkeeper
-diff -Nru mysql-3.23.42/regex/Makefile.am mysql-3.23.42.new/regex/Makefile.am
---- mysql-3.23.42/regex/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/regex/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/regex/Makefile.am mysql-3.23.49.new/regex/Makefile.am
+--- mysql-3.23.49/regex/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/regex/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -15,7 +15,7 @@
  # Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  # MA 02111-1307, USA
@@ -494,9 +494,9 @@ diff -Nru mysql-3.23.42/regex/Makefile.am mysql-3.23.42.new/regex/Makefile.am
  noinst_LIBRARIES =	libregex.a
  LDADD =			libregex.a ../strings/libmystrings.a
  noinst_HEADERS =	cclass.h cname.h regex2.h utils.h engine.c regex.h
-diff -Nru mysql-3.23.42/scripts/Makefile.am mysql-3.23.42.new/scripts/Makefile.am
---- mysql-3.23.42/scripts/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/scripts/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/scripts/Makefile.am mysql-3.23.49.new/scripts/Makefile.am
+--- mysql-3.23.49/scripts/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/scripts/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -76,8 +76,8 @@
  SUFFIXES = .sh
  
@@ -564,9 +564,9 @@ diff -Nru mysql-3.23.42/scripts/Makefile.am mysql-3.23.42.new/scripts/Makefile.a
  
  # Don't update the files from bitkeeper
  %::SCCS/s.%
-diff -Nru mysql-3.23.42/sql/Makefile.am mysql-3.23.42.new/sql/Makefile.am
---- mysql-3.23.42/sql/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/sql/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/sql/Makefile.am mysql-3.23.49.new/sql/Makefile.am
+--- mysql-3.23.49/sql/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/sql/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -20,16 +20,15 @@
  MYSQLDATAdir =		$(localstatedir)
  MYSQLSHAREdir =		$(pkgdatadir)
@@ -609,9 +609,9 @@ diff -Nru mysql-3.23.42/sql/Makefile.am mysql-3.23.42.new/sql/Makefile.am
  
  gen_lex_hash.o:		gen_lex_hash.cc lex.h
  			$(CXXCOMPILE) -c $(INCLUDES) $<
-diff -Nru mysql-3.23.42/sql/share/Makefile.am mysql-3.23.42.new/sql/share/Makefile.am
---- mysql-3.23.42/sql/share/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/sql/share/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/sql/share/Makefile.am mysql-3.23.49.new/sql/share/Makefile.am
+--- mysql-3.23.49/sql/share/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/sql/share/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -1,20 +1,20 @@
  ## Process this file with automake to create Makefile.in
  
@@ -637,9 +637,9 @@ diff -Nru mysql-3.23.42/sql/share/Makefile.am mysql-3.23.42.new/sql/share/Makefi
  	do \
  		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$lang; \
  		$(INSTALL_DATA) $(srcdir)/$$lang/errmsg.sys \
-diff -Nru mysql-3.23.42/sql-bench/Makefile.am mysql-3.23.42.new/sql-bench/Makefile.am
---- mysql-3.23.42/sql-bench/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/sql-bench/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/sql-bench/Makefile.am mysql-3.23.49.new/sql-bench/Makefile.am
+--- mysql-3.23.49/sql-bench/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/sql-bench/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -65,8 +65,8 @@
  SUFFIXES = .sh
  
@@ -669,9 +669,9 @@ diff -Nru mysql-3.23.42/sql-bench/Makefile.am mysql-3.23.42.new/sql-bench/Makefi
  
  # Don't update the files from bitkeeper
  %::SCCS/s.%
-diff -Nru mysql-3.23.42/strings/Makefile.am mysql-3.23.42.new/strings/Makefile.am
---- mysql-3.23.42/strings/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/strings/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/strings/Makefile.am mysql-3.23.49.new/strings/Makefile.am
+--- mysql-3.23.49/strings/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/strings/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -16,7 +16,7 @@
  
  # This file is public domain and comes with NO WARRANTY of any kind
@@ -707,9 +707,9 @@ diff -Nru mysql-3.23.42/strings/Makefile.am mysql-3.23.42.new/strings/Makefile.a
  
  clean-local:
  	rm -f ctype_extra_sources.c
-diff -Nru mysql-3.23.42/support-files/Makefile.am mysql-3.23.42.new/support-files/Makefile.am
---- mysql-3.23.42/support-files/Makefile.am	Tue Sep 11 14:28:24 2001
-+++ mysql-3.23.42.new/support-files/Makefile.am	Tue Sep 11 14:19:11 2001
+diff -Nru mysql-3.23.49/support-files/Makefile.am mysql-3.23.49.new/support-files/Makefile.am
+--- mysql-3.23.49/support-files/Makefile.am	Tue Sep 11 14:28:24 2001
++++ mysql-3.23.49.new/support-files/Makefile.am	Tue Sep 11 14:19:11 2001
 @@ -32,7 +32,7 @@
  			my-large.cnf \
  			my-huge.cnf \

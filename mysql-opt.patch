@@ -1,6 +1,6 @@
---- mysql-3.23.32/configure.in.orig	Sat Feb 10 02:57:16 2001
-+++ mysql-3.23.32/configure.in	Sat Feb 10 03:21:04 2001
-@@ -1094,17 +1094,17 @@
+--- mysql-3.23.56/configure.in.orig	Sat Feb 10 02:57:16 2001
++++ mysql-3.23.56/configure.in	Sat Feb 10 03:21:04 2001
+@@ -1252,17 +1252,17 @@
  if test "$with_debug" = "yes"
  then
    # Medium debug.

@@ -1,5 +1,5 @@
---- mysql-3.23.37/libmysql_r/Makefile.am.amfix	Fri May 11 13:38:18 2001
-+++ mysql-3.23.37/libmysql_r/Makefile.am	Fri May 11 13:38:41 2001
+--- mysql-3.23.49/libmysql_r/Makefile.am.amfix	Fri May 11 13:38:18 2001
++++ mysql-3.23.49/libmysql_r/Makefile.am	Fri May 11 13:38:41 2001
 @@ -27,17 +27,6 @@
  ## automake barfs if you don't use $(srcdir) or $(top_srcdir) in include
  include $(top_srcdir)/libmysql/Makefile.shared
@@ -18,8 +18,8 @@
  libmysql_dir = $(top_srcdir)/libmysql
  
  libmysqlclient_r_la_SOURCES = $(target_sources)
---- mysql-3.23.37/strings/Makefile.am.amfix	Fri May 11 13:40:18 2001
-+++ mysql-3.23.37/strings/Makefile.am	Fri May 11 13:40:41 2001
+--- mysql-3.23.49/strings/Makefile.am.amfix	Fri May 11 13:40:18 2001
++++ mysql-3.23.49/strings/Makefile.am	Fri May 11 13:40:41 2001
 @@ -38,7 +38,7 @@
  endif
  endif
@@ -45,8 +45,8 @@
  
  libmystrings_a_LIBADD=	@CHARSET_OBJS@
  ctype.o:		ctype_extra_sources.c
---- mysql-3.23.37/dbug/Makefile.am.amfix	Fri May 11 13:37:18 2001
-+++ mysql-3.23.37/dbug/Makefile.am	Fri May 11 13:37:30 2001
+--- mysql-3.23.49/dbug/Makefile.am.amfix	Fri May 11 13:37:18 2001
++++ mysql-3.23.49/dbug/Makefile.am	Fri May 11 13:37:30 2001
 @@ -23,14 +23,6 @@
  EXTRA_DIST =		example1.c example2.c example3.c user.r monty.doc readme.prof \
  			main.c factorial.c
@@ -62,9 +62,9 @@
  
  # Must be linked with libs thta are not compiled yet
  extra_progs: factorial dbug_analyze
---- mysql-3.23.37/mysys/Makefile.am.amfix	Fri May 11 13:39:28 2001
-+++ mysql-3.23.37/mysys/Makefile.am	Fri May 11 13:39:43 2001
-@@ -63,14 +63,6 @@
+--- mysql-3.23.49/mysys/Makefile.am.amfix	Fri May 11 13:39:28 2001
++++ mysql-3.23.49/mysys/Makefile.am	Fri May 11 13:39:43 2001
+@@ -65,14 +65,6 @@
  
  libmysys_a_DEPENDENCIES= @THREAD_LOBJECTS@
  
@@ -79,8 +79,8 @@
  
  # I hope this always does the right thing. Otherwise this is only test programs
  FLAGS=$(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @NOINST_LDFLAGS@
---- mysql-3.23.37/extra/Makefile.am.amfix	Fri May 11 13:37:32 2001
-+++ mysql-3.23.37/extra/Makefile.am	Fri May 11 13:37:41 2001
+--- mysql-3.23.49/extra/Makefile.am.amfix	Fri May 11 13:37:32 2001
++++ mysql-3.23.49/extra/Makefile.am	Fri May 11 13:37:41 2001
 @@ -20,14 +20,5 @@
  bin_PROGRAMS =		replace comp_err perror resolveip my_print_defaults \
  resolve_stack_dump
@@ -96,8 +96,8 @@
 -
  # Don't update the files from bitkeeper
  %::SCCS/s.%
---- mysql-3.23.37/regex/Makefile.am.amfix	Fri May 11 13:39:43 2001
-+++ mysql-3.23.37/regex/Makefile.am	Fri May 11 13:39:51 2001
+--- mysql-3.23.49/regex/Makefile.am.amfix	Fri May 11 13:39:43 2001
++++ mysql-3.23.49/regex/Makefile.am	Fri May 11 13:39:51 2001
 @@ -28,15 +28,6 @@
  			debug.ih engine.ih main.ih regcomp.ih regerror.ih \
  			regex.3 regex.7
@@ -114,8 +114,8 @@
  test: re tests
  	./re < tests
  	./re -el < tests
---- mysql-3.23.37/isam/Makefile.am.amfix	Fri May 11 13:37:52 2001
-+++ mysql-3.23.37/isam/Makefile.am	Fri May 11 13:38:18 2001
+--- mysql-3.23.49/isam/Makefile.am.amfix	Fri May 11 13:37:52 2001
++++ mysql-3.23.49/isam/Makefile.am	Fri May 11 13:38:18 2001
 @@ -36,15 +36,6 @@
  			log.c changed.c static.c
  isamchk_SOURCES =	isamchk.c sort.c
@@ -132,8 +132,8 @@
  
  # Move to automake rules ?
  prolint:;	plparse -b -u -hF1 "-width(0,0)" "-format=%f:%l:\s%t:%n\s%m" \
---- mysql-3.23.37/merge/Makefile.am.amfix	Fri May 11 13:38:41 2001
-+++ mysql-3.23.37/merge/Makefile.am	Fri May 11 13:38:50 2001
+--- mysql-3.23.49/merge/Makefile.am.amfix	Fri May 11 13:38:41 2001
++++ mysql-3.23.49/merge/Makefile.am	Fri May 11 13:38:50 2001
 @@ -21,14 +21,5 @@
  			rrnd.c update.c delete.c rsame.c panic.c \
  			close.c create.c static.c
@@ -149,8 +149,8 @@
 -
  # Don't update the files from bitkeeper
  %::SCCS/s.%
---- mysql-3.23.37/myisam/Makefile.am.amfix	Fri May 11 13:38:50 2001
-+++ mysql-3.23.37/myisam/Makefile.am	Fri May 11 13:39:13 2001
+--- mysql-3.23.49/myisam/Makefile.am.amfix	Fri May 11 13:38:50 2001
++++ mysql-3.23.49/myisam/Makefile.am	Fri May 11 13:39:13 2001
 @@ -48,17 +48,6 @@
  			ft_update.c sort.c
  CLEANFILES =		test?.MY? FT?.MY? isam.log mi_test_all
@@ -169,8 +169,8 @@
  
  # Move to automake rules ?
  prolint:;	plparse -b -u -hF1 "-width(0,0)" "-format=%f:%l:\s%t:%n\s%m" \
---- mysql-3.23.37/myisammrg/Makefile.am.amfix	Fri May 11 13:39:13 2001
-+++ mysql-3.23.37/myisammrg/Makefile.am	Fri May 11 13:39:28 2001
+--- mysql-3.23.49/myisammrg/Makefile.am.amfix	Fri May 11 13:39:13 2001
++++ mysql-3.23.49/myisammrg/Makefile.am	Fri May 11 13:39:28 2001
 @@ -22,14 +22,5 @@
  			myrg_panic.c myrg_close.c myrg_create.c myrg_static.c \
  			myrg_rkey.c myrg_rfirst.c myrg_rlast.c myrg_rnext.c \
@@ -186,8 +186,8 @@
 -
  # Don't update the files from bitkeeper
  %::SCCS/s.%
---- mysql-3.23.37/heap/Makefile.am.amfix	Fri May 11 13:37:43 2001
-+++ mysql-3.23.37/heap/Makefile.am	Fri May 11 13:37:52 2001
+--- mysql-3.23.49/heap/Makefile.am.amfix	Fri May 11 13:37:43 2001
++++ mysql-3.23.49/heap/Makefile.am	Fri May 11 13:37:52 2001
 @@ -29,14 +29,5 @@
  			hp_rkey.c hp_block.c \
  			hp_hash.c _check.c _rectest.c hp_static.c
@@ -203,9 +203,9 @@
 -
  # Don't update the files from bitkeeper
  %::SCCS/s.%
---- mysql-3.23.37/sql/Makefile.am.amfix	Fri May 11 13:39:51 2001
-+++ mysql-3.23.37/sql/Makefile.am	Fri May 11 13:40:18 2001
-@@ -94,16 +94,6 @@
+--- mysql-3.23.49/sql/Makefile.am.amfix	Fri May 11 13:39:51 2001
++++ mysql-3.23.49/sql/Makefile.am	Fri May 11 13:40:18 2001
+@@ -93,16 +93,6 @@
  EXTRA_DIST =		udf_example.cc $(BUILT_SOURCES)
  YFLAGS =		-d
  
