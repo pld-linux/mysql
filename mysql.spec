@@ -1,4 +1,5 @@
 Summary:	MySQL: a very fast and reliable SQL database engine
+Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybki i niezawodna baza danych (SQL)
 Name:		mysql
 Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável.
@@ -16,7 +17,7 @@ Provides:	msqlormysql MySQL-server
 Obsoletes:	mysql
 BuildRoot:	/tmp/%{name}-%{version}
 
-%define		_libexec	%{_prefix}/sbin
+%define		_libexecdir	%{_prefix}/sbin
 %define		_sysconfdir	/etc
 %define		_localstatedir	/var/state/mysql
 
