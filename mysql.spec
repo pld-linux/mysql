@@ -27,7 +27,6 @@ Patch2:		%{name}-c++.patch
 Patch3:		%{name}-_r-link.patch
 Patch4:		%{name}-info.patch
 Patch5:		%{name}-dump_quote_db_names.patch
-Patch6:		%{name}-manfixes.patch
 Patch7:		%{name}-sql-cxx-pic.patch
 Patch8:		%{name}-noproc.patch
 Patch9:		%{name}-fix_privilege_tables.patch
@@ -325,7 +324,6 @@ MySQL.
 %patch3 -p1
 %patch4 -p1
 #%patch5 -p1
-#%patch6 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
