@@ -246,7 +246,7 @@ Este pacote contém medições de desempenho de scripts e dados do MySQL.
 rm -f missing
 libtoolize --copy --force
 aclocal
-automake -a -c
+automake -a -c -f
 autoconf
 CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
 CFLAGS="%{rpmcflags} -fomit-frame-pointer"
