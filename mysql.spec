@@ -76,7 +76,7 @@ Obsoletes:	mysql-server
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
 # workaround for buggy gcc 3.3.1
-%define 	specflags_alpha "-mno-explicit-relocs"
+%define 	specflags_alpha  -mno-explicit-relocs 
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
