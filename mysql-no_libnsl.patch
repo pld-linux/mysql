@@ -1,8 +1,18 @@
---- mysql-3.23.49/configure.in~	Mon Jan 22 14:37:03 2001
-+++ mysql-3.23.49/configure.in	Sat Feb 10 02:45:27 2001
-@@ -622,11 +622,7 @@
-   AC_CHECK_LIB(nsl_r, gethostbyname_r, [],
-     AC_CHECK_LIB(nsl, gethostbyname_r))])
+--- mysql-3.23.51/configure.in.orig	Mon Jun  3 12:39:03 2002
++++ mysql-3.23.51/configure.in	Thu Jun 13 09:41:57 2002
+@@ -675,16 +675,14 @@
+ 
+ AC_CHECK_LIB(m, floor, [], AC_CHECK_LIB(m, __infinity))
+ 
+-AC_CHECK_LIB(nsl_r, gethostbyname_r, [],
+-  AC_CHECK_LIB(nsl, gethostbyname_r))
+-AC_CHECK_FUNC(gethostbyname_r)
++AC_CHECK_FUNC(gethostbyname_r, [],
++	[AC_CHECK_LIB(nsl_r, gethostbyname_r,
++		[AC_CHECK_LIB(nsl, gethostbyname_r)]
++	)]
++)
+ 
  AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt))
 -AC_CHECK_FUNC(yp_get_default_domain, ,
 -  AC_CHECK_LIB(nsl, yp_get_default_domain))
