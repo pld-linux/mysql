@@ -313,46 +313,20 @@ mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 perl -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
 
 %pre
-if [ -n "`getgid mysql`" ]; then
-	if [ "`getgid mysql`" != "89" ]; then
-		echo "Warning: group mysql haven't gid=89. Correct this before installing mysql" 1>&2
-		exit 1
-	fi
-else
-	/usr/sbin/groupadd -g 89 -r -f mysql
-fi
-if [ -n "`id -u mysql 2>/dev/null`" ]; then
-	if [ "`id -u mysql`" != "89" ]; then
-		echo "Warning: user mysql haven't uid=89. Correct this before installing mysql" 1>&2
-		exit 1
-	fi
-else
-	/usr/sbin/useradd -u 89 -r -d /var/lib/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
-fi
+GID=89; %groupadd
+UID=89; HOMEDIR=/var/lib/mysql; COMMENT="MySQL User"; %useradd
 
 %post
-[ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
-/sbin/chkconfig --add mysql
-if [ -f /var/lock/subsys/mysql ]; then
-	/etc/rc.d/init.d/mysql restart >&2
-else
-	echo "Run \"/etc/rc.d/init.d/mysql start\" to start mysql." >&2
-fi
+%fix_info_dir
+%chkconfig_add
 
 %preun
-if [ "$1" = "0" ]; then
-	if [ -f /var/lock/subsys/mysql ]; then
-		/etc/rc.d/init.d/mysql stop
-	fi
-	/sbin/chkconfig --del mysql
-fi
+%chkconfig_del
 
 %postun
-[ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
-if [ "$1" = "0" ]; then
-	/usr/sbin/userdel mysql
-	/usr/sbin/groupdel mysql
-fi
+%fix_info_dir
+%userdel
+%groupdel
 
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
