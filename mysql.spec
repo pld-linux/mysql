@@ -30,7 +30,7 @@ Patch5:		%{name}-dump_quote_db_names.patch
 Patch6:		%{name}-manfixes.patch
 Patch7:		%{name}-sql-cxx-pic.patch
 Patch8:		%{name}-buffer.patch
-Patch9:         %{name}-fix_privilege_tables.patch
+Patch9:		%{name}-fix_privilege_tables.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	/bin/ps
@@ -366,7 +366,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer} -DUSE_OLD_FUNCTIONS"
 	--enable-assembler \
 	--without-readline \
 	--without-docs \
-	--with-low-memory  \
+	--with-low-memory \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--enable-thread-safe-client
 #	--with-mysqlfs
@@ -453,8 +453,8 @@ if [ "$1" = "0" ]; then
 	/usr/sbin/groupdel mysql
 fi
 
-%post   libs -p /sbin/ldconfig
-%postun libs -p /sbin/ldconfig
+%post	libs -p /sbin/ldconfig
+%postun	libs -p /sbin/ldconfig
 
 %files
 %defattr(644,root,root,755)
