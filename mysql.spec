@@ -3,13 +3,13 @@
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
-Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável.
+Summary(pt_BR): MySQL: Um servidor SQL rápido e confiável
 Name:           mysql
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy Danych
 Group(pt_BR):	Aplicações/Banco_de_Dados
 Version:	3.22.32
-Release:	3
+Release:	4
 License:	MySQL FREE PUBLIC LICENSE (See the file PUBLIC)
 Source0:	http://www.mysql.com/Downloads/MySQL-3.22/%{name}-%{version}.tar.gz
 Source1:	mysql.init
@@ -27,6 +27,7 @@ BuildRequires:	ncurses-devel
 BuildRequires:	readline-devel
 BuildRequires:	texinfo
 BuildRequires:	rpm-perlprov
+Requires:	rc-scripts >= 0.2.0
 Prereq:		shadow
 Provides:	msqlormysql MySQL-server
 Obsoletes:	MySQL
