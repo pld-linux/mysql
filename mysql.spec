@@ -172,17 +172,17 @@ lisa --SysV-init remove mysql $1
 %defattr(644,root,root,755)
 %doc /usr/doc/MySQL-%{mysql-version}/
 
-%attr(755,root,root) /usr/bin/isamchk
-%attr(755,root,root) /usr/bin/isamlog
-%attr(755,root,root) /usr/bin/mysql_fix_privilege_tables
-%attr(755,root,root) /usr/bin/mysql_install_db
-%attr(755,root,root) /usr/bin/mysql_setpermission
-%attr(755,root,root) /usr/bin/mysql_zap
-%attr(755,root,root) /usr/bin/mysqlbug
-%attr(755,root,root) /usr/bin/perror
-%attr(755,root,root) /usr/bin/replace
-%attr(755,root,root) /usr/bin/resolveip
-%attr(755,root,root) /usr/bin/safe_mysqld
+%attr(755,root,root) %{_bindir}/isamchk
+%attr(755,root,root) %{_bindir}/isamlog
+%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
+%attr(755,root,root) %{_bindir}/mysql_install_db
+%attr(755,root,root) %{_bindir}/mysql_setpermission
+%attr(755,root,root) %{_bindir}/mysql_zap
+%attr(755,root,root) %{_bindir}/mysqlbug
+%attr(755,root,root) %{_bindir}/perror
+%attr(755,root,root) %{_bindir}/replace
+%attr(755,root,root) %{_bindir}/resolveip
+%attr(755,root,root) %{_bindir}/safe_mysqld
 
 %attr(644,root,root) %{_infodir}/mysql.info
 
@@ -197,14 +197,14 @@ lisa --SysV-init remove mysql $1
 %Files client
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
 
-%attr(755,root,root) /usr/bin/msql2mysql
-%attr(755,root,root) /usr/bin/mysql
-%attr(755,root,root) /usr/bin/mysqlaccess
-%attr(755,root,root) /usr/bin/mysqladmin
-%attr(755,root,root) /usr/bin/mysqlbug
-%attr(755,root,root) /usr/bin/mysqldump
-%attr(755,root,root) /usr/bin/mysqlimport
-%attr(755,root,root) /usr/bin/mysqlshow
+%attr(755,root,root) %{_bindir}/msql2mysql
+%attr(755,root,root) %{_bindir}/mysql
+%attr(755,root,root) %{_bindir}/mysqlaccess
+%attr(755,root,root) %{_bindir}/mysqladmin
+%attr(755,root,root) %{_bindir}/mysqlbug
+%attr(755,root,root) %{_bindir}/mysqldump
+%attr(755,root,root) %{_bindir}/mysqlimport
+%attr(755,root,root) %{_bindir}/mysqlshow
 
 %{_mandir}/man1/mysql.1.*
 
@@ -215,7 +215,7 @@ lisa --SysV-init remove mysql $1
 %attr(644,root,root) /usr/include/mysql/*
 %attr(644,root,root) %{_libdir}/mysql/*
 %attr(644,root,root) %{_libdir}/libmysqlclient.so
-%attr(755,root,root) /usr/bin/comp_err
+%attr(755,root,root) %{_bindir}/comp_err
 
 %ChangeLog
 * Thu Jan 25 1999 Stephan Seyboth <sseyboth@linuxland.de>
