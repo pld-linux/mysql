@@ -17,7 +17,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.0.20
-Release:	2.4
+Release:	2.5
 License:	GPL
 Source0:	http://mysql.linux.cz/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
 # Source0-md5:	7c75ac74e23396bd228dbc2c2d1131df
@@ -26,6 +26,7 @@ Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Source5:	%{name}-clusters.conf
+Source6:	%{name}.monitrc
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -397,7 +398,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,monit} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
@@ -419,6 +420,7 @@ install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 install %{SOURCE4} $RPM_BUILD_ROOT/etc/mysql/mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT/etc/mysql/clusters.conf
+install %{SOURCE6} $RPM_BUILD_ROOT/etc/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 
 # remove mysqld's *.po files
@@ -501,6 +503,7 @@ fi
 %attr(751,root,root) %dir /etc/mysql
 %attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/mysqld.conf
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/clusters.conf
+%attr(750,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
