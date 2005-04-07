@@ -23,11 +23,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.1.10a
+Version:	4.1.11
 Release:	1.1
 License:	GPL + MySQL FLOSS Exception
-Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
-# Source0-md5:	6a4a6a5b3d0a42a9a271b2b8867bde82
+Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
+# Source0-md5:	0b99001b07cad53f161ec629a6bb24ea
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -475,6 +475,8 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %{__make} \
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
+# workaround for missing files
+(cd Docs; touch Images/cluster-components-1.txt Images/multi-comp-1.txt errmsg-table.texi cl-errmsg-table.texi)
 %{__make} -C Docs mysql.info
 
 %install
@@ -678,6 +680,7 @@ done
 %attr(755,root,root) %{_bindir}/myisampack
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/pack_isam
+%attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/isamchk.1*
 %{_mandir}/man1/isamlog.1*
@@ -725,7 +728,6 @@ done
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
 %attr(755,root,root) %{_bindir}/perror
-%attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/perror.1*
