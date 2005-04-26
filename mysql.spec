@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.11
-Release:	1.1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	0b99001b07cad53f161ec629a6bb24ea
