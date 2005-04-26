@@ -26,7 +26,7 @@ Version:	5.0.3
 Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mirror.anlx.net/Downloads/MySQL-5.0/%{name}-%{version}-beta.tar.gz
-# Source0-md5:	6a4a6a5b3d0a42a9a271b2b8867bde82
+# Source0-md5:	15913b736389992bd031fd1dbe6f4dfe
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
