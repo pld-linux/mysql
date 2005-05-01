@@ -1,0 +1,4 @@
+- extended libs patch: don't link with unnecessary -lnsl, link with -lcrypt
+  only where needed, link libmysqlclient_r with -lpthread
+- avoid leaving trash (innodb static libs) in %{tmpdir} after %install
+- extended pl description
