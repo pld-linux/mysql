@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.12
-Release:	0.1
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	56a6f5cacd97ae290e07bbe19f279af1
@@ -52,7 +52,6 @@ Patch8:		%{name}-align.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
-BuildRequires:	/bin/ps
 BuildRequires:	autoconf
 BuildRequires:	automake
 %{?with_bdb:BuildRequires:	db3-devel}
@@ -436,6 +435,10 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 # The compiler flags are as per their "official" spec ;)
 CXXFLAGS="%{rpmcflags} -felide-constructors -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
 CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
+
+# NOTE: the PS, FIND_PROC, KILL, CHECK_PID are not used by PLD Linux
+# and therefore do not add BR on these. These are here just to satisfy
+# configure.
 %configure \
 	PS='/bin/ps' \
 	FIND_PROC='/bin/ps p $$PID' \
@@ -468,15 +471,13 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 
 # NOTE that /var/lib/mysql/mysql.sock is symlink to real sock file
 # (it defaults to first cluster but user may change it to whatever
-#  cluster it wants)
+# cluster it wants)
 
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %{__make} \
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
-# workaround for missing files
-(cd Docs; touch Images/cluster-components-1.txt Images/multi-comp-1.txt errmsg-table.texi cl-errmsg-table.texi)
 %{__make} -C Docs mysql.info
 
 %install
@@ -530,7 +531,7 @@ install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 
 # remove mysqld's *.po files
-find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
+find $RPM_BUILD_ROOT%{_datadir}/%{name} -name '*.txt' | xargs -n 100 rm -f
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 %{__perl} -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
 
