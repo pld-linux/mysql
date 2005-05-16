@@ -530,12 +530,55 @@ install %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
 install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 
-# remove mysqld's *.po files
-find $RPM_BUILD_ROOT%{_datadir}/%{name} -name '*.txt' | xargs -n 100 rm -f
+# remove .txt variants for .sys messages
+rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
+
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 %{__perl} -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
 
+# remove known unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
+
+# to -devel?
+rm $RPM_BUILD_ROOT%{_bindir}/comp_err
+rm $RPM_BUILD_ROOT%{_bindir}/resolve_stack_dump
+
+# not our OS
+rm $RPM_BUILD_ROOT%{_bindir}/make_win_*_distribution
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.plist
+# unuseful stuff
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.spec
+
+# to -extras?
+rm $RPM_BUILD_ROOT%{_bindir}/myisam_ftdump
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_secure_installation
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_tzinfo_to_sql
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
+rm $RPM_BUILD_ROOT%{_bindir}/mysqlcheck
+
+# functionality in initscript / rpm
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
+rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
+rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/fill_help_tables.sql
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/{pre,post}install
+
+# probably utility for safe_mysqld
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
+
+# to -extras-perl?
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_explain_log
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_tableinfo
+
+# useful when copying files from windows: to -extras-perl
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_fix_extensions
+
+# in %doc
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.cnf
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -652,6 +695,7 @@ done
 
 %files
 %defattr(644,root,root,755)
+%doc support-files/*.cnf
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
@@ -768,6 +812,9 @@ done
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
+# wrong dir?
+%{_datadir}/mysql/mi_test_all.res
+%attr(755,root,root) %{_datadir}/mysql/mi_test_all
 
 %files doc
 %defattr(644,root,root,755)
