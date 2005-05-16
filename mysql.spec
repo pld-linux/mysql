@@ -539,22 +539,15 @@ mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 # remove known unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 
-# to -devel?
-rm $RPM_BUILD_ROOT%{_bindir}/comp_err
-rm $RPM_BUILD_ROOT%{_bindir}/resolve_stack_dump
+# rename not to be so generic name
+mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
+mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 
 # not our OS
 rm $RPM_BUILD_ROOT%{_bindir}/make_win_*_distribution
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.plist
 # unuseful stuff
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.spec
-
-# to -extras?
-rm $RPM_BUILD_ROOT%{_bindir}/myisam_ftdump
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_secure_installation
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_tzinfo_to_sql
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
-rm $RPM_BUILD_ROOT%{_bindir}/mysqlcheck
 
 # functionality in initscript / rpm
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
@@ -566,22 +559,13 @@ rm $RPM_BUILD_ROOT%{_datadir}/%{name}/fill_help_tables.sql
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/{pre,post}install
-
-# probably utility for safe_mysqld
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 
-# to -extras-perl?
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_explain_log
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_tableinfo
-
-# useful when copying files from windows: to -extras-perl
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_fix_extensions
-
 # in %doc
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.cnf
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+#rm -rf $RPM_BUILD_ROOT
 
 %pre
 %groupadd -g 89 mysql
@@ -695,7 +679,7 @@ done
 
 %files
 %defattr(644,root,root,755)
-%doc support-files/*.cnf
+%doc support-files/*.cnf support-files/*.ini
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
@@ -740,6 +724,8 @@ done
 %lang(hu) %{_datadir}/mysql/hungarian
 %lang(it) %{_datadir}/mysql/italian
 %lang(ja) %{_datadir}/mysql/japanese
+# FIXME: correct locale!
+%lang(ja) %{_datadir}/mysql/japanese-sjis
 %lang(ko) %{_datadir}/mysql/korean
 %lang(nl) %{_datadir}/mysql/dutch
 %lang(nb) %{_datadir}/mysql/norwegian
@@ -759,6 +745,11 @@ done
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
+%attr(755,root,root) %{_bindir}/myisam_ftdump
+%attr(755,root,root) %{_bindir}/mysql_secure_installation
+%attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
+%attr(755,root,root) %{_bindir}/mysql_client_test
+%attr(755,root,root) %{_bindir}/mysqlcheck
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 
@@ -771,6 +762,9 @@ done
 %attr(755,root,root) %{_bindir}/mysql_zap
 %attr(755,root,root) %{_bindir}/mysql_find_rows
 %attr(755,root,root) %{_bindir}/mysqlaccess
+%attr(755,root,root) %{_bindir}/mysql_fix_extensions
+%attr(755,root,root) %{_bindir}/mysql_explain_log
+%attr(755,root,root) %{_bindir}/mysql_tableinfo
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 
@@ -799,6 +793,8 @@ done
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/lib*.so
+%attr(755,root,root) %{_bindir}/*comp_err
+%attr(755,root,root) %{_bindir}/*resolve_stack_dump
 %{_libdir}/lib*.la
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
