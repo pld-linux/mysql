@@ -766,7 +766,7 @@ done
 %defattr(644,root,root,755)
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
-%attr(755,root,root) %{_datadir}/sql-bench/[bcgrst]*
+%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
 
 %files doc
 %defattr(644,root,root,755)
