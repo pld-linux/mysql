@@ -770,7 +770,7 @@ done
 
 %files doc
 %defattr(644,root,root,755)
-%doc Docs/manual.html Docs/manual_toc.html
+#%doc Docs/manual.html Docs/manual_toc.html
 
 %files ndb
 %defattr(644,root,root,755)
