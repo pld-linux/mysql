@@ -811,8 +811,8 @@ done
 %{_datadir}/mysql/mi_test_all.res
 %attr(755,root,root) %{_datadir}/mysql/mi_test_all
 
-%files doc
-%defattr(644,root,root,755)
+#%files doc
+#%defattr(644,root,root,755)
 #%doc Docs/manual.html Docs/manual_toc.html
 
 %files ndb
