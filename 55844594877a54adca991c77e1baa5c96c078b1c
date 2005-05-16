@@ -1,0 +1,5 @@
+- remove Docs workaround (no longer needed)
+- remove BR on /bin/ps, only one that needed PS, KILL, FIND_PROC,
+  CHECK_PID was safe_mysqld, but PLD has it's own initscript
+- remove STUPID typo which killed .txt files from source tree and
+  broke re-entrant %install
