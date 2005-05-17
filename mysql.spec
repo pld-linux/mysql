@@ -724,7 +724,7 @@ done
 %lang(hu) %{_datadir}/mysql/hungarian
 %lang(it) %{_datadir}/mysql/italian
 %lang(ja) %{_datadir}/mysql/japanese
-%lang(ja_JP.SJIS) %{_datadir}/mysql/japanese-sjis
+%lang(ja) %{_datadir}/mysql/japanese-sjis
 %lang(ko) %{_datadir}/mysql/korean
 %lang(nl) %{_datadir}/mysql/dutch
 %lang(nb) %{_datadir}/mysql/norwegian
