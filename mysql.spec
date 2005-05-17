@@ -47,8 +47,7 @@ Patch3:		%{name}-info.patch
 Patch4:		%{name}-sql-cxx-pic.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fix_privilege_tables.patch
-#Patch7:		%{name}-nptl.patch
-Patch8:		%{name}-align.patch
+Patch7:		%{name}-align.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -422,8 +421,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %endif
 %patch5 -p1
 %patch6 -p1
-#%patch7 -p1
-%patch8 -p1
+%patch7 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
