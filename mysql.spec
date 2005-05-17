@@ -563,7 +563,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 
 %clean
-#rm -rf $RPM_BUILD_ROOT
+rm -rf $RPM_BUILD_ROOT
 
 %pre
 %groupadd -g 89 mysql
