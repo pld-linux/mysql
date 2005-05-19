@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.12
-Release:	0.4
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	56a6f5cacd97ae290e07bbe19f279af1
