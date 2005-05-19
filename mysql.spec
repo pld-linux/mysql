@@ -2,7 +2,6 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
-# - what's the libwrapper constistent bcond name? I see in specs 'libwrap', 'tcpd', 'tcp_wrappers'
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -11,6 +10,7 @@
 %bcond_without	raid	# Without raid
 %bcond_without	ssl	# Without OpenSSL
 %bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
+%bcond_with		big_tables	# enable '--with-big-tables', some performance loss on 32bit arch, but can do >= 4GB database tables.
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.12
-Release:	0.2
+Release:	0.4
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	56a6f5cacd97ae290e07bbe19f279af1
@@ -452,6 +452,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with%{!?with_raid:out}-raid \
 	--with%{!?with_ssl:out}-openssl \
 	--with%{!?with_tcpd:out}-libwrap \
+	%{?with_big_tables:--with-big-tables} \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--with%{!?debug:out}-debug \
 	--with-embedded-server \
@@ -459,13 +460,15 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-low-memory \
 	--with-mysqld-user=mysql \
 	--with-named-curses-libs="-lncurses" \
-	--with-named-thread-libs="-lpthread" --with-pthread \
+	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-vio \
 	--with-ndbcluster \
 	--without-readline \
+	--without-libedit \
 	--without-docs
 #	--with-mysqlfs
+#	--with-ndb-test --with-ndb-docs
 
 # NOTE that /var/lib/mysql/mysql.sock is symlink to real sock file
 # (it defaults to first cluster but user may change it to whatever
@@ -745,7 +748,6 @@ done
 %attr(755,root,root) %{_bindir}/myisam_ftdump
 %attr(755,root,root) %{_bindir}/mysql_secure_installation
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
-%attr(755,root,root) %{_bindir}/mysql_client_test
 %attr(755,root,root) %{_bindir}/mysqlcheck
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
@@ -802,6 +804,7 @@ done
 %files bench
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysqltest
+%attr(755,root,root) %{_bindir}/mysql_client_test
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
