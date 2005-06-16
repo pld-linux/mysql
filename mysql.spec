@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.12
-Release:	1
+Release:	1.1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	56a6f5cacd97ae290e07bbe19f279af1
@@ -74,6 +74,7 @@ Requires(pre):	/usr/sbin/useradd
 Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
 Requires(post,preun):	/sbin/chkconfig
+Requires(triggerpostun):	sed >= 4.0
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
@@ -664,18 +665,25 @@ fi
 
 %triggerpostun -- mysql <= 4.1.1
 # For better compatibility with prevoius versions:
-for config in `grep -v "^#" /etc/mysql/clusters.conf | cut -d"=" -f 1`; do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
 	elif [ -f "/etc/mysql/$config" ]; then
 		config_file=/etc/mysql/$config
 	else
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
 		config_file="$clusterdir/mysqld.conf"
 	fi
 	echo "Adding option old-passwords to config: $config_file"
 	echo "If you want to use new, better passwords - remove it"
-	echo "# Compatibility options:" >> $config_file
-	echo "old-passwords" >> $config_file
+
+	# sed magic to add 'old-passwords' to [mysqld] section
+	sed -i -e '/./{H;$!d;};x;/\[mysqld\]/{
+		a
+		a; Compatibility options:
+		aold-passwords
+	}
+	' $config_file
 done
 
 %files
