@@ -22,11 +22,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.0.24
+Version:	4.0.25
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.mainseek.com/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
-# Source0-md5:	408d3001ed715ddc90009c247e548638
+# Source0-md5:	68a47ff8c1f0c24866a792f6b3bb59d6
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -237,6 +237,7 @@ Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
 Group:		Applications/Databases
 Obsoletes:	libmysql10
+Obsoletes:	mysql-doc < 4.0.25-1
 
 %description libs
 Shared libraries for MySQL.
@@ -350,7 +351,8 @@ Podrêcznik MySQL-a w formacie HTML.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
-%patch4 -p1
+# in 4.0.25 there is no source for info file
+#%patch4 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
@@ -642,6 +644,6 @@ fi
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgrst]*
 
-%files doc
-%defattr(644,root,root,755)
-%doc Docs/manual.html Docs/manual_toc.html
+#%files doc
+#%defattr(644,root,root,755)
+#%doc Docs/manual.html Docs/manual_toc.html
