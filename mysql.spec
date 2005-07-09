@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.12
-Release:	1.2
+Release:	1.4
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	56a6f5cacd97ae290e07bbe19f279af1
@@ -40,6 +40,7 @@ Source9:	%{name}-ndb-mgm.init
 Source10:	%{name}-ndb-mgm.sysconfig
 Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
+Source13:	%{name}-client.conf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -48,6 +49,7 @@ Patch4:		%{name}-sql-cxx-pic.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fix_privilege_tables.patch
 Patch7:		%{name}-align.patch
+Patch8:		%{name}-client-config.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
@@ -423,6 +425,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
@@ -457,8 +460,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--with%{!?debug:out}-debug \
 	--with-embedded-server \
-	--with-charset=latin2 \
-	--with-collation=latin2_general_ci \
 	--with-extra-charsets=all \
 	--with-low-memory \
 	--with-mysqld-user=mysql \
@@ -525,6 +526,7 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
 %endif
 
 install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
+install %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
 
 # NDB
 install %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
@@ -694,7 +696,6 @@ done
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
-%attr(751,root,root) %dir %{_sysconfdir}/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
 %attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/isamchk
@@ -796,6 +797,8 @@ done
 %defattr(644,root,root,755)
 %doc EXCEPTIONS-CLIENT
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
+%attr(751,root,root) %dir %{_sysconfdir}/mysql
+%attr(644,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 
 %files devel
 %defattr(644,root,root,755)
