@@ -1,0 +1,1 @@
+- switch by default to latin2 (of course latin1 still can be changed runtime but not exactly in the same way as setting here)
