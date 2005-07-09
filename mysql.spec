@@ -582,7 +582,7 @@ rm -rf $RPM_BUILD_ROOT
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
 if [ -f /var/lock/subsys/mysql ]; then
-	/etc/rc.d/init.d/mysql restart >&2
+	/etc/rc.d/init.d/mysql restart >&2 || :
 else
 	echo "Run \"/etc/rc.d/init.d/mysql start\" to start mysql." >&2
 fi
