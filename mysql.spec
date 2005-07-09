@@ -458,6 +458,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with%{!?debug:out}-debug \
 	--with-embedded-server \
 	--with-charset=latin2 \
+	--with-collation=latin2_general_ci \
 	--with-extra-charsets=all \
 	--with-low-memory \
 	--with-mysqld-user=mysql \
