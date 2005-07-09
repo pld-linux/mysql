@@ -85,7 +85,6 @@ Provides:	msqlormysql
 Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
-Obsoletes:	mysql-doc < 4.1.12
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
@@ -255,6 +254,7 @@ Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
 Group:		Applications/Databases
 Obsoletes:	libmysql10
+Obsoletes:	mysql-doc < 4.1.12
 
 %description libs
 Shared libraries for MySQL.
