@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.12
-Release:	2
+Release:	2.1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	56a6f5cacd97ae290e07bbe19f279af1
@@ -670,13 +670,18 @@ fi
 
 %triggerpostun -- mysql <= 4.1.1
 # For better compatibility with prevoius versions:
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf | xargs); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
 	elif [ -f "/etc/mysql/$config" ]; then
 		config_file=/etc/mysql/$config
 	else
 		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
+		if [ -z "$clusterdir" ]; then
+			echo >&2 "Can't find cluster dir for $config!"
+			echo >&2 "Please remove extra (leading) spaces from /etc/mysql/clusters.conf"
+			exit 1
+		fi
 		config_file="$clusterdir/mysqld.conf"
 	fi
 	echo "Adding option old-passwords to config: $config_file"
