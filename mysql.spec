@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.12
-Release:	2.1
+Release:	2.4
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	56a6f5cacd97ae290e07bbe19f279af1
@@ -670,7 +670,7 @@ fi
 
 %triggerpostun -- mysql <= 4.1.1
 # For better compatibility with prevoius versions:
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf | xargs); do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
 	elif [ -f "/etc/mysql/$config" ]; then
@@ -683,6 +683,11 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf | xarg
 			exit 1
 		fi
 		config_file="$clusterdir/mysqld.conf"
+	fi
+
+	if [ ! -f "$config_file" ]; then
+			echo >&2 "Lost myself! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
+			exit 1
 	fi
 	echo "Adding option old-passwords to config: $config_file"
 	echo "If you want to use new, better passwords - remove it"
