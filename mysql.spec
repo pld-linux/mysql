@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	4.1.13
-Release:	0.1
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	49d7a7314a2c9cf49e34777e73e66562
@@ -65,7 +65,7 @@ BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.202
+BuildRequires:	rpmbuild(macros) >= 1.228
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 PreReq:		rc-scripts >= 0.2.0
@@ -551,7 +551,6 @@ mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 
 # not our OS
-rm $RPM_BUILD_ROOT%{_bindir}/make_win_*_distribution
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.plist
 # unuseful stuff
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.spec
@@ -581,17 +580,11 @@ rm -rf $RPM_BUILD_ROOT
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
-if [ -f /var/lock/subsys/mysql ]; then
-	/etc/rc.d/init.d/mysql restart >&2 || :
-else
-	echo "Run \"/etc/rc.d/init.d/mysql start\" to start mysql." >&2
-fi
+%service mysql restart
 
 %preun
 if [ "$1" = "0" ]; then
-	if [ -f /var/lock/subsys/mysql ]; then
-		/etc/rc.d/init.d/mysql stop
-	fi
+	%service -q mysql stop
 	/sbin/chkconfig --del mysql
 fi
 
