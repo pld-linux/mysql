@@ -580,6 +580,15 @@ rm -rf $RPM_BUILD_ROOT
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
+
+if [ "$1" = 1 ]; then
+	%banner -e %{name}-4.1.x <<-EOF
+	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
+	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
+EOF
+#'
+fi
+
 %service mysql restart
 
 %preun
@@ -693,6 +702,12 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 	}
 	' $config_file
 done
+
+%banner -e %{name}-4.1.x <<-EOF
+	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
+	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
+EOF
+#'
 
 %files
 %defattr(644,root,root,755)
