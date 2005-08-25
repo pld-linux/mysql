@@ -23,11 +23,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.1.13
+Version:	4.1.14
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
-# Source0-md5:	49d7a7314a2c9cf49e34777e73e66562
+# Source0-md5:	98ba9caea24b0a48ee06bb242ff2e37f
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -550,11 +550,6 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 
-# not our OS
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.plist
-# unuseful stuff
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.spec
-
 # functionality in initscript / rpm
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
@@ -564,7 +559,7 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/fill_help_tables.sql
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/{pre,post}install
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 
 # in %doc
