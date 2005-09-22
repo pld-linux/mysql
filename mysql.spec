@@ -584,7 +584,7 @@ EOF
 #'
 fi
 
-%service mysql restart
+%service mysql restart || :
 
 %preun
 if [ "$1" = "0" ]; then
