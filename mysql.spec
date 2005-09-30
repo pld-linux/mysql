@@ -7,7 +7,6 @@
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
 %bcond_without	innodb	# Without InnoDB support
-%bcond_without	isam	# Without ISAM table format (used in mysql 3.22)
 %bcond_without	raid	# Without raid
 %bcond_without	ssl	# Without OpenSSL
 %bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
@@ -458,7 +457,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--enable-thread-safe-client \
 	--with%{!?with_bdb:out}-berkeley-db \
 	--with%{!?with_innodb:out}-innodb \
-	--with%{!?with_isam:out}-isam \
 	--with%{!?with_raid:out}-raid \
 	--with%{!?with_ssl:out}-openssl \
 	--with%{!?with_tcpd:out}-libwrap \
@@ -519,7 +517,7 @@ install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 install %{SOURCE4} mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
 install %{SOURCE6} $RPM_BUILD_ROOT%{_sysconfdir}/monit
-touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
+touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
@@ -720,17 +718,12 @@ EOF
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
 %attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/innochecksum
-#%attr(755,root,root) %{_bindir}/isamchk
-#%attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
-#%attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/mysqld
-#%{_mandir}/man1/isamchk.1*
-#%{_mandir}/man1/isamlog.1*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 
