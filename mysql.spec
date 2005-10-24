@@ -2,15 +2,16 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
+# - what's the libwrapper constistent bcond name? I see in specs 'libwrap', 'tcpd', 'tcp_wrappers'
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
 %bcond_without	innodb	# Without InnoDB support
-%bcond_without	isam	# Without ISAM table format (used in mysql 3.22)
 %bcond_without	raid	# Without raid
 %bcond_without	ssl	# Without OpenSSL
 %bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
-%bcond_with		big_tables	# enable '--with-big-tables', some performance loss on 32bit arch, but can do >= 4GB database tables.
+%bcond_with	big_tables	# enable '--with-big-tables', some performance loss on 32bit arch,
+				# but can do >= 4GB database tables.
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -23,11 +24,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.1.15
-Release:	2
+Version:	5.0.15
+Release:	1
 License:	GPL + MySQL FLOSS Exception
-Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
-# Source0-md5:	65a0841e592641b8816f9212aaa40176
+Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+# Source0-md5:	b19e03de0ec348552b4bfac2e215f335
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -50,9 +51,9 @@ Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fix_privilege_tables.patch
 Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
+Patch9:		%{name}-build.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
-#BuildRequires:	ORBit-devel
 BuildRequires:	autoconf
 BuildRequires:	automake
 %{?with_bdb:BuildRequires:	db3-devel}
@@ -68,7 +69,7 @@ BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.228
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-PreReq:		rc-scripts >= 0.2.0
+Requires:	rc-scripts >= 0.2.0
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/bin/id
 Requires(pre):	/usr/sbin/groupadd
@@ -427,6 +428,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
+%patch9 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
@@ -435,6 +437,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %{__aclocal}
 %{__automake}
 %{__autoconf}
+
 # The compiler flags are as per their "official" spec ;)
 CXXFLAGS="%{rpmcflags} -felide-constructors -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
 CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
@@ -442,6 +445,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 # NOTE: the PS, FIND_PROC, KILL, CHECK_PID are not used by PLD Linux
 # and therefore do not add BR on these. These are here just to satisfy
 # configure.
+
 %configure \
 	PS='/bin/ps' \
 	FIND_PROC='/bin/ps p $$PID' \
@@ -453,7 +457,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--enable-thread-safe-client \
 	--with%{!?with_bdb:out}-berkeley-db \
 	--with%{!?with_innodb:out}-innodb \
-	--with%{!?with_isam:out}-isam \
 	--with%{!?with_raid:out}-raid \
 	--with%{!?with_ssl:out}-openssl \
 	--with%{!?with_tcpd:out}-libwrap \
@@ -467,7 +470,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-named-curses-libs="-lncurses" \
 	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
-	--with-archive-storage-engine \
 	--with-vio \
 	--with-ndbcluster \
 	--without-readline \
@@ -478,13 +480,15 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 
 # NOTE that /var/lib/mysql/mysql.sock is symlink to real sock file
 # (it defaults to first cluster but user may change it to whatever
-# cluster it wants)
+#  cluster it wants)
 
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %{__make} \
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
+# workaround for missing files
+(cd Docs; touch Images/cluster-components-1.txt Images/multi-comp-1.txt errmsg-table.texi cl-errmsg-table.texi)
 %{__make} -C Docs mysql.info
 
 %install
@@ -513,7 +517,7 @@ install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 install %{SOURCE4} mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
 install %{SOURCE6} $RPM_BUILD_ROOT%{_sysconfdir}/monit
-touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog.log}
+touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
@@ -578,9 +582,9 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/chkconfig --add mysql
 
 if [ "$1" = 1 ]; then
-	%banner -e %{name}-4.1.x <<-EOF
-	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
-	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
+       %banner -e %{name}-4.1.x <<-EOF
+       If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
+       zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
 EOF
 #'
 fi
@@ -713,17 +717,13 @@ EOF
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
 %attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
-%attr(755,root,root) %{_bindir}/isamchk
-%attr(755,root,root) %{_bindir}/isamlog
+%attr(755,root,root) %{_bindir}/innochecksum
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
-%attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/mysqld
-%{_mandir}/man1/isamchk.1*
-%{_mandir}/man1/isamlog.1*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 
@@ -751,7 +751,6 @@ EOF
 %lang(hu) %{_datadir}/mysql/hungarian
 %lang(it) %{_datadir}/mysql/italian
 %lang(ja) %{_datadir}/mysql/japanese
-%lang(ja) %{_datadir}/mysql/japanese-sjis
 %lang(ko) %{_datadir}/mysql/korean
 %lang(nl) %{_datadir}/mysql/dutch
 %lang(nb) %{_datadir}/mysql/norwegian
@@ -799,10 +798,11 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
-%attr(755,root,root) %{_bindir}/mysqlmanager*
+%attr(755,root,root) %{_sbindir}/mysqlmanager*
 %attr(755,root,root) %{_bindir}/mysqlshow
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
+%attr(755,root,root) %{_bindir}/mysqltest*
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
