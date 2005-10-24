@@ -487,8 +487,6 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %{__make} \
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
-# workaround for missing files
-(cd Docs; touch Images/cluster-components-1.txt Images/multi-comp-1.txt errmsg-table.texi cl-errmsg-table.texi)
 %{__make} -C Docs mysql.info
 
 %install
@@ -751,7 +749,6 @@ EOF
 %lang(hu) %{_datadir}/mysql/hungarian
 %lang(it) %{_datadir}/mysql/italian
 %lang(ja) %{_datadir}/mysql/japanese
-%lang(ja) %{_datadir}/mysql/japanese-sjis
 %lang(ko) %{_datadir}/mysql/korean
 %lang(nl) %{_datadir}/mysql/dutch
 %lang(nb) %{_datadir}/mysql/norwegian
