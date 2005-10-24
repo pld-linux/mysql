@@ -24,11 +24,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	5.0.13
-Release:	0.1
+Version:	5.0.15
+Release:	1
 License:	GPL + MySQL FLOSS Exception
-Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}-rc.tar.gz
-# Source0-md5:	d9500d81b4253142a2a3c68b53942aab
+Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+# Source0-md5:	b19e03de0ec348552b4bfac2e215f335
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -69,7 +69,7 @@ BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.228
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-PreReq:		rc-scripts >= 0.2.0
+Requires:	rc-scripts >= 0.2.0
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/bin/id
 Requires(pre):	/usr/sbin/groupadd
@@ -413,7 +413,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n %{name}-%{version}-rc
+%setup -q
 %patch0 -p1
 %{?with_tcpd:%patch1 -p1}
 %patch2 -p1
@@ -802,6 +802,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlshow
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
+%attr(755,root,root) %{_bindir}/mysqltest*
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
