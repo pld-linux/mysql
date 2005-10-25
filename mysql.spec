@@ -51,6 +51,7 @@ Patch6:		%{name}-fix_privilege_tables.patch
 Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
+Patch10:	%{name}-alpha.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -422,6 +423,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
 %patch4 -p1
+%patch10 -p1
 %endif
 %patch5 -p1
 %patch6 -p1
