@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	5.0.15
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	b19e03de0ec348552b4bfac2e215f335
@@ -589,7 +589,8 @@ EOF
 #'
 fi
 
-%service mysql restart || :
+%service mysql restart
+exit 0
 
 %preun
 if [ "$1" = "0" ]; then
