@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	5.0.15
-Release:	4
+Release:	5
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	b19e03de0ec348552b4bfac2e215f335
@@ -52,6 +52,7 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
+Patch11:	%{name}-bug-13707.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -78,7 +79,7 @@ Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
 Requires(post,preun):	/sbin/chkconfig
 Requires(triggerpostun):	sed >= 4.0
-Requires:	%{name}-libs = %{version}-%{release}
+#Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
 Provides:	group(mysql)
@@ -430,6 +431,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
+%patch11 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
@@ -464,6 +466,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	%{?with_big_tables:--with-big-tables} \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--with%{!?debug:out}-debug \
+	--with%{!?debug:out}-ndb-debug \
 	--with-embedded-server \
 	--with-extra-charsets=all \
 	--with-low-memory \
