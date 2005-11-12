@@ -2,6 +2,7 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
+# - C(XX)FLAGS for innodb subdirs are overriden by ./configre!
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -9,8 +10,7 @@
 %bcond_without	raid	# Without raid
 %bcond_without	ssl	# Without OpenSSL
 %bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
-%bcond_with	big_tables	# enable '--with-big-tables', some performance loss on 32bit arch,
-				# but can do >= 4GB database tables.
+%bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	5.0.15
-Release:	5
+Release:	5.1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	b19e03de0ec348552b4bfac2e215f335
@@ -53,6 +53,8 @@ Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-bug-13707.patch
+Patch12:	%{name}-bug-14610.patch
+Patch13:	%{name}-bug-13587.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -68,6 +70,7 @@ BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.228
+BuildRequires:	sed >= 4.0
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 Requires:	rc-scripts >= 0.2.0
@@ -432,6 +435,8 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
+%patch12 -p1
+%patch13 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
@@ -549,7 +554,7 @@ install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-%{__perl} -pi -e 's,%{_libdir}/mysql,%{_libdir},;' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
+sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
 
 # remove known unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
