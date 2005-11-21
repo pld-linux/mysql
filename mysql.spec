@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	5.0.15
-Release:	5.1
+Release:	6
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	b19e03de0ec348552b4bfac2e215f335
@@ -82,7 +82,6 @@ Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
 Requires(post,preun):	/sbin/chkconfig
 Requires(triggerpostun):	sed >= 4.0
-#Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
 Provides:	group(mysql)
