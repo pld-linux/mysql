@@ -23,11 +23,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	5.0.15
-Release:	6
+Version:	5.0.16
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	b19e03de0ec348552b4bfac2e215f335
+# Source0-md5:	ecf2ae1d782a8d129af940c15a44f477
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -52,9 +52,6 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
-Patch11:	%{name}-bug-13707.patch
-Patch12:	%{name}-bug-14610.patch
-Patch13:	%{name}-bug-13587.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -433,9 +430,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
@@ -734,6 +728,9 @@ EOF
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
+%{_mandir}/man1/myisamchk.1*
+%{_mandir}/man1/myisamlog.1*
+%{_mandir}/man1/myisampack.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -784,6 +781,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlcheck
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
+%{_mandir}/man1/msql2mysql.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -799,6 +797,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_tableinfo
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
+%{_mandir}/man1/mysqlhotcopy.1*
 
 %files client
 %defattr(644,root,root,755)
@@ -815,6 +814,9 @@ EOF
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlshow.1*
+%{_mandir}/man1/mysqlmanager.1*
+%{_mandir}/man1/mysqlbinlog.1*
+%{_mandir}/man1/mysqlimport.1*
 
 %files libs
 %defattr(644,root,root,755)
@@ -832,6 +834,7 @@ EOF
 %{_libdir}/lib*.la
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
+%{_mandir}/man1/mysql_config.1*
 
 %files static
 %defattr(644,root,root,755)
