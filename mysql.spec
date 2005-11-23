@@ -453,6 +453,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	KILL='/bin/kill' \
 	CHECK_PID='/bin/kill -0 $$PID' \
 	--enable-assembler \
+	--enable-largefile=yes \
 	--enable-shared \
 	--enable-static \
 	--enable-thread-safe-client \
