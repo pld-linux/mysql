@@ -24,7 +24,7 @@ Summary(zh_CN):	MySQL数据库服务器
 Name:		mysql
 Group:		Applications/Databases
 Version:	5.0.16
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	ecf2ae1d782a8d129af940c15a44f477
@@ -52,6 +52,7 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
+Patch11:	%{name}-bug-14610.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -430,6 +431,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
+%patch11 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
