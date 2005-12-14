@@ -2,6 +2,7 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
+# - package man1/mysqlman.1, and make programs without manpage '.so mysqlman'
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -23,11 +24,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.1.13
+Version:	4.1.16
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
-# Source0-md5:	49d7a7314a2c9cf49e34777e73e66562
+# Source0-md5:	13c5fdd05e28863db3a1261635890b5f
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -77,7 +78,6 @@ Requires(postun):	/usr/sbin/userdel
 Requires(postun):	/usr/sbin/groupdel
 Requires(post,preun):	/sbin/chkconfig
 Requires(triggerpostun):	sed >= 4.0
-Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Provides:	MySQL-server
 Provides:	group(mysql)
@@ -467,6 +467,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-named-curses-libs="-lncurses" \
 	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
+	--with-archive-storage-engine \
 	--with-vio \
 	--with-ndbcluster \
 	--without-readline \
@@ -550,11 +551,6 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 
-# not our OS
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.plist
-# unuseful stuff
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.spec
-
 # functionality in initscript / rpm
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
@@ -564,8 +560,9 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/fill_help_tables.sql
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/{pre,post}install
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
+rm $RPM_BUILD_ROOT%{_mandir}/man1/{mysql.server,safe_mysqld}*
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
@@ -580,7 +577,16 @@ rm -rf $RPM_BUILD_ROOT
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
-%service mysql restart
+
+if [ "$1" = 1 ]; then
+	%banner -e %{name}-4.1.x <<-EOF
+	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
+	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
+EOF
+#'
+fi
+
+%service mysql restart || :
 
 %preun
 if [ "$1" = "0" ]; then
@@ -694,6 +700,12 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 	' $config_file
 done
 
+%banner -e %{name}-4.1.x <<-EOF
+	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
+	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
+EOF
+#'
+
 %files
 %defattr(644,root,root,755)
 %doc support-files/*.cnf support-files/*.ini scripts/fill_help_tables.sql
@@ -715,6 +727,10 @@ done
 %{_mandir}/man1/isamlog.1*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
+%{_mandir}/man1/myisamchk.1*
+%{_mandir}/man1/myisamlog.1*
+%{_mandir}/man1/myisampack.1*
+%{_mandir}/man1/pack_isam.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -766,6 +782,8 @@ done
 %attr(755,root,root) %{_bindir}/mysqlcheck
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
+%{_mandir}/man1/msql2mysql*
+%{_mandir}/man1/mysqlcheck.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -781,6 +799,7 @@ done
 %attr(755,root,root) %{_bindir}/mysql_tableinfo
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
+%{_mandir}/man1/mysqlhotcopy.1*
 
 %files client
 %defattr(644,root,root,755)
@@ -796,6 +815,8 @@ done
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlshow.1*
+%{_mandir}/man1/mysqlbinlog.1*
+%{_mandir}/man1/mysqlimport.1*
 
 %files libs
 %defattr(644,root,root,755)
@@ -813,6 +834,7 @@ done
 %{_libdir}/lib*.la
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
+%{_mandir}/man1/mysql_config.1*
 
 %files static
 %defattr(644,root,root,755)
