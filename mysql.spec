@@ -2,6 +2,7 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
+# - package man1/mysqlman.1, and make programs without manpage '.so mysqlman'
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -23,11 +24,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	4.1.15
-Release:	3
+Version:	4.1.16
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
-# Source0-md5:	65a0841e592641b8816f9212aaa40176
+# Source0-md5:	13c5fdd05e28863db3a1261635890b5f
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -561,6 +562,7 @@ rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
+rm $RPM_BUILD_ROOT%{_mandir}/man1/{mysql.server,safe_mysqld}*
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
@@ -725,6 +727,10 @@ EOF
 %{_mandir}/man1/isamlog.1*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
+%{_mandir}/man1/myisamchk.1*
+%{_mandir}/man1/myisamlog.1*
+%{_mandir}/man1/myisampack.1*
+%{_mandir}/man1/pack_isam.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -776,6 +782,8 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlcheck
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
+%{_mandir}/man1/msql2mysql*
+%{_mandir}/man1/mysqlcheck.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -791,6 +799,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_tableinfo
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
+%{_mandir}/man1/mysqlhotcopy.1*
 
 %files client
 %defattr(644,root,root,755)
@@ -806,6 +815,8 @@ EOF
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlshow.1*
+%{_mandir}/man1/mysqlbinlog.1*
+%{_mandir}/man1/mysqlimport.1*
 
 %files libs
 %defattr(644,root,root,755)
@@ -823,6 +834,7 @@ EOF
 %{_libdir}/lib*.la
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
+%{_mandir}/man1/mysql_config.1*
 
 %files static
 %defattr(644,root,root,755)
