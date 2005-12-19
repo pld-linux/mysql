@@ -550,7 +550,7 @@ install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient.la
+sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient{,_r}.la
 
 # remove known unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
@@ -570,6 +570,8 @@ rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
+rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
