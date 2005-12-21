@@ -23,11 +23,11 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Group:		Applications/Databases
-Version:	5.0.16
-Release:	2
+Version:	5.0.17
+Release:	1
 License:	GPL + MySQL FLOSS Exception
-Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	ecf2ae1d782a8d129af940c15a44f477
+Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+# Source0-md5:	c6e93571a944a7e7203e4e831adaaee3
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -52,7 +52,6 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
-Patch11:	%{name}-bug-14610.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
@@ -431,7 +430,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
-%patch11 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
