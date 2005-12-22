@@ -25,7 +25,7 @@ Group:		Applications/Databases
 Version:	4.0.26
 Release:	1
 License:	GPL + MySQL FLOSS Exception
-Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/mysql-%{version}.tar.gz
+Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/%{name}-%{version}.tar.gz
 # Source0-md5:	4e2060a3875470e0d853391e8647a019
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -44,8 +44,8 @@ Patch7:		%{name}-fix_privilege_tables.patch
 Patch8:		%{name}-nptl.patch
 Icon:		mysql.gif
 URL:		http://www.mysql.com/
-#BuildRequires:	ORBit-devel
 BuildRequires:	/bin/ps
+#BuildRequires:	ORBit-devel
 BuildRequires:	autoconf
 BuildRequires:	automake
 %{?with_bdb:BuildRequires:	db3-devel}
@@ -61,16 +61,15 @@ BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.159
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-PreReq:		rc-scripts >= 0.2.0
-Requires(pre):	/usr/bin/getgid
+Requires(post,preun):	/sbin/chkconfig
+Requires(postun):	/usr/sbin/groupdel
+Requires(postun):	/usr/sbin/userdel
 Requires(pre):	/bin/id
+Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
-Requires(postun):	/usr/sbin/userdel
-Requires(postun):	/usr/sbin/groupdel
-Requires(post,preun):	/sbin/chkconfig
-Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
+Requires:	rc-scripts >= 0.2.0
 Provides:	MySQL-server
 Provides:	group(mysql)
 Provides:	msqlormysql
@@ -79,6 +78,7 @@ Obsoletes:	MySQL
 Obsoletes:	mysql-server
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
+%define		_sysconfdir	/etc/%{name}
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
 %define		_mysqlhome	/home/services/mysql
@@ -137,8 +137,8 @@ G³ównymi celami MySQL-a s± szybko¶æ, potêga i ³atwo¶æ u¿ytkowania.
 MySQL oryginalnie by³ tworzony, poniewa¿ autorzy w Tcx potrzebowali
 serwera SQL do obs³ugi bardzo du¿ych baz danych z szybko¶ci± o wiele
 wiêksz±, ni¿ mogli zaoferowaæ inni producenci baz danych. U¿ywaj± go
-od 1996 roku w ¶rodowisku z ponad 40 bazami danych, 10 000 tabel,
-z których ponad 500 zawiera ponad 7 milionów rekordów - w sumie oko³o
+od 1996 roku w ¶rodowisku z ponad 40 bazami danych, 10 000 tabel, z
+których ponad 500 zawiera ponad 7 milionów rekordów - w sumie oko³o
 50GB krytycznych danych.
 
 Baza, na której oparty jest MySQL, sk³ada siê ze zbioru procedur,
@@ -313,8 +313,8 @@ Summary(pt):	MySQL - Medições de desempenho
 Summary(ru):	MySQL - ÂÅÎÞÍÁÒËÉ
 Summary(uk):	MySQL - ÂÅÎÞÍÁÒËÉ
 Group:		Applications/Databases
-Requires:	%{name} = %{version}-%{release}
 Requires:	%{name}-client
+Requires:	%{name} = %{version}-%{release}
 Requires:	perl(DBD::mysql)
 Obsoletes:	MySQL-bench
 
@@ -529,12 +529,12 @@ fi
 
 %files
 %defattr(644,root,root,755)
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/logrotate.d/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
 %attr(751,root,root) %dir /etc/mysql
-%attr(640,root,mysql) %config(noreplace) %verify(not md5 size mtime) /etc/mysql/clusters.conf
-%attr(750,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/monit/*.monitrc
+%attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) /etc/mysql/clusters.conf
+%attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/myisamchk
@@ -551,7 +551,7 @@ fi
 %attr(751,root,root) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archiv/mysql
-%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/mysql/*
+%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 mtime size) /var/log/mysql/*
 
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
