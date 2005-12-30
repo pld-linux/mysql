@@ -14,20 +14,20 @@
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
+Summary(de):	MySQL: ist eine SQL-Datenbank
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
-Summary(de):	MySQL: ist eine SQL-Datenbank
 Summary(pt_BR):	MySQL: Um servidor SQL rápido e confiável
 Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
 Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
-Group:		Applications/Databases
-Version:	5.0.17
+Version:	5.0.18
 Release:	1
 License:	GPL + MySQL FLOSS Exception
+Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	c6e93571a944a7e7203e4e831adaaee3
+# Source0-md5:	f18153b0239aaa03fc5a751f2d82cb71
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -70,16 +70,16 @@ BuildRequires:	rpmbuild(macros) >= 1.228
 BuildRequires:	sed >= 4.0
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-Requires:	rc-scripts >= 0.2.0
-Requires(pre):	/usr/bin/getgid
+Requires(post,preun):	/sbin/chkconfig
+Requires(postun):	/usr/sbin/groupdel
+Requires(postun):	/usr/sbin/userdel
 Requires(pre):	/bin/id
+Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
-Requires(postun):	/usr/sbin/userdel
-Requires(postun):	/usr/sbin/groupdel
-Requires(post,preun):	/sbin/chkconfig
 Requires(triggerpostun):	sed >= 4.0
 Requires:	/usr/bin/setsid
+Requires:	rc-scripts >= 0.2.0
 Provides:	MySQL-server
 Provides:	group(mysql)
 Provides:	msqlormysql
