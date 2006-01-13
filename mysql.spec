@@ -14,6 +14,7 @@
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
 #
 %include	/usr/lib/rpm/macros.perl
+#define	_snap	20060111
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de):	MySQL: ist eine SQL-Datenbank
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
@@ -29,6 +30,7 @@ License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	f18153b0239aaa03fc5a751f2d82cb71
+#Source0:	http://downloads.mysql.com/snapshots/mysql-5.0/%{name}-%{version}-nightly-%{_snap}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -414,7 +416,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q
+%setup -q %{?_snap:-n %{name}-%{version}-nightly-%{_snap}}
 %patch0 -p1
 %{?with_tcpd:%patch1 -p1}
 %patch2 -p1
