@@ -3,6 +3,7 @@
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configre!
+# - http://bugs.mysql.com/bug.php?id=16470
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -543,7 +544,6 @@ install %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
 install %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
 install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
-
 # remove .txt variants for .sys messages
 rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
@@ -556,6 +556,13 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 # rename not to be so generic name
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
+
+# not useful without -debug build
+%{!?debug:rm -f $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
+# generate symbols file, so one can generate backtrace using it
+# mysql_resolve_stack_dump -s /usr/share/mysql/mysqld.sym -n mysqld.stack.
+# http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
+%{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.sym}
 
 # functionality in initscript / rpm
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
@@ -835,6 +842,7 @@ EOF
 %attr(755,root,root) %{_libdir}/lib*.so
 %attr(755,root,root) %{_bindir}/*comp_err
 %attr(755,root,root) %{_bindir}/*resolve_stack_dump
+%{?debug:%{_datadir}/mysql/mysqld.sym}
 %{_libdir}/lib*.la
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
