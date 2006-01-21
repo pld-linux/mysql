@@ -55,7 +55,6 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
-Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
 BuildRequires:	automake
