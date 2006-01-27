@@ -842,7 +842,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/lib*.so
 %attr(755,root,root) %{_bindir}/*comp_err
-%attr(755,root,root) %{_bindir}/*resolve_stack_dump
+%{?debug:%attr(755,root,root) %{_bindir}/*resolve_stack_dump}
 %{?debug:%{_datadir}/mysql/mysqld.sym}
 %{_libdir}/lib*.la
 %{_libdir}/lib*[!tr].a
