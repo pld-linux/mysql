@@ -25,7 +25,7 @@ Summary(uk):	MySQL - €◊…ƒÀ…  SQL-”≈“◊≈“
 Summary(zh_CN):	MySQL ˝æ›ø‚∑˛ŒÒ∆˜
 Name:		mysql
 Version:	5.0.18
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
@@ -81,6 +81,7 @@ Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
 Requires(triggerpostun):	sed >= 4.0
 Requires:	/usr/bin/setsid
+Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	rc-scripts >= 0.2.0
 Provides:	MySQL-server
 Provides:	group(mysql)
@@ -232,6 +233,7 @@ Summary(ru):	MySQL ÀÃ…≈Œ‘
 Summary(uk):	MySQL ÀÃ¶§Œ‘
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
+Requires:	%{name}-charsets = %{version}-%{release}
 Obsoletes:	MySQL-client
 
 %description client
@@ -413,6 +415,19 @@ This package contains the standard MySQL NDB CPC Daemon.
 
 %description ndb-cpc -l pl
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
+
+%package charsets
+Summary:	MySQL - character sets definitions
+Summary(pl):	MySQL - definicje kodowaÒ znakÛw
+Group:		Applications/Databases
+
+%description charsets
+This package contains character sets definitions needed by
+both client and server.
+
+%description charsets -l pl
+Ten pakiet zawiera definicje kodowaÒ znakÛw potrzebne dla
+serwera i klienta.
 
 %prep
 %setup -q %{?_snap:-n %{name}-%{version}-nightly-%{_snap}}
@@ -754,7 +769,6 @@ EOF
 %dir %{_datadir}/mysql
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/mysql/mysqld.conf
-%{_datadir}/mysql/charsets
 %{_datadir}/mysql/english
 %{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
@@ -779,6 +793,10 @@ EOF
 %lang(sk) %{_datadir}/mysql/slovak
 %lang(sv) %{_datadir}/mysql/swedish
 %lang(uk) %{_datadir}/mysql/ukrainian
+
+%files charsets
+%defattr(644,root,root,755)
+%{_datadir}/mysql/charsets
 
 %files extras
 %defattr(644,root,root,755)
