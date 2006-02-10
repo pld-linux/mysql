@@ -80,8 +80,8 @@ Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
 Requires(triggerpostun):	sed >= 4.0
-Requires:	/usr/bin/setsid
 Requires:	%{name}-charsets = %{version}-%{release}
+Requires:	/usr/bin/setsid
 Requires:	rc-scripts >= 0.2.0
 Provides:	MySQL-server
 Provides:	group(mysql)
@@ -197,6 +197,19 @@ MySQL - це SQL (Structured Query Language) сервер бази даних. MySQL
 було написано Michael'ом (monty) Widenius'ом. Див. файл CREDITS в
 дистрибутив╕ для ╕нформац╕╖ про ╕нших учасник╕в проекту та ╕ншо╖
 ╕нформац╕╖.
+
+%package charsets
+Summary:	MySQL - character sets definitions
+Summary(pl):	MySQL - definicje kodowaЯ znakСw
+Group:		Applications/Databases
+
+%description charsets
+This package contains character sets definitions needed by both client
+and server.
+
+%description charsets -l pl
+Ten pakiet zawiera definicje kodowaЯ znakСw potrzebne dla serwera i
+klienta.
 
 %package extras
 Summary:	MySQL additional utilities
@@ -416,19 +429,6 @@ This package contains the standard MySQL NDB CPC Daemon.
 %description ndb-cpc -l pl
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
-%package charsets
-Summary:	MySQL - character sets definitions
-Summary(pl):	MySQL - definicje kodowaЯ znakСw
-Group:		Applications/Databases
-
-%description charsets
-This package contains character sets definitions needed by
-both client and server.
-
-%description charsets -l pl
-Ten pakiet zawiera definicje kodowaЯ znakСw potrzebne dla
-serwera i klienta.
-
 %prep
 %setup -q %{?_snap:-n %{name}-%{version}-nightly-%{_snap}}
 %patch0 -p1
@@ -440,6 +440,7 @@ serwera i klienta.
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
 %patch4 -p1
+# gcc 3.3.x ICE
 %patch10 -p1
 %endif
 %patch5 -p1
@@ -766,7 +767,6 @@ EOF
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
 
 %{_infodir}/mysql.info*
-%dir %{_datadir}/mysql
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/english
@@ -796,6 +796,7 @@ EOF
 
 %files charsets
 %defattr(644,root,root,755)
+%dir %{_datadir}/mysql
 %{_datadir}/mysql/charsets
 
 %files extras
@@ -853,7 +854,7 @@ EOF
 %doc EXCEPTIONS-CLIENT
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
-%attr(644,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 
 %files devel
 %defattr(644,root,root,755)
