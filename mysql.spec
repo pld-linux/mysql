@@ -25,7 +25,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.18
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
@@ -55,6 +55,7 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
+Patch11:	%{name}-bug-14057.patch
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -448,6 +449,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
+%patch11 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
