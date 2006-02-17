@@ -21,10 +21,10 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Group:		Applications/Databases
 Version:	4.0.26
 Release:	1
 License:	GPL + MySQL FLOSS Exception
+Group:		Applications/Databases
 Source0:	http://sunsite.icm.edu.pl/mysql/Downloads/MySQL-4.0/%{name}-%{version}.tar.gz
 # Source0-md5:	4e2060a3875470e0d853391e8647a019
 Source1:	%{name}.init
@@ -42,7 +42,6 @@ Patch5:		%{name}-sql-cxx-pic.patch
 Patch6:		%{name}-noproc.patch
 Patch7:		%{name}-fix_privilege_tables.patch
 Patch8:		%{name}-nptl.patch
-Icon:		mysql.gif
 URL:		http://www.mysql.com/
 BuildRequires:	/bin/ps
 #BuildRequires:	ORBit-devel
@@ -313,8 +312,8 @@ Summary(pt):	MySQL - MediГУes de desempenho
 Summary(ru):	MySQL - бенчмарки
 Summary(uk):	MySQL - бенчмарки
 Group:		Applications/Databases
-Requires:	%{name}-client
 Requires:	%{name} = %{version}-%{release}
+Requires:	%{name}-client
 Requires:	perl(DBD::mysql)
 Obsoletes:	MySQL-bench
 
