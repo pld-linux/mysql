@@ -15,18 +15,18 @@
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
+Summary(de):	MySQL: ist eine SQL-Datenbank
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
-Summary(de):	MySQL: ist eine SQL-Datenbank
 Summary(pt_BR):	MySQL: Um servidor SQL rápido e confiável
 Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
 Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
-Group:		Applications/Databases
 Version:	4.1.18
 Release:	1
 License:	GPL + MySQL FLOSS Exception
+Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
 # Source0-md5:	a2db4edb3e1e3b8e0f8c2242225ea513
 Source1:	%{name}.init
@@ -51,7 +51,6 @@ Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fix_privilege_tables.patch
 Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
-Icon:		mysql.gif
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
 BuildRequires:	autoconf
@@ -69,16 +68,16 @@ BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.228
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-PreReq:		rc-scripts >= 0.2.0
-Requires(pre):	/usr/bin/getgid
+Requires(post,preun):	/sbin/chkconfig
+Requires(postun):	/usr/sbin/groupdel
+Requires(postun):	/usr/sbin/userdel
 Requires(pre):	/bin/id
+Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
-Requires(postun):	/usr/sbin/userdel
-Requires(postun):	/usr/sbin/groupdel
-Requires(post,preun):	/sbin/chkconfig
 Requires(triggerpostun):	sed >= 4.0
 Requires:	/usr/bin/setsid
+Requires:	rc-scripts >= 0.2.0
 Provides:	MySQL-server
 Provides:	group(mysql)
 Provides:	msqlormysql
@@ -92,6 +91,9 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_mysqlhome	/home/services/mysql
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
+
+# innodb confcache has different CFLAGS
+%undefine	configure_cache
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
