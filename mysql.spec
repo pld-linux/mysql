@@ -14,7 +14,6 @@
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
 #
 %include	/usr/lib/rpm/macros.perl
-#define	_snap	20060111
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de):	MySQL: ist eine SQL-Datenbank
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
@@ -24,13 +23,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.18
-Release:	4
+Version:	5.1.6
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	f18153b0239aaa03fc5a751f2d82cb71
-#Source0:	http://downloads.mysql.com/snapshots/mysql-5.0/%{name}-%{version}-nightly-%{_snap}.tar.gz
+Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-alpha.tar.gz
+# Source0-md5:	da1e2d40b30373f0cce79a96f58fbf28
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -246,8 +244,8 @@ Summary(pt):	MySQL - Cliente
 Summary(ru):	MySQL клиент
 Summary(uk):	MySQL кл╕╓нт
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}-%{release}
 Requires:	%{name}-charsets = %{version}-%{release}
+Requires:	%{name}-libs = %{version}-%{release}
 Obsoletes:	MySQL-client
 
 %description client
@@ -431,7 +429,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q %{?_snap:-n %{name}-%{version}-nightly-%{_snap}}
+%setup -q -n %{name}-%{version}-alpha
 %patch0 -p1
 %{?with_tcpd:%patch1 -p1}
 %patch2 -p1
