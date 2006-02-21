@@ -1,6 +1,5 @@
-diff -ur mysql-4.1.7.org/myisam/Makefile.am mysql-4.1.7/myisam/Makefile.am
---- mysql-4.1.7.org/myisam/Makefile.am	2004-10-27 01:35:55.000000000 +0200
-+++ mysql-4.1.7/myisam/Makefile.am	2004-10-27 01:41:47.764533080 +0200
+--- mysql-5.1.6-alpha/storage/myisam/Makefile.am~	2006-02-21 16:08:48.000000000 +0200
++++ mysql-5.1.6-alpha/storage/myisam/Makefile.am	2006-02-21 16:08:51.000000000 +0200
 @@ -21,7 +21,7 @@
  LDADD =			@CLIENT_EXTRA_LDFLAGS@ libmyisam.a \
  			$(top_builddir)/mysys/libmysys.a \
