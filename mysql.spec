@@ -825,7 +825,6 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysql_fix_extensions
 %attr(755,root,root) %{_bindir}/mysql_explain_log
-%attr(755,root,root) %{_bindir}/mysql_tableinfo
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqlhotcopy.1*
@@ -876,6 +875,8 @@ EOF
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysqltest
 %attr(755,root,root) %{_bindir}/mysql_client_test
+%attr(755,root,root) %{_bindir}/mysqlslap
+%{_mandir}/man1/mysqlslap.1*
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
