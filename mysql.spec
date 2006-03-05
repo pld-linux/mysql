@@ -69,7 +69,7 @@ BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.228
+BuildRequires:	rpmbuild(macros) >= 1.268
 BuildRequires:	sed >= 4.0
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
@@ -246,8 +246,8 @@ Summary(pt):	MySQL - Cliente
 Summary(ru):	MySQL клиент
 Summary(uk):	MySQL кл╕╓нт
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}-%{release}
 Requires:	%{name}-charsets = %{version}-%{release}
+Requires:	%{name}-libs = %{version}-%{release}
 Obsoletes:	MySQL-client
 
 %description client
@@ -637,50 +637,32 @@ fi
 
 %post ndb
 /sbin/chkconfig --add mysql-ndb
-if [ -f /var/lock/subsys/mysql-ndb ]; then
-        /etc/rc.d/init.d/mysql-ndb restart >&2
-else
-        echo "Run \"/etc/rc.d/init.d/mysql-ndb start\" to start mysql NDB engine." >&2
-fi
+%service mysql-ndb restart "mysql NDB engine"
 
 %preun ndb
 if [ "$1" = "0" ]; then
-        if [ -f /var/lock/subsys/mysql-ndb ]; then
-                /etc/rc.d/init.d/mysql-ndb stop
-        fi
-        /sbin/chkconfig --del mysql-ndb
+	%service mysql-ndb stop
+	/sbin/chkconfig --del mysql-ndb
 fi
 
 %post ndb-mgm
 /sbin/chkconfig --add mysql-ndb-mgm
-if [ -f /var/lock/subsys/mysql-ndb-mgm ]; then
-        /etc/rc.d/init.d/mysql-ndb-mgm restart >&2
-else
-        echo "Run \"/etc/rc.d/init.d/mysql-ndb-mgm start\" to start mysql NDB management node." >&2
-fi
+%service mysql-ndb-mgm restart "mysql NDB management node"
 
 %preun ndb-mgm
 if [ "$1" = "0" ]; then
-        if [ -f /var/lock/subsys/mysql-ndb-mgm ]; then
-                /etc/rc.d/init.d/mysql-ndb-mgm stop
-        fi
-        /sbin/chkconfig --del mysql-ndb-mgm
+	%service mysql-ndb-mgm stop
+	/sbin/chkconfig --del mysql-ndb-mgm
 fi
 
 %post ndb-cpc
 /sbin/chkconfig --add mysql-ndb-cpc
-if [ -f /var/lock/subsys/mysql-ndb-cpc ]; then
-        /etc/rc.d/init.d/mysql-ndb-cpc restart >&2
-else
-        echo "Run \"/etc/rc.d/init.d/mysql-ndb-cpc start\" to start mysql NDB CPC." >&2
-fi
+%service mysql-ndb-cpc restart "mysql NDB CPC"
 
 %preun ndb-cpc
 if [ "$1" = "0" ]; then
-        if [ -f /var/lock/subsys/mysql-ndb-cpc ]; then
-                /etc/rc.d/init.d/mysql-ndb-cpc stop
-        fi
-        /sbin/chkconfig --del mysql-ndb-cpc
+	%service mysql-ndb-cpc stop
+	/sbin/chkconfig --del mysql-ndb-cpc
 fi
 
 %post   libs -p /sbin/ldconfig
