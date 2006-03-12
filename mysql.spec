@@ -2,7 +2,7 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
-# - C(XX)FLAGS for innodb subdirs are overriden by ./configre!
+# - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
 #
 # Conditional build:
@@ -24,12 +24,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.18
-Release:	4
+Version:	5.0.19
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	f18153b0239aaa03fc5a751f2d82cb71
+# Source0-md5:	d8a922fe657cca3b03d390e5f13d60a8
 #Source0:	http://downloads.mysql.com/snapshots/mysql-5.0/%{name}-%{version}-nightly-%{_snap}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -55,7 +55,7 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
-Patch11:	%{name}-bug-14057.patch
+Patch11:	%{name}-ndb-ldflags.patch
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -97,6 +97,8 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_mysqlhome	/home/services/mysql
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
+# CFLAGS for innodb are altered
+%undefine	configure_cache
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -451,8 +453,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch9 -p1
 %patch11 -p1
 
-%{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
-
 %build
 %{__libtoolize}
 %{__aclocal}
@@ -620,7 +620,6 @@ EOF
 fi
 
 %service mysql restart
-exit 0
 
 %preun
 if [ "$1" = "0" ]; then
@@ -736,12 +735,14 @@ EOF
 %attr(755,root,root) %{_bindir}/myisampack
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/my_print_defaults
+%attr(755,root,root) %{_bindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
+%{_mandir}/man1/mysql_upgrade.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
