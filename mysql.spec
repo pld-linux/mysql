@@ -271,7 +271,7 @@ Este pacote contém os clientes padrão para o MySQL.
 %package libs
 Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
-Group:		Applications/Databases
+Group:		Libraries
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
 
