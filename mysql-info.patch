@@ -1,12 +1,11 @@
-diff -ru mysql-3.22.30/Docs/manual.texi mysql-3.22.30.AX/Docs/manual.texi
---- mysql-3.22.30/Docs/manual.texi	Tue Jan 11 18:38:47 2000
-+++ mysql-3.22.30.AX/Docs/manual.texi	Sun Jan 23 10:34:31 2000
-@@ -28,9 +28,10 @@
+--- mysql-3.23.58/Docs/manual.texi~	2006-04-04 16:04:01.874806750 +0300
++++ mysql-3.23.58/Docs/manual.texi	2006-04-04 16:04:56.926021185 +0300
+@@ -69,9 +69,10 @@
  
  @ifinfo
  @format
 -START-INFO-DIR-ENTRY
--* mysql: (mysql).               @strong{MySQL} documentation.
+-* mysql: (mysql).               MySQL documentation.
 -END-INFO-DIR-ENTRY
 +@dircategory Data bases:
 +@direntry
