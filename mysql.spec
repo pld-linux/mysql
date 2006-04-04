@@ -8,10 +8,11 @@ Name:		mysql
 Group:		Applications/Databases
 Group(pl):	Aplikacje/Bazy danych
 Group(pt):	Aplicações/Banco_de_Dados
-Version:	3.23.32
-Release:	1
+Version:	3.23.58
+Release:	0.1
 License:	GPL/LGPL
-Source0:	http://www.mysql.com/Downloads/MySQL-3.23/%{name}-%{version}.tar.gz
+Source0:	http://downloads.mysql.com/archives/mysql-3.23/mysql-3.23.58.tar.gz
+# Source0-md5: 835a96c86132fbde0db36db60c5b34cd
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
