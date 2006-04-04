@@ -1,0 +1,7 @@
+- new version
+- added -doc subpackage
+- mysql database currently removed
+- patches hacked for current version
+- removing mysql user and group in %postun
+- mysql.logrotate fixed (wrong owner and permissions)
+- added /var/log/mysqld.log
