@@ -1,12 +1,12 @@
+%bcond_with	raid	# Without raid (broken)
 %include	/usr/lib/rpm/macros.perl
-%define		__find_requires %{_builddir}/%{buildsubdir}/find-perl-requires
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
 Summary(pt):	MySQL: Um servidor SQL rápido e confiável
 Name:		mysql
 Version:	3.23.58
-Release:	0.1
+Release:	0.2
 License:	GPL/LGPL
 Group:		Applications/Databases
 Source0:	http://downloads.mysql.com/archives/mysql-3.23/%{name}-%{version}.tar.gz
@@ -23,12 +23,16 @@ BuildRequires:	libstdc++-devel
 BuildRequires:	ncurses-devel
 BuildRequires:	readline-devel
 BuildRequires:	rpm-perlprov
+BuildRequires:	rpmbuild(macros) >= 1.268
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-Requires:	%{name}-libs = %{version}
+#Requires:	%{name}-libs = %{version}
 Requires:	rc-scripts >= 0.2.0
 Requires:	shadow
-Provides:	msqlormysql MySQL-server
+Provides:	MySQL-server
+Provides:	group(mysql)
+Provides:	msqlormysql
+Provides:	user(mysql)
 Obsoletes:	MySQL
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -223,7 +227,7 @@ export LDFLAGS CXXFLAGS CFLAGS
 	--with-pthread \
 	--with-named-curses-libs="-lncurses" \
 	--enable-assembler \
-	--with-raid \
+	--with%{!?with_raid:out}-raid \
 	--with-charset=latin2 \
 	--with-mysqld-user=mysql \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
@@ -258,61 +262,29 @@ install %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/mysqld.conf
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update,isamlog}
 
 # remove mysqld's *.po files
-find . $RPM_BUILD_ROOT%{_datadir}/%{name} -name \*.txt | xargs -n 100 rm -f
+find $RPM_BUILD_ROOT%{_datadir}/%{name} -name '*.txt' | xargs -n 100 rm -f
 mv $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 
 %pre
-if [ -n "`getgid mysql`" ]; then
-	if [ "`getgid mysql`" != "89" ]; then
-		echo "Warning:group mysql haven't gid=89. Corect this before install mysql" 1>&2
-		exit 1
-	fi
-else
-	/usr/sbin/groupadd -g 89 -r -f mysql
-	if [ -f /var/db/group.db ]; then
-		/usr/bin/update-db 1>&2
-	fi
-fi
-if [ -n "`id -u mysql 2>/dev/null`" ]; then
-	if [ "`id -u mysql`" != "89" ]; then
-		echo "Warning:user mysql haven't uid=89. Corect this before install mysql" 1>&2
-		exit 1
-	fi
-else
-	/usr/sbin/useradd -u 89 -r -d /var/lib/mysql -s /bin/false -c "MySQL User" -g mysql mysql 1>&2
-	if [ -f /var/db/passwd.db ]; then
-		/usr/bin/update-db 1>&2
-	fi
-fi
+%groupadd -g 89 mysql
+%useradd -u 89 -d %{_mysqlhome} -s /bin/sh -g mysql -c "MySQL User" mysql
 
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
-if [ -f /var/lock/subsys/mysql ]; then
-	/etc/rc.d/init.d/mysql restart >&2
-else
-	echo "Run \"/etc/rc.d/init.d/mysql start\" to start mysql." >&2
-fi
+%service mysql restart
 
 %preun
 if [ "$1" = "0" ]; then
-	if [ -f /var/lock/subsys/mysql ]; then
-		/etc/rc.d/init.d/mysql stop
-	fi
+	%service -q mysql stop
 	/sbin/chkconfig --del mysql
 fi
 
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 if [ "$1" = "0" ]; then
-	/usr/sbin/userdel mysql
-	if [ -f /var/db/passwd.db ]; then
-		/usr/bin/update-db
-	fi
-	/usr/sbin/groupdel mysql
-	if [ -f /var/db/group.db ]; then
-		/usr/bin/update-db
-	fi
+	%userremove mysql
+	%groupremove mysql
 fi
 
 %post   libs -p /sbin/ldconfig
