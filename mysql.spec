@@ -5,13 +5,11 @@ Summary(fr):	MySQL: un serveur SQL rapide et fiable
 Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
 Summary(pt):	MySQL: Um servidor SQL rápido e confiável
 Name:		mysql
-Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
 Version:	3.23.58
 Release:	0.1
 License:	GPL/LGPL
-Source0:	http://downloads.mysql.com/archives/mysql-3.23/mysql-3.23.58.tar.gz
+Group:		Applications/Databases
+Source0:	http://downloads.mysql.com/archives/mysql-3.23/%{name}-%{version}.tar.gz
 # Source0-md5: 835a96c86132fbde0db36db60c5b34cd
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -20,17 +18,16 @@ Source4:	%{name}d.conf
 Patch0:		%{name}-info.patch
 Patch1:		%{name}-no_libbind.patch
 Patch2:		%{name}-perldep.patch
-Icon:		mysql.gif
 URL:		http://www.mysql.com/
-Requires:	%{name}-libs = %{version}
 BuildRequires:	libstdc++-devel
-BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
 BuildRequires:	readline-devel
-BuildRequires:	texinfo
 BuildRequires:	rpm-perlprov
+BuildRequires:	texinfo
+BuildRequires:	zlib-devel
+Requires:	%{name}-libs = %{version}
 Requires:	rc-scripts >= 0.2.0
-Prereq:		shadow
+Requires:	shadow
 Provides:	msqlormysql MySQL-server
 Obsoletes:	MySQL
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
@@ -105,10 +102,8 @@ funções muito ricas e úteis. Veja a documentação para maiores
 informações.
 
 %package extras
-Summary:	MySQL additional utilities 
+Summary:	MySQL additional utilities
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-libs = %{version}
 
 %description extras
@@ -118,8 +113,6 @@ MySQL additional utilities except Perl scripts (they may be found in
 %package extras-perl
 Summary:	MySQL additional utilities written in Perl
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-extras = %{version}
 
 %description extras-perl
@@ -130,27 +123,24 @@ Summary:	MySQL - Client
 Summary(pl):	MySQL - Klient
 Summary(pt):	MySQL - Cliente
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-client
 
 %description client
 This package contains the standard MySQL clients.
 
-%description -l fr client
+%description client -l fr
 Ce package contient les clients MySQL standards.
 
-%description -l pl client
+%description client -l pl
 Standardowe programy klienckie MySQL.
 
-%description -l pt_BR client
+%description client -l pt_BR
 Este pacote contém os clientes padrão para o MySQL.
 
 %package libs
 Summary:	Shared libraries for MySQL
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
 
 %description libs
 Shared libraries for MySQL.
@@ -160,8 +150,6 @@ Summary:	MySQL - Development header files and libraries
 Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla programistów
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Development/Libraries
-Group(pl):	Programowanie/Biblioteki
-Group(fr):	Development/Librairies
 Requires:	%{name}-libs = %{version}
 Obsoletes:	MySQL-devel
 
@@ -169,7 +157,7 @@ Obsoletes:	MySQL-devel
 This package contains the development header files and libraries
 necessary to develop MySQL client applications.
 
-%description -l pl devel
+%description devel -l pl
 Pliki nag³ówkowe i biblioteki konieczne do kompilacji aplikacji
 klienckich MySQL.
 
@@ -177,7 +165,7 @@ klienckich MySQL.
 Este pacote contém os arquivos de cabeçalho (header files) e
 bibliotecas necessárias para desenvolver aplicações clientes do MySQL.
 
-%description -l fr devel
+%description devel -l fr
 Ce package contient les fichiers entetes et les librairies de
 developpement necessaires pour developper des applications clientes
 MySQL.
@@ -186,15 +174,13 @@ MySQL.
 Summary:	MySQL staic libraris
 Summary(pl):	Biblioteki statyczne MySQL
 Group:		Development/Libraries
-Group(pl):	Programowanie/Biblioteki
-Group(fr):	Development/Librairies
 Requires:	%{name}-devel = %{version}
 Obsoletes:	MySQL-static
 
 %description static
 MySQL staic libraris.
 
-%description -l pl static
+%description static -l pl
 Biblioteki statyczne MySQL.
 
 %package bench
@@ -202,8 +188,6 @@ Summary:	MySQL - Benchmarks
 Summary(pl):	mySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
 Summary(pt):	MySQL - Medições de desempenho
 Group:		Applications/Databases
-Group(pl):	Aplikacje/Bazy danych
-Group(pt):	Aplicações/Banco_de_Dados
 Requires:	%{name} = %{version}
 Requires:	%{name}-client
 Obsoletes:	MySQL-bench
@@ -211,14 +195,14 @@ Obsoletes:	MySQL-bench
 %description bench
 This package contains MySQL benchmark scripts and data.
 
-%description -l pl bench
+%description bench -l pl
 Programy testuj±ce szybko¶æ serwera MySQL.
 
-%description -l pt_BR bench
+%description bench -l pt_BR
 Este pacote contém medições de desempenho de scripts e dados do MySQL.
 
 %prep
-%setup -q -n %{name}-%{version}
+%setup -q
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
@@ -229,8 +213,8 @@ chmod +x find-perl-requires
 #automake
 #aclocal
 #autoconf
-CXXFLAGS="$RPM_OPT_FLAGS -fno-rtti -fno-exceptions -fomit-frame-pointer"
-CFLAGS="$RPM_OPT_FLAGS -fomit-frame-pointer"
+CXXFLAGS="%{rpmcflags} -fno-rtti -fno-exceptions -fomit-frame-pointer"
+CFLAGS="%{rpmcflags} -fomit-frame-pointer"
 export LDFLAGS CXXFLAGS CFLAGS
 %configure \
 	--without-debug \
@@ -251,7 +235,7 @@ export LDFLAGS CXXFLAGS CFLAGS
 # If you have much RAM you can remove --with-low-memory
 
 # To build mysqld as static binary add option
-#	--with-mysqld-ldflags='-all-static' 
+#	--with-mysqld-ldflags='-all-static'
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 %{__make} -C Docs mysql.info
@@ -263,7 +247,8 @@ install -d $RPM_BUILD_ROOT%{_sysconfdir}/{logrotate.d,rc.d/init.d,sysconfig} \
 	   $RPM_BUILD_ROOT%{_infodir}
 
 # Make install
-%{__make} install DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
+%{__make} install \
+	DESTDIR=$RPM_BUILD_ROOT benchdir=%{_datadir}/sql-bench
 install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
@@ -338,10 +323,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/logrotate.d/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) /etc/sysconfig/mysql
-%attr(640,root,root) %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/mysqld.conf
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysqld.conf
 %attr(755,root,root) %{_bindir}/isamchk
 %attr(755,root,root) %{_bindir}/isamlog
 %attr(755,root,root) %{_bindir}/mysqladmin
@@ -355,7 +340,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(751,mysql,mysql) %dir /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archiv/mysql
-%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 size mtime) /var/log/mysql/*
+%attr(640,mysql,mysql) %config(noreplace) %verify(not md5 mtime size) /var/log/mysql/*
 
 %{_infodir}/mysql.info*
 %dir %{_datadir}/mysql
