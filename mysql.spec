@@ -24,12 +24,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.20
+Version:	5.0.20a
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	54507849c9888ff9abe2c8ae203becd9
+# Source0-md5:	946867320094875c1a44f305bcdf1665
 #Source0:	http://downloads.mysql.com/snapshots/mysql-5.0/%{name}-%{version}-nightly-%{_snap}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -883,6 +883,7 @@ EOF
 %files ndb-client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/ndb_*
+%attr(755,root,root) %{_datadir}/mysql/ndb_size.tmpl
 
 %files ndb-mgm
 %defattr(644,root,root,755)
