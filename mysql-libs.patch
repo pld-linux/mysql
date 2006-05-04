@@ -1,7 +1,6 @@
-diff -urN mysql-4.1.7.org/configure.in mysql-4.1.7/configure.in
---- mysql-4.1.7.org/configure.in	2004-10-27 01:35:54.930172056 +0200
-+++ mysql-4.1.7/configure.in	2004-10-27 01:39:04.368373072 +0200
-@@ -779,19 +779,20 @@
+--- mysql-4.1.19/configure.in~	2006-05-04 22:37:01.424363499 +0300
++++ mysql-4.1.19/configure.in	2006-05-04 22:39:56.658291086 +0300
+@@ -817,18 +817,20 @@
  
  AC_CHECK_LIB(m, floor, [], AC_CHECK_LIB(m, __infinity))
  
@@ -18,17 +17,16 @@ diff -urN mysql-4.1.7.org/configure.in mysql-4.1.7/configure.in
  AC_CHECK_FUNC(p2open, , AC_CHECK_LIB(gen, p2open))
  # This may get things to compile even if bind-8 is installed
  AC_CHECK_FUNC(bind, , AC_CHECK_LIB(bind, bind))
- # For crypt() on Linux
--AC_CHECK_LIB(crypt, crypt)
+ # Check if crypt() exists in libc or libcrypt, sets LIBS if needed
+-AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
 +save_LIBS="$LIBS"
 +AC_CHECK_LIB(crypt, crypt, [LIBS="-lcrypt $LIBS"; LIBCRYPT="-lcrypt"])
 +AC_SUBST(LIBCRYPT)
- AC_CHECK_FUNC(crypt, AC_DEFINE([HAVE_CRYPT], [1], [crypt])) 
++AC_CHECK_FUNC(crypt, AC_DEFINE([HAVE_CRYPT], [1], [crypt])) 
 +LIBS="$save_LIBS"
  
  # For sem_xxx functions on Solaris 2.6
  AC_CHECK_FUNC(sem_init, , AC_CHECK_LIB(posix4, sem_init))
-diff -urN mysql-4.1.7.org/libmysql_r/Makefile.am mysql-4.1.7/libmysql_r/Makefile.am
 --- mysql-4.1.7.org/libmysql_r/Makefile.am	2004-10-27 01:35:55.265121136 +0200
 +++ mysql-4.1.7/libmysql_r/Makefile.am	2004-10-27 01:36:23.574817408 +0200
 @@ -33,7 +33,7 @@
@@ -40,7 +38,6 @@ diff -urN mysql-4.1.7.org/libmysql_r/Makefile.am mysql-4.1.7/libmysql_r/Makefile
  libmysqlclient_r_la_LDFLAGS = $(target_ldflags)
  
  # This is called from the toplevel makefile
-diff -urN mysql-4.1.7.org/sql/Makefile.am mysql-4.1.7/sql/Makefile.am
 --- mysql-4.1.7.org/sql/Makefile.am	2004-10-27 01:35:55.971013824 +0200
 +++ mysql-4.1.7/sql/Makefile.am	2004-10-27 01:37:07.260176224 +0200
 @@ -43,7 +43,7 @@
