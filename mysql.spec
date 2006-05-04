@@ -23,12 +23,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	4.1.18
+Version:	4.1.19
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
-# Source0-md5:	a2db4edb3e1e3b8e0f8c2242225ea513
+# Source0-md5:	874514ef3cca9e729aaf4e0a894c5cbb
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -785,6 +785,7 @@ EOF
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 %{_mandir}/man1/msql2mysql*
+%{_mandir}/man1/myisam_ftdump.1*
 %{_mandir}/man1/mysqlcheck.1*
 
 %files extras-perl
@@ -866,6 +867,7 @@ EOF
 %files ndb-client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/ndb_*
+%attr(755,root,root) %{_datadir}/mysql/ndb_size.tmpl
 
 %files ndb-mgm
 %defattr(644,root,root,755)
