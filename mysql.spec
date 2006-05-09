@@ -6,11 +6,11 @@
 # - http://bugs.mysql.com/bug.php?id=16470
 #
 # Conditional build:
-%bcond_with	bdb	# Berkeley DB support
-%bcond_without	innodb	# Without InnoDB support
-%bcond_without	raid	# Without raid
-%bcond_without	ssl	# Without OpenSSL
-%bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
+%bcond_with	bdb		# Berkeley DB support
+%bcond_without	innodb		# Without InnoDB support
+%bcond_without	raid		# Without raid
+%bcond_without	ssl		# Without OpenSSL
+%bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
 #
 %include	/usr/lib/rpm/macros.perl
