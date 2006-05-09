@@ -5,13 +5,13 @@
 # - package man1/mysqlman.1, and make programs without manpage '.so mysqlman'
 #
 # Conditional build:
-%bcond_with	bdb	# Berkeley DB support
-%bcond_without	innodb	# Without InnoDB support
-%bcond_without	isam	# Without ISAM table format (used in mysql 3.22)
-%bcond_without	raid	# Without raid
-%bcond_without	ssl	# Without OpenSSL
-%bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
-%bcond_with		big_tables	# enable '--with-big-tables', some performance loss on 32bit arch, but can do >= 4GB database tables.
+%bcond_with	bdb		# Berkeley DB support
+%bcond_without	innodb		# Without InnoDB support
+%bcond_without	isam		# Without ISAM table format (used in mysql 3.22)
+%bcond_without	raid		# Without raid
+%bcond_without	ssl		# Without OpenSSL
+%bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
+%bcond_with	big_tables	# enable '--with-big-tables', some performance loss on 32bit arch, but can do >= 4GB database tables.
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
