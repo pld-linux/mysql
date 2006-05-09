@@ -1,4 +1,4 @@
-check process mysql with pidfile /var/lib/mysql/mysql.pid
+check process mysql with pidfile /var/lib/mysql/mysqldb/mysql.pid
 	group database
 	start program = "/etc/init.d/mysql restart"
 	stop program = "/etc/init.d/mysql stop"
