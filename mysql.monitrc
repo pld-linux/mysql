@@ -1,7 +1,7 @@
 check process mysql with pidfile /var/lib/mysql/mysqldb/mysql.pid
 	group database
-	start program = "/etc/init.d/mysql restart"
-	stop program = "/etc/init.d/mysql stop"
+	start program = "/etc/rc.d/init.d/mysql restart"
+	stop program = "/etc/rc.d/init.d/mysql stop"
 	if failed unix /var/lib/mysql/mysql.sock then restart
 	if 5 restarts within 5 cycles then timeout
 	depends on mysql_bin
@@ -14,7 +14,7 @@ check file mysql_bin with path /usr/sbin/mysqld
 	if failed uid root then unmonitor
 	if failed gid root then unmonitor
 
-check file mysql_rc with path /etc/init.d/mysql
+check file mysql_rc with path /etc/rc.d/init.d/mysql
 	group database
 	if failed checksum then unmonitor
 	if failed permission 754 then unmonitor
