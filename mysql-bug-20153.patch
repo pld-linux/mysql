@@ -1,0 +1,18 @@
+--- mysql-5.0.22/scripts/mysqlhotcopy.sh	2006-05-25 11:56:49.000000000 +0300
++++ /home/glen/mysqlhotcopy.fixed	2006-06-09 18:41:01.447594016 +0300
+@@ -212,6 +212,7 @@
+ while ( my ($var,$value) = $sth_vars->fetchrow_array ) {
+     $mysqld_vars{ $var } = $value;
+ }
++$sth_vars->free;
+ my $datadir = $mysqld_vars{'datadir'}
+     || die "datadir not in mysqld variables";
+     $datadir= $opt{chroot}.$datadir if ($opt{chroot});
+@@ -255,6 +256,7 @@
+ 	next if $db_name =~ m/^information_schema$/i;
+ 	push @db_desc, { 'src' => $db_name, 't_regex' => $t_regex } if ( $db_name =~ m/$opt{regexp}/o );
+     }
++    $sth_dbs->free;
+ }
+ 
+ # --- get list of tables to hotcopy ---
