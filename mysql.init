@@ -101,17 +101,17 @@ mysqlstatus() {
 		if [ ! -d "/proc/$MYSQL_PID" ]; then
 			MYSQL_STATUS="died"
 			return
-		elif (grep -qa "$MYSQL_PIDFILE" /proc/$MYSQL_PID/cmdline); then
+		elif (grep -qa "$MYSQL_PIDFILE" /proc/$MYSQL_PID/cmdline 2> /dev/null); then
 			MYSQL_STATUS="running"
 			return
 		fi
 	fi
 
 	if [ "$mode" = "start" ]; then
-		MYSQL_GREP_PID=$(grep -lE "^/usr/sbin/mysqld.*${MYSQL_PIDFILE}" /proc/[0-9]*/cmdline | awk -F "/" '{ print $3; exit; }')
+		MYSQL_GREP_PID=$(grep -lE "^/usr/sbin/mysqld.*${MYSQL_PIDFILE}" /proc/[0-9]*/cmdline 2> /dev/null | awk -F "/" '{ print $3; exit; }')
 		if [ -n "$MYSQL_GREP_PID" ]; then
 			MYSQL_PID=$MYSQL_GREP_PID
-			if (grep -qa "$MYSQL_PIDFILE" /proc/$MYSQL_PID/cmdline); then
+			if (grep -qa "$MYSQL_PIDFILE" /proc/$MYSQL_PID/cmdline 2> /dev/null); then
 				if [ -f "$MYSQL_PIDFILE" ]; then
 					MYSQL_PIDFILE_PID=$(cat "$MYSQL_PIDFILE")
 				fi
@@ -231,7 +231,7 @@ mysqlstart() {
 	busy
 	[ -z "$DEFAULT_SERVICE_RUN_NICE_LEVEL" ] && DEFAULT_SERVICE_RUN_NICE_LEVEL=0
 	rm -f "$MYSQL_PIDFILE"
-	TMPDIR=/tmp nice -n ${SERVICE_RUN_NICE_LEVEL:-$DEFAULT_SERVICE_RUN_NICE_LEVEL} /usr/bin/setsid /usr/sbin/mysqld --defaults-file=$MYSQL_CONFIG --datadir=$MYSQL_DATA_DIR --pid-file=$MYSQL_PIDFILE >> $MYSQL_ERRLOG 2>&1 &
+	TMPDIR=/tmp nice -n ${SERVICE_RUN_NICE_LEVEL:-$DEFAULT_SERVICE_RUN_NICE_LEVEL} /usr/bin/setsid /usr/sbin/mysqld --defaults-file=$MYSQL_CONFIG --datadir=$MYSQL_DATA_DIR --pid-file=$MYSQL_PIDFILE $MYSQL_OPTIONS >> $MYSQL_ERRLOG 2>&1 &
 	sleep 0.2
 	mysqlstatus "$clusterdir" start
 	# it takes longer for mysqld to start and create pidfile if it has to recover innodb transactions
@@ -631,16 +631,17 @@ mysqlinit() {
 	chmod 751 "$MYSQL_CLUSTER_DIR" "$MYSQL_CLUSTER_DIR/mysqldb"
 
 	if [ -f /usr/share/mysql/mysqld.conf -a ! -f "$MYSQL_CLUSTER_DIR/mysqld.conf" ]; then
-	    sed -e "s#datadir.*=.*#datadir	= $MYSQL_DATA_DIR#g" \
-		-e "s#pid-file.*=.*#pid-file = $MYSQL_PIDFILE#g" \
-		-e "s#socket.*=.*#socket = $MYSQL_SOCKET#g" \
+	    sed -e "s#\(datadir.*\)=.*#\1= $MYSQL_DATA_DIR#g" \
+		-e "s#\(pid-file.*\)=.*#\1= $MYSQL_PIDFILE#g" \
+		-e "s#\(socket.*\)=.*#\1= $MYSQL_SOCKET#g" \
 		/usr/share/mysql/mysqld.conf > "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	    chown root:root "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	    chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
 
 	if [ ! -e /var/lib/mysql/mysql.sock ]; then
-	    ln -s "$MYSQL_SOCKET" /var/lib/mysql/mysql.sock
+		sock=$(echo "$MYSQL_SOCKET" | sed -e 's,^/var/lib/mysql/,,')
+	    ln -s "$sock" /var/lib/mysql/mysql.sock
 	fi
 
 	if /usr/sbin/mysqld --bootstrap --skip-grant-tables \
@@ -678,11 +679,11 @@ END_OF_DATA
 	cat << END_OF_MSG
 
 PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL USERS!
-This is done (after starting database) with:
+This is done (after starting database; press enter when asked for password) with:
 
-/usr/bin/mysqladmin -u mysql -S $MYSQL_SOCKET password 'password'
-/usr/bin/mysqladmin -h $hostname -u mysql -S $MYSQL_SOCKET password 'password'
-/usr/bin/mysqladmin -u mysql_logrotate -S $MYSQL_SOCKET password 'password'
+/usr/bin/mysqladmin -u mysql -p -S $MYSQL_SOCKET password 'password'
+/usr/bin/mysqladmin -h $hostname -u mysql -p -S $MYSQL_SOCKET password 'password'
+/usr/bin/mysqladmin -u mysql_logrotate -p -S $MYSQL_SOCKET password 'password'
 
 NOTE: mysql_logrotate password should be placed to $MYSQL_CONFIG in
 mysqladmin section. See the manual for more instructions.
@@ -758,13 +759,13 @@ case "$action" in
 	mysqlsubsys
 	;;
   status)
-	status mysqld
 	for mysqldir in $DB_CLUSTERS; do
 		mysqlstatus "$mysqldir"
-		show "MySQL cluster %s" "$mysqldir"
 		if [ "$MYSQL_STATUS" = "running" ]; then
+			show "MySQL cluster %s, PID %s" "$mysqldir" "$MYSQL_PID"
 			progress "$MYSQL_STATUS"
 		else
+			show "MySQL cluster %s" "$mysqldir"
 			progress "$MYSQL_STATUS" "$CFAIL"
 		fi
 		echo
