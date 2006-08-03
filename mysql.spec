@@ -4,6 +4,8 @@
 #   conflict with /var/lib/mysql/mysqld.conf
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
+# - security: http://securitytracker.com/alerts/2006/Aug/1016617.html
+#	where is 5.0.24 available?
 #
 # Conditional build:
 %bcond_with	bdb		# Berkeley DB support
