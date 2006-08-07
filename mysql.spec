@@ -742,6 +742,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/mysql_upgrade
+%attr(755,root,root) %{_bindir}/mysql_upgrade_shell
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
@@ -809,15 +810,16 @@ EOF
 %files extras-perl
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_convert_table_format
+%attr(755,root,root) %{_bindir}/mysql_explain_log
+%attr(755,root,root) %{_bindir}/mysql_find_rows
+%attr(755,root,root) %{_bindir}/mysql_fix_extensions
+%attr(755,root,root) %{_bindir}/mysql_setpermission
+%attr(755,root,root) %{_bindir}/mysql_tableinfo
+%attr(755,root,root) %{_bindir}/mysql_zap
+%attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysqldumpslow
 %attr(755,root,root) %{_bindir}/mysqlhotcopy
-%attr(755,root,root) %{_bindir}/mysql_setpermission
-%attr(755,root,root) %{_bindir}/mysql_zap
-%attr(755,root,root) %{_bindir}/mysql_find_rows
-%attr(755,root,root) %{_bindir}/mysqlaccess
-%attr(755,root,root) %{_bindir}/mysql_fix_extensions
-%attr(755,root,root) %{_bindir}/mysql_explain_log
-%attr(755,root,root) %{_bindir}/mysql_tableinfo
+%{_mandir}/man1/mysql_explain_log.1*
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqlhotcopy.1*
