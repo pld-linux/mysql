@@ -1,11 +1,6 @@
 # TODO:
-# - trigger that prepares system from pre-cluster into cluster
-# - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
-#   conflict with /var/lib/mysql/mysqld.conf
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
-# - security: http://securitytracker.com/alerts/2006/Aug/1016617.html
-#	where is 5.0.24 available?
 #
 # Conditional build:
 %bcond_with	bdb		# Berkeley DB support
@@ -27,7 +22,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.24
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
@@ -47,7 +42,7 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Patch0:		%{name}-libs.patch
-Patch1:		%{name}-libwrap.patch
+
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-info.patch
 Patch4:		%{name}-sql-cxx-pic.patch
@@ -59,6 +54,7 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
+Patch13:	%{name}-test_bug17667.patch
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -438,7 +434,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %prep
 %setup -q %{?_snap:-n %{name}-%{version}-nightly-%{_snap}}
 %patch0 -p1
-%{?with_tcpd:%patch1 -p1}
+
 %patch2 -p1
 %patch3 -p1
 %ifarch alpha
@@ -456,6 +452,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
+%patch13 -p1
 
 %build
 %{__libtoolize}
