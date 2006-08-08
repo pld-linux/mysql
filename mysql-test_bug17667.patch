@@ -1,0 +1,11 @@
+--- mysql-5.0.24/tests/mysql_client_test.c~	2006-07-27 21:51:19.000000000 +0300
++++ mysql-5.0.24/tests/mysql_client_test.c	2006-08-08 02:49:46.424600181 +0300
+@@ -14876,7 +14876,7 @@
+             NULL);
+         /* If we reach EOF before finishing the statement list, then we failed. */
+ 
+-      } while (my_memmem(line_buffer, MAX_TEST_QUERY_LENGTH*2,
++      } while (memmem(line_buffer, MAX_TEST_QUERY_LENGTH*2,
+             statement_cursor->buffer, statement_cursor->length) == NULL);
+     }
+ 
