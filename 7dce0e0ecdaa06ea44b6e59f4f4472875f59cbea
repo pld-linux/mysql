@@ -1,0 +1,3 @@
+- ignore error from mysql restart in %post. it doesn't give any value not
+  having so, but having it could at least prevent duplicate mysql packages
+  installed on system
