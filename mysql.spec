@@ -22,7 +22,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.24a
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
@@ -568,7 +568,7 @@ install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient{,_r}.la
+sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT{%{_libdir}/libmysqlclient{,_r}.la,%{_bindir}/mysql_config}
 
 # remove known unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
