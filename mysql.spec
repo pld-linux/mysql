@@ -22,7 +22,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.24a
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
@@ -590,7 +590,6 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/fill_help_tables.sql
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
@@ -613,15 +612,6 @@ rm -rf $RPM_BUILD_ROOT
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
-
-if [ "$1" = 1 ]; then
-	%banner -e %{name}-4.1.x <<-EOF
-	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
-	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
-EOF
-#'
-fi
-
 %service mysql restart
 
 %preun
@@ -719,14 +709,14 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 done
 
 %banner -e %{name}-4.1.x <<-EOF
-	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
-	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
+	If you want to use new help tables in MySQL 4.1.x then You'll need to import the help data:
+	mysql -u mysql mysql < %{_datadir}/%{name}/fill_help_tables.sql
 EOF
 #'
 
 %files
 %defattr(644,root,root,755)
-%doc support-files/*.cnf support-files/*.ini scripts/fill_help_tables.sql
+%doc support-files/*.cnf support-files/*.ini
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
@@ -759,6 +749,7 @@ EOF
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/english
+%{_datadir}/mysql/fill_help_tables.sql
 %{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
