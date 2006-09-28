@@ -55,7 +55,7 @@ Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
 Patch13:	%{name}-test_bug17667.patch
-URL:		http://www.mysql.com/
+URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
 %{?with_bdb:BuildRequires:	db3-devel}
