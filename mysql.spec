@@ -21,12 +21,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.24a
-Release:	4
+Version:	5.0.26
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	6b07546389f75c52611adb7af38c3667
+# Source0-md5:	63ec8afeaf202c435b12d112f5ce7857
 #Source0:	http://downloads.mysql.com/snapshots/mysql-5.0/%{name}-%{version}-nightly-%{_snap}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -54,7 +54,6 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
-Patch13:	%{name}-test_bug17667.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -452,7 +451,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
-%patch13 -p1
 
 %build
 %{__libtoolize}
@@ -737,6 +735,7 @@ EOF
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
 %{_mandir}/man1/mysql_upgrade.1*
+%{_mandir}/man8/mysqld.8*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -830,6 +829,7 @@ EOF
 %{_mandir}/man1/mysqlmanager.1*
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqlimport.1*
+%{_mandir}/man8/mysqlmanager.8*
 
 %files libs
 %defattr(644,root,root,755)
