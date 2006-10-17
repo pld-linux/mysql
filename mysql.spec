@@ -1,33 +1,27 @@
 # TODO:
 # - trigger that prepares system from pre-cluster into cluster
-# - C(XX)FLAGS for innodb subdirs are overriden by ./configre!
+# - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
+# - innodb, dbd are dynamic (= as plugins) ?
 # - warning: Installed (but unpackaged) file(s) found:
 #   /usr/bin/benchmark
 #   /usr/bin/mysql_client_test
-#   /usr/bin/mysql_upgrade
 #   /usr/bin/mysqlslap
 #   /usr/bin/test
 #   /usr/bin/testsuite
 #   /usr/lib/mysql/ha_blackhole.a
 #   /usr/lib/mysql/ha_blackhole.la
 #   /usr/lib/mysql/ha_blackhole.so.0.0.0
-#   /usr/share/man/man1/myisam_ftdump.1.gz
-#   /usr/share/man/man1/mysql_upgrade.1.gz
-#   /usr/share/man/man1/mysqlman.1.gz
 #   /usr/share/man/man1/mysqlslap.1.gz
-#   /usr/share/mysql/errmsg.txt
 #   /usr/share/mysql/mi_test_all
 #   /usr/share/mysql/mi_test_all.res
-#   /usr/share/mysql/ndb_size.tmpl
-# - innodb, dbd are dynamic (= as plugins) ?
 #
 # Conditional build:
-%bcond_with	bdb	# Berkeley DB support
-%bcond_without	innodb	# Without InnoDB support
-%bcond_without	raid	# Without raid
-%bcond_without	ssl	# Without OpenSSL
-%bcond_without	tcpd	# Without libwrap (tcp_wrappers) support
+%bcond_with	bdb		# Berkeley DB support
+%bcond_without	innodb		# Without InnoDB support
+%bcond_without	raid		# Without raid
+%bcond_without	ssl		# Without OpenSSL
+%bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
 #
 %include	/usr/lib/rpm/macros.perl
@@ -41,7 +35,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.1.11
-Release:	0.1
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -70,7 +64,7 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
-URL:		http://www.mysql.com/
+URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
 %{?with_bdb:BuildRequires:	db3-devel}
@@ -83,7 +77,7 @@ BuildRequires:	perl-DBI
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.228
+BuildRequires:	rpmbuild(macros) >= 1.268
 BuildRequires:	sed >= 4.0
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
@@ -286,7 +280,7 @@ Este pacote contém os clientes padrão para o MySQL.
 %package libs
 Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
-Group:		Applications/Databases
+Group:		Libraries
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
 
@@ -539,7 +533,7 @@ install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT%{_libdir}/libmysqlclient{,_r}.la
+sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT{%{_libdir}/libmysqlclient{,_r}.la,%{_bindir}/mysql_config}
 
 # remove known unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
@@ -561,13 +555,14 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/fill_help_tables.sql
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg.txt
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
@@ -582,17 +577,7 @@ rm -rf $RPM_BUILD_ROOT
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
-
-if [ "$1" = 1 ]; then
-	%banner -e %{name}-4.1.x <<-EOF
-	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
-	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
-EOF
-#'
-fi
-
 %service mysql restart
-exit 0
 
 %preun
 if [ "$1" = "0" ]; then
@@ -609,50 +594,32 @@ fi
 
 %post ndb
 /sbin/chkconfig --add mysql-ndb
-if [ -f /var/lock/subsys/mysql-ndb ]; then
-        /etc/rc.d/init.d/mysql-ndb restart >&2
-else
-        echo "Run \"/etc/rc.d/init.d/mysql-ndb start\" to start mysql NDB engine." >&2
-fi
+%service mysql-ndb restart "mysql NDB engine"
 
 %preun ndb
 if [ "$1" = "0" ]; then
-        if [ -f /var/lock/subsys/mysql-ndb ]; then
-                /etc/rc.d/init.d/mysql-ndb stop
-        fi
-        /sbin/chkconfig --del mysql-ndb
+	%service mysql-ndb stop
+	/sbin/chkconfig --del mysql-ndb
 fi
 
 %post ndb-mgm
 /sbin/chkconfig --add mysql-ndb-mgm
-if [ -f /var/lock/subsys/mysql-ndb-mgm ]; then
-        /etc/rc.d/init.d/mysql-ndb-mgm restart >&2
-else
-        echo "Run \"/etc/rc.d/init.d/mysql-ndb-mgm start\" to start mysql NDB management node." >&2
-fi
+%service mysql-ndb-mgm restart "mysql NDB management node"
 
 %preun ndb-mgm
 if [ "$1" = "0" ]; then
-        if [ -f /var/lock/subsys/mysql-ndb-mgm ]; then
-                /etc/rc.d/init.d/mysql-ndb-mgm stop
-        fi
-        /sbin/chkconfig --del mysql-ndb-mgm
+	%service mysql-ndb-mgm stop
+	/sbin/chkconfig --del mysql-ndb-mgm
 fi
 
 %post ndb-cpc
 /sbin/chkconfig --add mysql-ndb-cpc
-if [ -f /var/lock/subsys/mysql-ndb-cpc ]; then
-        /etc/rc.d/init.d/mysql-ndb-cpc restart >&2
-else
-        echo "Run \"/etc/rc.d/init.d/mysql-ndb-cpc start\" to start mysql NDB CPC." >&2
-fi
+%service mysql-ndb-cpc restart "mysql NDB CPC"
 
 %preun ndb-cpc
 if [ "$1" = "0" ]; then
-        if [ -f /var/lock/subsys/mysql-ndb-cpc ]; then
-                /etc/rc.d/init.d/mysql-ndb-cpc stop
-        fi
-        /sbin/chkconfig --del mysql-ndb-cpc
+	%service mysql-ndb-cpc stop
+	/sbin/chkconfig --del mysql-ndb-cpc
 fi
 
 %post   libs -p /sbin/ldconfig
@@ -707,31 +674,33 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 done
 
 %banner -e %{name}-4.1.x <<-EOF
-	If you want to use new help tables in mysql 4.1.x then you'll need to import the help data:
-	zcat %{_docdir}/%{name}-%{version}/fill_help_tables.sql.gz | mysql mysql
+	If you want to use new help tables in MySQL 4.1.x then You'll need to import the help data:
+	mysql -u mysql mysql < %{_datadir}/%{name}/fill_help_tables.sql
 EOF
 #'
 
 %files
 %defattr(644,root,root,755)
-%doc support-files/*.cnf support-files/*.ini scripts/fill_help_tables.sql
+%doc support-files/*.cnf support-files/*.ini
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
-%attr(750,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/innochecksum
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
 %attr(755,root,root) %{_bindir}/myisampack
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/my_print_defaults
+%attr(755,root,root) %{_bindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
+%{_mandir}/man1/mysql_upgrade.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -744,6 +713,7 @@ EOF
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/english
+%{_datadir}/mysql/fill_help_tables.sql
 %{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
@@ -784,6 +754,7 @@ EOF
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/msql2mysql.1*
+%{_mandir}/man1/myisam_ftdump.1*
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
@@ -791,14 +762,14 @@ EOF
 %files extras-perl
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_convert_table_format
-%attr(755,root,root) %{_bindir}/mysqldumpslow
-%attr(755,root,root) %{_bindir}/mysqlhotcopy
+%attr(755,root,root) %{_bindir}/mysql_explain_log
+%attr(755,root,root) %{_bindir}/mysql_find_rows
+%attr(755,root,root) %{_bindir}/mysql_fix_extensions
 %attr(755,root,root) %{_bindir}/mysql_setpermission
 %attr(755,root,root) %{_bindir}/mysql_zap
-%attr(755,root,root) %{_bindir}/mysql_find_rows
 %attr(755,root,root) %{_bindir}/mysqlaccess
-%attr(755,root,root) %{_bindir}/mysql_fix_extensions
-%attr(755,root,root) %{_bindir}/mysql_explain_log
+%attr(755,root,root) %{_bindir}/mysqldumpslow
+%attr(755,root,root) %{_bindir}/mysqlhotcopy
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqlhotcopy.1*
@@ -854,6 +825,7 @@ EOF
 %files ndb-client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/ndb_*
+%attr(755,root,root) %{_datadir}/mysql/ndb_size.tmpl
 
 %files ndb-mgm
 %defattr(644,root,root,755)
