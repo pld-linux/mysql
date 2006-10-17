@@ -1,9 +1,26 @@
 # TODO:
 # - trigger that prepares system from pre-cluster into cluster
-# - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
-#   conflict with /var/lib/mysql/mysqld.conf
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configre!
 # - http://bugs.mysql.com/bug.php?id=16470
+# - warning: Installed (but unpackaged) file(s) found:
+#   /usr/bin/benchmark
+#   /usr/bin/mysql_client_test
+#   /usr/bin/mysql_upgrade
+#   /usr/bin/mysqlslap
+#   /usr/bin/test
+#   /usr/bin/testsuite
+#   /usr/lib/mysql/ha_blackhole.a
+#   /usr/lib/mysql/ha_blackhole.la
+#   /usr/lib/mysql/ha_blackhole.so.0.0.0
+#   /usr/share/man/man1/myisam_ftdump.1.gz
+#   /usr/share/man/man1/mysql_upgrade.1.gz
+#   /usr/share/man/man1/mysqlman.1.gz
+#   /usr/share/man/man1/mysqlslap.1.gz
+#   /usr/share/mysql/errmsg.txt
+#   /usr/share/mysql/mi_test_all
+#   /usr/share/mysql/mi_test_all.res
+#   /usr/share/mysql/ndb_size.tmpl
+# - innodb, dbd are dynamic (= as plugins) ?
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
@@ -23,12 +40,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.1.6
+Version:	5.1.11
 Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-alpha.tar.gz
-# Source0-md5:	da1e2d40b30373f0cce79a96f58fbf28
+Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
+# Source0-md5:	f5e807425247f7b726faefa232367fbd
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -53,7 +70,6 @@ Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
-Patch11:	%{name}-bug-14057.patch
 URL:		http://www.mysql.com/
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -88,6 +104,7 @@ Provides:	msqlormysql
 Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
+Obsoletes:	mysql-bench < 5.1.11
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
@@ -340,45 +357,6 @@ Biblioteki statyczne MySQL.
 Цей пакет м╕стить статичн╕ б╕бл╕отеки програм╕ста, необх╕дн╕ для
 розробки програм-кл╕╓нт╕в.
 
-%package bench
-Summary:	MySQL - Benchmarks
-Summary(pl):	MySQL - Programy testuj╠ce szybko╤Ф dziaЁania bazy
-Summary(pt):	MySQL - MediГУes de desempenho
-Summary(ru):	MySQL - бенчмарки
-Summary(uk):	MySQL - бенчмарки
-Group:		Applications/Databases
-Requires:	%{name} = %{version}-%{release}
-Requires:	%{name}-client
-Requires:	perl(DBD::mysql)
-Obsoletes:	MySQL-bench
-
-%description bench
-This package contains MySQL benchmark scripts and data.
-
-%description bench -l pl
-Programy testuj╠ce szybko╤Ф serwera MySQL.
-
-%description bench -l pt_BR
-Este pacote contИm mediГУes de desempenho de scripts e dados do MySQL.
-
-%description bench -l ru
-Этот пакет содержит скрипты и данные для оценки производительности
-MySQL.
-
-%description bench -l uk
-Цей пакет м╕стить скрипти та дан╕ для оц╕нки продуктивност╕ MySQL.
-
-%package doc
-Summary:	MySQL manual
-Summary(pl):	PodrЙcznik u©ytkownika MySQL
-Group:		Applications/Databases
-
-%description doc
-This package contains manual in HTML format.
-
-%description doc -l pl
-PodrЙcznik MySQL-a w formacie HTML.
-
 %package ndb
 Summary:	MySQL - NDB Storage Engine Daemon
 Summary(pl):	MySQL - demon silnika przechowywania danych NDB
@@ -429,7 +407,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n %{name}-%{version}-alpha
+%setup -q -n %{name}-%{version}-beta
 %patch0 -p1
 %{?with_tcpd:%patch1 -p1}
 %patch2 -p1
@@ -447,7 +425,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
-%patch11 -p1
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
@@ -478,7 +455,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with%{!?with_bdb:out}-berkeley-db \
 	--with%{!?with_innodb:out}-innodb \
 	--with%{!?with_raid:out}-raid \
-	--with%{!?with_ssl:out}-openssl \
+	--with%{!?with_ssl:out}-ssl \
 	--with%{!?with_tcpd:out}-libwrap \
 	%{?with_big_tables:--with-big-tables} \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
@@ -506,9 +483,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
-%{__make} \
-	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
-
+%{__make}
 %{__make} -C Docs mysql.info
 
 %install
@@ -524,7 +499,6 @@ install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 # Make install
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT \
-	benchdir=%{_datadir}/sql-bench \
 	libsdir=/tmp
 # libsdir is to avoid installing innodb static libs in $RPM_BUILD_ROOT../libs
 
@@ -870,23 +844,6 @@ EOF
 %files static
 %defattr(644,root,root,755)
 %{_libdir}/lib*[tr].a
-
-%files bench
-%defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/mysqltest
-%attr(755,root,root) %{_bindir}/mysql_client_test
-%attr(755,root,root) %{_bindir}/mysqlslap
-%{_mandir}/man1/mysqlslap.1*
-%dir %{_datadir}/sql-bench
-%{_datadir}/sql-bench/[CDRl]*
-%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
-# wrong dir?
-%{_datadir}/mysql/mi_test_all.res
-%attr(755,root,root) %{_datadir}/mysql/mi_test_all
-
-#%files doc
-#%defattr(644,root,root,755)
-#%doc Docs/manual.html Docs/manual_toc.html
 
 %files ndb
 %defattr(644,root,root,755)
