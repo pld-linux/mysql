@@ -6,15 +6,13 @@
 # - warning: Installed (but unpackaged) file(s) found:
 #   /usr/bin/benchmark
 #   /usr/bin/mysql_client_test
-#   /usr/bin/mysqlslap
 #   /usr/bin/test
 #   /usr/bin/testsuite
-#   /usr/lib/mysql/ha_blackhole.a
-#   /usr/lib/mysql/ha_blackhole.la
-#   /usr/lib/mysql/ha_blackhole.so.0.0.0
-#   /usr/share/man/man1/mysqlslap.1.gz
 #   /usr/share/mysql/mi_test_all
 #   /usr/share/mysql/mi_test_all.res
+# - berkeley is still compiled in regardless of --without conf arg
+# - missing have_archive, have_merge
+# - is plugin_dir lib64 safe?
 #
 # Conditional build:
 %bcond_with	bdb		# Berkeley DB support
@@ -35,7 +33,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.1.11
-Release:	0.2
+Release:	0.3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -97,8 +95,8 @@ Provides:	group(mysql)
 Provides:	msqlormysql
 Provides:	user(mysql)
 Obsoletes:	MySQL
-Obsoletes:	mysql-server
 Obsoletes:	mysql-bench < 5.1.11
+Obsoletes:	mysql-server
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
@@ -106,6 +104,9 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_mysqlhome	/home/services/mysql
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
+
+# readline/libedit detection goes wrong
+%undefine	configure_cache
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -420,8 +421,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch8 -p1
 %patch9 -p1
 
-%{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
-
 %build
 %{__libtoolize}
 %{__aclocal}
@@ -453,7 +452,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with%{!?with_tcpd:out}-libwrap \
 	%{?with_big_tables:--with-big-tables} \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
-	--with%{!?debug:out}-debug \
+	--with%{!?debug:out}-debug%{?debug:=full} \
 	--with%{!?debug:out}-ndb-debug \
 	--with-embedded-server \
 	--with-extra-charsets=all \
@@ -463,13 +462,16 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-archive-storage-engine \
+	--with-plugins=berkeley,blackhole,csv,federated,ftexample,heap,innobase,myisam,myisammrg,ndbcluster,partition \
+	--with-fast-mutexes \
 	--with-vio \
 	--with-ndbcluster \
 	--without-readline \
 	--without-libedit \
-	--without-docs
-#	--with-mysqlfs
-#	--with-ndb-test --with-ndb-docs
+	--with-ndb-docs \
+	--with-docs
+
+#--with-error-inject
 
 # NOTE that /var/lib/mysql/mysql.sock is symlink to real sock file
 # (it defaults to first cluster but user may change it to whatever
@@ -478,7 +480,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %{__make}
-%{__make} -C Docs mysql.info
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -777,21 +778,23 @@ EOF
 %files client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql
+%attr(755,root,root) %{_bindir}/mysqladmin
+%attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
-%attr(755,root,root) %{_sbindir}/mysqlmanager*
 %attr(755,root,root) %{_bindir}/mysqlshow
-%attr(755,root,root) %{_bindir}/mysqlbinlog
-%attr(755,root,root) %{_bindir}/mysqladmin
+%attr(755,root,root) %{_bindir}/mysqlslap
 %attr(755,root,root) %{_bindir}/mysqltest*
+%attr(755,root,root) %{_sbindir}/mysqlmanager*
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
-%{_mandir}/man1/mysqldump.1*
-%{_mandir}/man1/mysqlshow.1*
-%{_mandir}/man1/mysqlmanager.1*
 %{_mandir}/man1/mysqlbinlog.1*
+%{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
+%{_mandir}/man1/mysqlmanager.1*
+%{_mandir}/man1/mysqlshow.1*
+%{_mandir}/man1/mysqlslap.1*
 
 %files libs
 %defattr(644,root,root,755)
