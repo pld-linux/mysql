@@ -3,16 +3,12 @@
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb, dbd are dynamic (= as plugins) ?
-# - warning: Installed (but unpackaged) file(s) found:
-#   /usr/bin/benchmark
-#   /usr/bin/mysql_client_test
-#   /usr/bin/test
-#   /usr/bin/testsuite
-#   /usr/share/mysql/mi_test_all
-#   /usr/share/mysql/mi_test_all.res
 # - berkeley is still compiled in regardless of --without conf arg
 # - missing have_archive, have_merge
 # - is plugin_dir lib64 safe?
+#   /usr/lib/mysql/ha_blackhole.a
+#   /usr/lib/mysql/ha_blackhole.la
+#   /usr/lib/mysql/ha_blackhole.so.0.0.0
 #
 # Conditional build:
 %bcond_with	bdb		# Berkeley DB support
@@ -33,7 +29,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.1.11
-Release:	0.3
+Release:	0.5
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -448,7 +444,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with%{!?with_bdb:out}-berkeley-db \
 	--with%{!?with_innodb:out}-innodb \
 	--with%{!?with_raid:out}-raid \
-	--with%{!?with_ssl:out}-ssl \
+	--with%{!?with_ssl:out}-ssl=/usr \
 	--with%{!?with_tcpd:out}-libwrap \
 	%{?with_big_tables:--with-big-tables} \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
@@ -462,7 +458,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-archive-storage-engine \
-	--with-plugins=berkeley,blackhole,csv,federated,ftexample,heap,innobase,myisam,myisammrg,ndbcluster,partition \
 	--with-fast-mutexes \
 	--with-vio \
 	--with-ndbcluster \
@@ -564,6 +559,11 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
+
+# we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
+rm $RPM_BUILD_ROOT%{_datadir}/mysql/mi_test_all
+rm $RPM_BUILD_ROOT%{_datadir}/mysql/mi_test_all.res
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
