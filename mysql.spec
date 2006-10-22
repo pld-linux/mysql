@@ -6,9 +6,6 @@
 # - berkeley is still compiled in regardless of --without conf arg
 # - missing have_archive, have_merge
 # - is plugin_dir lib64 safe?
-#   /usr/lib/mysql/ha_blackhole.a
-#   /usr/lib/mysql/ha_blackhole.la
-#   /usr/lib/mysql/ha_blackhole.so.0.0.0
 #
 # Conditional build:
 %bcond_with	bdb		# Berkeley DB support
@@ -29,7 +26,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.1.11
-Release:	0.5
+Release:	0.6
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -75,6 +72,7 @@ BuildRequires:	rpmbuild(macros) >= 1.268
 BuildRequires:	sed >= 4.0
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
+Requires(post,postun):	/sbin/ldconfig
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/groupdel
 Requires(postun):	/usr/sbin/userdel
@@ -568,6 +566,9 @@ rm $RPM_BUILD_ROOT%{_datadir}/mysql/mi_test_all.res
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 
+# afaik not needed
+rm $RPM_BUILD_ROOT%{_libdir}/mysql/ha_blackhole.{a,la}
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -577,6 +578,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+/sbin/ldconfig
 /sbin/chkconfig --add mysql
 %service mysql restart
 
@@ -588,6 +590,8 @@ fi
 
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+/sbin/ldconfig
+
 if [ "$1" = "0" ]; then
 	%userremove mysql
 	%groupremove mysql
@@ -696,6 +700,8 @@ EOF
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqld
+%dir %{_libdir}/mysql
+%attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 %{_mandir}/man1/myisamchk.1*
