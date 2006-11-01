@@ -559,6 +559,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
+rm $RPM_BUILD_ROOT%{_bindir}/resolveip
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
@@ -795,7 +796,6 @@ done
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/replace
-%attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
 %{_mandir}/man1/perror.1*
