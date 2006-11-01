@@ -684,6 +684,39 @@ done
 EOF
 #'
 
+%triggerpostun -- mysql < 5.1
+configs=""
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
+	if echo "$config" | grep -q '^/'; then
+		config_file="$config"
+	elif [ -f "/etc/mysql/$config" ]; then
+		config_file=/etc/mysql/$config
+	else
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
+		if [ -z "$clusterdir" ]; then
+			echo >&2 "Can't find cluster dir for $config!"
+			echo >&2 "Please remove extra (leading) spaces from /etc/mysql/clusters.conf"
+			exit 1
+		fi
+		config_file="$clusterdir/mysqld.conf"
+	fi
+
+	if [ ! -f "$config_file" ]; then
+		echo >&2 "ERROR: Can't find real config file for $config! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
+		continue
+	fi
+	configs="$configs $config_file"
+done
+
+(
+echo 'You should run MySQL upgrade scripts for all MySQL clusters.'
+echo 'Thus, you should invoke:'
+for config in $configs; do
+	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config)
+	echo "# mysql_upgrade --datadir=$datadir"
+done
+) | %banner -e %{name}-5.1
+
 %files
 %defattr(644,root,root,755)
 %doc support-files/*.cnf support-files/*.ini
