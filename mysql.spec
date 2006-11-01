@@ -732,6 +732,7 @@ done
 %attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_bindir}/mysql_upgrade
+%attr(755,root,root) %{_bindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
 %dir %{_libdir}/mysql
 %attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
@@ -741,6 +742,7 @@ done
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
 %{_mandir}/man1/mysql_upgrade.1*
+%{_mandir}/man1/mysqlcheck.1*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -789,13 +791,11 @@ done
 %attr(755,root,root) %{_bindir}/myisam_ftdump
 %attr(755,root,root) %{_bindir}/mysql_secure_installation
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
-%attr(755,root,root) %{_bindir}/mysqlcheck
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
-%{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 
