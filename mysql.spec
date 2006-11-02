@@ -26,7 +26,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.1.11
-Release:	0.7
+Release:	0.8
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -44,6 +44,8 @@ Source10:	%{name}-ndb-mgm.sysconfig
 Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
+Source14:	%{name}-init_db.sql
+Source15:	%{name}-init_db-data.sql
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -516,7 +518,9 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 %endif
 
 install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
-install %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
+cp -a %{SOURCE14} $RPM_BUILD_ROOT%{_datadir}/mysql/init_db.sql
+cp -a %{SOURCE15} $RPM_BUILD_ROOT%{_datadir}/mysql/init_db-data.sql
+cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
 
 # NDB
 install %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
@@ -525,14 +529,15 @@ install %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
 install %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
 install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
-# remove .txt variants for .sys messages
-rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT{%{_libdir}/libmysqlclient{,_r}.la,%{_bindir}/mysql_config}
 
 # remove known unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
+
+# remove .txt variants for .sys messages
+rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
 # rename not to be so generic name
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
@@ -759,6 +764,8 @@ done
 %{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/english
 %{_datadir}/mysql/fill_help_tables.sql
+%{_datadir}/mysql/init_db-data.sql
+%{_datadir}/mysql/init_db.sql
 %{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
