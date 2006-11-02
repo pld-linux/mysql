@@ -19,7 +19,7 @@
 -- Table structure for table `columns_priv`
 --
 
-CREATE TABLE `columns_priv` (
+CREATE TABLE  IF NOT EXISTS `columns_priv` (
   `Host` char(60) COLLATE utf8_bin NOT NULL DEFAULT '',
   `Db` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
   `User` char(16) COLLATE utf8_bin NOT NULL DEFAULT '',
@@ -34,7 +34,7 @@ CREATE TABLE `columns_priv` (
 -- Table structure for table `db`
 --
 
-CREATE TABLE `db` (
+CREATE TABLE  IF NOT EXISTS `db` (
   `Host` char(60) COLLATE utf8_bin NOT NULL DEFAULT '',
   `Db` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
   `User` char(16) COLLATE utf8_bin NOT NULL DEFAULT '',
@@ -65,7 +65,7 @@ CREATE TABLE `db` (
 -- Table structure for table `event`
 --
 
-CREATE TABLE `event` (
+CREATE TABLE  IF NOT EXISTS `event` (
   `db` char(64) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '',
   `name` char(64) NOT NULL DEFAULT '',
   `body` longblob NOT NULL,
@@ -89,7 +89,7 @@ CREATE TABLE `event` (
 -- Table structure for table `func`
 --
 
-CREATE TABLE `func` (
+CREATE TABLE  IF NOT EXISTS `func` (
   `name` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
   `ret` tinyint(1) NOT NULL DEFAULT '0',
   `dl` char(128) COLLATE utf8_bin NOT NULL DEFAULT '',
@@ -101,7 +101,7 @@ CREATE TABLE `func` (
 -- Table structure for table `general_log`
 --
 
-CREATE TABLE `general_log` (
+CREATE TABLE  IF NOT EXISTS `general_log` (
   `event_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `user_host` mediumtext,
   `thread_id` int(11) DEFAULT NULL,
@@ -114,7 +114,7 @@ CREATE TABLE `general_log` (
 -- Table structure for table `help_category`
 --
 
-CREATE TABLE `help_category` (
+CREATE TABLE  IF NOT EXISTS `help_category` (
   `help_category_id` smallint(5) unsigned NOT NULL DEFAULT '0',
   `name` varchar(64) NOT NULL DEFAULT '',
   `parent_category_id` smallint(5) unsigned DEFAULT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE `help_category` (
 -- Table structure for table `help_keyword`
 --
 
-CREATE TABLE `help_keyword` (
+CREATE TABLE  IF NOT EXISTS `help_keyword` (
   `help_keyword_id` int(10) unsigned NOT NULL DEFAULT '0',
   `name` varchar(64) NOT NULL DEFAULT '',
   PRIMARY KEY (`help_keyword_id`),
@@ -138,7 +138,7 @@ CREATE TABLE `help_keyword` (
 -- Table structure for table `help_relation`
 --
 
-CREATE TABLE `help_relation` (
+CREATE TABLE  IF NOT EXISTS `help_relation` (
   `help_topic_id` int(10) unsigned NOT NULL DEFAULT '0',
   `help_keyword_id` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`help_keyword_id`,`help_topic_id`)
@@ -148,7 +148,7 @@ CREATE TABLE `help_relation` (
 -- Table structure for table `help_topic`
 --
 
-CREATE TABLE `help_topic` (
+CREATE TABLE  IF NOT EXISTS `help_topic` (
   `help_topic_id` int(10) unsigned NOT NULL DEFAULT '0',
   `name` varchar(64) NOT NULL DEFAULT '',
   `help_category_id` smallint(5) unsigned NOT NULL DEFAULT '0',
@@ -163,7 +163,7 @@ CREATE TABLE `help_topic` (
 -- Table structure for table `host`
 --
 
-CREATE TABLE `host` (
+CREATE TABLE  IF NOT EXISTS `host` (
   `Host` char(60) COLLATE utf8_bin NOT NULL DEFAULT '',
   `Db` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
   `Select_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
@@ -191,7 +191,7 @@ CREATE TABLE `host` (
 -- Table structure for table `plugin`
 --
 
-CREATE TABLE `plugin` (
+CREATE TABLE  IF NOT EXISTS `plugin` (
   `name` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
   `dl` char(128) COLLATE utf8_bin NOT NULL DEFAULT '',
   PRIMARY KEY (`name`)
@@ -201,7 +201,7 @@ CREATE TABLE `plugin` (
 -- Table structure for table `proc`
 --
 
-CREATE TABLE `proc` (
+CREATE TABLE  IF NOT EXISTS `proc` (
   `db` char(64) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '',
   `name` char(64) NOT NULL DEFAULT '',
   `type` enum('FUNCTION','PROCEDURE') NOT NULL,
@@ -225,7 +225,7 @@ CREATE TABLE `proc` (
 -- Table structure for table `procs_priv`
 --
 
-CREATE TABLE `procs_priv` (
+CREATE TABLE  IF NOT EXISTS `procs_priv` (
   `Host` char(60) COLLATE utf8_bin NOT NULL DEFAULT '',
   `Db` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
   `User` char(16) COLLATE utf8_bin NOT NULL DEFAULT '',
@@ -242,7 +242,7 @@ CREATE TABLE `procs_priv` (
 -- Table structure for table `slow_log`
 --
 
-CREATE TABLE `slow_log` (
+CREATE TABLE  IF NOT EXISTS `slow_log` (
   `start_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `user_host` mediumtext NOT NULL,
   `query_time` time NOT NULL,
@@ -260,7 +260,7 @@ CREATE TABLE `slow_log` (
 -- Table structure for table `tables_priv`
 --
 
-CREATE TABLE `tables_priv` (
+CREATE TABLE  IF NOT EXISTS `tables_priv` (
   `Host` char(60) COLLATE utf8_bin NOT NULL DEFAULT '',
   `Db` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
   `User` char(16) COLLATE utf8_bin NOT NULL DEFAULT '',
@@ -277,7 +277,7 @@ CREATE TABLE `tables_priv` (
 -- Table structure for table `time_zone`
 --
 
-CREATE TABLE `time_zone` (
+CREATE TABLE  IF NOT EXISTS `time_zone` (
   `Time_zone_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `Use_leap_seconds` enum('Y','N') NOT NULL DEFAULT 'N',
   PRIMARY KEY (`Time_zone_id`)
@@ -287,7 +287,7 @@ CREATE TABLE `time_zone` (
 -- Table structure for table `time_zone_leap_second`
 --
 
-CREATE TABLE `time_zone_leap_second` (
+CREATE TABLE  IF NOT EXISTS `time_zone_leap_second` (
   `Transition_time` bigint(20) NOT NULL DEFAULT '0',
   `Correction` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`Transition_time`)
@@ -297,7 +297,7 @@ CREATE TABLE `time_zone_leap_second` (
 -- Table structure for table `time_zone_name`
 --
 
-CREATE TABLE `time_zone_name` (
+CREATE TABLE  IF NOT EXISTS `time_zone_name` (
   `Name` char(64) NOT NULL DEFAULT '',
   `Time_zone_id` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`Name`)
@@ -307,7 +307,7 @@ CREATE TABLE `time_zone_name` (
 -- Table structure for table `time_zone_transition`
 --
 
-CREATE TABLE `time_zone_transition` (
+CREATE TABLE  IF NOT EXISTS `time_zone_transition` (
   `Time_zone_id` int(10) unsigned NOT NULL DEFAULT '0',
   `Transition_time` bigint(20) NOT NULL DEFAULT '0',
   `Transition_type_id` int(10) unsigned NOT NULL DEFAULT '0',
@@ -318,7 +318,7 @@ CREATE TABLE `time_zone_transition` (
 -- Table structure for table `time_zone_transition_type`
 --
 
-CREATE TABLE `time_zone_transition_type` (
+CREATE TABLE  IF NOT EXISTS `time_zone_transition_type` (
   `Time_zone_id` int(10) unsigned NOT NULL DEFAULT '0',
   `Transition_type_id` int(10) unsigned NOT NULL DEFAULT '0',
   `Offset` int(11) NOT NULL DEFAULT '0',
@@ -331,7 +331,7 @@ CREATE TABLE `time_zone_transition_type` (
 -- Table structure for table `user`
 --
 
-CREATE TABLE `user` (
+CREATE TABLE  IF NOT EXISTS `user` (
   `Host` char(60) COLLATE utf8_bin NOT NULL DEFAULT '',
   `User` char(16) COLLATE utf8_bin NOT NULL DEFAULT '',
   `Password` char(41) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
