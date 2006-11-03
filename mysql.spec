@@ -2,13 +2,14 @@
 # - trigger that prepares system from pre-cluster into cluster
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
-# - innodb, dbd are dynamic (= as plugins) ?
+# - innodb are dynamic (= as plugins) ?
 # - berkeley is still compiled in regardless of --without conf arg
 # - missing have_archive, have_merge
 # - is plugin_dir lib64 safe?
+# - Using NDB Cluster... could not find sci transporter in /{include, lib}
 #
 # Conditional build:
-%bcond_with	bdb		# Berkeley DB support
+%bcond_with	bdb		# Berkeley DB support # DROPPED UPSTREAM
 %bcond_without	innodb		# Without InnoDB support
 %bcond_without	raid		# Without raid
 %bcond_without	ssl		# Without OpenSSL
@@ -25,12 +26,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.1.11
-Release:	0.8
+Version:	5.1.12
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-# Source0-md5:	f5e807425247f7b726faefa232367fbd
+# Source0-md5:	942122d1275fe5f8c4b1fa313fb233f6
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -58,6 +59,7 @@ Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
+Patch12:	%{name}-NDB_CXXFLAGS.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -401,8 +403,8 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %prep
 %setup -q -n %{name}-%{version}-beta
 %patch0 -p1
-%{?with_tcpd:%patch1 -p1}
-%patch2 -p1
+#%{?with_tcpd:%patch1 -p1}  # WHATS PURPOSE OF THIS PATCH?
+#%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
 %patch3 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
@@ -418,6 +420,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
+%patch12 -p1
 
 %build
 %{__libtoolize}
@@ -540,7 +543,6 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
 # rename not to be so generic name
-mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 
 # not useful without -debug build
@@ -562,7 +564,6 @@ rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg.txt
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 rm $RPM_BUILD_ROOT%{_bindir}/resolveip
 
@@ -575,7 +576,7 @@ rm $RPM_BUILD_ROOT%{_datadir}/mysql/mi_test_all.res
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 
 # afaik not needed
-rm $RPM_BUILD_ROOT%{_libdir}/mysql/ha_blackhole.{a,la}
+rm $RPM_BUILD_ROOT%{_libdir}/mysql/ha_{example,blackhole,federated}.{a,la}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -744,6 +745,8 @@ done
 %attr(755,root,root) %{_sbindir}/mysqld
 %dir %{_libdir}/mysql
 %attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
+%attr(755,root,root) %{_libdir}/mysql/ha_example.so.*.*.*
+%attr(755,root,root) %{_libdir}/mysql/ha_federated.so.*.*.*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysqld.1*
 %{_mandir}/man1/myisamchk.1*
@@ -751,6 +754,7 @@ done
 %{_mandir}/man1/myisampack.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
+%{_mandir}/man8/mysqld.8*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -811,7 +815,6 @@ done
 %files extras-perl
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_convert_table_format
-%attr(755,root,root) %{_bindir}/mysql_explain_log
 %attr(755,root,root) %{_bindir}/mysql_find_rows
 %attr(755,root,root) %{_bindir}/mysql_fix_extensions
 %attr(755,root,root) %{_bindir}/mysql_setpermission
@@ -843,6 +846,7 @@ done
 %{_mandir}/man1/mysqlmanager.1*
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlslap.1*
+%{_mandir}/man8/mysqlmanager.8*
 
 %files libs
 %defattr(644,root,root,755)
@@ -855,7 +859,6 @@ done
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/lib*.so
-%attr(755,root,root) %{_bindir}/*comp_err
 %{?debug:%attr(755,root,root) %{_bindir}/*resolve_stack_dump}
 %{?debug:%{_datadir}/mysql/mysqld.sym}
 %{_libdir}/lib*.la
