@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `columns_priv` (
   `Timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `Column_priv` set('Select','Insert','Update','References') CHARACTER SET utf8 NOT NULL DEFAULT '',
   PRIMARY KEY (`Host`,`Db`,`User`,`Table_name`,`Column_name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Column privileges';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Column privileges';
 
 --
 -- Table structure for table `db`
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `func` (
   `dl` char(128) COLLATE utf8_bin NOT NULL DEFAULT '',
   `type` enum('function','aggregate') CHARACTER SET utf8 NOT NULL,
   PRIMARY KEY (`name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='User defined functions';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='User defined functions';
 
 --
 -- Table structure for table `general_log`
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `help_category` (
   `url` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`help_category_id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='help categories';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='help categories';
 
 --
 -- Table structure for table `help_keyword`
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS `help_keyword` (
   `name` varchar(64) NOT NULL DEFAULT '',
   PRIMARY KEY (`help_keyword_id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='help keywords';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='help keywords';
 
 --
 -- Table structure for table `help_relation`
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `help_relation` (
   `help_topic_id` int(10) unsigned NOT NULL DEFAULT '0',
   `help_keyword_id` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`help_keyword_id`,`help_topic_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='keyword-topic relation';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='keyword-topic relation';
 
 --
 -- Table structure for table `help_topic`
@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS `help_topic` (
   `url` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`help_topic_id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='help topics';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='help topics';
 
 --
 -- Table structure for table `host`
@@ -219,7 +219,7 @@ CREATE TABLE IF NOT EXISTS `proc` (
   `sql_mode` set('REAL_AS_FLOAT','PIPES_AS_CONCAT','ANSI_QUOTES','IGNORE_SPACE','NOT_USED','ONLY_FULL_GROUP_BY','NO_UNSIGNED_SUBTRACTION','NO_DIR_IN_CREATE','POSTGRESQL','ORACLE','MSSQL','DB2','MAXDB','NO_KEY_OPTIONS','NO_TABLE_OPTIONS','NO_FIELD_OPTIONS','MYSQL323','MYSQL40','ANSI','NO_AUTO_VALUE_ON_ZERO','NO_BACKSLASH_ESCAPES','STRICT_TRANS_TABLES','STRICT_ALL_TABLES','NO_ZERO_IN_DATE','NO_ZERO_DATE','INVALID_DATES','ERROR_FOR_DIVISION_BY_ZERO','TRADITIONAL','NO_AUTO_CREATE_USER','HIGH_NOT_PRECEDENCE') NOT NULL DEFAULT '',
   `comment` char(64) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '',
   PRIMARY KEY (`db`,`name`,`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Stored Procedures';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Stored Procedures';
 
 --
 -- Table structure for table `procs_priv`
@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS `procs_priv` (
   `Timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`Host`,`Db`,`User`,`Routine_name`,`Routine_type`),
   KEY `Grantor` (`Grantor`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Procedure privileges';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Procedure privileges';
 
 --
 -- Table structure for table `slow_log`
@@ -271,7 +271,7 @@ CREATE TABLE IF NOT EXISTS `tables_priv` (
   `Column_priv` set('Select','Insert','Update','References') CHARACTER SET utf8 NOT NULL DEFAULT '',
   PRIMARY KEY (`Host`,`Db`,`User`,`Table_name`),
   KEY `Grantor` (`Grantor`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Table privileges';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Table privileges';
 
 --
 -- Table structure for table `time_zone`
@@ -281,7 +281,7 @@ CREATE TABLE IF NOT EXISTS `time_zone` (
   `Time_zone_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `Use_leap_seconds` enum('Y','N') NOT NULL DEFAULT 'N',
   PRIMARY KEY (`Time_zone_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Time zones';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Time zones';
 
 --
 -- Table structure for table `time_zone_leap_second`
@@ -291,7 +291,7 @@ CREATE TABLE IF NOT EXISTS `time_zone_leap_second` (
   `Transition_time` bigint(20) NOT NULL DEFAULT '0',
   `Correction` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`Transition_time`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Leap seconds information for time zones';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Leap seconds information for time zones';
 
 --
 -- Table structure for table `time_zone_name`
@@ -301,7 +301,7 @@ CREATE TABLE IF NOT EXISTS `time_zone_name` (
   `Name` char(64) NOT NULL DEFAULT '',
   `Time_zone_id` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`Name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Time zone names';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Time zone names';
 
 --
 -- Table structure for table `time_zone_transition`
@@ -312,7 +312,7 @@ CREATE TABLE IF NOT EXISTS `time_zone_transition` (
   `Transition_time` bigint(20) NOT NULL DEFAULT '0',
   `Transition_type_id` int(10) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`Time_zone_id`,`Transition_time`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Time zone transitions';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Time zone transitions';
 
 --
 -- Table structure for table `time_zone_transition_type`
@@ -325,7 +325,7 @@ CREATE TABLE IF NOT EXISTS `time_zone_transition_type` (
   `Is_DST` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `Abbreviation` char(8) NOT NULL DEFAULT '',
   PRIMARY KEY (`Time_zone_id`,`Transition_type_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Time zone transition types';
+) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Time zone transition types';
 
 --
 -- Table structure for table `user`
