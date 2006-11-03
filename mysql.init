@@ -380,7 +380,7 @@ mysqlinit() {
 
 		CREATE DATABASE mysql;
 		use mysql;
-		$(cat /usr/share/mysql/init_db.sql)
+		$(sed -e "s,@ENGINE@,$BASE_TABLETYPE," /usr/share/mysql/init_db.sql)
 		$(sed -e "s,\$hostname,$hostname,g" /usr/share/mysql/init_db-data.sql)
 END_OF_DATA
 
