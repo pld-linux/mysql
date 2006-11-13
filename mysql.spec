@@ -541,14 +541,14 @@ install %{SOURCE6} $RPM_BUILD_ROOT%{_sysconfdir}/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
-%if %{without innodb}
+%if !%{with innodb}
 	echo "BASE_TABLETYPE=MyISAM" >> $RPM_BUILD_ROOT/etc/sysconfig/mysql
 	cp mysqld.conf mysqld.tmp
 	awk 'BEGIN { RS="\n\n" } !/innodb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 %endif
 
 # remove berkeley-db directives from mysqld.conf if mysqld is configured without
-%if %{without bdb}
+%if !%{with bdb}
 	cp mysqld.conf mysqld.tmp
 	awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 %endif
