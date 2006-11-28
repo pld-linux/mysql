@@ -23,12 +23,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	4.1.21
+Version:	4.1.22
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-4.1/%{name}-%{version}.tar.gz
-# Source0-md5:	d3e0127078981590095d331d4e745d73
+# Source0-md5:	37b4479951fa0cf052269d27c41ca200
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -733,6 +733,7 @@ EOF
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
 %{_mandir}/man1/pack_isam.1*
+%{_mandir}/man8/mysqld.8*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -803,6 +804,7 @@ EOF
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqlhotcopy.1*
+%{_mandir}/man1/mysql_explain_log.1*
 
 %files client
 %defattr(644,root,root,755)
@@ -815,6 +817,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
 %{_mandir}/man1/mysql.1*
+%{_mandir}/man1/mysqlman.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlshow.1*
@@ -826,7 +829,7 @@ EOF
 %doc EXCEPTIONS-CLIENT
 %attr(755,root,root) %{_libdir}/lib*.so.*.*
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
-%attr(644,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 
 %files devel
 %defattr(644,root,root,755)
