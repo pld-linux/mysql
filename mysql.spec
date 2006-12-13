@@ -26,12 +26,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.1.12
+Version:	5.1.14
 Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-# Source0-md5:	942122d1275fe5f8c4b1fa313fb233f6
+# Source0-md5:	f02115e98c99558e062adcf2dc305283
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
