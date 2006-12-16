@@ -1,3 +1,4 @@
+diff -urN mysql-4.1.7.org/scripts/mysql_fix_privilege_tables.sh mysql-4.1.7/scripts/mysql_fix_privilege_tables.sh
 --- mysql-4.1.7.org/scripts/mysql_fix_privilege_tables.sh	2004-10-27 01:35:56.000000000 +0200
 +++ mysql-4.1.7/scripts/mysql_fix_privilege_tables.sh	2004-10-27 12:13:42.159439392 +0200
 @@ -5,7 +5,7 @@
@@ -9,14 +10,3 @@
  sql_only=0
  basedir=""
  verbose=0
---- mysql-5.0.19/scripts/mysql_upgrade_shell.sh~	2006-03-04 22:35:13.000000000 +0200
-+++ mysql-5.0.24/scripts/mysql_upgrade_shell.sh	2006-03-12 22:52:55.000000000 +0200
-@@ -13,7 +13,7 @@
- # arguments as these needs to be passed on to the mysqlcheck command
- 
- 
--user=root
-+user=mysql
- 
- case "$1" in
-     --no-defaults|--defaults-file=*|--defaults-extra-file=*)
