@@ -35,7 +35,6 @@ Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Source5:	%{name}-clusters.conf
-Source6:	%{name}.monitrc
 Source7:	%{name}-ndb.init
 Source8:	%{name}-ndb.sysconfig
 Source9:	%{name}-ndb-mgm.init
@@ -479,7 +478,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,monit} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
@@ -497,7 +496,6 @@ install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'
 install %{SOURCE4} mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
-install %{SOURCE6} $RPM_BUILD_ROOT%{_sysconfdir}/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
@@ -723,7 +721,6 @@ done
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/innochecksum
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
