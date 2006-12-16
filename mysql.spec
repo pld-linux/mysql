@@ -58,6 +58,8 @@ Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-NDB_CXXFLAGS.patch
 Patch13:	%{name}-bug-16634.patch
+Patch14:	%{name}-bug-18156.patch
+Patch15:	%{name}-bug-22807.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -419,6 +421,8 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch11 -p1
 %patch12 -p1
 %patch13 -p1
+%patch14 -p1
+%patch15 -p1
 
 %build
 %{__libtoolize}
