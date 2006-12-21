@@ -25,7 +25,7 @@ Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Version:	5.1.14
-Release:	0.1
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -93,7 +93,6 @@ Provides:	group(mysql)
 Provides:	msqlormysql
 Provides:	user(mysql)
 Obsoletes:	MySQL
-Obsoletes:	mysql-bench < 5.1.11
 Obsoletes:	mysql-server
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -281,7 +280,6 @@ Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
 Group:		Libraries
 Obsoletes:	libmysql10
-Obsoletes:	mysql-doc < 4.1.12
 
 %description libs
 Shared libraries for MySQL.
@@ -349,6 +347,45 @@ Biblioteki statyczne MySQL.
 %description static -l uk
 Цей пакет м╕стить статичн╕ б╕бл╕отеки програм╕ста, необх╕дн╕ для
 розробки програм-кл╕╓нт╕в.
+
+%package bench
+Summary:	MySQL - Benchmarks
+Summary(pl):	MySQL - Programy testuj╠ce szybko╤Ф dziaЁania bazy
+Summary(pt):	MySQL - MediГУes de desempenho
+Summary(ru):	MySQL - бенчмарки
+Summary(uk):	MySQL - бенчмарки
+Group:		Applications/Databases
+Requires:	%{name} = %{version}-%{release}
+Requires:	%{name}-client
+Requires:	perl(DBD::mysql)
+Obsoletes:	MySQL-bench
+
+%description bench
+This package contains MySQL benchmark scripts and data.
+
+%description bench -l pl
+Programy testuj╠ce szybko╤Ф serwera MySQL.
+
+%description bench -l pt_BR
+Este pacote contИm mediГУes de desempenho de scripts e dados do MySQL.
+
+%description bench -l ru
+Этот пакет содержит скрипты и данные для оценки производительности
+MySQL.
+
+%description bench -l uk
+Цей пакет м╕стить скрипти та дан╕ для оц╕нки продуктивност╕ MySQL.
+
+%package doc
+Summary:	MySQL manual
+Summary(pl):	PodrЙcznik u©ytkownika MySQL
+Group:		Applications/Databases
+
+%description doc
+This package contains manual in HTML format.
+
+%description doc -l pl
+PodrЙcznik MySQL-a w formacie HTML.
 
 %package ndb
 Summary:	MySQL - NDB Storage Engine Daemon
@@ -480,7 +517,10 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 
 echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
-%{__make}
+%{__make} \
+	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
+
+%{__make} -C Docs mysql.info
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -491,6 +531,7 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql} \
 # Make install
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT \
+	benchdir=%{_datadir}/sql-bench \
 	libsdir=/tmp
 # libsdir is to avoid installing innodb static libs in $RPM_BUILD_ROOT../libs
 
@@ -862,6 +903,17 @@ done
 %files static
 %defattr(644,root,root,755)
 %{_libdir}/lib*[tr].a
+
+%files bench
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/mysqltest
+%dir %{_datadir}/sql-bench
+%{_datadir}/sql-bench/[CDRl]*
+%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
+
+%files doc
+%defattr(644,root,root,755)
+%doc Docs/manual.html Docs/manual_toc.html
 
 %files ndb
 %defattr(644,root,root,755)
