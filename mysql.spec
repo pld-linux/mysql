@@ -25,7 +25,7 @@ Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Version:	5.1.14
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -280,6 +280,7 @@ Summary:	Shared libraries for MySQL
 Summary(pl):	Biblioteki dzielone MySQL
 Group:		Libraries
 Obsoletes:	libmysql10
+Obsoletes:	mysql-doc < 4.1.12
 
 %description libs
 Shared libraries for MySQL.
@@ -911,9 +912,9 @@ done
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
 
-%files doc
-%defattr(644,root,root,755)
-%doc Docs/manual.html Docs/manual_toc.html
+#%files doc
+#%defattr(644,root,root,755)
+#%doc Docs/manual.html Docs/manual_toc.html
 
 %files ndb
 %defattr(644,root,root,755)
