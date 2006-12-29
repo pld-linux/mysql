@@ -21,12 +21,12 @@ Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
 Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
-Version:	5.0.26
-Release:	4
+Version:	5.0.27
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	63ec8afeaf202c435b12d112f5ce7857
+# Source0-md5:	584d423440a9d9c859678e3d4f2690b3
 #Source0:	http://downloads.mysql.com/snapshots/mysql-5.0/%{name}-%{version}-nightly-%{_snap}.tar.gz
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -54,6 +54,7 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
+Patch13:	%{name}-bug-24148.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -451,6 +452,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
+%patch13 -p1
 
 %build
 %{__libtoolize}
@@ -542,6 +544,7 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
+	echo "BASE_TABLETYPE=MyISAM" >> $RPM_BUILD_ROOT/etc/sysconfig/mysql
 	cp mysqld.conf mysqld.tmp
 	awk 'BEGIN { RS="\n\n" } !/innodb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 %endif
