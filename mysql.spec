@@ -21,12 +21,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.30
-Release:	2
+Version:	5.0.32
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
-# Source0-md5:	164b1e145155318f9904967715492f94
+# Source0-md5:	ccdcddf97fab88d7d6bd43dff73bf61b
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -729,7 +729,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_upgrade_shell
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
-%{_mandir}/man1/mysqld.1*
+%{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
@@ -789,6 +789,7 @@ EOF
 %attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
+%{_mandir}/man1/mysql_tzinfo_to_sql.1*
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
@@ -825,7 +826,6 @@ EOF
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlshow.1*
-%{_mandir}/man1/mysqlmanager.1*
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqlimport.1*
 %{_mandir}/man8/mysqlmanager.8*
