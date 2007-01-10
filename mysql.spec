@@ -21,19 +21,18 @@ Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
 Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
-Version:	5.0.26
-Release:	4
+Version:	5.0.33
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
+#Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	63ec8afeaf202c435b12d112f5ce7857
-#Source0:	http://downloads.mysql.com/snapshots/mysql-5.0/%{name}-%{version}-nightly-%{_snap}.tar.gz
+# Source0-md5:	10cb85276a1468c7906a4ff4dd565d61
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
 Source4:	%{name}d.conf
 Source5:	%{name}-clusters.conf
-Source6:	%{name}.monitrc
 Source7:	%{name}-ndb.init
 Source8:	%{name}-ndb.sysconfig
 Source9:	%{name}-ndb-mgm.init
@@ -54,6 +53,7 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
+Patch13:	%{name}-bug-24148.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -451,6 +451,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
+%patch13 -p1
 
 %build
 %{__libtoolize}
@@ -514,7 +515,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,monit} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql} \
 	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
@@ -537,17 +538,17 @@ install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'
 install %{SOURCE4} mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
-install %{SOURCE6} $RPM_BUILD_ROOT%{_sysconfdir}/monit
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
-%if %{without innodb}
+%if !%{with innodb}
+	echo "BASE_TABLETYPE=MyISAM" >> $RPM_BUILD_ROOT/etc/sysconfig/mysql
 	cp mysqld.conf mysqld.tmp
 	awk 'BEGIN { RS="\n\n" } !/innodb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 %endif
 
 # remove berkeley-db directives from mysqld.conf if mysqld is configured without
-%if %{without bdb}
+%if !%{with bdb}
 	cp mysqld.conf mysqld.tmp
 	awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 %endif
@@ -719,7 +720,6 @@ EOF
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/monit/*.monitrc
 %attr(755,root,root) %{_bindir}/innochecksum
 %attr(755,root,root) %{_bindir}/myisamchk
 %attr(755,root,root) %{_bindir}/myisamlog
@@ -730,7 +730,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_upgrade_shell
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
-%{_mandir}/man1/mysqld.1*
+%{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
@@ -790,6 +790,7 @@ EOF
 %attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
+%{_mandir}/man1/mysql_tzinfo_to_sql.1*
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
@@ -826,7 +827,6 @@ EOF
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlshow.1*
-%{_mandir}/man1/mysqlmanager.1*
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqlimport.1*
 %{_mandir}/man8/mysqlmanager.8*
