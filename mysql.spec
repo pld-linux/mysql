@@ -21,12 +21,13 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.32
+Version:	5.0.33
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
-# Source0-md5:	ccdcddf97fab88d7d6bd43dff73bf61b
+#Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
+Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+# Source0-md5:	10cb85276a1468c7906a4ff4dd565d61
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
