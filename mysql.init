@@ -26,7 +26,7 @@ if [ -n "$MYSQL_DB_CLUSTERS" ]; then
 fi
 
 if [ -f /etc/mysql/clusters.conf ]; then
-	MYSQL_DB_CLUSTERS=$(grep -v '^#' /etc/mysql/clusters.conf | cut -s -f 2 -d '=')
+	MYSQL_DB_CLUSTERS=$(awk -F= '!/^#/{print $2}' /etc/mysql/clusters.conf)
 	if [ -z "$MYSQL_DB_CLUSTERS"  ]; then
 		nls "Warning: there are no configured clusters."
 	fi
@@ -57,7 +57,22 @@ action="$1"
 if [ $# -gt 1 ]; then
 	shift
 	# perform action for specified clusters only
-	DB_CLUSTERS="$@"
+	for a in "$@"; do
+		# try auto resolving from /etc/mysql/clusters.conf
+		if [[ "$a" != /* ]]; then
+			m=$(awk -va="$a" -F= 'substr($0, 1, length(a)) == a {print $1}' /etc/mysql/clusters.conf)
+			if [ -z "$m" ]; then
+				echo >&2 "Cluster name '$a' did not match anything!"
+				exit 1
+			fi
+			if [ $(echo "$m" | wc -l) -gt 1 ]; then
+				echo >&2 "Cluster name '$a' ambiguous:" $m
+				exit 1
+			fi
+			a=$(awk -va="$a" -F= 'substr($0, 1, length(a)) == a {print $2}' /etc/mysql/clusters.conf)
+		fi
+		DB_CLUSTERS="$DB_CLUSTERS $a"
+	done
 else
 	DB_CLUSTERS="$MYSQL_DB_CLUSTERS"
 fi
@@ -141,27 +156,26 @@ mysqlgetconfig() {
 
 	# emulate old behaviour if only one cluster specified
 	if [ "$clusterdir" = "$MYSQL_DB_CLUSTERS" -a "$clusterdir" = "/var/lib/mysql" -a -f /etc/mysqld.conf ]; then
-		MYSQL_RA_COMPAT=yes; export MYSQL_RA_COMPAT
+		MYSQL_RA_COMPAT=yes
 		config_file=/etc/mysqld.conf
 	else
-		# TODO: convert this piece of crap to awk
-		config=`grep -v "^#" /etc/mysql/clusters.conf | grep "${clusterdir}$" | cut -s -f 1 -d '='`
-		if echo "$config" | grep -q '^/'; then
+		config=$(awk -F= -vclusterdir="$clusterdir" '!/^#/{ if (clusterdir == $2) print $1}' /etc/mysql/clusters.conf)
+		if [[ $config = /* ]]; then
 			config_file="$config"
 		elif [ -f "/etc/mysql/$config" ]; then
-			config_file=/etc/mysql/$config
+			config_file="/etc/mysql/$config"
 		else
 			config_file="$clusterdir/mysqld.conf"
 		fi
 	fi
 
-	MYSQL_CLUSTER_DIR="$clusterdir"; export MYSQL_CLUSTER_DIR
+	MYSQL_CLUSTER_DIR="$clusterdir"
 
 	if [ -z "$config_file" ]; then
 		nls "Error: Can't find config file for %s cluster" "$clusterdir"
 		exit 6
 	else
-		MYSQL_CONFIG="$config_file"; export MYSQL_CONFIG
+		MYSQL_CONFIG="$config_file"
 	fi
 
 	if [ ! -f "$config_file" ]; then
@@ -173,21 +187,18 @@ mysqlgetconfig() {
 	eval `awk '
 /^[ \t]*\[.*\][ \t]*$/ {
 	match($0,/\[.*\]/)
-	section=substr($0,RSTART+1,RSTART+RLENGTH-3)
+	section=substr($0, RSTART + 1, RSTART + RLENGTH - 3)
 }
-section=="mysqld" && $2~"=" {
-	if ($1=="datadir") {
+section == "mysqld" && $2 ~ "=" {
+	if ($1 == "datadir") {
 		printf("MYSQL_DATA_DIR=%s;", $3)
-	} else if ($1=="user") {
+	} else if ($1 == "user") {
 		printf("MYSQL_USER=%s;", $3)
-	} else if ($1=="pid-file") {
+	} else if ($1 == "pid-file") {
 		printf("MYSQL_PIDFILE=%s;", $3)
-	} else if ($1=="socket") {
+	} else if ($1 == "socket") {
 		printf("MYSQL_SOCKET=%s;", $3)
 	}
-}
-END {
-	print "export MYSQL_DATA_DIR MYSQL_USER MYSQL_PIDFILE MYSQL_SOCKET"
 }
 ' $config_file`
 
@@ -335,7 +346,6 @@ mysqlinit() {
 	show "Creating privilege mysql tables for $MYSQL_DATA_DIR"
 	busy
 	TMP=/tmp TMPDIR=/tmp
-
 
 	# Install this in the user table, too
 	hostname="`hostname --fqdn 2> /dev/null | tr -d '[:space:]'`"
@@ -624,23 +634,25 @@ mysqlinit() {
 	  c_tzls="$c_tzls   comment='Leap seconds information for time zones';"
 	fi
 
-	mkdir -p "$MYSQL_DATA_DIR" > /dev/null 2>&1
+	mkdir -p "$MYSQL_DATA_DIR"
 	# Using mysql:mysql for MYSQL_CLUSTER_DIR is creating SECURITY hole, root:root is proper
 	chown root:root "$MYSQL_CLUSTER_DIR"
     chown mysql:mysql "$MYSQL_CLUSTER_DIR/mysqldb" "$MYSQL_DATA_DIR" > /dev/null 2>&1
 	chmod 751 "$MYSQL_CLUSTER_DIR" "$MYSQL_CLUSTER_DIR/mysqldb"
 
 	if [ -f /usr/share/mysql/mysqld.conf -a ! -f "$MYSQL_CLUSTER_DIR/mysqld.conf" ]; then
-	    sed -e "s#\(datadir.*\)=.*#\1= $MYSQL_DATA_DIR#g" \
-		-e "s#\(pid-file.*\)=.*#\1= $MYSQL_PIDFILE#g" \
-		-e "s#\(socket.*\)=.*#\1= $MYSQL_SOCKET#g" \
-		/usr/share/mysql/mysqld.conf > "$MYSQL_CLUSTER_DIR/mysqld.conf"
+	    sed -e "
+		s#\(datadir.*\)=.*#\1= $MYSQL_DATA_DIR#g;
+		s#\(pid-file.*\)=.*#\1= $MYSQL_PIDFILE#g;
+		s#\(socket.*\)=.*#\1= $MYSQL_SOCKET#g;
+		s#@clusterdir@#$MYSQL_CLUSTER_DIR#g;
+		" /usr/share/mysql/mysqld.conf > "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	    chown root:root "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	    chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
 
 	if [ ! -e /var/lib/mysql/mysql.sock ] || [ -L /var/lib/mysql/mysql.sock ] && [ -z "$(readlink /var/lib/mysql/mysql.sock)" ]; then
-		sock=$(echo "$MYSQL_SOCKET" | sed -e 's,^/var/lib/mysql/,,')
+		sock=${MYSQL_SOCKET#/var/lib/mysql/} # make it relative if possible
 	    ln -s "$sock" /var/lib/mysql/mysql.sock
 	fi
 
@@ -728,9 +740,7 @@ END_OF_MSG
 # End of useful functions.
 #
 
-RETVAL=0
-case "$action" in
-  start)
+start() {
 	if [ ! -f $MYSQL_ERRLOG ]; then
 		touch $MYSQL_ERRLOG
 	fi
@@ -746,8 +756,9 @@ case "$action" in
 		fi
 	done
 	mysqlsubsys
-	;;
-  stop)
+}
+
+stop() {
 	for mysqldir in $DB_CLUSTERS; do
 		mysqlstatus "$mysqldir" stop
 		if [ "$MYSQL_STATUS" = "not running" ]; then
@@ -757,6 +768,15 @@ case "$action" in
 		fi
 	done
 	mysqlsubsys
+}
+
+RETVAL=0
+case "$action" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
 	;;
   status)
 	for mysqldir in $DB_CLUSTERS; do
@@ -773,9 +793,8 @@ case "$action" in
 	exit $?
 	;;
   restart|force-reload)
-	$0 stop $DB_CLUSTERS
-	$0 start $DB_CLUSTERS
-	exit $?
+	stop
+	start
 	;;
   init)
 	for mysqldir in $DB_CLUSTERS; do
