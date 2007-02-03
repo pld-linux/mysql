@@ -25,7 +25,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.1.14
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -60,9 +60,11 @@ Patch12:	%{name}-NDB_CXXFLAGS.patch
 Patch13:	%{name}-bug-16634.patch
 Patch14:	%{name}-bug-18156.patch
 Patch15:	%{name}-bug-22807.patch
+Patch16:	%{name}-bug-24747.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
+BuildRequires:	doxygen
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
 %{?with_tcpd:BuildRequires:	libwrap-devel}
@@ -461,6 +463,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch13 -p1
 %patch14 -p1
 %patch15 -p1
+%patch16 -p1
 
 %build
 %{__libtoolize}
