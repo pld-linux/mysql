@@ -24,12 +24,13 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.1.14
-Release:	3
+Version:	5.1.15
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-# Source0-md5:	f02115e98c99558e062adcf2dc305283
+#Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
+Source0:	http://mysql.mirrors.cybercity.dk/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
+# Source0-md5:	8c4c114e0dbbdda6822c0c7d7eed4faf
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -57,9 +58,7 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-NDB_CXXFLAGS.patch
-Patch13:	%{name}-bug-16634.patch
 Patch14:	%{name}-bug-18156.patch
-Patch15:	%{name}-bug-22807.patch
 Patch16:	%{name}-bug-24747.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -460,9 +459,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
-%patch13 -p1
 %patch14 -p1
-%patch15 -p1
 %patch16 -p1
 
 %build
