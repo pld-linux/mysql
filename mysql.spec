@@ -25,7 +25,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.1.15
-Release:	0.1
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -584,13 +584,14 @@ mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 # not useful without -debug build
 %{!?debug:rm -f $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
 # generate symbols file, so one can generate backtrace using it
-# mysql_resolve_stack_dump -s /usr/share/mysql/mysqld.sym -n mysqld.stack.
+# mysql_resolve_stack_dump -s %{_datadir}/mysql/mysqld.sym -n mysqld.stack.
 # http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.sym}
 
 # functionality in initscript / rpm
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1.gz
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
@@ -782,13 +783,14 @@ done
 %attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
 %attr(755,root,root) %{_libdir}/mysql/ha_example.so.*.*.*
 %attr(755,root,root) %{_libdir}/mysql/ha_federated.so.*.*.*
-%{_mandir}/man1/mysql_fix_privilege_tables.1*
-%{_mandir}/man1/mysqld.1*
+%{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
+%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
+#%{_mandir}/man1/mysqld.1*
 %{_mandir}/man8/mysqld.8*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
@@ -844,6 +846,7 @@ done
 %attr(755,root,root) %{_bindir}/replace
 %{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
+%{_mandir}/man1/mysql_tzinfo_to_sql.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 
@@ -878,7 +881,7 @@ done
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
-%{_mandir}/man1/mysqlmanager.1*
+#%{_mandir}/man1/mysqlmanager.1*
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man8/mysqlmanager.8*
