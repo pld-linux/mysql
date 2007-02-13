@@ -16,13 +16,13 @@
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
-Summary(de.UTF-8):   MySQL: ist eine SQL-Datenbank
-Summary(fr.UTF-8):   MySQL: un serveur SQL rapide et fiable
-Summary(pl.UTF-8):   MySQL: bardzo szybka i niezawodna baza danych (SQL)
-Summary(pt_BR.UTF-8):   MySQL: Um servidor SQL rápido e confiável
-Summary(ru.UTF-8):   MySQL - быстрый SQL-сервер
-Summary(uk.UTF-8):   MySQL - швидкий SQL-сервер
-Summary(zh_CN.UTF-8):   MySQL数据库服务器
+Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
+Summary(fr.UTF-8):	MySQL: un serveur SQL rapide et fiable
+Summary(pl.UTF-8):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
+Summary(pt_BR.UTF-8):	MySQL: Um servidor SQL rápido e confiável
+Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
+Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
+Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.15
 Release:	1
@@ -209,7 +209,7 @@ MySQL - це SQL (Structured Query Language) сервер бази даних. M
 
 %package charsets
 Summary:	MySQL - character sets definitions
-Summary(pl.UTF-8):   MySQL - definicje kodowań znaków
+Summary(pl.UTF-8):	MySQL - definicje kodowań znaków
 Group:		Applications/Databases
 
 %description charsets
@@ -222,7 +222,7 @@ klienta.
 
 %package extras
 Summary:	MySQL additional utilities
-Summary(pl.UTF-8):   Dodatkowe narzędzia do MySQL
+Summary(pl.UTF-8):	Dodatkowe narzędzia do MySQL
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
@@ -236,7 +236,7 @@ pakiecie %{name}-extras-perl).
 
 %package extras-perl
 Summary:	MySQL additional utilities written in Perl
-Summary(pl.UTF-8):   Dodatkowe narzędzia do MySQL napisane w Perlu
+Summary(pl.UTF-8):	Dodatkowe narzędzia do MySQL napisane w Perlu
 Group:		Applications/Databases
 Requires:	%{name}-extras = %{version}-%{release}
 Requires:	perl(DBD::mysql)
@@ -249,10 +249,10 @@ Dodatkowe narzędzia do MySQL napisane w Perlu.
 
 %package client
 Summary:	MySQL - Client
-Summary(pl.UTF-8):   MySQL - Klient
-Summary(pt.UTF-8):   MySQL - Cliente
-Summary(ru.UTF-8):   MySQL клиент
-Summary(uk.UTF-8):   MySQL клієнт
+Summary(pl.UTF-8):	MySQL - Klient
+Summary(pt.UTF-8):	MySQL - Cliente
+Summary(ru.UTF-8):	MySQL клиент
+Summary(uk.UTF-8):	MySQL клієнт
 Group:		Applications/Databases
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
@@ -278,7 +278,7 @@ Este pacote contém os clientes padrão para o MySQL.
 
 %package libs
 Summary:	Shared libraries for MySQL
-Summary(pl.UTF-8):   Biblioteki dzielone MySQL
+Summary(pl.UTF-8):	Biblioteki dzielone MySQL
 Group:		Libraries
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
@@ -291,10 +291,10 @@ Biblioteki dzielone MySQL.
 
 %package devel
 Summary:	MySQL - Development header files and libraries
-Summary(pl.UTF-8):   MySQL - Pliki nagłówkowe i biblioteki dla programistów
-Summary(pt.UTF-8):   MySQL - Medições de desempenho
-Summary(ru.UTF-8):   MySQL - хедеры и библиотеки разработчика
-Summary(uk.UTF-8):   MySQL - хедери та бібліотеки програміста
+Summary(pl.UTF-8):	MySQL - Pliki nagłówkowe i biblioteki dla programistów
+Summary(pt.UTF-8):	MySQL - Medições de desempenho
+Summary(ru.UTF-8):	MySQL - хедеры и библиотеки разработчика
+Summary(uk.UTF-8):	MySQL - хедери та бібліотеки програміста
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
 %{?with_ssl:Requires:	openssl-devel}
@@ -329,9 +329,9 @@ bibliotecas necessárias para desenvolver aplicações clientes do MySQL.
 
 %package static
 Summary:	MySQL static libraries
-Summary(pl.UTF-8):   Biblioteki statyczne MySQL
-Summary(ru.UTF-8):   MySQL - статические библиотеки
-Summary(uk.UTF-8):   MySQL - статичні бібліотеки
+Summary(pl.UTF-8):	Biblioteki statyczne MySQL
+Summary(ru.UTF-8):	MySQL - статические библиотеки
+Summary(uk.UTF-8):	MySQL - статичні бібліотеки
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}-%{release}
 Obsoletes:	MySQL-static
@@ -352,10 +352,10 @@ Biblioteki statyczne MySQL.
 
 %package bench
 Summary:	MySQL - Benchmarks
-Summary(pl.UTF-8):   MySQL - Programy testujące szybkość działania bazy
-Summary(pt.UTF-8):   MySQL - Medições de desempenho
-Summary(ru.UTF-8):   MySQL - бенчмарки
-Summary(uk.UTF-8):   MySQL - бенчмарки
+Summary(pl.UTF-8):	MySQL - Programy testujące szybkość działania bazy
+Summary(pt.UTF-8):	MySQL - Medições de desempenho
+Summary(ru.UTF-8):	MySQL - бенчмарки
+Summary(uk.UTF-8):	MySQL - бенчмарки
 Group:		Applications/Databases
 Requires:	%{name} = %{version}-%{release}
 Requires:	%{name}-client
@@ -380,7 +380,7 @@ MySQL.
 
 %package doc
 Summary:	MySQL manual
-Summary(pl.UTF-8):   Podręcznik użytkownika MySQL
+Summary(pl.UTF-8):	Podręcznik użytkownika MySQL
 Group:		Applications/Databases
 
 %description doc
@@ -391,7 +391,7 @@ Podręcznik MySQL-a w formacie HTML.
 
 %package ndb
 Summary:	MySQL - NDB Storage Engine Daemon
-Summary(pl.UTF-8):   MySQL - demon silnika przechowywania danych NDB
+Summary(pl.UTF-8):	MySQL - demon silnika przechowywania danych NDB
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
@@ -404,7 +404,7 @@ NDB.
 
 %package ndb-client
 Summary:	MySQL - NDB Clients
-Summary(pl.UTF-8):   MySQL - programy klienckie NDB
+Summary(pl.UTF-8):	MySQL - programy klienckie NDB
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
@@ -416,7 +416,7 @@ Ten pakiet zawiera standardowe programy klienckie MySQL NDB.
 
 %package ndb-mgm
 Summary:	MySQL - NDB Management Daemon
-Summary(pl.UTF-8):   MySQL - demon zarządzający NDB
+Summary(pl.UTF-8):	MySQL - demon zarządzający NDB
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
@@ -428,7 +428,7 @@ Ten pakiet zawiera standardowego demona zarządzającego MySQL NDB.
 
 %package ndb-cpc
 Summary:	MySQL - NDB CPC Daemon
-Summary(pl.UTF-8):   MySQL - demon NDB CPC
+Summary(pl.UTF-8):	MySQL - demon NDB CPC
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
