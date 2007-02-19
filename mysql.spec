@@ -591,7 +591,7 @@ mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 # functionality in initscript / rpm
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1.gz
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1*
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
