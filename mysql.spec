@@ -24,13 +24,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.15
+Version:	5.1.16
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
 Source0:	http://mysql.mirrors.cybercity.dk/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-# Source0-md5:	8c4c114e0dbbdda6822c0c7d7eed4faf
+# Source0-md5:	fb6fd4d26335245f679572f65c299762
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -927,8 +927,28 @@ done
 
 %files ndb-client
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/ndb_*
+%attr(755,root,root) %{_bindir}/ndb_config
+%attr(755,root,root) %{_bindir}/ndb_delete_all
+%attr(755,root,root) %{_bindir}/ndb_desc
+%attr(755,root,root) %{_bindir}/ndb_drop_index
+%attr(755,root,root) %{_bindir}/ndb_drop_table
+%attr(755,root,root) %{_bindir}/ndb_error_reporter
+%attr(755,root,root) %{_bindir}/ndb_mgm
+%attr(755,root,root) %{_bindir}/ndb_print_backup_file
+%attr(755,root,root) %{_bindir}/ndb_print_schema_file
+%attr(755,root,root) %{_bindir}/ndb_print_sys_file
+%attr(755,root,root) %{_bindir}/ndb_restore
+%attr(755,root,root) %{_bindir}/ndb_select_all
+%attr(755,root,root) %{_bindir}/ndb_select_count
+%attr(755,root,root) %{_bindir}/ndb_show_tables
+%attr(755,root,root) %{_bindir}/ndb_size.pl
+%attr(755,root,root) %{_bindir}/ndb_test_platform
+%attr(755,root,root) %{_bindir}/ndb_waiter
 %attr(755,root,root) %{_datadir}/mysql/ndb_size.tmpl
+%{_mandir}/man1/ndb_config.1*
+%{_mandir}/man1/ndb_delete_all.1*
+%{_mandir}/man1/ndb_desc.1*
+%{_mandir}/man1/ndb_size.pl.1*
 
 %files ndb-mgm
 %defattr(644,root,root,755)
