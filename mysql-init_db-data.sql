@@ -3,3 +3,5 @@ INSERT INTO `db` VALUES ('%','test\\_%','','Y','Y','Y','Y','Y','Y','N','Y','Y','
 INSERT INTO `user` VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0);
 INSERT INTO `user` VALUES ('$hostname','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0);
 INSERT INTO `user` VALUES ('localhost','','','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','','','','',0,0,0,0);
+
+insert into user set host='localhost', user='mysql_logrotate', Reload_priv='Y';
