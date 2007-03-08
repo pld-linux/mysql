@@ -1,8 +1,8 @@
--- MySQL dump 10.10
+-- MySQL dump 10.12
 --
 -- Host: localhost    Database: mysql
 -- ------------------------------------------------------
--- Server version	5.1.11-beta-log
+-- Server version	5.1.16-beta-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -50,13 +50,13 @@ CREATE TABLE IF NOT EXISTS `db` (
   `Alter_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   `Create_tmp_table_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   `Lock_tables_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
-  `Create_view_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Show_view_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Create_routine_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Alter_routine_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Execute_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Event_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Trigger_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
+  `Create_view_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Show_view_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Create_routine_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Alter_routine_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Execute_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Event_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Trigger_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   PRIMARY KEY (`Host`,`Db`,`User`),
   KEY `User` (`User`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Database privileges';
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS `event` (
   `on_completion` enum('DROP','PRESERVE') NOT NULL DEFAULT 'DROP',
   `sql_mode` set('REAL_AS_FLOAT','PIPES_AS_CONCAT','ANSI_QUOTES','IGNORE_SPACE','NOT_USED','ONLY_FULL_GROUP_BY','NO_UNSIGNED_SUBTRACTION','NO_DIR_IN_CREATE','POSTGRESQL','ORACLE','MSSQL','DB2','MAXDB','NO_KEY_OPTIONS','NO_TABLE_OPTIONS','NO_FIELD_OPTIONS','MYSQL323','MYSQL40','ANSI','NO_AUTO_VALUE_ON_ZERO','NO_BACKSLASH_ESCAPES','STRICT_TRANS_TABLES','STRICT_ALL_TABLES','NO_ZERO_IN_DATE','NO_ZERO_DATE','INVALID_DATES','ERROR_FOR_DIVISION_BY_ZERO','TRADITIONAL','NO_AUTO_CREATE_USER','HIGH_NOT_PRECEDENCE') NOT NULL DEFAULT '',
   `comment` char(64) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '',
-  PRIMARY KEY (`definer`,`db`,`name`)
+  PRIMARY KEY (`db`,`name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Events';
 
 --
@@ -115,10 +115,10 @@ CREATE TABLE IF NOT EXISTS `general_log` (
 --
 
 CREATE TABLE IF NOT EXISTS `help_category` (
-  `help_category_id` smallint(5) unsigned NOT NULL DEFAULT '0',
-  `name` varchar(64) NOT NULL DEFAULT '',
+  `help_category_id` smallint(5) unsigned NOT NULL,
+  `name` char(64) NOT NULL,
   `parent_category_id` smallint(5) unsigned DEFAULT NULL,
-  `url` varchar(128) NOT NULL DEFAULT '',
+  `url` char(128) NOT NULL,
   PRIMARY KEY (`help_category_id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='help categories';
@@ -128,8 +128,8 @@ CREATE TABLE IF NOT EXISTS `help_category` (
 --
 
 CREATE TABLE IF NOT EXISTS `help_keyword` (
-  `help_keyword_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `name` varchar(64) NOT NULL DEFAULT '',
+  `help_keyword_id` int(10) unsigned NOT NULL,
+  `name` char(64) NOT NULL,
   PRIMARY KEY (`help_keyword_id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='help keywords';
@@ -139,8 +139,8 @@ CREATE TABLE IF NOT EXISTS `help_keyword` (
 --
 
 CREATE TABLE IF NOT EXISTS `help_relation` (
-  `help_topic_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `help_keyword_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `help_topic_id` int(10) unsigned NOT NULL,
+  `help_keyword_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`help_keyword_id`,`help_topic_id`)
 ) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='keyword-topic relation';
 
@@ -149,12 +149,12 @@ CREATE TABLE IF NOT EXISTS `help_relation` (
 --
 
 CREATE TABLE IF NOT EXISTS `help_topic` (
-  `help_topic_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `name` varchar(64) NOT NULL DEFAULT '',
-  `help_category_id` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `help_topic_id` int(10) unsigned NOT NULL,
+  `name` char(64) NOT NULL,
+  `help_category_id` smallint(5) unsigned NOT NULL,
   `description` text NOT NULL,
   `example` text NOT NULL,
-  `url` varchar(128) NOT NULL DEFAULT '',
+  `url` char(128) NOT NULL,
   PRIMARY KEY (`help_topic_id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='help topics';
@@ -178,14 +178,29 @@ CREATE TABLE IF NOT EXISTS `host` (
   `Alter_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   `Create_tmp_table_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   `Lock_tables_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
-  `Create_view_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Show_view_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Create_routine_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Alter_routine_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Execute_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Trigger_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
+  `Create_view_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Show_view_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Create_routine_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Alter_routine_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Execute_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Trigger_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   PRIMARY KEY (`Host`,`Db`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Host privileges;  Merged with database privileges';
+
+--
+-- Table structure for table `ndb_binlog_index`
+--
+
+CREATE TABLE IF NOT EXISTS `ndb_binlog_index` (
+  `Position` bigint(20) unsigned NOT NULL,
+  `File` varchar(255) NOT NULL,
+  `epoch` bigint(20) unsigned NOT NULL,
+  `inserts` bigint(20) unsigned NOT NULL,
+  `updates` bigint(20) unsigned NOT NULL,
+  `deletes` bigint(20) unsigned NOT NULL,
+  `schemaops` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`epoch`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `plugin`
@@ -195,7 +210,7 @@ CREATE TABLE IF NOT EXISTS `plugin` (
   `name` char(64) COLLATE utf8_bin NOT NULL DEFAULT '',
   `dl` char(128) COLLATE utf8_bin NOT NULL DEFAULT '',
   PRIMARY KEY (`name`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='MySQL plugins';
 
 --
 -- Table structure for table `proc`
@@ -237,6 +252,23 @@ CREATE TABLE IF NOT EXISTS `procs_priv` (
   PRIMARY KEY (`Host`,`Db`,`User`,`Routine_name`,`Routine_type`),
   KEY `Grantor` (`Grantor`)
 ) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Procedure privileges';
+
+--
+-- Table structure for table `servers`
+--
+
+CREATE TABLE IF NOT EXISTS `servers` (
+  `Server_name` char(64) NOT NULL,
+  `Host` char(64) NOT NULL,
+  `Db` char(64) NOT NULL,
+  `Username` char(64) NOT NULL,
+  `Password` char(64) NOT NULL,
+  `Port` int(4) DEFAULT NULL,
+  `Socket` char(64) DEFAULT NULL,
+  `Wrapper` char(64) NOT NULL,
+  `Owner` char(64) NOT NULL,
+  PRIMARY KEY (`Server_name`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='MySQL Foreign Servers table';
 
 --
 -- Table structure for table `slow_log`
@@ -288,8 +320,8 @@ CREATE TABLE IF NOT EXISTS `time_zone` (
 --
 
 CREATE TABLE IF NOT EXISTS `time_zone_leap_second` (
-  `Transition_time` bigint(20) NOT NULL DEFAULT '0',
-  `Correction` int(11) NOT NULL DEFAULT '0',
+  `Transition_time` bigint(20) NOT NULL,
+  `Correction` int(11) NOT NULL,
   PRIMARY KEY (`Transition_time`)
 ) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Leap seconds information for time zones';
 
@@ -298,8 +330,8 @@ CREATE TABLE IF NOT EXISTS `time_zone_leap_second` (
 --
 
 CREATE TABLE IF NOT EXISTS `time_zone_name` (
-  `Name` char(64) NOT NULL DEFAULT '',
-  `Time_zone_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `Name` char(64) NOT NULL,
+  `Time_zone_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`Name`)
 ) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Time zone names';
 
@@ -308,9 +340,9 @@ CREATE TABLE IF NOT EXISTS `time_zone_name` (
 --
 
 CREATE TABLE IF NOT EXISTS `time_zone_transition` (
-  `Time_zone_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `Transition_time` bigint(20) NOT NULL DEFAULT '0',
-  `Transition_type_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `Time_zone_id` int(10) unsigned NOT NULL,
+  `Transition_time` bigint(20) NOT NULL,
+  `Transition_type_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`Time_zone_id`,`Transition_time`)
 ) ENGINE=@ENGINE@ DEFAULT CHARSET=utf8 COMMENT='Time zone transitions';
 
@@ -319,8 +351,8 @@ CREATE TABLE IF NOT EXISTS `time_zone_transition` (
 --
 
 CREATE TABLE IF NOT EXISTS `time_zone_transition_type` (
-  `Time_zone_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `Transition_type_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `Time_zone_id` int(10) unsigned NOT NULL,
+  `Transition_type_id` int(10) unsigned NOT NULL,
   `Offset` int(11) NOT NULL DEFAULT '0',
   `Is_DST` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `Abbreviation` char(8) NOT NULL DEFAULT '',
@@ -356,13 +388,13 @@ CREATE TABLE IF NOT EXISTS `user` (
   `Execute_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   `Repl_slave_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   `Repl_client_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
-  `Create_view_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Show_view_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Create_routine_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Alter_routine_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Create_user_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Event_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
-  `Trigger_priv` enum('N','Y') COLLATE utf8_bin NOT NULL DEFAULT 'N',
+  `Create_view_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Show_view_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Create_routine_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Alter_routine_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Create_user_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Event_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
+  `Trigger_priv` enum('N','Y') CHARACTER SET utf8 NOT NULL DEFAULT 'N',
   `ssl_type` enum('','ANY','X509','SPECIFIED') CHARACTER SET utf8 NOT NULL DEFAULT '',
   `ssl_cipher` blob NOT NULL,
   `x509_issuer` blob NOT NULL,
@@ -383,3 +415,4 @@ CREATE TABLE IF NOT EXISTS `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+-- Dump completed on 2007-03-08 15:32:19
