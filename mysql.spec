@@ -21,13 +21,13 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.33
+Version:	5.0.37
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	10cb85276a1468c7906a4ff4dd565d61
+# Source0-md5:	26ed76facb58bdeae40c8310e337dde2
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -53,7 +53,6 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
-Patch13:	%{name}-bug-24148.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -451,7 +450,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
-%patch13 -p1
 
 %build
 %{__libtoolize}
@@ -874,20 +872,26 @@ EOF
 %attr(755,root,root) %{_sbindir}/ndbd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb
+%{_mandir}/man1/ndbd.1*
 
 %files ndb-client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/ndb_*
 %attr(755,root,root) %{_datadir}/mysql/ndb_size.tmpl
+%{_mandir}/man1/ndb_*.1*
+%exclude %{_mandir}/man1/ndb_mgmd.1*
+%exclude %{_mandir}/man1/ndb_cpcd.1*
 
 %files ndb-mgm
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_sbindir}/ndb_mgmd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-mgm
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-mgm
+%{_mandir}/man1/ndb_mgmd.1*
 
 %files ndb-cpc
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_sbindir}/ndb_cpcd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-cpc
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-cpc
+%{_mandir}/man1/ndb_cpcd.1*
