@@ -25,7 +25,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.16
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -43,8 +43,6 @@ Source10:	%{name}-ndb-mgm.sysconfig
 Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
-Source14:	%{name}-init_db.sql
-Source15:	%{name}-init_db-data.sql
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -58,6 +56,7 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-NDB_CXXFLAGS.patch
+Patch13:	%{name}-create_system_tables.patch
 Patch14:	%{name}-bug-18156.patch
 Patch16:	%{name}-bug-24747.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
@@ -459,6 +458,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
+%patch13 -p1
 %patch14 -p1
 %patch16 -p1
 
@@ -557,8 +557,6 @@ cp mysqld.conf mysqld.tmp
 awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 
 install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
-cp -a %{SOURCE14} $RPM_BUILD_ROOT%{_datadir}/mysql/init_db.sql
-cp -a %{SOURCE15} $RPM_BUILD_ROOT%{_datadir}/mysql/init_db-data.sql
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
 
 # NDB
@@ -588,8 +586,18 @@ mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 # http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.sym}
 
+# do not clobber users $PATH
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_create_system_tables
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_upgrade
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/innochecksum
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
+
 # functionality in initscript / rpm
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1*
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
@@ -770,15 +778,16 @@ done
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
-%attr(755,root,root) %{_bindir}/innochecksum
-%attr(755,root,root) %{_bindir}/myisamchk
-%attr(755,root,root) %{_bindir}/myisamlog
-%attr(755,root,root) %{_bindir}/myisampack
-%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
-%attr(755,root,root) %{_bindir}/my_print_defaults
-%attr(755,root,root) %{_bindir}/mysql_upgrade
-%attr(755,root,root) %{_bindir}/mysqlcheck
+%attr(755,root,root) %{_sbindir}/innochecksum
+%attr(755,root,root) %{_sbindir}/myisamchk
+%attr(755,root,root) %{_sbindir}/myisamlog
+%attr(755,root,root) %{_sbindir}/myisampack
+%attr(755,root,root) %{_sbindir}/my_print_defaults
+%attr(755,root,root) %{_sbindir}/mysqlcheck
+%attr(755,root,root) %{_sbindir}/mysql_create_system_tables
 %attr(755,root,root) %{_sbindir}/mysqld
+%attr(755,root,root) %{_sbindir}/mysql_fix_privilege_tables
+%attr(755,root,root) %{_sbindir}/mysql_upgrade
 %dir %{_libdir}/mysql
 %attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
 %attr(755,root,root) %{_libdir}/mysql/ha_example.so.*.*.*
@@ -805,8 +814,6 @@ done
 %{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/english
 %{_datadir}/mysql/fill_help_tables.sql
-%{_datadir}/mysql/init_db-data.sql
-%{_datadir}/mysql/init_db.sql
 %{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
