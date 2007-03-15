@@ -269,3 +269,34 @@
  	    default:
  	      my_error(ER_NOT_SUPPORTED_YET, MYF(0), "STATUS");
  	      YYABORT;
+--- mysql-5.0.37/sql/sphinx/ha_sphinx.h~	2007-03-15 19:05:24.757934541 +0200
++++ mysql-5.0.37/sql/sphinx/ha_sphinx.h	2007-03-15 19:05:27.217989955 +0200
+@@ -136,7 +136,7 @@
+ 	int				rnd_next ( byte * buf );
+ 	int				rnd_pos ( byte * buf, byte * pos );
+ 	void			position ( const byte * record );
+-#if MYSQL_VERSION_ID>=50114
++#if (MYSQL_VERSION_ID >= 50114) || (MYSQL_VERSION_ID < 50100 && MYSQL_VERSION_ID >= 50037)
+ 	int			info ( uint );
+ #else
+ 	void			info ( uint );
+--- mysql-5.0.37/sql/sphinx/ha_sphinx.cc~	2007-03-15 19:05:20.167831147 +0200
++++ mysql-5.0.37/sql/sphinx/ha_sphinx.cc	2007-03-15 19:05:21.737866513 +0200
+@@ -1180,7 +1180,7 @@
+ }
+ 
+ 
+-#if MYSQL_VERSION_ID>=50114
++#if (MYSQL_VERSION_ID >= 50114) || (MYSQL_VERSION_ID < 50100 && MYSQL_VERSION_ID >= 50037)
+ int ha_sphinx::info ( uint flag )
+ #else
+ void ha_sphinx::info ( uint flag )
+@@ -1196,7 +1196,7 @@
+ 	records = 20;
+ 	#endif
+ 
+-#if MYSQL_VERSION_ID>=50114
++#if (MYSQL_VERSION_ID >= 50114) || (MYSQL_VERSION_ID < 50100 && MYSQL_VERSION_ID >= 50037)
+ 	DBUG_RETURN(0);
+ #else
+ 	DBUG_VOID_RETURN;
