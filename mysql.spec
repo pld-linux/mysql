@@ -8,7 +8,8 @@
 # - Using NDB Cluster... could not find sci transporter in /{include, lib}
 #
 # Conditional build:
-%bcond_without	innodb		# Without InnoDB support
+%bcond_without	innodb		# Without InnoDB storage engine support
+%bcond_with	sphinx		# Without Sphinx storage engine support
 %bcond_without	raid		# Without raid
 %bcond_without	ssl		# Without OpenSSL
 %bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
@@ -31,6 +32,8 @@ Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
 Source0:	http://mysql.mirrors.cybercity.dk/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
 # Source0-md5:	fb6fd4d26335245f679572f65c299762
+Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7-rc2.tar.gz
+# Source100-md5:	65daf0feb7e276fb3de0aba82cff1d3e
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -438,7 +441,10 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n %{name}-%{version}-beta
+%setup -q -n %{name}-%{version}-beta %{?with_sphinx:-a100}
+%if %{with sphinx}
+mv sphinx-*/mysqlse storage/sphinx
+%endif
 %patch0 -p1
 #%{?with_tcpd:%patch1 -p1}  # WHATS PURPOSE OF THIS PATCH?
 #%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
