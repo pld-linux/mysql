@@ -4,7 +4,8 @@
 #
 # Conditional build:
 %bcond_with	bdb		# Berkeley DB support
-%bcond_without	innodb		# Without InnoDB support
+%bcond_without	innodb		# InnoDB storage engine support
+%bcond_with	sphinx		# Sphinx storage engine support
 %bcond_without	raid		# Without raid
 %bcond_without	ssl		# Without OpenSSL
 %bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
@@ -28,6 +29,8 @@ Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	26ed76facb58bdeae40c8310e337dde2
+Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7-rc2.tar.gz
+# Source100-md5:	65daf0feb7e276fb3de0aba82cff1d3e
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -41,7 +44,7 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Patch0:		%{name}-libs.patch
-
+Patch1:		%{name}-sphinx.patch
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-info.patch
 Patch4:		%{name}-sql-cxx-pic.patch
@@ -430,9 +433,12 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q %{?_snap:-n %{name}-%{version}-nightly-%{_snap}}
+%setup -q %{?_snap:-n %{name}-%{version}-nightly-%{_snap}} %{?with_sphinx:-a100}
 %patch0 -p1
-
+%if %{with sphinx}
+mv sphinx-*/mysqlse sql/sphinx
+%patch1 -p1
+%endif
 %patch2 -p1
 %patch3 -p1
 %ifarch alpha
@@ -492,6 +498,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-archive-storage-engine \
+	%{?with_sphinx:--with-sphinx-storage-engine} \
 	--with-vio \
 	--with-ndbcluster \
 	--without-readline \
@@ -595,6 +602,8 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
+rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_bin_dist.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
