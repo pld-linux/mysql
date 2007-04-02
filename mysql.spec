@@ -26,7 +26,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.16
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -532,7 +532,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql} \
-	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
+	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
 # Make install
