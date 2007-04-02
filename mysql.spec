@@ -812,7 +812,7 @@ done
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
 %attr(751,root,root) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
-%attr(750,mysql,mysql) %dir /var/log/archiv/mysql
+%attr(750,mysql,mysql) %dir /var/log/archive/mysql
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
 
 %{_infodir}/mysql.info*
