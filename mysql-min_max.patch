@@ -1,0 +1,15 @@
+--- ./include/my_global.h.org	2007-04-16 15:21:49.919125205 +0200
++++ ./include/my_global.h	2007-04-16 15:23:56.166608710 +0200
+@@ -543,9 +543,9 @@
+ #endif
+ 
+ /* Define some useful general macros */
+-#if !defined(max)
+-#define max(a, b)	((a) > (b) ? (a) : (b))
+-#define min(a, b)	((a) < (b) ? (a) : (b))
++#if !defined(mysql_max)
++static __inline long min( long a, long b ) { return ( ( a < b ) ? a : b ); }
++static __inline long max( long a, long b ) { return ( ( a > b ) ? a : b ); }
+ #endif
+ 
+ #if !defined(HAVE_UINT)
