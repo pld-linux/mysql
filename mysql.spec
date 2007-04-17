@@ -23,14 +23,14 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.37
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	26ed76facb58bdeae40c8310e337dde2
-Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7-rc2.tar.gz
-# Source100-md5:	65daf0feb7e276fb3de0aba82cff1d3e
+Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
+# Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
