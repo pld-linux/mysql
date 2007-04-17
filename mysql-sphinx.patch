@@ -1,5 +1,6 @@
---- mysql-5.0.22/config/ac-macros/ha_sphinx.m4	1970-01-01 01:00:00.000000000 +0100
-+++ mysql-5.0.22.sx/config/ac-macros/ha_sphinx.m4	2006-06-06 19:49:38.000000000 +0200
+diff -BNru mysql-5.0.37/config/ac-macros/ha_sphinx.m4 mysql-5.0.37-sphinx/config/ac-macros/ha_sphinx.m4
+--- mysql-5.0.37/config/ac-macros/ha_sphinx.m4	1969-12-31 16:00:00.000000000 -0800
++++ mysql-5.0.37-sphinx/config/ac-macros/ha_sphinx.m4	2007-04-01 15:35:16.000000000 -0700
 @@ -0,0 +1,30 @@
 +dnl ---------------------------------------------------------------------------
 +dnl Macro: MYSQL_CHECK_EXAMPLEDB
@@ -31,9 +32,10 @@
 +dnl END OF MYSQL_CHECK_EXAMPLE SECTION
 +dnl ---------------------------------------------------------------------------
 +
---- mysql-5.0.22/configure.in	2006-05-25 10:56:45.000000000 +0200
-+++ mysql-5.0.22.sx/configure.in	2006-06-06 19:49:38.000000000 +0200
-@@ -41,6 +41,7 @@
+diff -BNru mysql-5.0.37/configure.in mysql-5.0.37-sphinx/configure.in
+--- mysql-5.0.37/configure.in	2007-03-05 11:21:13.000000000 -0800
++++ mysql-5.0.37-sphinx/configure.in	2007-04-01 15:35:16.000000000 -0700
+@@ -45,6 +45,7 @@
  sinclude(config/ac-macros/ha_berkeley.m4)
  sinclude(config/ac-macros/ha_blackhole.m4)
  sinclude(config/ac-macros/ha_example.m4)
@@ -41,7 +43,7 @@
  sinclude(config/ac-macros/ha_federated.m4)
  sinclude(config/ac-macros/ha_innodb.m4)
  sinclude(config/ac-macros/ha_ndbcluster.m4)
-@@ -2450,6 +2451,7 @@
+@@ -2532,6 +2533,7 @@
  MYSQL_CHECK_BDB
  MYSQL_CHECK_INNODB
  MYSQL_CHECK_EXAMPLEDB
@@ -49,8 +51,9 @@
  MYSQL_CHECK_ARCHIVEDB
  MYSQL_CHECK_CSVDB
  MYSQL_CHECK_BLACKHOLEDB
---- mysql-5.0.22.sx/libmysqld/Makefile.am	2006-06-06 19:49:38.000000000 +0200
-+++ mysql-5.0.37/libmysqld/Makefile.am	2007-03-15 16:23:41.829249633 +0200
+diff -BNru mysql-5.0.37/libmysqld/Makefile.am mysql-5.0.37-sphinx/libmysqld/Makefile.am
+--- mysql-5.0.37/libmysqld/Makefile.am	2007-03-05 11:21:41.000000000 -0800
++++ mysql-5.0.37-sphinx/libmysqld/Makefile.am	2007-04-01 15:35:54.000000000 -0700
 @@ -29,6 +29,7 @@
  			-I$(top_builddir)/include -I$(top_srcdir)/include \
  			-I$(top_builddir)/sql -I$(top_srcdir)/sql \
@@ -59,7 +62,7 @@
  			-I$(top_srcdir)/regex \
  			$(openssl_includes) @ZLIB_INCLUDES@
  
-@@ -38,6 +39,7 @@
+@@ -39,6 +40,7 @@
  libmysqlsources =	errmsg.c get_password.c libmysql.c client.c pack.c \
                          my_time.c
  sqlexamplessources =	ha_example.cc ha_tina.cc
@@ -67,7 +70,7 @@
  
  noinst_HEADERS =	embedded_priv.h emb_qcache.h
  
-@@ -65,7 +67,7 @@
+@@ -67,7 +69,7 @@
  	parse_file.cc sql_view.cc sql_trigger.cc my_decimal.cc \
  	ha_blackhole.cc ha_archive.cc my_user.c
  
@@ -76,7 +79,7 @@
  libmysqld_a_SOURCES=
  
  # automake misses these
-@@ -133,12 +135,16 @@
+@@ -147,12 +149,16 @@
  	    rm -f $$f; \
  	    @LN_CP_F@ $(top_srcdir)/sql/examples/$$f $$f; \
  	  done; \
@@ -94,9 +97,10 @@
  	       $(top_srcdir)/linked_libmysqld_sources; \
  	rm -f client_settings.h
  
---- mysql-5.0.22/sql/handler.cc	2006-05-25 10:56:42.000000000 +0200
-+++ mysql-5.0.22.sx/sql/handler.cc	2006-06-06 19:49:38.000000000 +0200
-@@ -78,6 +78,15 @@
+diff -BNru mysql-5.0.37/sql/handler.cc mysql-5.0.37-sphinx/sql/handler.cc
+--- mysql-5.0.37/sql/handler.cc	2007-03-05 11:21:13.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/handler.cc	2007-04-01 15:35:16.000000000 -0700
+@@ -77,6 +77,15 @@
    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
    HTON_NO_FLAGS };
  #endif
@@ -112,7 +116,7 @@
  #ifdef HAVE_INNOBASE_DB
  #include "ha_innodb.h"
  extern handlerton innobase_hton;
-@@ -147,6 +156,7 @@
+@@ -146,6 +155,7 @@
    &example_hton,
    &archive_hton,
    &tina_hton,
@@ -120,7 +124,7 @@
    &ndbcluster_hton,
    &federated_hton,
    &myisammrg_hton,
-@@ -345,6 +355,12 @@
+@@ -346,6 +356,12 @@
        return new (alloc) ha_tina(table);
      return NULL;
  #endif
@@ -133,9 +137,10 @@
  #ifdef HAVE_NDBCLUSTER_DB
    case DB_TYPE_NDBCLUSTER:
      if (have_ndbcluster == SHOW_OPTION_YES)
---- mysql-5.0.22/sql/handler.h	2006-05-25 10:56:55.000000000 +0200
-+++ mysql-5.0.22.sx/sql/handler.h	2006-06-06 19:49:38.000000000 +0200
-@@ -183,8 +183,9 @@
+diff -BNru mysql-5.0.37/sql/handler.h mysql-5.0.37-sphinx/sql/handler.h
+--- mysql-5.0.37/sql/handler.h	2007-03-05 11:21:22.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/handler.h	2007-04-01 15:35:16.000000000 -0700
+@@ -184,8 +184,9 @@
    DB_TYPE_BERKELEY_DB, DB_TYPE_INNODB,
    DB_TYPE_GEMINI, DB_TYPE_NDBCLUSTER,
    DB_TYPE_EXAMPLE_DB, DB_TYPE_ARCHIVE_DB, DB_TYPE_CSV_DB,
@@ -146,9 +151,10 @@
    DB_TYPE_DEFAULT // Must be last
  };
  
---- mysql-5.0.22/sql/Makefile.am	2006-05-25 10:56:41.000000000 +0200
-+++ mysql-5.0.22.sx/sql/Makefile.am	2006-06-06 19:49:38.000000000 +0200
-@@ -66,6 +66,7 @@
+diff -BNru mysql-5.0.37/sql/Makefile.am mysql-5.0.37-sphinx/sql/Makefile.am
+--- mysql-5.0.37/sql/Makefile.am	2007-03-05 11:21:40.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/Makefile.am	2007-04-01 15:35:16.000000000 -0700
+@@ -67,6 +67,7 @@
  			sql_array.h sql_cursor.h \
  			examples/ha_example.h ha_archive.h \
  			examples/ha_tina.h ha_blackhole.h  \
@@ -156,7 +162,7 @@
  			ha_federated.h
  mysqld_SOURCES =	sql_lex.cc sql_handler.cc \
  			item.cc item_sum.cc item_buff.cc item_func.cc \
-@@ -102,6 +103,7 @@
+@@ -104,6 +105,7 @@
  			sp_cache.cc parse_file.cc sql_trigger.cc \
  			examples/ha_example.cc ha_archive.cc \
  			examples/ha_tina.cc ha_blackhole.cc \
@@ -164,9 +170,10 @@
  			ha_federated.cc
  
  gen_lex_hash_SOURCES =	gen_lex_hash.cc
---- mysql-5.0.22/sql/mysqld.cc	2006-05-25 10:56:41.000000000 +0200
-+++ mysql-5.0.22.sx/sql/mysqld.cc	2006-06-06 19:49:38.000000000 +0200
-@@ -6420,6 +6420,11 @@
+diff -BNru mysql-5.0.37/sql/mysqld.cc mysql-5.0.37-sphinx/sql/mysqld.cc
+--- mysql-5.0.37/sql/mysqld.cc	2007-03-05 11:21:11.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/mysqld.cc	2007-04-01 15:35:16.000000000 -0700
+@@ -6542,6 +6542,11 @@
  #else
    have_csv_db= SHOW_OPTION_NO;
  #endif
@@ -178,7 +185,7 @@
  #ifdef HAVE_NDBCLUSTER_DB
    have_ndbcluster=SHOW_OPTION_DISABLED;
  #else
-@@ -7457,6 +7462,7 @@
+@@ -7596,6 +7601,7 @@
  #undef have_example_db
  #undef have_archive_db
  #undef have_csv_db
@@ -186,7 +193,7 @@
  #undef have_federated_db
  #undef have_partition_db
  #undef have_blackhole_db
-@@ -7467,6 +7473,7 @@
+@@ -7606,6 +7612,7 @@
  SHOW_COMP_OPTION have_example_db= SHOW_OPTION_NO;
  SHOW_COMP_OPTION have_archive_db= SHOW_OPTION_NO;
  SHOW_COMP_OPTION have_csv_db= SHOW_OPTION_NO;
@@ -194,9 +201,10 @@
  SHOW_COMP_OPTION have_federated_db= SHOW_OPTION_NO;
  SHOW_COMP_OPTION have_partition_db= SHOW_OPTION_NO;
  SHOW_COMP_OPTION have_blackhole_db= SHOW_OPTION_NO;
---- mysql-5.0.22/sql/mysql_priv.h	2006-05-25 10:56:43.000000000 +0200
-+++ mysql-5.0.22.sx/sql/mysql_priv.h	2006-06-06 19:49:38.000000000 +0200
-@@ -1279,6 +1279,12 @@
+diff -BNru mysql-5.0.37/sql/mysql_priv.h mysql-5.0.37-sphinx/sql/mysql_priv.h
+--- mysql-5.0.37/sql/mysql_priv.h	2007-03-05 11:21:40.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/mysql_priv.h	2007-04-01 15:35:16.000000000 -0700
+@@ -1364,6 +1364,12 @@
  #else
  extern SHOW_COMP_OPTION have_csv_db;
  #endif
@@ -209,9 +217,10 @@
  #ifdef HAVE_FEDERATED_DB
  extern handlerton federated_hton;
  #define have_federated_db federated_hton.state
---- mysql-5.0.22/sql/set_var.cc	2006-05-25 10:56:41.000000000 +0200
-+++ mysql-5.0.22.sx/sql/set_var.cc	2006-06-06 19:49:38.000000000 +0200
-@@ -864,6 +864,7 @@
+diff -BNru mysql-5.0.37/sql/set_var.cc mysql-5.0.37-sphinx/sql/set_var.cc
+--- mysql-5.0.37/sql/set_var.cc	2007-03-05 11:21:24.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/set_var.cc	2007-04-01 15:35:16.000000000 -0700
+@@ -868,6 +868,7 @@
    {"have_compress",	      (char*) &have_compress,		    SHOW_HAVE},
    {"have_crypt",	      (char*) &have_crypt,		    SHOW_HAVE},
    {"have_csv",	              (char*) &have_csv_db,	            SHOW_HAVE},
@@ -219,9 +228,10 @@
    {"have_dynamic_loading",    (char*) &have_dlopen,	            SHOW_HAVE},
    {"have_example_engine",     (char*) &have_example_db,	            SHOW_HAVE},
    {"have_federated_engine",   (char*) &have_federated_db,           SHOW_HAVE},
---- mysql-5.0.22/sql/sql_lex.h	2006-05-25 10:56:41.000000000 +0200
-+++ mysql-5.0.22.sx/sql/sql_lex.h	2006-06-06 19:49:38.000000000 +0200
-@@ -58,6 +58,7 @@
+diff -BNru mysql-5.0.37/sql/sql_lex.h mysql-5.0.37-sphinx/sql/sql_lex.h
+--- mysql-5.0.37/sql/sql_lex.h	2007-03-05 11:21:05.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/sql_lex.h	2007-04-01 15:35:16.000000000 -0700
+@@ -57,6 +57,7 @@
    SQLCOM_SHOW_DATABASES, SQLCOM_SHOW_TABLES, SQLCOM_SHOW_FIELDS,
    SQLCOM_SHOW_KEYS, SQLCOM_SHOW_VARIABLES, SQLCOM_SHOW_LOGS, SQLCOM_SHOW_STATUS,
    SQLCOM_SHOW_INNODB_STATUS, SQLCOM_SHOW_NDBCLUSTER_STATUS, SQLCOM_SHOW_MUTEX_STATUS,
@@ -229,9 +239,10 @@
    SQLCOM_SHOW_PROCESSLIST, SQLCOM_SHOW_MASTER_STAT, SQLCOM_SHOW_SLAVE_STAT,
    SQLCOM_SHOW_GRANTS, SQLCOM_SHOW_CREATE, SQLCOM_SHOW_CHARSETS,
    SQLCOM_SHOW_COLLATIONS, SQLCOM_SHOW_CREATE_DB, SQLCOM_SHOW_TABLE_STATUS,
---- mysql-5.0.22/sql/sql_parse.cc	2006-05-25 10:56:41.000000000 +0200
-+++ mysql-5.0.22.sx/sql/sql_parse.cc	2006-06-06 19:49:38.000000000 +0200
-@@ -25,6 +25,9 @@
+diff -BNru mysql-5.0.37/sql/sql_parse.cc mysql-5.0.37-sphinx/sql/sql_parse.cc
+--- mysql-5.0.37/sql/sql_parse.cc	2007-03-05 11:21:40.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/sql_parse.cc	2007-04-01 15:35:16.000000000 -0700
+@@ -24,6 +24,9 @@
  #ifdef HAVE_INNOBASE_DB
  #include "ha_innodb.h"
  #endif
@@ -241,7 +252,7 @@
  
  #ifdef HAVE_NDBCLUSTER_DB
  #include "ha_ndbcluster.h"
-@@ -2722,6 +2725,15 @@
+@@ -2882,6 +2885,15 @@
        break;
      }
  #endif
@@ -257,9 +268,10 @@
  #ifdef HAVE_REPLICATION
    case SQLCOM_LOAD_MASTER_TABLE:
    {
---- mysql-5.0.22/sql/sql_yacc.yy	2006-05-25 10:56:43.000000000 +0200
-+++ mysql-5.0.22.sx/sql/sql_yacc.yy	2006-06-06 19:49:38.000000000 +0200
-@@ -6584,6 +6584,9 @@
+diff -BNru mysql-5.0.37/sql/sql_yacc.yy mysql-5.0.37-sphinx/sql/sql_yacc.yy
+--- mysql-5.0.37/sql/sql_yacc.yy	2007-03-05 11:21:23.000000000 -0800
++++ mysql-5.0.37-sphinx/sql/sql_yacc.yy	2007-04-01 15:35:16.000000000 -0700
+@@ -7052,6 +7052,9 @@
  	    case DB_TYPE_INNODB:
  	      Lex->sql_command = SQLCOM_SHOW_INNODB_STATUS;
  	      break;
@@ -269,34 +281,3 @@
  	    default:
  	      my_error(ER_NOT_SUPPORTED_YET, MYF(0), "STATUS");
  	      YYABORT;
---- mysql-5.0.37/sql/sphinx/ha_sphinx.h~	2007-03-15 19:05:24.757934541 +0200
-+++ mysql-5.0.37/sql/sphinx/ha_sphinx.h	2007-03-15 19:05:27.217989955 +0200
-@@ -136,7 +136,7 @@
- 	int				rnd_next ( byte * buf );
- 	int				rnd_pos ( byte * buf, byte * pos );
- 	void			position ( const byte * record );
--#if MYSQL_VERSION_ID>=50114
-+#if (MYSQL_VERSION_ID >= 50114) || (MYSQL_VERSION_ID < 50100 && MYSQL_VERSION_ID >= 50037)
- 	int			info ( uint );
- #else
- 	void			info ( uint );
---- mysql-5.0.37/sql/sphinx/ha_sphinx.cc~	2007-03-15 19:05:20.167831147 +0200
-+++ mysql-5.0.37/sql/sphinx/ha_sphinx.cc	2007-03-15 19:05:21.737866513 +0200
-@@ -1180,7 +1180,7 @@
- }
- 
- 
--#if MYSQL_VERSION_ID>=50114
-+#if (MYSQL_VERSION_ID >= 50114) || (MYSQL_VERSION_ID < 50100 && MYSQL_VERSION_ID >= 50037)
- int ha_sphinx::info ( uint flag )
- #else
- void ha_sphinx::info ( uint flag )
-@@ -1196,7 +1196,7 @@
- 	records = 20;
- 	#endif
- 
--#if MYSQL_VERSION_ID>=50114
-+#if (MYSQL_VERSION_ID >= 50114) || (MYSQL_VERSION_ID < 50100 && MYSQL_VERSION_ID >= 50037)
- 	DBUG_RETURN(0);
- #else
- 	DBUG_VOID_RETURN;
