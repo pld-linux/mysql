@@ -26,7 +26,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.17
-Release:	0.2
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
