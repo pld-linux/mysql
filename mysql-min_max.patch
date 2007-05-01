@@ -1,6 +1,7 @@
---- ./include/my_global.h.org	2007-04-16 15:21:49.919125205 +0200
-+++ ./include/my_global.h	2007-04-16 15:23:56.166608710 +0200
-@@ -543,9 +543,9 @@
+diff -urN mysql-5.1.17-beta.org/include/my_global.h mysql-5.1.17-beta/include/my_global.h
+--- mysql-5.1.17-beta.org/include/my_global.h	2007-04-04 15:15:25.000000000 +0200
++++ mysql-5.1.17-beta/include/my_global.h	2007-05-01 19:46:56.111245806 +0200
+@@ -543,9 +543,11 @@
  #endif
  
  /* Define some useful general macros */
@@ -8,8 +9,34 @@
 -#define max(a, b)	((a) > (b) ? (a) : (b))
 -#define min(a, b)	((a) < (b) ? (a) : (b))
 +#if !defined(mysql_max)
++#define mysql_max(a, b)      ((a) > (b) ? (a) : (b))
++#define mysql_min(a, b)      ((a) < (b) ? (a) : (b))
 +static __inline long min( long a, long b ) { return ( ( a < b ) ? a : b ); }
 +static __inline long max( long a, long b ) { return ( ( a > b ) ? a : b ); }
  #endif
  
  #if !defined(HAVE_UINT)
+diff -urN mysql-5.1.17-beta.org/sql/mysql_tzinfo_to_sql.cc mysql-5.1.17-beta/sql/mysql_tzinfo_to_sql.cc
+--- mysql-5.1.17-beta.org/sql/mysql_tzinfo_to_sql.cc	2007-04-04 15:16:24.000000000 +0200
++++ mysql-5.1.17-beta/sql/mysql_tzinfo_to_sql.cc	2007-05-01 19:47:19.705911429 +0200
+@@ -167,7 +167,7 @@
+       char buf[sizeof(struct tzhead) + sizeof(my_time_t) * TZ_MAX_TIMES +
+                TZ_MAX_TIMES + sizeof(TRAN_TYPE_INFO) * TZ_MAX_TYPES +
+ #ifdef ABBR_ARE_USED
+-               max(TZ_MAX_CHARS + 1, (2 * (MY_TZNAME_MAX + 1))) +
++               mysql_max(TZ_MAX_CHARS + 1, (2 * (MY_TZNAME_MAX + 1))) +
+ #endif
+                sizeof(LS_INFO) * TZ_MAX_LEAPS];
+     } u;
+
+--- mysql/sql/sql_cache.cc.org	2007-05-01 19:54:50.311298644 +0200
++++ mysql/sql/sql_cache.cc	2007-05-01 19:54:59.958508136 +0200
+@@ -2585,7 +2585,7 @@
+   DBUG_PRINT("qcache", ("len %lu, not less %d, min %lu, uder_guard %d",
+ 		      len, not_less,min,under_guard));
+ 
+-  if (len >= min(query_cache_size, query_cache_limit))
++  if (len >= mysql_min(query_cache_size, query_cache_limit))
+   {
+     DBUG_PRINT("qcache", ("Query cache hase only %lu memory and limit %lu",
+ 			query_cache_size, query_cache_limit));
