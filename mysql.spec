@@ -22,13 +22,13 @@ Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
 Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
-Version:	5.0.37
-Release:	2
+Version:	5.0.41
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	26ed76facb58bdeae40c8310e337dde2
+# Source0-md5:	b45cd6c89e35dfc1cdbe1a1f782aefbf
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -589,7 +589,6 @@ mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.sym}
 
 # functionality in initscript / rpm
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
@@ -604,6 +603,7 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_bin_dist.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
@@ -742,6 +742,7 @@ EOF
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
 %{_mandir}/man1/mysql_upgrade.1*
+%{_mandir}/man1/innochecksum.1*
 %{_mandir}/man8/mysqld.8*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
@@ -801,6 +802,7 @@ EOF
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
+%{_mandir}/man1/mysql_secure_installation.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -818,6 +820,11 @@ EOF
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqlhotcopy.1*
+%{_mandir}/man1/mysql_setpermission.1*
+%{_mandir}/man1/mysql_tableinfo.1*
+%{_mandir}/man1/mysql_fix_extensions.1*
+%{_mandir}/man1/mysql_find_rows.1*
+%{_mandir}/man1/mysql_convert_table_format.1*
 
 %files client
 %defattr(644,root,root,755)
@@ -836,6 +843,8 @@ EOF
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqlimport.1*
+%{_mandir}/man1/mysqltest*.1*
+%{_mandir}/man1/mysqlmanager*.1*
 %{_mandir}/man8/mysqlmanager.8*
 
 %files libs
@@ -856,6 +865,7 @@ EOF
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
 %{_mandir}/man1/mysql_config.1*
+%{?debug:%{_mandir}/man1/resolve_stack_dump.1*}
 
 %files static
 %defattr(644,root,root,755)
@@ -871,6 +881,7 @@ EOF
 # wrong dir?
 %{_datadir}/mysql/mi_test_all.res
 %attr(755,root,root) %{_datadir}/mysql/mi_test_all
+%{_mandir}/man1/mysql_client_test.1*
 
 #%files doc
 #%defattr(644,root,root,755)
