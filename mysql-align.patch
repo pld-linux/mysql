@@ -15,7 +15,7 @@
    const struct my_option *optp;
 -  gptr *value;
 +  gptr value;
-   int error;
+   int error, i;
  
    LINT_INIT(opt_found);
 @@ -537,14 +537,14 @@
