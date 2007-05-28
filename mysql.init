@@ -770,7 +770,7 @@ mysqlinit() {
 	fi
 
 	if /usr/sbin/mysqld --bootstrap --skip-grant-tables \
-	    --datadir=$MYSQL_DATA_DIR --user=$MYSQL_USER << END_OF_DATA
+	    --datadir=$MYSQL_DATA_DIR --user=$MYSQL_USER 2>> /var/log/mysql/err << END_OF_DATA
 CREATE DATABASE mysql;
 use mysql;
 $c_d
