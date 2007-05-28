@@ -1,0 +1,940 @@
+#!/bin/sh
+#
+# mysql         A very fast and reliable SQL database engine
+#
+# chkconfig:    2345 84 25
+#
+# description:  A very fast and reliable SQL database engine.
+#
+# Source function library
+. /etc/rc.d/init.d/functions
+
+# Get network config
+. /etc/sysconfig/network
+
+# Get service config
+if [ -f /etc/sysconfig/mysql ]; then
+	. /etc/sysconfig/mysql
+else
+	nls "Error: %s not found" /etc/sysconfig/mysql
+	nls "%s can't be run." MySQL
+	exit 1
+fi
+
+[ -z "$BASE_TABLETYPE" ] && BASE_TABLETYPE="InnoDB"
+
+if [ -n "$MYSQL_DB_CLUSTERS" ]; then
+	nls "Warning: MYSQL_DB_CLUSTERS is set. It's obsolete. Use %s instead." /etc/mysql/clusters.conf
+fi
+
+if [ -f /etc/mysql/clusters.conf ]; then
+	MYSQL_DB_CLUSTERS=$(awk -F= '!/^#/{print $2}' /etc/mysql/clusters.conf)
+	if [ -z "$MYSQL_DB_CLUSTERS"  ]; then
+		nls "Warning: there are no configured clusters."
+	fi
+
+else
+	nls "Warning: Missing clusters config file %s" /etc/mysql/clusters.conf
+	if [ -z "$MYSQL_DB_CLUSTERS"  ]; then
+		nls "Warning: there are no configured clusters."
+		nls "Using default cluster /var/lib/mysql (compatibility mode)"
+		MYSQL_DB_CLUSTERS=/var/lib/mysql
+	fi
+fi
+
+
+# Check that networking is up
+if is_yes "${NETWORKING}"; then
+	if [ ! -f /var/lock/subsys/network -a "$1" != stop -a "$1" != status -a "$1" != init ]; then
+		msg_network_down MySQL
+		exit 1
+	fi
+else
+	exit 0
+fi
+
+action="$1"
+
+# any db cluster as command line argument?
+if [ $# -gt 1 ]; then
+	shift
+	# perform action for specified clusters only
+	for a in "$@"; do
+		# try auto resolving from /etc/mysql/clusters.conf
+		if [[ "$a" != /* ]]; then
+			m=$(awk -va="$a" -F= 'substr($0, 1, length(a)) == a {print $1}' /etc/mysql/clusters.conf)
+			if [ -z "$m" ]; then
+				echo >&2 "Cluster name '$a' did not match anything!"
+				exit 1
+			fi
+			if [ $(echo "$m" | wc -l) -gt 1 ]; then
+				echo >&2 "Cluster name '$a' ambiguous:" $m
+				exit 1
+			fi
+			a=$(awk -va="$a" -F= 'substr($0, 1, length(a)) == a {print $2}' /etc/mysql/clusters.conf)
+		fi
+		DB_CLUSTERS="$DB_CLUSTERS $a"
+	done
+else
+	DB_CLUSTERS="$MYSQL_DB_CLUSTERS"
+fi
+
+MYSQL_ERRLOG=/var/log/mysql/err
+MYSQL_START_WAIT_TIME=${MYSQL_START_WAIT_TIME:-15}
+MYSQL_STOP_WAIT_TIME=${MYSQL_STOP_WAIT_TIME:-900}
+
+#
+# Useful functions.
+#
+
+#
+# check for mysql status
+#
+# arguments:
+# $1 - db cluster
+# $2 - start|stop
+#
+# sets variables:
+# MYSQL_STATUS = starting | running | not running | died
+# MYSQL_PID    = pid of mysqld process
+#
+mysqlstatus() {
+	clusterdir="$1"
+	mode="$2"
+	
+	mysqlgetconfig "$clusterdir"
+
+	MYSQL_STATUS="not running"
+	MYSQL_PID="unknown"
+	MYSQL_PIDFILE_PID=""
+	MYSQL_GREP_PID=""
+
+	if [ -f "$MYSQL_PIDFILE" ]; then
+		MYSQL_PIDFILE_PID=$(cat "$MYSQL_PIDFILE")
+	fi
+	
+	if [ -n "$MYSQL_PIDFILE_PID" ]; then
+		MYSQL_PID=$MYSQL_PIDFILE_PID
+		if [ ! -d "/proc/$MYSQL_PID" ]; then
+			MYSQL_STATUS="died"
+			return
+		elif (grep -qa "$MYSQL_PIDFILE" /proc/$MYSQL_PID/cmdline 2> /dev/null); then
+			MYSQL_STATUS="running"
+			return
+		fi
+	fi
+
+	if [ "$mode" = "start" ]; then
+		MYSQL_GREP_PID=$(grep -lE "^/usr/sbin/mysqld.*${MYSQL_PIDFILE}" /proc/[0-9]*/cmdline 2> /dev/null | awk -F "/" '{ print $3; exit; }')
+		if [ -n "$MYSQL_GREP_PID" ]; then
+			MYSQL_PID=$MYSQL_GREP_PID
+			if grep -qa "$MYSQL_PIDFILE" /proc/$MYSQL_PID/cmdline 2> /dev/null; then
+				if [ -f "$MYSQL_PIDFILE" ]; then
+					MYSQL_PIDFILE_PID=$(cat "$MYSQL_PIDFILE")
+				fi
+				if [ -n "$MYSQL_PIDFILE_PID" ]; then
+					MYSQL_PID=$MYSQL_PIDFILE_PID
+					MYSQL_STATUS="running"
+					return
+				else
+					MYSQL_STATUS="starting"
+					return
+				fi
+			fi
+		fi
+	fi
+
+	# else default, "not running"
+}
+
+# get mysql configuration in variables
+# MYSQL_CONFIG MYSQL_DATA_DIR MYSQL_USER MYSQL_PIDFILE
+#
+# arguments
+# $1 - db cluster
+
+mysqlgetconfig() {
+	clusterdir="$1"
+
+	# emulate old behaviour if only one cluster specified
+	if [ "$clusterdir" = "$MYSQL_DB_CLUSTERS" -a "$clusterdir" = "/var/lib/mysql" -a -f /etc/mysqld.conf ]; then
+		MYSQL_RA_COMPAT=yes
+		config_file=/etc/mysqld.conf
+	else
+		config=$(awk -F= -vclusterdir="$clusterdir" '!/^#/{ if (clusterdir == $2) print $1}' /etc/mysql/clusters.conf)
+		if [[ $config = /* ]]; then
+			config_file="$config"
+		elif [ -f "/etc/mysql/$config" ]; then
+			config_file="/etc/mysql/$config"
+		else
+			config_file="$clusterdir/mysqld.conf"
+		fi
+	fi
+
+	MYSQL_CLUSTER_DIR="$clusterdir"
+
+	if [ -z "$config_file" ]; then
+		nls "Error: Can't find config file for %s cluster" "$clusterdir"
+		exit 6
+	else
+		MYSQL_CONFIG="$config_file"
+	fi
+
+	if [ ! -f "$config_file" ]; then
+		nls "Error: config file %s not found" "$config_file"
+		nls "MySQL can't be run. Did you initialize DB by doing \`$0 init'?"
+		exit 6
+	fi
+
+	eval `awk '
+/^[ \t]*\[.*\][ \t]*$/ {
+	match($0,/\[.*\]/)
+	section=substr($0, RSTART + 1, RSTART + RLENGTH - 3)
+}
+section == "mysqld" && $2 ~ "=" {
+	if ($1 == "datadir") {
+		printf("MYSQL_DATA_DIR=%s;", $3)
+	} else if ($1 == "user") {
+		printf("MYSQL_USER=%s;", $3)
+	} else if ($1 == "pid-file") {
+		printf("MYSQL_PIDFILE=%s;", $3)
+	} else if ($1 == "socket") {
+		printf("MYSQL_SOCKET=%s;", $3)
+	}
+}
+' $config_file`
+
+
+	if is_yes "$MYSQL_RA_COMPAT"; then
+		MYSQL_DATA_DIR_SUB=""
+	else
+		MYSQL_DATA_DIR_SUB="/mysqldb"
+	fi
+
+	if [ -z "$MYSQL_DATA_DIR" -o "$MYSQL_DATA_DIR" != "${clusterdir}${MYSQL_DATA_DIR_SUB}/db" ]; then
+		nls "Error: datadir specified in %s should be %s" "$config_file" "$clusterdir${MYSQL_DATA_DIR_SUB}/db"
+		nls " MySQL can't be run."
+		exit 6
+	fi
+
+	if [ -z "$MYSQL_PIDFILE" -o "$MYSQL_PIDFILE" != "$clusterdir${MYSQL_DATA_DIR_SUB}/mysql.pid" ]; then
+		nls "Error: pid-file specified in %s should be %s" "$config_file" "$clusterdir${MYSQL_DATA_DIR_SUB}/mysql.pid"
+		nls " MySQL can't be run."
+		exit 6
+	fi
+
+	if [ -z $MYSQL_USER ]; then
+		echo "$(nls 'MySQL user not configured properly')"'!' >&2
+		nls "Edit %s and configure it." "$config_file" >&2
+		exit 6
+	fi
+}
+
+# start mysql
+mysqlstart() {
+	clusterdir="$1"
+	mysqlgetconfig "$clusterdir"
+	if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
+		nls "MySQL cluster %s not initialized." "$clusterdir"
+		nls "Try \`%s init %s' before start." "$0" "$clusterdir"
+		exit 6
+	fi
+
+	msg_starting "MySQL $clusterdir"
+	busy
+	[ -z "$DEFAULT_SERVICE_RUN_NICE_LEVEL" ] && DEFAULT_SERVICE_RUN_NICE_LEVEL=0
+	rm -f "$MYSQL_PIDFILE"
+
+	TMPDIR=/tmp nice -n ${SERVICE_RUN_NICE_LEVEL:-$DEFAULT_SERVICE_RUN_NICE_LEVEL} \
+   		/usr/bin/setsid /usr/sbin/mysqld \
+			--defaults-file=$MYSQL_CONFIG \
+			--datadir=$MYSQL_DATA_DIR \
+			--pid-file=$MYSQL_PIDFILE $MYSQL_OPTIONS \
+		>> $MYSQL_ERRLOG 2>&1 &
+	pid=$!
+
+	sleep 0.1
+	mysqlstatus "$clusterdir" start
+	# it takes longer for mysqld to start and create pidfile if it has to recover innodb transactions
+	if [ "$MYSQL_STATUS" = "starting" ]; then
+		echo ""
+		show "Waiting for MySQL to start"
+		busy
+
+		# while the pid is running, mysql is starting up
+		# if the pidfile was created, it started up successfully
+		# if either case fails we break and report status
+		while true; do
+			[ -d /proc/$pid ] || break
+			[ -f "$MYSQL_PIDFILE" ] && break
+			sleep 0.2
+		done
+	fi
+
+	mysqlstatus "$clusterdir" start
+	if [ "$MYSQL_STATUS" = "running" -a "$MYSQL_PID" != "unknown" ]; then
+		ok
+	elif [ "$MYSQL_STATUS" = "died" ]; then
+		RETVAL=1
+		died
+	else
+		RETVAL=1
+		fail
+	fi
+}
+
+# stop mysql
+mysqlstop() {
+	clusterdir="$1"
+	mysqlstatus "$clusterdir" stop
+	msg_stopping "MySQL $clusterdir"
+	busy
+
+	# try graceful shutdown -- send shutdown command
+	# requires mysql_logrotate user proper privs
+	/usr/bin/mysqladmin --defaults-file=$MYSQL_CONFIG ${MYSQL_SOCKET:+--socket=$MYSQL_SOCKET} shutdown >/dev/null 2>&1
+	mysqlstatus "$clusterdir" stop
+
+	if [ "$MYSQL_PID" != "unknown" ]; then
+		kill -TERM "$MYSQL_PID" 2> /dev/null
+		for nr in $(seq 1 $(($MYSQL_STOP_WAIT_TIME*10))); do
+			[ -d "/proc/$MYSQL_PID" ] || break
+			sleep 0.1
+		done
+	fi
+	
+	mysqlstatus "$clusterdir" stop
+	if [ "$MYSQL_STATUS" = "died" ]; then
+		died
+	elif [ "$MYSQL_STATUS" = "running" -o "$MYSQL_STATUS" = "starting" ]; then
+		fail
+	else
+		ok
+	fi
+}
+
+#
+# check for running mysql instances; if any instance is running then
+# create subsys lock file
+#
+mysqlsubsys() {
+	# check for every defined db cluster in sysconfig file
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlstatus "$mysqldir"
+		if [ "$MYSQL_STATUS" = "running" ]; then
+			touch /var/lock/subsys/mysql
+			return
+		fi
+	done
+	rm -f /var/lock/subsys/mysql
+}
+
+mysqlinit() {
+	clusterdir="$1"
+
+	if [ -f /etc/mysqld.conf ]; then
+		nls "Running in \`no cluster compat' mode: can't initialize database."
+		nls "Move /etc/mysqld.conf away and rerun \`$0 init' (new config will be in $clusterdir)."
+		exit 1
+	fi
+
+	if [ -f "$clusterdir/mysqld.conf" ]; then
+		mysqlgetconfig "$clusterdir"
+	else
+		MYSQL_USER="mysql"
+		MYSQL_CLUSTER_DIR="$clusterdir"
+		MYSQL_DATA_DIR="$clusterdir/mysqldb/db"
+		MYSQL_PIDFILE="$clusterdir/mysqldb/mysql.pid"
+		MYSQL_SOCKET="$clusterdir/mysqldb/mysql.sock"
+
+		# this $MYSQL_CONFIG will be created later
+		MYSQL_CONFIG="$MYSQL_CLUSTER_DIR/mysqld.conf"
+	fi
+
+	nls "Initializing cluster %s" "$clusterdir"
+
+	# Check if not exist init database
+	if [ -d "$MYSQL_DATA_DIR/mysql" ]; then
+		nls "Seems that database is initialized now. Remove by hand %s" "$MYSQL_DATA_DIR/mysql"
+		nls "before initializing database."
+		nls "For now skipping cluster %s." "$clusterdir"
+		return
+	fi
+
+	show "Creating privilege mysql tables for $MYSQL_DATA_DIR"
+	busy
+	TMP=/tmp TMPDIR=/tmp
+
+	# Install this in the user table, too
+	hostname="`hostname --fqdn 2> /dev/null | tr -d '[:space:]'`"
+	[ -z "$hostname" ] && hostname="localhost-unknown"
+
+	# Check if hostname is valid
+	if [ -z "$hostname" ]; then
+		deltext
+		fail
+		nls "Sorry, the host name is not configured."
+		nls "Please configure the 'hostname' command to return a hostname."
+		exit 1
+	elif ! hostname -i >/dev/null 2>&1; then
+		deltext
+		fail
+		nls "Sorry, the host '%s' could not be looked up." "$hostname"
+		nls "Please configure the 'hostname' command to return a correct hostname."
+		exit 1
+	fi
+
+	# Initialize variables
+	c_d="" i_d="" c_ht=""  c_tz=""
+	c_h="" i_h="" c_hc=""  c_tzt=""
+	c_u="" i_u="" c_hk=""  c_tztt=""
+	c_f="" i_f="" c_hr=""  c_tzls=""
+	c_t="" c_c="" c_tzn="" c_p=""
+	c_pp=""
+
+	# Check for old tables
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/db.frm
+	then
+	  # mysqld --bootstrap wants one command/line
+	  c_d="$c_d CREATE TABLE db ("
+	  c_d="$c_d   Host char(60) DEFAULT '' NOT NULL,"
+	  c_d="$c_d   Db char(64) DEFAULT '' NOT NULL,"
+	  c_d="$c_d   User char(16) DEFAULT '' NOT NULL,"
+	  c_d="$c_d   Select_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Insert_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Update_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Delete_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Create_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Drop_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Grant_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   References_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Index_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Alter_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Create_tmp_table_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Lock_tables_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Create_view_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Show_view_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Create_routine_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Alter_routine_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d   Execute_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_d="$c_d PRIMARY KEY Host (Host,Db,User),"
+	  c_d="$c_d KEY User (User)"
+	  c_d="$c_d ) engine=MyISAM "
+	  c_d="$c_d CHARACTER SET utf8 COLLATE utf8_bin"
+	  c_d="$c_d comment='Database privileges';"
+
+	  i_d="INSERT INTO db VALUES ('%','test','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y','Y','Y','Y','Y','Y','N','N');
+	  INSERT INTO db VALUES ('%','test\_%','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y','Y','Y','Y','Y','Y','N','N');"
+
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/host.frm
+	then
+	  c_h="$c_h CREATE TABLE host ("
+	  c_h="$c_h  Host char(60) DEFAULT '' NOT NULL,"
+	  c_h="$c_h  Db char(64) DEFAULT '' NOT NULL,"
+	  c_h="$c_h  Select_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Insert_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Update_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Delete_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Create_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Drop_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Grant_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  References_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Index_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Alter_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Create_tmp_table_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Lock_tables_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Create_view_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Show_view_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Create_routine_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Alter_routine_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  Execute_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_h="$c_h  PRIMARY KEY Host (Host,Db)"
+	  c_h="$c_h ) engine=MyISAM "
+	  c_h="$c_h CHARACTER SET utf8 COLLATE utf8_bin"
+	  c_h="$c_h comment='Host privileges;  Merged with database privileges';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/user.frm
+	then
+	  c_u="$c_u CREATE TABLE user ("
+	  c_u="$c_u   Host char(60) binary DEFAULT '' NOT NULL,"
+	  c_u="$c_u   User char(16) binary DEFAULT '' NOT NULL,"
+	  c_u="$c_u   Password char(41) character set latin1 collate latin1_bin DEFAULT '' NOT NULL,"
+	  c_u="$c_u   Select_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Insert_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Update_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Delete_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Create_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Drop_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Reload_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Shutdown_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Process_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   File_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Grant_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   References_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Index_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Alter_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Show_db_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Super_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Create_tmp_table_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Lock_tables_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Execute_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Repl_slave_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Repl_client_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Create_view_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Show_view_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Create_routine_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Alter_routine_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   Create_user_priv enum('N','Y') COLLATE utf8_general_ci DEFAULT 'N' NOT NULL,"
+	  c_u="$c_u   ssl_type enum('','ANY','X509', 'SPECIFIED') COLLATE utf8_general_ci DEFAULT '' NOT NULL,"
+	  c_u="$c_u   ssl_cipher BLOB NOT NULL,"
+	  c_u="$c_u   x509_issuer BLOB NOT NULL,"
+	  c_u="$c_u   x509_subject BLOB NOT NULL,"
+	  c_u="$c_u   max_questions int(11) unsigned DEFAULT 0  NOT NULL,"
+	  c_u="$c_u   max_updates int(11) unsigned DEFAULT 0  NOT NULL,"
+	  c_u="$c_u   max_connections int(11) unsigned DEFAULT 0  NOT NULL,"
+	  c_u="$c_u   max_user_connections int(11) unsigned DEFAULT 0  NOT NULL,"
+	  c_u="$c_u   PRIMARY KEY Host (Host,User)"
+	  c_u="$c_u ) engine=MyISAM "
+	  c_u="$c_u CHARACTER SET utf8 COLLATE utf8_bin"
+	  c_u="$c_u comment='Users and global privileges';"
+
+
+	  i_u="INSERT INTO user VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0);
+	  INSERT INTO user VALUES ('$hostname',          'mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0);
+	  INSERT INTO user (host,user) values ('localhost','');
+	  INSERT INTO user (host,user) values ('$hostname','');
+	  INSERT INTO user VALUES ('localhost','mysql_logrotate','','N','N','N','N','N','N','Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','','','','',0,0,0,0);"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/func.frm
+	then
+	  c_f="$c_f CREATE TABLE func ("
+	  c_f="$c_f   name char(64) DEFAULT '' NOT NULL,"
+	  c_f="$c_f   ret tinyint(1) DEFAULT '0' NOT NULL,"
+	  c_f="$c_f   dl char(128) DEFAULT '' NOT NULL,"
+	  c_f="$c_f   type enum ('function','aggregate') COLLATE utf8_general_ci NOT NULL,"
+	  c_f="$c_f   PRIMARY KEY (name)"
+	  c_f="$c_f ) engine=${BASE_TABLETYPE} "
+	  c_f="$c_f CHARACTER SET utf8 COLLATE utf8_bin"
+	  c_f="$c_f comment='User defined functions';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/tables_priv.frm
+	then
+	  c_t="$c_t CREATE TABLE tables_priv ("
+	  c_t="$c_t   Host char(60) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Db char(64) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   User char(16) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Table_name char(60) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Grantor char(77) DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Timestamp timestamp(14),"
+	  c_t="$c_t   Table_priv set('Select','Insert','Update','Delete','Create','Drop','Grant','References','Index', 'Alter','Create View','Show view') COLLATE utf8_general_ci DEFAULT '' NOT NULL,"
+	  c_t="$c_t   Column_priv set('Select','Insert','Update','References') COLLATE utf8_general_ci DEFAULT '' NOT NULL,"
+	  c_t="$c_t   PRIMARY KEY (Host,Db,User,Table_name),"
+	  c_t="$c_t   KEY Grantor (Grantor)"
+	  c_t="$c_t ) engine=${BASE_TABLETYPE} "
+	  c_t="$c_t CHARACTER SET utf8 COLLATE utf8_bin"
+	  c_t="$c_t comment='Table privileges';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/columns_priv.frm
+	then
+	  c_c="$c_c CREATE TABLE columns_priv ("
+	  c_c="$c_c   Host char(60) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   Db char(64) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   User char(16) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   Table_name char(64) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   Column_name char(64) DEFAULT '' NOT NULL,"
+	  c_c="$c_c   Timestamp timestamp(14),"
+	  c_c="$c_c   Column_priv set('Select','Insert','Update','References') COLLATE utf8_general_ci DEFAULT '' NOT NULL,"
+	  c_c="$c_c   PRIMARY KEY (Host,Db,User,Table_name,Column_name)"
+	  c_c="$c_c ) engine=${BASE_TABLETYPE} "
+	  c_c="$c_c CHARACTER SET utf8 COLLATE utf8_bin"
+	  c_c="$c_c comment='Column privileges';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/procs_priv.frm
+	then
+      c_pp="$c_pp CREATE TABLE procs_priv ("
+	  c_pp="$c_pp   Host char(60) binary DEFAULT '' NOT NULL,"
+	  c_pp="$c_pp   Db char(64) binary DEFAULT '' NOT NULL,"
+	  c_pp="$c_pp   User char(16) binary DEFAULT '' NOT NULL,"
+	  c_pp="$c_pp   Routine_name char(64) binary DEFAULT '' NOT NULL,"
+	  c_pp="$c_pp   Routine_type enum('FUNCTION','PROCEDURE') NOT NULL,"
+	  c_pp="$c_pp   Grantor char(77) DEFAULT '' NOT NULL,"
+	  c_pp="$c_pp   Proc_priv set('Execute','Alter Routine','Grant') COLLATE utf8_general_ci DEFAULT '' NOT NULL,"
+	  c_pp="$c_pp   Timestamp timestamp(14),"
+	  c_pp="$c_pp   PRIMARY KEY (Host,Db,User,Routine_name,Routine_type),"
+	  c_pp="$c_pp   KEY Grantor (Grantor)"
+	  c_pp="$c_pp ) engine=${BASE_TABLETYPE} "
+	  c_pp="$c_pp CHARACTER SET utf8 COLLATE utf8_bin"
+	  c_pp="$c_pp   comment='Procedure privileges';"
+    fi
+
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/help_topic.frm
+	then
+	  c_ht="$c_ht CREATE TABLE help_topic ("
+	  c_ht="$c_ht   help_topic_id    int unsigned not null,"
+	  c_ht="$c_ht   name             varchar(64) not null,"
+      c_ht="$c_ht   help_category_id smallint unsigned not null,"
+	  c_ht="$c_ht   description      text not null,"
+	  c_ht="$c_ht   example          text not null,"
+	  c_ht="$c_ht   url              varchar(128) not null,"
+	  c_ht="$c_ht   primary key      (help_topic_id),"
+	  c_ht="$c_ht   unique index     (name)"
+	  c_ht="$c_ht ) engine=${BASE_TABLETYPE} "
+	  c_ht="$c_ht CHARACTER SET utf8"
+	  c_ht="$c_ht comment='help topics';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/help_category.frm
+	then
+	  c_hc="$c_hc CREATE TABLE help_category ("
+	  c_hc="$c_hc   help_category_id   smallint unsigned not null,"
+	  c_hc="$c_hc   name               varchar(64) not null,"
+	  c_hc="$c_hc   parent_category_id smallint unsigned null,"
+	  c_hc="$c_hc   url                varchar(128) not null,"
+	  c_hc="$c_hc   primary key        (help_category_id),"
+	  c_hc="$c_hc   unique index       (name)"
+	  c_hc="$c_hc ) engine=${BASE_TABLETYPE} "
+	  c_hc="$c_hc   CHARACTER SET utf8"
+	  c_hc="$c_hc comment='help categories';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/help_keyword.frm
+	then
+	  c_hk="$c_hk CREATE TABLE help_keyword ("
+	  c_hk="$c_hk   help_keyword_id  int unsigned not null,"
+	  c_hk="$c_hk   name             varchar(64) not null,"
+	  c_hk="$c_hk   primary key      (help_keyword_id),"
+	  c_hk="$c_hk   unique index     (name)"
+	  c_hk="$c_hk ) engine=${BASE_TABLETYPE} "
+	  c_hk="$c_hk   CHARACTER SET utf8"
+	  c_hk="$c_hk comment='help keywords';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/help_relation.frm
+	then
+	  c_hr="$c_hr CREATE TABLE help_relation ("
+	  c_hr="$c_hr   help_topic_id    int unsigned not null references help_topic,"
+	  c_hr="$c_hr   help_keyword_id  int unsigned not null references help_keyword,"
+	  c_hr="$c_hr   primary key      (help_keyword_id, help_topic_id)"
+	  c_hr="$c_hr ) engine=${BASE_TABLETYPE} "
+	  c_hr="$c_hr   CHARACTER SET utf8"
+	  c_hr="$c_hr comment='keyword-topic relation';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/time_zone_name.frm
+	then
+	  c_tzn="$c_tzn CREATE TABLE time_zone_name ("
+	  c_tzn="$c_tzn   Name char(64) NOT NULL,"
+	  c_tzn="$c_tzn   Time_zone_id int unsigned NOT NULL,"
+	  c_tzn="$c_tzn   PRIMARY KEY Name (Name)"
+	  c_tzn="$c_tzn ) engine=${BASE_TABLETYPE} "
+	  c_tzn="$c_tzn   CHARACTER SET utf8"
+	  c_tzn="$c_tzn comment='Time zone names';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/time_zone.frm
+	then
+	  c_tz="$c_tz CREATE TABLE time_zone ("
+	  c_tz="$c_tz   Time_zone_id int unsigned NOT NULL auto_increment,"
+	  c_tz="$c_tz   Use_leap_seconds enum('Y','N') DEFAULT 'N' NOT NULL,"
+	  c_tz="$c_tz   PRIMARY KEY TzId (Time_zone_id)"
+	  c_tz="$c_tz ) engine=${BASE_TABLETYPE} "
+	  c_tz="$c_tz   CHARACTER SET utf8"
+	  c_tz="$c_tz comment='Time zones';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/time_zone_transition.frm
+	then
+	  c_tzt="$c_tzt CREATE TABLE time_zone_transition ("
+	  c_tzt="$c_tzt   Time_zone_id int unsigned NOT NULL,"
+	  c_tzt="$c_tzt   Transition_time bigint signed NOT NULL,"
+	  c_tzt="$c_tzt   Transition_type_id int unsigned NOT NULL,"
+	  c_tzt="$c_tzt   PRIMARY KEY TzIdTranTime (Time_zone_id, Transition_time)"
+	  c_tzt="$c_tzt ) engine=${BASE_TABLETYPE} "
+	  c_tzt="$c_tzt   CHARACTER SET utf8"
+	  c_tzt="$c_tzt comment='Time zone transitions';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/time_zone_transition_type.frm
+	then
+	  c_tztt="$c_tztt CREATE TABLE time_zone_transition_type ("
+	  c_tztt="$c_tztt   Time_zone_id int unsigned NOT NULL,"
+	  c_tztt="$c_tztt   Transition_type_id int unsigned NOT NULL,"
+	  c_tztt="$c_tztt   Offset int signed DEFAULT 0 NOT NULL,"
+	  c_tztt="$c_tztt   Is_DST tinyint unsigned DEFAULT 0 NOT NULL,"
+	  c_tztt="$c_tztt   Abbreviation char(8) DEFAULT '' NOT NULL,"
+	  c_tztt="$c_tztt   PRIMARY KEY TzIdTrTId (Time_zone_id, Transition_type_id)"
+	  c_tztt="$c_tztt ) engine=${BASE_TABLETYPE} "
+	  c_tztt="$c_tztt   CHARACTER SET utf8"
+	  c_tztt="$c_tztt comment='Time zone transition types';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/time_zone_leap_second.frm
+	then
+	  c_tzls="$c_tzls CREATE TABLE time_zone_leap_second ("
+	  c_tzls="$c_tzls   Transition_time bigint signed NOT NULL,"
+	  c_tzls="$c_tzls   Correction int signed NOT NULL,"
+	  c_tzls="$c_tzls   PRIMARY KEY TranTime (Transition_time)"
+	  c_tzls="$c_tzls ) engine=${BASE_TABLETYPE} "
+	  c_tzls="$c_tzls CHARACTER SET utf8"
+	  c_tzls="$c_tzls   comment='Leap seconds information for time zones';"
+	fi
+
+	if test ! -f $MYSQL_DATA_DIR/mysqldb/mysql/proc.frm
+	then
+	  c_p="$c_p CREATE TABLE proc ("
+	  c_p="$c_p   db                char(64) collate utf8_bin DEFAULT '' NOT NULL,"
+	  c_p="$c_p   name              char(64) DEFAULT '' NOT NULL,"
+	  c_p="$c_p   type              enum('FUNCTION','PROCEDURE') NOT NULL,"
+	  c_p="$c_p   specific_name     char(64) DEFAULT '' NOT NULL,"
+	  c_p="$c_p   language          enum('SQL') DEFAULT 'SQL' NOT NULL,"
+	  c_p="$c_p   sql_data_access   enum('CONTAINS_SQL',"
+	  c_p="$c_p                          'NO_SQL',"
+	  c_p="$c_p                          'READS_SQL_DATA',"
+	  c_p="$c_p                          'MODIFIES_SQL_DATA'"
+	  c_p="$c_p                     ) DEFAULT 'CONTAINS_SQL' NOT NULL,"
+	  c_p="$c_p   is_deterministic  enum('YES','NO') DEFAULT 'NO' NOT NULL,"
+	  c_p="$c_p   security_type     enum('INVOKER','DEFINER') DEFAULT 'DEFINER' NOT NULL,"
+	  c_p="$c_p   param_list        blob DEFAULT '' NOT NULL,"
+	  c_p="$c_p   returns           char(64) DEFAULT '' NOT NULL,"
+	  c_p="$c_p   body              longblob DEFAULT '' NOT NULL,"
+	  c_p="$c_p   definer           char(77) collate utf8_bin DEFAULT '' NOT NULL,"
+	  c_p="$c_p   created           timestamp,"
+	  c_p="$c_p   modified          timestamp,"
+	  c_p="$c_p   sql_mode          set("
+	  c_p="$c_p                         'REAL_AS_FLOAT',"
+	  c_p="$c_p                         'PIPES_AS_CONCAT',"
+	  c_p="$c_p                         'ANSI_QUOTES',"
+	  c_p="$c_p                         'IGNORE_SPACE',"
+	  c_p="$c_p                         'NOT_USED',"
+	  c_p="$c_p                         'ONLY_FULL_GROUP_BY',"
+	  c_p="$c_p                         'NO_UNSIGNED_SUBTRACTION',"
+	  c_p="$c_p                         'NO_DIR_IN_CREATE',"
+	  c_p="$c_p                         'POSTGRESQL',"
+	  c_p="$c_p                         'ORACLE',"
+	  c_p="$c_p                         'MSSQL',"
+	  c_p="$c_p                         'DB2',"
+	  c_p="$c_p                         'MAXDB',"
+	  c_p="$c_p                         'NO_KEY_OPTIONS',"
+	  c_p="$c_p                         'NO_TABLE_OPTIONS',"
+	  c_p="$c_p                         'NO_FIELD_OPTIONS',"
+	  c_p="$c_p                         'MYSQL323',"
+	  c_p="$c_p                         'MYSQL40',"
+	  c_p="$c_p                         'ANSI',"
+	  c_p="$c_p                         'NO_AUTO_VALUE_ON_ZERO',"
+	  c_p="$c_p                         'NO_BACKSLASH_ESCAPES',"
+	  c_p="$c_p                         'STRICT_TRANS_TABLES',"
+	  c_p="$c_p                         'STRICT_ALL_TABLES',"
+	  c_p="$c_p                         'NO_ZERO_IN_DATE',"
+	  c_p="$c_p                         'NO_ZERO_DATE',"
+	  c_p="$c_p                         'INVALID_DATES',"
+	  c_p="$c_p                         'ERROR_FOR_DIVISION_BY_ZERO',"
+	  c_p="$c_p                         'TRADITIONAL',"
+	  c_p="$c_p                         'NO_AUTO_CREATE_USER',"
+	  c_p="$c_p                         'HIGH_NOT_PRECEDENCE'"
+	  c_p="$c_p                     ) DEFAULT '' NOT NULL,"
+	  c_p="$c_p   comment           char(64) collate utf8_bin DEFAULT '' NOT NULL,"
+	  c_p="$c_p   PRIMARY KEY (db,name,type)"
+	  c_p="$c_p ) engine=${BASE_TABLETYPE} "
+	  c_p="$c_p character set utf8"
+	  c_p="$c_p comment='Stored Procedures';"
+	fi
+
+	mkdir -p "$MYSQL_DATA_DIR" > /dev/null 2>&1
+	# Using mysql:mysql for MYSQL_CLUSTER_DIR is creating SECURITY hole, root:root is proper
+	chown root:root "$MYSQL_CLUSTER_DIR"
+    chown mysql:mysql "$MYSQL_CLUSTER_DIR/mysqldb" "$MYSQL_DATA_DIR" > /dev/null 2>&1
+	chmod 751 "$MYSQL_CLUSTER_DIR" "$MYSQL_CLUSTER_DIR/mysqldb"
+
+	if [ -f /usr/share/mysql/mysqld.conf -a ! -f "$MYSQL_CLUSTER_DIR/mysqld.conf" ]; then
+	    sed -e "
+		s#\(datadir.*\)=.*#\1= $MYSQL_DATA_DIR#g;
+		s#\(pid-file.*\)=.*#\1= $MYSQL_PIDFILE#g;
+		s#\(socket.*\)=.*#\1= $MYSQL_SOCKET#g;
+		s#@clusterdir@#$MYSQL_CLUSTER_DIR#g;
+		" /usr/share/mysql/mysqld.conf > "$MYSQL_CLUSTER_DIR/mysqld.conf"
+	    chown root:root "$MYSQL_CLUSTER_DIR/mysqld.conf"
+	    chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
+	fi
+
+	if [ ! -e /var/lib/mysql/mysql.sock ] || [ -L /var/lib/mysql/mysql.sock ] && [ -z "$(readlink /var/lib/mysql/mysql.sock)" ]; then
+		sock=${MYSQL_SOCKET#/var/lib/mysql/} # make it relative if possible
+	    ln -s "$sock" /var/lib/mysql/mysql.sock
+	fi
+
+	if /usr/sbin/mysqld --bootstrap --skip-grant-tables \
+	    --datadir=$MYSQL_DATA_DIR --user=$MYSQL_USER 2>> /var/log/mysql/err << END_OF_DATA
+CREATE DATABASE mysql;
+use mysql;
+$c_d
+$i_d
+
+$c_h
+$i_h
+
+$c_u
+$i_u
+
+$c_f
+$i_f
+
+$c_t
+$c_c
+
+$c_ht
+$c_hc
+$c_hk
+$c_hr
+
+$c_tzn
+$c_tz
+$c_tzt
+$c_tztt
+$c_tzls
+
+$c_p
+$c_pp
+END_OF_DATA
+	then
+	    ok
+	cat << END_OF_MSG
+
+PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL USERS!
+This is done (after starting database; press enter when asked for password) with:
+
+/usr/bin/mysqladmin -u mysql -S $MYSQL_SOCKET password 'password'
+/usr/bin/mysqladmin -h $hostname -u mysql -S $MYSQL_SOCKET password 'password'
+/usr/bin/mysqladmin -u mysql_logrotate -S $MYSQL_SOCKET password 'password'
+
+NOTE: mysql_logrotate password should be placed to $MYSQL_CONFIG in
+mysqladmin section. See the manual for more instructions.
+
+If you want to use new help tables in MySQL 4.1.x then you'll need to import the help data:
+/usr/bin/mysql -u mysql -p -S $MYSQL_SOCKET mysql < /usr/share/mysql/fill_help_tables.sql
+
+END_OF_MSG
+      else
+	    fail
+	    cat << END_OF_MSG
+Installation of grant tables FAILED!
+
+Examine the logs in $MYSQL_DATA_DIR for more information.  You can
+also try to start the mysqld demon with:
+
+/usr/sbin/mysqld --skip-grant &
+
+You can use the command line tool /usr/bin/mysql to connect to the mysql
+database and look at the grant tables:
+
+shell> /usr/bin/mysql -u mysql mysql
+mysql> show tables
+
+Try 'mysqld --help' if you have problems with paths. Setting on
+logging in /etc/mysqld.conf gives you a log in /var/log/mysql/log that
+may be helpful. The latest information about MySQL is available on the
+web at http://www.mysql.com/.
+
+Please check PLD Linux ftp site for newer versions of this package.
+
+Please consult the MySQL manual section: 'Problems running
+mysql_install_db', and the manual section that describes problems on
+your OS.  Another information source is the MySQL email archive.
+Please check all of the above before mailing us!  And if you do mail
+us, you MUST use the /usr/bin/mysqlbug script!
+
+END_OF_MSG
+
+	exit 1
+	fi
+}
+
+#
+# End of useful functions.
+#
+
+start() {
+	if [ ! -f $MYSQL_ERRLOG ]; then
+		touch $MYSQL_ERRLOG
+	fi
+	chown mysql:mysql $MYSQL_ERRLOG
+	chmod 640 $MYSQL_ERRLOG
+
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlstatus "$mysqldir" start
+		if [ "$MYSQL_STATUS" = "running" ]; then
+			msg_already_running "MySQL $mysqldir"
+		else
+			mysqlstart "$mysqldir"
+		fi
+	done
+	mysqlsubsys
+}
+
+stop() {
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlstatus "$mysqldir" stop
+		if [ "$MYSQL_STATUS" = "not running" ]; then
+			msg_not_running "MySQL $mysqldir"
+		else
+			mysqlstop "$mysqldir"
+		fi
+	done
+	mysqlsubsys
+}
+
+RETVAL=0
+case "$action" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  status)
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlstatus "$mysqldir"
+		if [ "$MYSQL_STATUS" = "running" ]; then
+			show "MySQL cluster %s, PID %s" "$mysqldir" "$MYSQL_PID"
+			progress "$MYSQL_STATUS"
+		else
+			show "MySQL cluster %s" "$mysqldir"
+			progress "$MYSQL_STATUS" "$CFAIL"
+		fi
+		echo
+	done
+	exit $?
+	;;
+  restart|force-reload)
+	stop
+	start
+	;;
+  init)
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlinit "$mysqldir"
+	done
+	exit $?
+	;;
+  flush-logs)
+  	for mysqldir in $DB_CLUSTERS; do
+	    mysqlgetconfig "$mysqldir"
+		# just if mysqld is really running
+		if /usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" ping >/dev/null 2>&1; then
+			/usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" flush-logs
+		fi
+	done
+	;;
+  *)
+	msg_usage "$0 {start|stop|init|restart|force-reload|status}"
+	exit 3
+esac
+
+exit $RETVAL
+
+# vi: shiftwidth=4 tabstop=4
