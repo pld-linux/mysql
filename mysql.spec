@@ -463,7 +463,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
-#%patch13 -p1 # DROP?
+#%patch13 -p1 # UPDATE: needed for th-gcc
 #%patch14 -p1 # OUTDATED?
 
 %build
