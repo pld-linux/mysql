@@ -887,6 +887,7 @@ done
 %attr(755,root,root) %{_bindir}/mysql_zap
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysql_convert_table_format.1*
+%{_mandir}/man1/mysql_find_rows.1*
 %{_mandir}/man1/mysql_fix_extensions.1*
 %{_mandir}/man1/mysqlhotcopy.1*
 %{_mandir}/man1/mysql_setpermission.1*
@@ -902,12 +903,14 @@ done
 %attr(755,root,root) %{_bindir}/mysqlimport
 %attr(755,root,root) %{_bindir}/mysqlshow
 %attr(755,root,root) %{_bindir}/mysqlslap
-%attr(755,root,root) %{_sbindir}/mysqlmanager*
+%attr(755,root,root) %{_sbindir}/mysqlmanager
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
+%{_mandir}/man1/mysqlmanagerc.1*
+%{_mandir}/man1/mysqlmanager-pwgen.1*
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man8/mysqlmanager.8*
@@ -939,11 +942,11 @@ done
 %files bench
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysqltest
-%{_mandir}/man1/mysqltest.1*
-%{_mandir}/man1/mysqltest_embedded.1*
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
+%{_mandir}/man1/mysqltest.1*
+%{_mandir}/man1/mysqltest_embedded.1*
 
 #%files doc
 #%defattr(644,root,root,755)
@@ -955,6 +958,7 @@ done
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb
 %{_mandir}/man1/ndbd.1*
+%{_mandir}/man1/ndbd_redo_log_reader.1*
 
 %files ndb-client
 %defattr(644,root,root,755)
@@ -975,7 +979,6 @@ done
 %attr(755,root,root) %{_bindir}/ndb_size.pl
 %attr(755,root,root) %{_bindir}/ndb_test_platform
 %attr(755,root,root) %{_bindir}/ndb_waiter
-%attr(755,root,root) %{_datadir}/mysql/ndb_size.tmpl
 %{_mandir}/man1/ndb_config.1*
 %{_mandir}/man1/ndb_delete_all.1*
 %{_mandir}/man1/ndb_desc.1*
