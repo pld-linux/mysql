@@ -25,13 +25,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.18
+Version:	5.1.19
 Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
 Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-# Source0-md5:	50aace960b9489e5d57be4224755cdf4
+# Source0-md5:	5e4280fb3cf1051d779f686d0cd45622
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7-rc2.tar.gz
 # Source100-md5:	65daf0feb7e276fb3de0aba82cff1d3e
 Source1:	%{name}.init
@@ -58,7 +58,7 @@ Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
-Patch12:	%{name}-NDB_CXXFLAGS.patch
+#Patch12:	%{name}-NDB_CXXFLAGS.patch
 #Patch13:	%{name}-min_max.patch
 #Patch14:	%{name}-bug-18156.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
@@ -462,7 +462,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
-%patch12 -p1
+#%patch12 -p1 # OUTDATED?
 #%patch13 -p1 # UPDATE: needed for th-gcc
 #%patch14 -p1 # OUTDATED?
 
