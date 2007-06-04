@@ -16,9 +16,9 @@ diff -urN mysql-5.1.17-beta.org/include/my_global.h mysql-5.1.17-beta/include/my
  #endif
  
  #if !defined(HAVE_UINT)
-diff -urN mysql-5.1.17-beta.org/sql/mysql_tzinfo_to_sql.cc mysql-5.1.17-beta/sql/mysql_tzinfo_to_sql.cc
---- mysql-5.1.17-beta.org/sql/mysql_tzinfo_to_sql.cc	2007-04-04 15:16:24.000000000 +0200
-+++ mysql-5.1.17-beta/sql/mysql_tzinfo_to_sql.cc	2007-05-01 19:47:19.705911429 +0200
+diff -urN mysql-5.1.17-beta.org/sql/tztime.cc mysql-5.1.17-beta/sql/tztime.cc
+--- mysql-5.1.17-beta.org/sql/tztime.cc	2007-04-04 15:16:24.000000000 +0200
++++ mysql-5.1.17-beta/sql/tztime.cc	2007-05-01 19:47:19.705911429 +0200
 @@ -167,7 +167,7 @@
        char buf[sizeof(struct tzhead) + sizeof(my_time_t) * TZ_MAX_TIMES +
                 TZ_MAX_TIMES + sizeof(TRAN_TYPE_INFO) * TZ_MAX_TYPES +
