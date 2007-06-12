@@ -3,13 +3,6 @@
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
 # - package man1/mysqlman.1, and make programs without manpage '.so mysqlman'
-# - alpha build failure:
-#alpha-pld-linux-gcc -DMYSQL_SERVER -DDEFAULT_MYSQL_HOME="\"/usr\"" -DDATADIR="\"/var/lib/mysql\"" -DSHAREDIR="\"/usr/share/mysql\"" -DHAVE_CONFIG_H -I. -I.. -I../innobase/include -I../ndb/include -I../ndb/include/ndbapi -I../include -I../include -I../regex -I.     -DDBUG_OFF -O2 -mieee  -fomit-frame-pointer   -MT stacktrace.o -MD -MP -MF .deps/stacktrace.Tpo -c -o stacktrace.o stacktrace.c
-#stacktrace.c: In function `print_stacktrace':
-#stacktrace.c:189: error: `SIGRETURN_FRAME_COUNT' undeclared (first use in this function)
-#stacktrace.c:189: error: (Each undeclared identifier is reported only once
-#stacktrace.c:189: error: for each function it appears in.)
-#make[4]: *** [stacktrace.o] Error 1
 #
 # Conditional build:
 %bcond_with	bdb		# Berkeley DB support
@@ -58,6 +51,7 @@ Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-fix_privilege_tables.patch
 Patch7:		%{name}-align.patch
 Patch8:		%{name}-client-config.patch
+Patch9:		%{name}-alpha.patch
 URL:		http://www.mysql.com/
 #BuildRequires:	ORBit-devel
 BuildRequires:	autoconf
@@ -436,6 +430,9 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
+%ifarch alpha
+%patch9 -p1
+%endif
 
 %{__perl} -pi -e 's@(ndb_bin_am_ldflags)="-static"@$1=""@' configure.in
 
