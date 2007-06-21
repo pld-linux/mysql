@@ -26,7 +26,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.19
-Release:	0.1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -61,6 +61,8 @@ Patch11:	%{name}-upgrade.patch
 #Patch12:	%{name}-NDB_CXXFLAGS.patch
 Patch13:	%{name}-min_max.patch
 #Patch14:	%{name}-bug-18156.patch
+Patch15:	%{name}-bug-27694.patch
+Patch16:	%{name}-bug-29082.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -465,6 +467,8 @@ mv sphinx-*/mysqlse storage/sphinx
 #%patch12 -p1 # OUTDATED?
 %patch13 -p1
 #%patch14 -p1 # OUTDATED?
+%patch15 -p1
+%patch16 -p1
 
 %build
 %{__libtoolize}
