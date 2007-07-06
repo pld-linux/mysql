@@ -503,8 +503,8 @@ mysqlinit() {
 	  i_u="INSERT INTO user VALUES ('localhost','mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0);
 	  INSERT INTO user (host,user) values ('localhost','');
 	  INSERT INTO user VALUES ('localhost','mysql_logrotate','','N','N','N','N','N','N','Y','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','','','','',0,0,0,0);"
-	  if [ "$hostname" != "locahost" ]; then
-		  i_u="
+	  if [ "$hostname" != "localhost" ]; then
+		  i_u="$i_u
 		  INSERT INTO user VALUES ('$hostname',          'mysql','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0);
 		  INSERT INTO user (host,user) values ('$hostname','');";
 	  fi
