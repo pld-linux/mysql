@@ -22,13 +22,13 @@ Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
 Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
-Version:	5.0.41
-Release:	7
+Version:	5.0.45
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	b45cd6c89e35dfc1cdbe1a1f782aefbf
+# Source0-md5:	a2a1c5a82bb22b45ab76a8ecab94e10d
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -56,7 +56,6 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
-Patch13:	%{name}-bug-28337.patch
 Patch14:	%{name}-bug-27694.patch
 Patch15:	%{name}-bug-29082.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
@@ -459,7 +458,6 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
-%patch13 -p1
 %patch14 -p1
 %patch15 -p1
 
@@ -586,15 +584,18 @@ rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 # rename not to be so generic name
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
+mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
+mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}comp_err.1
 
 # not useful without -debug build
 %{!?debug:rm -f $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
+%{!?debug:rm -f $RPM_BUILD_ROOT%{_mandir}/man1/mysql_resolve_stack_dump.1}
 # generate symbols file, so one can generate backtrace using it
 # mysql_resolve_stack_dump -s %{_datadir}/mysql/mysqld.sym -n mysqld.stack.
 # http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.sym}
 
-# functionality in initscript / rpm
+# functionality in initscript / rpm / other os
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
@@ -610,6 +611,12 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_bin_dist.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_src_distribution.1
+
+# no package for tests
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
@@ -761,9 +768,14 @@ EOF
 %{_infodir}/mysql.info*
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/mysql/mysqld.conf
-%{_datadir}/mysql/english
+
 %{_datadir}/mysql/fill_help_tables.sql
 %{_datadir}/mysql/mysql_fix_privilege_tables.sql
+%{_datadir}/mysql/mysql_system_tables.sql
+%{_datadir}/mysql/mysql_system_tables_data.sql
+%{_datadir}/mysql/mysql_test_data_timezone.sql
+
+%{_datadir}/mysql/english
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
 %lang(de) %{_datadir}/mysql/german
@@ -804,11 +816,12 @@ EOF
 %attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
+%{_mandir}/man1/mysql_secure_installation.1*
 %{_mandir}/man1/mysql_tzinfo_to_sql.1*
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
-%{_mandir}/man1/mysql_secure_installation.1*
+%{_mandir}/man1/resolveip.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -871,7 +884,8 @@ EOF
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
 %{_mandir}/man1/mysql_config.1*
-%{?debug:%{_mandir}/man1/resolve_stack_dump.1*}
+%{?debug:%{_mandir}/man1/*resolve_stack_dump.1*}
+%{_mandir}/man1/*comp_err.1*
 
 %files static
 %defattr(644,root,root,755)
