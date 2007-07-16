@@ -1,4 +1,3 @@
-diff -ur mysql-5.0.41.org/configure.in mysql-5.0.41/configure.in
 --- mysql-5.0.41.org/configure.in	2007-05-02 16:39:58.000000000 +0200
 +++ mysql-5.0.41/configure.in	2007-05-10 15:02:12.075664162 +0200
 @@ -779,19 +779,20 @@
@@ -29,7 +28,6 @@ diff -ur mysql-5.0.41.org/configure.in mysql-5.0.41/configure.in
  
  # For the sched_yield() function on Solaris
  AC_CHECK_FUNC(sched_yield, , AC_CHECK_LIB(posix4, sched_yield))
-diff -ur mysql-5.0.41.org/libmysql_r/Makefile.am mysql-5.0.41/libmysql_r/Makefile.am
 --- mysql-5.0.41.org/libmysql_r/Makefile.am	2007-05-02 16:39:59.000000000 +0200
 +++ mysql-5.0.41/libmysql_r/Makefile.am	2007-05-10 15:00:11.721844431 +0200
 @@ -30,7 +30,7 @@
@@ -41,15 +39,14 @@ diff -ur mysql-5.0.41.org/libmysql_r/Makefile.am mysql-5.0.41/libmysql_r/Makefil
  libmysqlclient_r_la_LDFLAGS = $(target_ldflags)
  
  # This is called from the toplevel makefile
-diff -ur mysql-5.0.41.org/sql/Makefile.am mysql-5.0.41/sql/Makefile.am
---- mysql-5.0.41.org/sql/Makefile.am	2007-05-02 16:40:42.000000000 +0200
-+++ mysql-5.0.41/sql/Makefile.am	2007-05-10 15:00:11.721844431 +0200
-@@ -43,7 +43,7 @@
-                         @innodb_system_libs@ \
+--- mysql-5.0.45/sql/Makefile.am~	2007-07-13 13:43:06.490108665 +0300
++++ mysql-5.0.45/sql/Makefile.am	2007-07-16 20:03:55.513501322 +0300
+@@ -44,7 +44,7 @@
  			@ndbcluster_libs@ @ndbcluster_system_libs@ \
  			$(LDADD)  $(CXXLDFLAGS) $(WRAPLIBS) @LIBDL@ \
--                        $(yassl_libs) $(openssl_libs)
-+                        $(yassl_libs) $(openssl_libs) @LIBCRYPT@
+ 			$(yassl_libs) $(openssl_libs) \
+-			@MYSQLD_EXTRA_LIBS@
++			@MYSQLD_EXTRA_LIBS@  @LIBCRYPT@
  
  noinst_HEADERS =	item.h item_func.h item_sum.h item_cmpfunc.h \
  			item_strfunc.h item_timefunc.h item_uniq.h \
