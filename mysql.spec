@@ -758,6 +758,12 @@ EOF
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man8/mysqld.8*
 
+%if %{?debug:1}0
+%attr(755,root,root) %{_bindir}/*resolve_stack_dump
+%{_datadir}/mysql/mysqld.sym
+%{_mandir}/man1/*resolve_stack_dump.1*
+%endif
+
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
 %attr(751,root,root) /var/lib/mysql
@@ -878,13 +884,10 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/lib*.so
 %attr(755,root,root) %{_bindir}/*comp_err
-%{?debug:%attr(755,root,root) %{_bindir}/*resolve_stack_dump}
-%{?debug:%{_datadir}/mysql/mysqld.sym}
 %{_libdir}/lib*.la
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
 %{_mandir}/man1/mysql_config.1*
-%{?debug:%{_mandir}/man1/*resolve_stack_dump.1*}
 %{_mandir}/man1/*comp_err.1*
 
 %files static
