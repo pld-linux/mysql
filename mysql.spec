@@ -14,6 +14,7 @@
 %bcond_without	ssl		# Without OpenSSL
 %bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
+%bcond_with	autodeps	# BR packages needed only for resolving deps
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -25,13 +26,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.20
-Release:	1
+Version:	5.1.21
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
 Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-# Source0-md5:	1a3883347040de3990c152d7aceabccb
+# Source0-md5:	c8e428a526b21d53c494a75b0ee01ffb
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7-rc2.tar.gz
 # Source100-md5:	65daf0feb7e276fb3de0aba82cff1d3e
 Source1:	%{name}.init
@@ -58,7 +59,7 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 #Patch12:	%{name}-NDB_CXXFLAGS.patch
-Patch13:	%{name}-min_max.patch
+#Patch13:	%{name}-min_max.patch
 #Patch14:	%{name}-bug-18156.patch
 Patch15:	%{name}-bug-27694.patch
 Patch16:	%{name}-bug-29082.patch
@@ -71,7 +72,7 @@ BuildRequires:	libtool
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
-BuildRequires:	perl-DBI
+%{?with_autodeps:BuildRequires:	perl-DBI}
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
@@ -463,7 +464,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch9 -p1
 %patch11 -p1
 #%patch12 -p1 # OUTDATED?
-%patch13 -p1
+#%patch13 -p1 # RECHECK?
 #%patch14 -p1 # OUTDATED?
 %patch15 -p1
 %patch16 -p1
@@ -917,8 +918,8 @@ done
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
-%{_mandir}/man1/mysqlmanagerc.1*
-%{_mandir}/man1/mysqlmanager-pwgen.1*
+#%{_mandir}/man1/mysqlmanagerc.1*
+#%{_mandir}/man1/mysqlmanager-pwgen.1*
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man8/mysqlmanager.8*
