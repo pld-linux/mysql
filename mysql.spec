@@ -6,6 +6,9 @@
 # - is plugin_dir lib64 safe?
 # - Using NDB Cluster... could not find sci transporter in /{include, lib}
 # - make service mysql init work again
+# - unpackaged:
+#   /usr/share/man/man1/mysql_tableinfo.1.gz
+#   /usr/share/mysql/mysqld_multi.server
 #
 # Conditional build:
 %bcond_without	innodb		# Without InnoDB storage engine support
@@ -26,13 +29,15 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.21
+Version:	5.1.22
 Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-# Source0-md5:	c8e428a526b21d53c494a75b0ee01ffb
+#Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
+Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-rc.tar.gz
+# Source0-md5:	87be813d1b2d76b1c756de0a16fa29fb
+#Source0:	http://dev.mysql.com/get/Downloads/MySQL-5.1/
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7-rc2.tar.gz
 # Source100-md5:	65daf0feb7e276fb3de0aba82cff1d3e
 Source1:	%{name}.init
@@ -443,7 +448,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n %{name}-%{version}-beta %{?with_sphinx:-a100}
+%setup -q -n %{name}-%{version}-rc %{?with_sphinx:-a100}
 %if %{with sphinx}
 mv sphinx-*/mysqlse storage/sphinx
 %endif
