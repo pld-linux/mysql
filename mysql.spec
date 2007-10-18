@@ -21,12 +21,12 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	4.0.27
+Version:	4.0.30
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-Source0:	http://downloads.mysql.com/archives/mysql-4.0/%{name}-%{version}.tar.gz
-# Source0-md5:	315f88a902c59e230212b3ccf137f92f
+Source0:	http://mirror.provenscaling.com/mysql/community/source/4.0/%{name}-%{version}.tar.gz
+# Source0-md5:	35b838f40fa1f1d7feb9e65b42eea449
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -42,6 +42,7 @@ Patch5:		%{name}-sql-cxx-pic.patch
 Patch6:		%{name}-noproc.patch
 Patch7:		%{name}-fix_privilege_tables.patch
 Patch8:		%{name}-nptl.patch
+Patch9:		%{name}-bug-27198.patch
 URL:		http://www.mysql.com/
 BuildRequires:	/bin/ps
 #BuildRequires:	ORBit-devel
@@ -361,6 +362,7 @@ PodrЙcznik MySQL-a w formacie HTML.
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
+%patch9 -p1
 
 %build
 %{__libtoolize}
@@ -543,7 +545,7 @@ fi
 %attr(755,root,root) %{_sbindir}/mysqld
 %{_mandir}/man1/isamchk.1*
 %{_mandir}/man1/isamlog.1*
-%{_mandir}/man1/mysqld.1*
+%{_mandir}/man8/mysqld.8*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
