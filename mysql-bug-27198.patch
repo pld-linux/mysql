@@ -1,0 +1,132 @@
+From: Tatjana&nbsp;A&nbsp;NuernbergDate: July 13 2007 5:50pm
+Subject: bk commit into 4.0 tree (tnurnberg:1.2214) BUG#27198
+
+Below is the list of changes that have just been committed into a local
+4.0 repository of tnurnberg. When tnurnberg does a push these changes will
+be propagated to the main repository and, within 24 hours after the
+push, to the public repository.
+For information on how to access the public repository
+see http://dev.mysql.com/doc/mysql/en/installing-source-tree.html
+
+ChangeSet@stripped, 2007-07-13 17:50:58+02:00, tnurnberg@stripped +2 -0
+  Bug#27198: Error returns from time() are ignored
+  
+  gettimeofday() can fail and presumably, so can time().
+  Keep an eye on it.
+  
+  Since we have no data on this at all so far, we just
+  retry on failure (and log the event), assuming that
+  this is just an intermittant failure. This might of
+  course hang the threat until we succeed. Once we know
+  more about these failures, an appropriate more clever
+  scheme may be picked (only try so many times per thread,
+  etc., if that fails, return last "good" time() we got or
+  some such).  Using sql_print_information() to log as this
+  probably only occurs in high load scenarios where the debug-
+  trace likely is disabled (or might interfere with testing
+  the effect).  No test-case as this is a non-deterministic
+  issue.
+
+  sql/mysql_priv.h@stripped, 2007-07-13 17:50:57+02:00, tnurnberg@stripped +8 -9
+    Bug#27198: Error returns from time() are ignored
+    
+    move declarations for log.cc to before inclusion of
+    sql_class.h as we now use sql_print_information() in
+    there.
+
+  sql/sql_class.h@stripped, 2007-07-13 17:50:57+02:00, tnurnberg@stripped +21 -5
+    Bug#27198: Error returns from time() are ignored
+    
+    gettimeofday() can fail and presumably, so can time().
+    Keep an eye on it.
+
+# This is a BitKeeper patch.  What follows are the unified diffs for the
+# set of deltas contained in the patch.  The rest of the patch, the part
+# that BitKeeper cares about, is below these diffs.
+# User:	tnurnberg
+# Host:	sin.intern.azundris.com
+# Root:	/home/tnurnberg/27198/40-27198
+
+--- 1.239/sql/mysql_priv.h	2005-11-29 19:17:37 +01:00
++++ 1.240/sql/mysql_priv.h	2007-07-13 17:50:57 +02:00
+@@ -302,6 +302,14 @@ inline THD *_current_thd(void)
+ }
+ #define current_thd _current_thd()
+ 
++/* log.cc */
++void sql_perror(const char *message);
++
++void vprint_msg_to_log( enum loglevel level, const char *format, va_list args );
++void sql_print_error( const char *format, ... );
++void sql_print_warning( const char *format, ...); 
++void sql_print_information( const char *format, ...); 
++
+ #include "sql_string.h"
+ #include "sql_list.h"
+ #include "sql_map.h"
+@@ -656,15 +664,6 @@ int key_cmp(TABLE *form,const byte *key,
+ void key_unpack(String *to,TABLE *form,uint index);
+ bool check_if_key_used(TABLE *table, uint idx, List<Item> &fields);
+ void init_errmessage(void);
+-
+-void sql_perror(const char *message);
+-
+-void vprint_msg_to_log( enum loglevel level, const char *format, va_list args );
+-void sql_print_error( const char *format, ... );
+-void sql_print_warning( const char *format, ...); 
+-void sql_print_information( const char *format, ...); 
+-
+-
+ 
+ bool fn_format_relative_to_data_home(my_string to, const char *name,
+ 				     const char *dir, const char *extension);
+
+--- 1.191/sql/sql_class.h	2004-12-03 00:02:39 +01:00
++++ 1.192/sql/sql_class.h	2007-07-13 17:50:57 +02:00
+@@ -569,17 +569,33 @@ public:
+     proc_info = old_msg;
+     pthread_mutex_unlock(&mysys_var->mutex);
+   }
++
++  static inline void safe_time(time_t *t)
++  {
++    /**
++       Wrapper around time() which retries on error (-1)
++
++       @details
++       This is needed because, despite the documentation, time() may fail
++       in some circumstances.  Here we retry time() until it succeeds, and
++       log the failure so that performance problems related to this can be
++       identified.
++    */
++    while(unlikely(time(t) == ((time_t) -1)))
++      sql_print_information("time() failed with %d", errno);
++  }
++
+   inline time_t query_start() { query_start_used=1; return start_time; }
+-  inline void	set_time()    { if (user_time) start_time=time_after_lock=user_time; else time_after_lock=time(&start_time); }
+-  inline void	end_time()    { time(&start_time); }
++  inline void	set_time()    { if (user_time) start_time=time_after_lock=user_time; else { safe_time(&start_time); time_after_lock= start_time; }}
++  inline void	end_time()    { safe_time(&start_time); }
+   inline void	set_time(time_t t) { time_after_lock=start_time=user_time=t; }
+-  inline void	lock_time()   { time(&time_after_lock); }
++  inline void	lock_time()   { safe_time(&time_after_lock); }
+   inline void	insert_id(ulonglong id)
+   { last_insert_id=id; insert_id_used=1; }
+   inline ulonglong insert_id(void)
+   {
+     if (!last_insert_id_used)
+-    {      
++    {
+       last_insert_id_used=1;
+       current_insert_id=last_insert_id;
+     }
+@@ -588,7 +604,7 @@ public:
+   inline ulonglong found_rows(void)
+   {
+     return limit_found_rows;
+-  }                                                                         
++  }
+   inline bool active_transaction()
+   {
+ #ifdef USING_TRANSACTIONS    
