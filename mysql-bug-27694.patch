@@ -1,0 +1,10 @@
+--- mysql-5.0.41/scripts/mysqlhotcopy.sh~	2007-06-21 14:17:42.000000000 +0300
++++ mysql-5.0.41/scripts/mysqlhotcopy.sh	2007-06-21 14:17:43.671033114 +0300
+@@ -840,6 +840,7 @@
+     my $quote = $dbh->get_info(29); # SQL_IDENTIFIER_QUOTE_CHAR
+     if ($quote) {
+       foreach (@dbh_tables) {
++        s/$quote.+$quote\.//; # perl-DBD-mysql-4.003 fix
+         s/^$quote(.*)$quote$/$1/;
+         s/$quote$quote/$quote/g;
+       }
