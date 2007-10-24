@@ -23,7 +23,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.45
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -58,6 +58,7 @@ Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
 Patch14:	%{name}-bug-27694.patch
 Patch15:	%{name}-bug-29082.patch
+Patch16:	%{name}-bug-16470.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -460,6 +461,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch12 -p1
 %patch14 -p1
 %patch15 -p1
+%patch16 -p1
 
 %build
 %{__libtoolize}
