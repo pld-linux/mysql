@@ -23,7 +23,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.45
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -863,14 +863,12 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlshow
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
-%attr(755,root,root) %{_bindir}/mysqltest*
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqlimport.1*
-%{_mandir}/man1/mysqltest*.1*
 %{_mandir}/man1/mysqlmanager*.1*
 %{_mandir}/man8/mysqlmanager.8*
 
@@ -906,6 +904,7 @@ EOF
 # wrong dir?
 %{_datadir}/mysql/mi_test_all.res
 %attr(755,root,root) %{_datadir}/mysql/mi_test_all
+%{_mandir}/man1/mysqltest*.1*
 %{_mandir}/man1/mysql_client_test.1*
 
 #%files doc
