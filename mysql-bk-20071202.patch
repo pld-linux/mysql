@@ -368,24 +368,6 @@ diff -urN mysql-4.1.23/cmd-line-utils/libedit/el_term.h mysql-4.1/cmd-line-utils
 diff -urN mysql-4.1.23/configure.in mysql-4.1/configure.in
 --- mysql-4.1.23/configure.in	2007-12-02 20:38:26.000000000 +0100
 +++ mysql-4.1/configure.in	2007-06-18 22:10:51.000000000 +0200
-@@ -5,7 +5,7 @@
- AC_CANONICAL_SYSTEM
- # The Docs Makefile.am parses this line!
- # remember to also change ndb version below and update version.c in ndb
--AM_INIT_AUTOMAKE(mysql, 4.1.23)
-+AM_INIT_AUTOMAKE(mysql, 4.1.24)
- AM_CONFIG_HEADER(config.h)
- 
- PROTOCOL_VERSION=10
-@@ -21,7 +21,7 @@
- # ndb version
- NDB_VERSION_MAJOR=4
- NDB_VERSION_MINOR=1
--NDB_VERSION_BUILD=23
-+NDB_VERSION_BUILD=24
- NDB_VERSION_STATUS=""
- 
- # Set all version vars based on $VERSION. How do we do this more elegant ?
 @@ -1960,6 +1960,19 @@
  fi
  AC_SUBST(TERMCAP_LIB)
