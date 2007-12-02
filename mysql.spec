@@ -34,6 +34,8 @@ Group:		Applications/Databases
 # Manual pages are at http://svn.mysql.com/svnpublic/mysqldoc/refman-4.1/ .
 Source0:	%{name}-%{version}.tar.bz2
 # Source0-md5:	146ab42a1c066156a8dcbd25abbe564a
+Source100:	%{name}-4.1.22-man.tar.bz2
+# Source100-md5:	6d79b8bdbf65feb68a84c1e350675473
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -421,7 +423,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q
+%setup -q -a100
 %patch100 -p1
 %patch0 -p1
 %{?with_tcpd:%patch1 -p1}
@@ -582,11 +584,13 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_create_system_tables
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/fill_help_tables.sql
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
+rm $RPM_BUILD_ROOT%{_mandir}/man1/{mysql.server,safe_mysqld}*
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
@@ -747,15 +751,15 @@ EOF
 %attr(755,root,root) %{_bindir}/pack_isam
 %attr(755,root,root) %{_bindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/mysqld
-#%{_mandir}/man1/isamchk.1*
-#%{_mandir}/man1/isamlog.1*
-#%{_mandir}/man1/mysql_fix_privilege_tables.1*
-#%{_mandir}/man1/mysqld.1*
-#%{_mandir}/man1/myisamchk.1*
-#%{_mandir}/man1/myisamlog.1*
-#%{_mandir}/man1/myisampack.1*
-#%{_mandir}/man1/pack_isam.1*
-#%{_mandir}/man8/mysqld.8*
+%{_mandir}/man1/isamchk.1*
+%{_mandir}/man1/isamlog.1*
+%{_mandir}/man1/mysql_fix_privilege_tables.1*
+%{_mandir}/man1/mysqld.1*
+%{_mandir}/man1/myisamchk.1*
+%{_mandir}/man1/myisamlog.1*
+%{_mandir}/man1/myisampack.1*
+%{_mandir}/man1/pack_isam.1*
+%{_mandir}/man8/mysqld.8*
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
@@ -805,11 +809,11 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_secure_installation
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
 %attr(755,root,root) %{_bindir}/mysqlcheck
-#%{_mandir}/man1/perror.1*
-#%{_mandir}/man1/replace.1*
-#%{_mandir}/man1/msql2mysql*
-#%{_mandir}/man1/myisam_ftdump.1*
-#%{_mandir}/man1/mysqlcheck.1*
+%{_mandir}/man1/perror.1*
+%{_mandir}/man1/replace.1*
+%{_mandir}/man1/msql2mysql*
+%{_mandir}/man1/myisam_ftdump.1*
+%{_mandir}/man1/mysqlcheck.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -823,10 +827,10 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_fix_extensions
 %attr(755,root,root) %{_bindir}/mysql_explain_log
 %attr(755,root,root) %{_bindir}/mysql_tableinfo
-#%{_mandir}/man1/mysql_zap.1*
-#%{_mandir}/man1/mysqlaccess.1*
-#%{_mandir}/man1/mysqlhotcopy.1*
-#%{_mandir}/man1/mysql_explain_log.1*
+%{_mandir}/man1/mysql_zap.1*
+%{_mandir}/man1/mysqlaccess.1*
+%{_mandir}/man1/mysqlhotcopy.1*
+%{_mandir}/man1/mysql_explain_log.1*
 
 %files client
 %defattr(644,root,root,755)
@@ -838,13 +842,13 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlshow
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqladmin
-#%{_mandir}/man1/mysql.1*
-#%{_mandir}/man1/mysqlman.1*
-#%{_mandir}/man1/mysqladmin.1*
-#%{_mandir}/man1/mysqldump.1*
-#%{_mandir}/man1/mysqlshow.1*
-#%{_mandir}/man1/mysqlbinlog.1*
-#%{_mandir}/man1/mysqlimport.1*
+%{_mandir}/man1/mysql.1*
+%{_mandir}/man1/mysqlman.1*
+%{_mandir}/man1/mysqladmin.1*
+%{_mandir}/man1/mysqldump.1*
+%{_mandir}/man1/mysqlshow.1*
+%{_mandir}/man1/mysqlbinlog.1*
+%{_mandir}/man1/mysqlimport.1*
 
 %files libs
 %defattr(644,root,root,755)
@@ -862,7 +866,7 @@ EOF
 %{_libdir}/lib*.la
 %{_libdir}/lib*[!tr].a
 %{_includedir}/mysql
-#%{_mandir}/man1/mysql_config.1*
+%{_mandir}/man1/mysql_config.1*
 
 %files static
 %defattr(644,root,root,755)
