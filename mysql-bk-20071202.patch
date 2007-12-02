@@ -1,0 +1,4150 @@
+diff -urN mysql-4.1.23/BK/keys mysql-4.1/BK/keys
+--- mysql-4.1.23/BK/keys	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/BK/keys	2007-11-29 23:23:39.000000000 +0100
+@@ -1,2 +1,2 @@
+ ROOTKEY=3985cf0cwNRCED_XNSCA7RvkLPer2Q
+-TIPKEY=466e5874F5N8tMqwd_kEmlTPE9UlnA
++TIPKEY=47448694WzdmhSoqwUkknsFfid9jmw
+diff -urN mysql-4.1.23/client/mysqldump.c mysql-4.1/client/mysqldump.c
+--- mysql-4.1.23/client/mysqldump.c	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/client/mysqldump.c	2007-10-04 08:27:01.000000000 +0200
+@@ -2428,6 +2428,18 @@
+     need the REPEATABLE READ level (not anything lower, for example READ
+     COMMITTED would give one new consistent read per dumped table).
+   */
++  if ((mysql_get_server_version(mysql_con) < 40100) && opt_master_data)
++  {
++    fprintf(stderr, "-- %s: the combination of --single-transaction and "
++            "--master-data requires a MySQL server version of at least 4.1 "
++            "(current server's version is %s). %s\n",
++            ignore_errors ? "Warning" : "Error",
++            mysql_con->server_version ? mysql_con->server_version : "unknown",
++            ignore_errors ? "Continuing due to --force, backup may not be consistent across all tables!" : "Aborting.");
++    if (!ignore_errors)
++      exit(EX_MYSQLERR);
++  }
++
+   return (mysql_query_with_error_report(mysql_con, 0,
+                                         "SET SESSION TRANSACTION ISOLATION "
+                                         "LEVEL REPEATABLE READ") ||
+diff -urN mysql-4.1.23/client/mysqltest.c mysql-4.1/client/mysqltest.c
+--- mysql-4.1.23/client/mysqltest.c	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/client/mysqltest.c	2007-06-01 19:57:26.000000000 +0200
+@@ -1125,6 +1125,50 @@
+ }
+ 
+ 
++/*
++   Remove surrounding chars from string
++
++   Return 1 if first character is found but not last
++*/
++static int strip_surrounding(char* str, char c1, char c2)
++{
++  char* ptr= str;
++
++  /* Check if the first non space character is c1 */
++  while(*ptr && my_isspace(charset_info, *ptr))
++    ptr++;
++  if (*ptr == c1)
++  {
++    /* Replace it with a space */
++    *ptr= ' ';
++
++    /* Last non space charecter should be c2 */
++    ptr= strend(str)-1;
++    while(*ptr && my_isspace(charset_info, *ptr))
++      ptr--;
++    if (*ptr == c2)
++    {
++      /* Replace it with \0 */
++      *ptr= 0;
++    }
++    else
++    {
++      /* Mismatch detected */
++      return 1;
++    }
++  }
++  return 0;
++}
++
++
++static void strip_parentheses(struct st_command *command)
++{
++  if (strip_surrounding(command->first_argument, '(', ')'))
++      die("%.*s - argument list started with '%c' must be ended with '%c'",
++          command->first_word_len, command->query, '(', ')');
++}
++
++
+ static byte *get_var_key(const byte* var, uint* len,
+                   my_bool __attribute__((unused)) t)
+ {
+@@ -1380,12 +1424,11 @@
+   init_dynamic_string(&ds_query, 0, (end - query) + 32, 256);
+   do_eval(&ds_query, query, end, FALSE);
+ 
+-  if (mysql_real_query(mysql, ds_query.str, ds_query.length) ||
+-      !(res = mysql_store_result(mysql)))
+-  {
++  if (mysql_real_query(mysql, ds_query.str, ds_query.length))
+     die("Error running query '%s': %d %s", ds_query.str,
+ 	mysql_errno(mysql), mysql_error(mysql));
+-  }
++  if (!(res= mysql_store_result(mysql)))
++    die("Query '%s' didn't return a result set", ds_query.str);
+   dynstr_free(&ds_query);
+ 
+   if ((row = mysql_fetch_row(res)) && row[0])
+@@ -1440,6 +1483,130 @@
+ }
+ 
+ 
++/*
++  Set variable from the result of a field in a query
++
++  This function is useful when checking for a certain value
++  in the output from a query that can't be restricted to only
++  return some values. A very good example of that is most SHOW
++  commands.
++
++  SYNOPSIS
++  var_set_query_get_value()
++
++  DESCRIPTION
++  let $variable= query_get_value(<query to run>,<column name>,<row no>);
++
++  <query to run> -    The query that should be sent to the server
++  <column name> -     Name of the column that holds the field be compared
++                      against the expected value
++  <row no> -          Number of the row that holds the field to be
++                      compared against the expected value
++
++*/
++
++void var_set_query_get_value(struct st_command *command, VAR *var)
++{
++  ulong row_no;
++  int col_no= -1;
++  MYSQL_RES* res;
++  MYSQL* mysql= &cur_con->mysql;
++
++  static DYNAMIC_STRING ds_query;
++  static DYNAMIC_STRING ds_col;
++  static DYNAMIC_STRING ds_row;
++  const struct command_arg query_get_value_args[] = {
++    "query", ARG_STRING, TRUE, &ds_query, "Query to run",
++    "column name", ARG_STRING, TRUE, &ds_col, "Name of column",
++    "row number", ARG_STRING, TRUE, &ds_row, "Number for row",
++  };
++
++  DBUG_ENTER("var_set_query_get_value");
++  LINT_INIT(res);
++
++  strip_parentheses(command);
++  DBUG_PRINT("info", ("query: %s", command->query));
++  check_command_args(command, command->first_argument, query_get_value_args,
++                     sizeof(query_get_value_args)/sizeof(struct command_arg),
++                     ',');
++
++  DBUG_PRINT("info", ("query: %s", ds_query.str));
++  DBUG_PRINT("info", ("col: %s", ds_col.str));
++
++  /* Convert row number to int */
++  if (!str2int(ds_row.str, 10, (long) 0, (long) INT_MAX, &row_no))
++    die("Invalid row number: '%s'", ds_row.str);
++  DBUG_PRINT("info", ("row: %s, row_no: %ld", ds_row.str, row_no));
++  dynstr_free(&ds_row);
++
++  /* Remove any surrounding "'s from the query - if there is any */
++  if (strip_surrounding(ds_query.str, '"', '"'))
++    die("Mismatched \"'s around query '%s'", ds_query.str);
++
++  /* Run the query */
++  if (mysql_real_query(mysql, ds_query.str, ds_query.length))
++    die("Error running query '%s': %d %s", ds_query.str,
++	mysql_errno(mysql), mysql_error(mysql));
++  if (!(res= mysql_store_result(mysql)))
++    die("Query '%s' didn't return a result set", ds_query.str);
++
++  {
++    /* Find column number from the given column name */
++    uint i;
++    uint num_fields= mysql_num_fields(res);
++    MYSQL_FIELD *fields= mysql_fetch_fields(res);
++
++    for (i= 0; i < num_fields; i++)
++    {
++      if (strcmp(fields[i].name, ds_col.str) == 0 &&
++          strlen(fields[i].name) == ds_col.length)
++      {
++        col_no= i;
++        break;
++      }
++    }
++    if (col_no == -1)
++    {
++      mysql_free_result(res);
++      die("Could not find column '%s' in the result of '%s'",
++          ds_col.str, ds_query.str);
++    }
++    DBUG_PRINT("info", ("Found column %d with name '%s'",
++                        i, fields[i].name));
++  }
++  dynstr_free(&ds_col);
++
++  {
++    /* Get the value */
++    MYSQL_ROW row;
++    ulong rows= 0;
++    const char* value= "No such row";
++
++    while ((row= mysql_fetch_row(res)))
++    {
++      if (++rows == row_no)
++      {
++
++        DBUG_PRINT("info", ("At row %ld, column %d is '%s'",
++                            row_no, col_no, row[col_no]));
++        /* Found the row to get */
++        if (row[col_no])
++          value= row[col_no];
++        else
++          value= "NULL";
++
++        break;
++      }
++    }
++    eval_expr(var, value, 0);
++  }
++  dynstr_free(&ds_query);
++  mysql_free_result(res);
++
++  DBUG_VOID_RETURN;
++}
++
++
+ void var_copy(VAR *dest, VAR *src)
+ {
+   dest->int_val= src->int_val;
+@@ -1463,26 +1630,47 @@
+ 
+ void eval_expr(VAR *v, const char *p, const char **p_end)
+ {
+-  static int MIN_VAR_ALLOC= 32; /* MASV why 32? */
+-  VAR *vp;
++
++  DBUG_ENTER("eval_expr");
++  DBUG_PRINT("enter", ("p: '%s'", p));
++
+   if (*p == '$')
+   {
++    VAR *vp;
+     if ((vp= var_get(p, p_end, 0, 0)))
+-    {
+       var_copy(v, vp);
+-      return;
+-    }
++    DBUG_VOID_RETURN;
+   }
+-  else if (*p == '`')
++
++  if (*p == '`')
+   {
+     var_query_set(v, p, p_end);
++    DBUG_VOID_RETURN;
+   }
+-  else
++
++  {
++    /* Check if this is a "let $var= query_get_value()" */
++    const char* get_value_str= "query_get_value";
++    const size_t len= strlen(get_value_str);
++    if (strncmp(p, get_value_str, len)==0)
++    {
++      struct st_command command;
++      memset(&command, 0, sizeof(command));
++      command.query= (char*)p;
++      command.first_word_len= len;
++      command.first_argument= command.query + len;
++      command.end= (char*)*p_end;
++      var_set_query_get_value(&command, v);
++      DBUG_VOID_RETURN;
++    }
++  }
++
+   {
+     int new_val_len = (p_end && *p_end) ?
+       (int) (*p_end - p) : (int) strlen(p);
+     if (new_val_len + 1 >= v->alloced_len)
+     {
++      static int MIN_VAR_ALLOC= 32;
+       v->alloced_len = (new_val_len < MIN_VAR_ALLOC - 1) ?
+         MIN_VAR_ALLOC : new_val_len + 1;
+       if (!(v->str_val =
+@@ -1495,9 +1683,10 @@
+     memcpy(v->str_val, p, new_val_len);
+     v->str_val[new_val_len] = 0;
+     v->int_val=atoi(p);
++    DBUG_PRINT("info", ("atoi on '%s', returns: %d", p, v->int_val));
+     v->int_dirty=0;
+   }
+-  return;
++  DBUG_VOID_RETURN;
+ }
+ 
+ 
+@@ -3432,7 +3621,6 @@
+   int con_port= port;
+   char *con_options;
+   bool con_ssl= 0, con_compress= 0;
+-  char *ptr;
+ 
+   static DYNAMIC_STRING ds_connection_name;
+   static DYNAMIC_STRING ds_host;
+@@ -3460,20 +3648,7 @@
+   DBUG_ENTER("do_connect");
+   DBUG_PRINT("enter",("connect: %s", command->first_argument));
+ 
+-  /* Remove parenteses around connect arguments */
+-  if ((ptr= strstr(command->first_argument, "(")))
+-  {
+-    /* Replace it with a space */
+-    *ptr= ' ';
+-    if ((ptr= strstr(command->first_argument, ")")))
+-    {
+-      /* Replace it with \0 */
+-      *ptr= 0;
+-    }
+-    else
+-      die("connect - argument list started with '(' must be ended with ')'");
+-  }
+-
++  strip_parentheses(command);
+   check_command_args(command, command->first_argument, connect_args,
+                      sizeof(connect_args)/sizeof(struct command_arg),
+                      ',');
+@@ -4173,16 +4348,12 @@
+     DBUG_RETURN(0);
+   }
+   if (!(*command_ptr= command=
+-        (struct st_command*) my_malloc(sizeof(*command), MYF(MY_WME))) ||
++        (struct st_command*) my_malloc(sizeof(*command),
++                                       MYF(MY_WME|MY_ZEROFILL))) ||
+       insert_dynamic(&q_lines, (gptr) &command))
+     die(NullS);
+-
+-  command->require_file[0]= 0;
+-  command->first_word_len= 0;
+-  command->query_len= 0;
+-
+   command->type= Q_UNKNOWN;
+-  command->query_buf= command->query= 0;
++
+   read_command_buf[0]= 0;
+   if (read_line(read_command_buf, sizeof(read_command_buf)))
+   {
+diff -urN mysql-4.1.23/cmd-line-utils/libedit/el_term.h mysql-4.1/cmd-line-utils/libedit/el_term.h
+--- mysql-4.1.23/cmd-line-utils/libedit/el_term.h	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/cmd-line-utils/libedit/el_term.h	2007-06-04 16:42:35.000000000 +0200
+@@ -90,6 +90,16 @@
+ extern char* tgetstr(char*, char**);
+ #endif
+ 
++
++#if !HAVE_DECL_TGOTO
++/*
++  'tgoto' is not declared in the system header files, this causes
++  problems on 64-bit systems. The function returns a 64 bit pointer
++  but caller see it as "int" and it's thus truncated to 32-bit
++*/
++extern char* tgoto(const char*, int, int);
++#endif
++
+ protected void	term_move_to_line(EditLine *, int);
+ protected void	term_move_to_char(EditLine *, int);
+ protected void	term_clear_EOL(EditLine *, int);
+diff -urN mysql-4.1.23/configure.in mysql-4.1/configure.in
+--- mysql-4.1.23/configure.in	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/configure.in	2007-06-18 22:10:51.000000000 +0200
+@@ -5,7 +5,7 @@
+ AC_CANONICAL_SYSTEM
+ # The Docs Makefile.am parses this line!
+ # remember to also change ndb version below and update version.c in ndb
+-AM_INIT_AUTOMAKE(mysql, 4.1.23)
++AM_INIT_AUTOMAKE(mysql, 4.1.24)
+ AM_CONFIG_HEADER(config.h)
+ 
+ PROTOCOL_VERSION=10
+@@ -21,7 +21,7 @@
+ # ndb version
+ NDB_VERSION_MAJOR=4
+ NDB_VERSION_MINOR=1
+-NDB_VERSION_BUILD=23
++NDB_VERSION_BUILD=24
+ NDB_VERSION_STATUS=""
+ 
+ # Set all version vars based on $VERSION. How do we do this more elegant ?
+@@ -1960,6 +1960,19 @@
+ fi
+ AC_SUBST(TERMCAP_LIB)
+ 
++# Check if the termcap function 'tgoto' is already declared in
++# system header files or if it need to be declared locally
++AC_CHECK_DECLS(tgoto,,,[
++#ifdef HAVE_CURSES_H
++# include <curses.h>
++#elif HAVE_NCURSES_H
++# include <ncurses.h>
++#endif
++#ifdef HAVE_TERM_H
++# include <term.h>
++#endif
++])
++
+ LIBEDIT_LOBJECTS=""
+ AC_CHECK_FUNC(strunvis, ,[LIBEDIT_LOBJECTS="$LIBEDIT_LOBJECTS unvis.o"])
+ AC_CHECK_FUNC(strvis,   ,[LIBEDIT_LOBJECTS="$LIBEDIT_LOBJECTS vis.o"])
+diff -urN mysql-4.1.23/Docs/INSTALL-BINARY mysql-4.1/Docs/INSTALL-BINARY
+--- mysql-4.1.23/Docs/INSTALL-BINARY	1970-01-01 01:00:00.000000000 +0100
++++ mysql-4.1/Docs/INSTALL-BINARY	2007-11-02 01:29:32.000000000 +0100
+@@ -0,0 +1,8 @@
++
++You can find information about how to install binary distributions at
++
++  http://dev.mysql.com/doc/refman/4.1/en/quick-standard-installation.html
++
++The MySQL Reference Manual is also available in various formats on
++http://dev.mysql.com/doc; if you're interested in the DocBook XML
++sources go to http://svn.mysql.com.
+diff -urN mysql-4.1.23/Docs/Makefile.am mysql-4.1/Docs/Makefile.am
+--- mysql-4.1.23/Docs/Makefile.am	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/Docs/Makefile.am	2007-11-02 13:13:51.000000000 +0100
+@@ -14,14 +14,7 @@
+ # along with this program; if not, write to the Free Software
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+-noinst_SCRIPTS =	Support/generate-text-files.pl
+-
+-EXTRA_DIST =		$(noinst_SCRIPTS) mysql.info INSTALL-BINARY
+-
+-TXT_FILES=		../INSTALL-SOURCE ../INSTALL-WIN-SOURCE \
+-			INSTALL-BINARY ../support-files/MacOSX/ReadMe.txt
+-
+-all-local:		$(TXT_FILES)
++EXTRA_DIST =		mysql.info INSTALL-BINARY
+ 
+ # make sure that "make install" installs the info page, too
+ # automake only seems to take care of this automatically,
+@@ -33,26 +26,5 @@
+ uninstall-local:
+ 	@RM@ -f $(DESTDIR)$(infodir)/mysql.info
+ 
+-# This target is not used in builds, just for convinience
+-CLEAN_FILES:		$(TXT_FILES)
+-	touch $(TXT_FILES)
+-
+-GT = $(srcdir)/Support/generate-text-files.pl
+-
+-../INSTALL-SOURCE:	$(srcdir)/mysql.info $(GT)
+-	perl -w $(GT) $(srcdir)/mysql.info "installing-source" "windows-source-build" > $@
+-
+-../INSTALL-WIN-SOURCE:	$(srcdir)/mysql.info $(GT)
+-	perl -w $(GT) $(srcdir)/mysql.info "windows-source-build" "post-installation" > $@
+-
+-# We put the description for the binary installation here so that
+-# people who download source wont have to see it. It is moved up to
+-# the toplevel by the script that makes the binary tar files.
+-INSTALL-BINARY:	$(srcdir)/mysql.info $(GT)
+-	perl -w $(GT) $(srcdir)/mysql.info "installing-binary" "installing-source" > $@
+-
+-../support-files/MacOSX/ReadMe.txt:	$(srcdir)/mysql.info $(GT)
+-	perl -w $(GT) $(srcdir)/mysql.info "mac-os-x-installation" "netware-installation" > $@
+-
+ # Don't update the files from bitkeeper
+ %::SCCS/s.%
+diff -urN mysql-4.1.23/Docs/mysql.info mysql-4.1/Docs/mysql.info
+--- mysql-4.1.23/Docs/mysql.info	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/Docs/mysql.info	2007-11-02 01:31:55.000000000 +0100
+@@ -1,27 +1,4 @@
+-This is mysql.info, produced by makeinfo version 4.8 from manual.texi.
+ 
+-START-INFO-DIR-ENTRY
+-* mysql: (mysql).               MySQL documentation.
+-END-INFO-DIR-ENTRY
+-
+-
+-File: mysql.info,  Node: Top,  Next: (dir),  Prev: (dir),  Up: (dir)
+-
+-This is an empty placeholder file for the MySQL manual.
+-
+-The MySQL manual is now maintained in a separate BitKeeper source tree!
+-Please see `http://www.mysql.com/doc/en/Installing_source_tree.html'
+-for more info on how to work with BitKeeper.
+-
+-This file will be replaced with the current `mysql.info' when building
+-the official source distribution.
+-
+-You can find a specific manual for any older version of MySQL in the
+-binary or source distribution for that version.
+-
+-
+-
+-Tag Table:
+-Node: Top166
+-
+-End Tag Table
++The MySQL Reference Manual is available in various formats on
++http://dev.mysql.com/doc; if you're interested in the DocBook XML
++sources go to http://svn.mysql.com.
+diff -urN mysql-4.1.23/Docs/Support/generate-text-files.pl mysql-4.1/Docs/Support/generate-text-files.pl
+--- mysql-4.1.23/Docs/Support/generate-text-files.pl	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/Docs/Support/generate-text-files.pl	1970-01-01 01:00:00.000000000 +0100
+@@ -1,43 +0,0 @@
+-#!/usr/bin/perl -w -*- perl -*-
+-# Generate text files from top directory from the manual.
+-
+-$from = shift(@ARGV);
+-$fnode = shift(@ARGV);
+-$tnode = shift(@ARGV);
+-
+-open(IN, "$from") || die "Cannot open $from: $!";
+-
+-$in = 0;
+-
+-while (<IN>)
+-{
+-  if ($in)
+-  {
+-    if (/Node: $tnode,/ || /\[index/)
+-    {
+-      $in = 0;
+-    }
+-    elsif (/^File: mysql.info/ || (/^/))
+-    {
+-      # Just Skip node beginnings
+-    }
+-    else
+-    {
+-      print;
+-    }
+-  }
+-  else
+-  {
+-    if (/Node: $fnode,/)
+-    {
+-      $in = 1;
+-      # Skip first empty line
+-      <IN>;
+-    }
+-  }
+-}
+-
+-close(IN);
+-
+-die "Could not find node \"$tnode\"" if ($in == 1);
+-exit 0;
+diff -urN mysql-4.1.23/heap/hp_delete.c mysql-4.1/heap/hp_delete.c
+--- mysql-4.1.23/heap/hp_delete.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/heap/hp_delete.c	2007-09-13 12:39:15.000000000 +0200
+@@ -73,10 +73,7 @@
+   int res;
+ 
+   if (flag) 
+-  {
+     info->last_pos= NULL; /* For heap_rnext/heap_rprev */
+-    info->lastkey_len= 0;
+-  }
+ 
+   custom_arg.keyseg= keyinfo->seg;
+   custom_arg.key_length= hp_rb_make_key(keyinfo, info->recbuf, record, recpos);
+diff -urN mysql-4.1.23/heap/hp_rfirst.c mysql-4.1/heap/hp_rfirst.c
+--- mysql-4.1.23/heap/hp_rfirst.c	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/heap/hp_rfirst.c	2007-09-13 12:39:15.000000000 +0200
+@@ -36,6 +36,17 @@
+ 	     sizeof(byte*));
+       info->current_ptr = pos;
+       memcpy(record, pos, (size_t)share->reclength);
++      /*
++        If we're performing index_first on a table that was taken from
++        table cache, info->lastkey_len is initialized to previous query.
++        Thus we set info->lastkey_len to proper value for subsequent
++        heap_rnext() calls.
++        This is needed for DELETE queries only, otherwise this variable is
++        not used.
++        Note that the same workaround may be needed for heap_rlast(), but
++        for now heap_rlast() is never used for DELETE queries.
++      */
++      info->lastkey_len= 0;
+       info->update = HA_STATE_AKTIV;
+     }
+     else
+diff -urN mysql-4.1.23/heap/hp_rnext.c mysql-4.1/heap/hp_rnext.c
+--- mysql-4.1.23/heap/hp_rnext.c	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/heap/hp_rnext.c	2007-09-13 12:39:15.000000000 +0200
+@@ -34,11 +34,40 @@
+     heap_rb_param custom_arg;
+ 
+     if (info->last_pos)
++    {
++      /*
++        We enter this branch for non-DELETE queries after heap_rkey()
++        or heap_rfirst(). As last key position (info->last_pos) is available,
++        we only need to climb the tree using tree_search_next().
++      */
+       pos = tree_search_next(&keyinfo->rb_tree, &info->last_pos,
+                              offsetof(TREE_ELEMENT, left),
+                              offsetof(TREE_ELEMENT, right));
++    }
++    else if (!info->lastkey_len)
++    {
++      /*
++        We enter this branch only for DELETE queries after heap_rfirst(). E.g.
++        DELETE FROM t1 WHERE a<10. As last key position is not available
++        (last key is removed by heap_delete()), we must restart search as it
++        is done in heap_rfirst().
++
++        It should be safe to handle this situation without this branch. That is
++        branch below should find smallest element in a tree as lastkey_len is
++        zero. tree_search_edge() is a kind of optimisation here as it should be
++        faster than tree_search_key().
++      */
++      pos= tree_search_edge(&keyinfo->rb_tree, info->parents,
++                            &info->last_pos, offsetof(TREE_ELEMENT, left));
++    }
+     else
+     {
++      /*
++        We enter this branch only for DELETE queries after heap_rkey(). E.g.
++        DELETE FROM t1 WHERE a=10. As last key position is not available
++        (last key is removed by heap_delete()), we must restart search as it
++        is done in heap_rkey().
++      */
+       custom_arg.keyseg = keyinfo->seg;
+       custom_arg.key_length = info->lastkey_len;
+       custom_arg.search_flag = SEARCH_SAME | SEARCH_FIND;
+diff -urN mysql-4.1.23/include/my_global.h mysql-4.1/include/my_global.h
+--- mysql-4.1.23/include/my_global.h	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/include/my_global.h	2007-06-22 14:12:39.000000000 +0200
+@@ -828,7 +828,12 @@
+ typedef unsigned long	ulong;		  /* Short for unsigned long */
+ #endif
+ #ifndef longlong_defined
+-#if defined(HAVE_LONG_LONG) && SIZEOF_LONG != 8
++/* 
++  Using [unsigned] long long is preferable as [u]longlong because we use 
++  [unsigned] long long unconditionally in many places, 
++  for example in constants with [U]LL suffix.
++*/
++#if defined(HAVE_LONG_LONG) && SIZEOF_LONG_LONG == 8
+ typedef unsigned long long int ulonglong; /* ulong or unsigned long long */
+ typedef long long int	longlong;
+ #else
+diff -urN mysql-4.1.23/include/mysql_com.h mysql-4.1/include/mysql_com.h
+--- mysql-4.1.23/include/mysql_com.h	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/include/mysql_com.h	2007-11-09 13:05:01.000000000 +0100
+@@ -291,6 +291,11 @@
+ int	net_real_write(NET *net,const char *packet,unsigned long len);
+ unsigned long my_net_read(NET *net);
+ 
++#ifdef _global_h
++void net_set_write_timeout(NET *net, uint timeout);
++void net_set_read_timeout(NET *net, uint timeout);
++#endif
++
+ /*
+   The following function is not meant for normal usage
+   Currently it's used internally by manager.c
+diff -urN mysql-4.1.23/include/my_sys.h mysql-4.1/include/my_sys.h
+--- mysql-4.1.23/include/my_sys.h	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/include/my_sys.h	2007-10-24 13:09:29.000000000 +0200
+@@ -784,6 +784,8 @@
+ extern CHARSET_INFO *get_charset_by_name(const char *cs_name, myf flags);
+ extern CHARSET_INFO *get_charset_by_csname(const char *cs_name,
+ 					   uint cs_flags, myf my_flags);
++extern CHARSET_INFO *get_compatible_charset_with_ctype(CHARSET_INFO
++                                                       *original_cs);
+ extern void free_charsets(void);
+ extern char *get_charsets_dir(char *buf);
+ extern my_bool my_charset_same(CHARSET_INFO *cs1, CHARSET_INFO *cs2);
+diff -urN mysql-4.1.23/INSTALL-SOURCE mysql-4.1/INSTALL-SOURCE
+--- mysql-4.1.23/INSTALL-SOURCE	1970-01-01 01:00:00.000000000 +0100
++++ mysql-4.1/INSTALL-SOURCE	2007-11-02 01:29:32.000000000 +0100
+@@ -0,0 +1,8 @@
++
++You can find information about how to install from a source distributions at
++
++  http://dev.mysql.com/doc/refman/4.1/en/installing-source.html
++
++The MySQL Reference Manual is also available in various formats on
++http://dev.mysql.com/doc; if you're interested in the DocBook XML
++sources go to http://svn.mysql.com.
+diff -urN mysql-4.1.23/INSTALL-WIN-SOURCE mysql-4.1/INSTALL-WIN-SOURCE
+--- mysql-4.1.23/INSTALL-WIN-SOURCE	1970-01-01 01:00:00.000000000 +0100
++++ mysql-4.1/INSTALL-WIN-SOURCE	2007-11-02 12:36:29.000000000 +0100
+@@ -0,0 +1,9 @@
++
++You can find information about how to install from a Windows source
++distributions at
++
++  http://dev.mysql.com/doc/refman/4.1/en/windows-source-build.html
++
++The MySQL Reference Manual is also available in various formats on
++http://dev.mysql.com/doc; if you're interested in the DocBook XML
++sources go to http://svn.mysql.com.
+diff -urN mysql-4.1.23/libmysqld/ha_blackhole.cc mysql-4.1/libmysqld/ha_blackhole.cc
+--- mysql-4.1.23/libmysqld/ha_blackhole.cc	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/libmysqld/ha_blackhole.cc	1970-01-01 01:00:00.000000000 +0100
+@@ -1,192 +0,0 @@
+-/* Copyright (C) 2005 MySQL AB
+-
+-  This program is free software; you can redistribute it and/or modify
+-  it under the terms of the GNU General Public License as published by
+-  the Free Software Foundation; either version 2 of the License, or
+-  (at your option) any later version.
+-
+-  This program is distributed in the hope that it will be useful,
+-  but WITHOUT ANY WARRANTY; without even the implied warranty of
+-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-  GNU General Public License for more details.
+-
+-  You should have received a copy of the GNU General Public License
+-  along with this program; if not, write to the Free Software
+-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+-
+-
+-#ifdef USE_PRAGMA_IMPLEMENTATION
+-#pragma implementation				// gcc: Class implementation
+-#endif
+-
+-#include "mysql_priv.h"
+-#ifdef HAVE_BLACKHOLE_DB
+-#include "ha_blackhole.h"
+-
+-
+-const char **ha_blackhole::bas_ext() const
+-{ 
+-  static const char *ext[]= { NullS }; 
+-  return ext; 
+-}
+-
+-int ha_blackhole::open(const char *name, int mode, uint test_if_locked)
+-{
+-  DBUG_ENTER("ha_blackhole::open");
+-  thr_lock_init(&thr_lock);
+-  thr_lock_data_init(&thr_lock,&lock,NULL);
+-  DBUG_RETURN(0);
+-}
+-
+-int ha_blackhole::close(void)
+-{
+-  DBUG_ENTER("ha_blackhole::close");
+-  thr_lock_delete(&thr_lock);
+-  DBUG_RETURN(0);
+-}
+-
+-int ha_blackhole::create(const char *name, TABLE *table_arg,
+-                         HA_CREATE_INFO *create_info)
+-{
+-  DBUG_ENTER("ha_blackhole::create");
+-  DBUG_RETURN(0);
+-}
+-
+-const char *ha_blackhole::index_type(uint key_number)
+-{
+-  DBUG_ENTER("ha_blackhole::index_type");
+-  DBUG_RETURN((table->key_info[key_number].flags & HA_FULLTEXT) ? 
+-              "FULLTEXT" :
+-              (table->key_info[key_number].flags & HA_SPATIAL) ?
+-              "SPATIAL" :
+-              (table->key_info[key_number].algorithm == HA_KEY_ALG_RTREE) ?
+-              "RTREE" :
+-              "BTREE");
+-}
+-
+-int ha_blackhole::write_row(byte * buf)
+-{
+-  DBUG_ENTER("ha_blackhole::write_row");
+-  DBUG_RETURN(0);
+-}
+-
+-int ha_blackhole::rnd_init(bool scan)
+-{
+-  DBUG_ENTER("ha_blackhole::rnd_init");
+-  DBUG_RETURN(0);
+-}
+-
+-
+-int ha_blackhole::rnd_next(byte *buf)
+-{
+-  DBUG_ENTER("ha_blackhole::rnd_next");
+-  DBUG_RETURN(HA_ERR_END_OF_FILE);
+-}
+-
+-
+-int ha_blackhole::rnd_pos(byte * buf, byte *pos)
+-{
+-  DBUG_ENTER("ha_blackhole::rnd_pos");
+-  DBUG_ASSERT(0);
+-  DBUG_RETURN(0);
+-}
+-
+-
+-void ha_blackhole::position(const byte *record)
+-{
+-  DBUG_ENTER("ha_blackhole::position");
+-  DBUG_ASSERT(0);
+-  DBUG_VOID_RETURN;
+-}
+-
+-
+-int ha_blackhole::info(uint flag)
+-{
+-  DBUG_ENTER("ha_blackhole::info");
+-
+-  records= 0;
+-  deleted= 0;
+-  errkey= 0;
+-  mean_rec_length= 0;
+-  data_file_length= 0;
+-  index_file_length= 0;
+-  max_data_file_length= 0;
+-  delete_length= 0;
+-  if (flag & HA_STATUS_AUTO)
+-    auto_increment_value= 1;
+-  DBUG_RETURN(0);
+-}
+-
+-int ha_blackhole::external_lock(THD *thd, int lock_type)
+-{
+-  DBUG_ENTER("ha_blackhole::external_lock");
+-  DBUG_RETURN(0);
+-}
+-
+-
+-uint ha_blackhole::lock_count(void) const
+-{
+-  DBUG_ENTER("ha_blackhole::lock_count");
+-  DBUG_RETURN(0);
+-}
+-
+-THR_LOCK_DATA **ha_blackhole::store_lock(THD *thd,
+-                                         THR_LOCK_DATA **to,
+-                                         enum thr_lock_type lock_type)
+-{
+-  DBUG_ENTER("ha_blackhole::store_lock");
+-  DBUG_RETURN(to);
+-}
+-
+-
+-int ha_blackhole::index_read(byte * buf, const byte * key,
+-                             uint key_len, enum ha_rkey_function find_flag)
+-{
+-  DBUG_ENTER("ha_blackhole::index_read");
+-  DBUG_RETURN(0);
+-}
+-
+-
+-int ha_blackhole::index_read_idx(byte * buf, uint idx, const byte * key,
+-                                 uint key_len, enum ha_rkey_function find_flag)
+-{
+-  DBUG_ENTER("ha_blackhole::index_read_idx");
+-  DBUG_RETURN(HA_ERR_END_OF_FILE);
+-}
+-
+-
+-int ha_blackhole::index_read_last(byte * buf, const byte * key, uint key_len)
+-{
+-  DBUG_ENTER("ha_blackhole::index_read_last");
+-  DBUG_RETURN(HA_ERR_END_OF_FILE);
+-}
+-
+-
+-int ha_blackhole::index_next(byte * buf)
+-{
+-  DBUG_ENTER("ha_blackhole::index_next");
+-  DBUG_RETURN(HA_ERR_END_OF_FILE);
+-}
+-
+-
+-int ha_blackhole::index_prev(byte * buf)
+-{
+-  DBUG_ENTER("ha_blackhole::index_prev");
+-  DBUG_RETURN(HA_ERR_END_OF_FILE);
+-}
+-
+-
+-int ha_blackhole::index_first(byte * buf)
+-{
+-  DBUG_ENTER("ha_blackhole::index_first");
+-  DBUG_RETURN(HA_ERR_END_OF_FILE);
+-}
+-
+-
+-int ha_blackhole::index_last(byte * buf)
+-{
+-  DBUG_ENTER("ha_blackhole::index_last");
+-  DBUG_RETURN(HA_ERR_END_OF_FILE);
+-}
+-
+-#endif /* HAVE_BLACKHOLE_DB */
+diff -urN mysql-4.1.23/libmysql_r/client_settings.h mysql-4.1/libmysql_r/client_settings.h
+--- mysql-4.1.23/libmysql_r/client_settings.h	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/libmysql_r/client_settings.h	1970-01-01 01:00:00.000000000 +0100
+@@ -1,66 +0,0 @@
+-/* Copyright (C) 2000 MySQL AB & MySQL Finland AB & TCX DataKonsult AB
+-   
+-   This program is free software; you can redistribute it and/or modify
+-   it under the terms of the GNU General Public License as published by
+-   the Free Software Foundation; either version 2 of the License, or
+-   (at your option) any later version.
+-   
+-   This program is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-   GNU General Public License for more details.
+-   
+-   You should have received a copy of the GNU General Public License
+-   along with this program; if not, write to the Free Software
+-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+-
+-extern uint		mysql_port;
+-extern my_string	mysql_unix_port;
+-
+-#define CLIENT_CAPABILITIES (CLIENT_LONG_PASSWORD | CLIENT_LONG_FLAG |	  \
+-                             CLIENT_TRANSACTIONS | \
+-			     CLIENT_PROTOCOL_41 | CLIENT_SECURE_CONNECTION)
+-
+-sig_handler pipe_sig_handler(int sig);
+-void read_user_name(char *name);
+-my_bool handle_local_infile(MYSQL *mysql, const char *net_filename);
+-
+-/*
+-  Let the user specify that we don't want SIGPIPE;  This doesn't however work
+-  with threaded applications as we can have multiple read in progress.
+-*/
+-
+-#if !defined(__WIN__) && defined(SIGPIPE) && !defined(THREAD)
+-#define init_sigpipe_variables  sig_return old_signal_handler=(sig_return) 0;
+-#define set_sigpipe(mysql)     if ((mysql)->client_flag & CLIENT_IGNORE_SIGPIPE) old_signal_handler=signal(SIGPIPE,pipe_sig_handler)
+-#define reset_sigpipe(mysql) if ((mysql)->client_flag & CLIENT_IGNORE_SIGPIPE) signal(SIGPIPE,old_signal_handler);
+-#else
+-#define init_sigpipe_variables
+-#define set_sigpipe(mysql)
+-#define reset_sigpipe(mysql)
+-#endif
+-
+-void mysql_read_default_options(struct st_mysql_options *options,
+-				const char *filename,const char *group);
+-void mysql_detach_stmt_list(LIST **stmt_list);
+-MYSQL * STDCALL
+-cli_mysql_real_connect(MYSQL *mysql,const char *host, const char *user,
+-		       const char *passwd, const char *db,
+-		       uint port, const char *unix_socket,ulong client_flag);
+-
+-void cli_mysql_close(MYSQL *mysql);
+-
+-MYSQL_FIELD * cli_list_fields(MYSQL *mysql);
+-my_bool cli_read_prepare_result(MYSQL *mysql, MYSQL_STMT *stmt);
+-MYSQL_DATA * cli_read_rows(MYSQL *mysql,MYSQL_FIELD *mysql_fields,
+-				   uint fields);
+-int cli_stmt_execute(MYSQL_STMT *stmt);
+-int cli_read_binary_rows(MYSQL_STMT *stmt);
+-int cli_unbuffered_fetch(MYSQL *mysql, char **row);
+-const char * cli_read_statistics(MYSQL *mysql);
+-int cli_read_change_user_result(MYSQL *mysql, char *buff, const char *passwd);
+-
+-#ifdef EMBEDDED_LIBRARY
+-int init_embedded_server(int argc, char **argv, char **groups);
+-void end_embedded_server();
+-#endif /*EMBEDDED_LIBRARY*/
+diff -urN mysql-4.1.23/myisam/ft_boolean_search.c mysql-4.1/myisam/ft_boolean_search.c
+--- mysql-4.1.23/myisam/ft_boolean_search.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/myisam/ft_boolean_search.c	2007-10-30 11:46:42.000000000 +0100
+@@ -446,7 +446,8 @@
+   {
+     if (cs->coll->instr(cs, p0, e0 - p0, s1, e1 - s1, m, 2) != 2)
+       return(0);
+-    if ((!s_after || p0 + m[1].beg == s0 || !true_word_char(cs, p0[m[1].beg-1])) &&
++    if ((!s_after || p0 + m[1].beg == s0 ||
++         !true_word_char(cs, p0[(int) m[1].beg - 1])) &&
+         (!e_before || p0 + m[1].end == e0 || !true_word_char(cs, p0[m[1].end])))
+       return(1);
+     p0+= m[1].beg;
+diff -urN mysql-4.1.23/myisam/mi_check.c mysql-4.1/myisam/mi_check.c
+--- mysql-4.1.23/myisam/mi_check.c	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/myisam/mi_check.c	2007-11-07 09:55:27.000000000 +0100
+@@ -940,7 +940,7 @@
+   ha_rows records,del_blocks;
+   my_off_t used,empty,pos,splits,start_recpos,
+ 	   del_length,link_used,start_block;
+-  byte	*record,*to;
++  byte	*record= 0, *to;
+   char llbuff[22],llbuff2[22],llbuff3[22];
+   ha_checksum intern_record_checksum;
+   ha_checksum key_checksum[MI_MAX_POSSIBLE_KEY];
+@@ -957,7 +957,7 @@
+       puts("- check record links");
+   }
+ 
+-  if (!(record= (byte*) my_malloc(info->s->base.pack_reclength,MYF(0))))
++  if (!mi_alloc_rec_buff(info, -1, &record))
+   {
+     mi_check_print_error(param,"Not enough memory for record");
+     DBUG_RETURN(-1);
+@@ -1364,12 +1364,12 @@
+     printf("Lost space:   %12s    Linkdata:     %10s\n",
+ 	   llstr(empty,llbuff),llstr(link_used,llbuff2));
+   }
+-  my_free((gptr) record,MYF(0));
++  my_free(mi_get_rec_buff_ptr(info, record), MYF(0));
+   DBUG_RETURN (error);
+  err:
+   mi_check_print_error(param,"got error: %d when reading datafile at record: %s",my_errno, llstr(records,llbuff));
+  err2:
+-  my_free((gptr) record,MYF(0));
++  my_free(mi_get_rec_buff_ptr(info, record), MYF(0));
+   param->testflag|=T_RETRY_WITHOUT_QUICK;
+   DBUG_RETURN(1);
+ } /* chk_data_link */
+@@ -1428,8 +1428,7 @@
+ 		      MYF(MY_WME | MY_WAIT_IF_FULL)))
+       goto err;
+   info->opt_flag|=WRITE_CACHE_USED;
+-  if (!(sort_param.record=(byte*) my_malloc((uint) share->base.pack_reclength,
+-					   MYF(0))) ||
++  if (!mi_alloc_rec_buff(info, -1, &sort_param.record) ||
+       !mi_alloc_rec_buff(info, -1, &sort_param.rec_buff))
+   {
+     mi_check_print_error(param, "Not enough memory for extra record");
+@@ -1631,7 +1630,8 @@
+   }
+   my_free(mi_get_rec_buff_ptr(info, sort_param.rec_buff),
+                             MYF(MY_ALLOW_ZERO_PTR));
+-  my_free(sort_param.record,MYF(MY_ALLOW_ZERO_PTR));
++  my_free(mi_get_rec_buff_ptr(info, sort_param.record),
++          MYF(MY_ALLOW_ZERO_PTR));
+   my_free(sort_info.buff,MYF(MY_ALLOW_ZERO_PTR));
+   VOID(end_io_cache(&param->read_cache));
+   info->opt_flag&= ~(READ_CACHE_USED | WRITE_CACHE_USED);
+@@ -2129,8 +2129,7 @@
+   info->opt_flag|=WRITE_CACHE_USED;
+   info->rec_cache.file=info->dfile;		/* for sort_delete_record */
+ 
+-  if (!(sort_param.record=(byte*) my_malloc((uint) share->base.pack_reclength,
+-					   MYF(0))) ||
++  if (!mi_alloc_rec_buff(info, -1, &sort_param.record) ||
+       !mi_alloc_rec_buff(info, -1, &sort_param.rec_buff))
+   {
+     mi_check_print_error(param, "Not enough memory for extra record");
+@@ -2415,7 +2414,8 @@
+ 
+   my_free(mi_get_rec_buff_ptr(info, sort_param.rec_buff),
+                             MYF(MY_ALLOW_ZERO_PTR));
+-  my_free(sort_param.record,MYF(MY_ALLOW_ZERO_PTR));
++  my_free(mi_get_rec_buff_ptr(info, sort_param.record),
++          MYF(MY_ALLOW_ZERO_PTR));
+   my_free((gptr) sort_info.key_block,MYF(MY_ALLOW_ZERO_PTR));
+   my_free((gptr) sort_info.ft_buf, MYF(MY_ALLOW_ZERO_PTR));
+   my_free(sort_info.buff,MYF(MY_ALLOW_ZERO_PTR));
+@@ -2493,6 +2493,7 @@
+   SORT_INFO sort_info;
+   ulonglong key_map=share->state.key_map;
+   pthread_attr_t thr_attr;
++  ulong max_pack_reclength;
+   DBUG_ENTER("mi_repair_parallel");
+ 
+   start_records=info->state->records;
+@@ -2649,10 +2650,13 @@
+ 
+   del=info->state->del;
+   param->glob_crc=0;
+-
++  /* for compressed tables */
++  max_pack_reclength= share->base.pack_reclength;
++  if (share->options & HA_OPTION_COMPRESS_RECORD)
++    set_if_bigger(max_pack_reclength, share->max_pack_length);
+   if (!(sort_param=(MI_SORT_PARAM *)
+         my_malloc((uint) share->base.keys *
+-		  (sizeof(MI_SORT_PARAM) + share->base.pack_reclength),
++		  (sizeof(MI_SORT_PARAM) + max_pack_reclength),
+ 		  MYF(MY_ZEROFILL))))
+   {
+     mi_check_print_error(param,"Not enough memory for key!");
+@@ -2704,7 +2708,7 @@
+     sort_param[i].max_pos=sort_param[i].pos=share->pack.header_length;
+ 
+     sort_param[i].record= (((char *)(sort_param+share->base.keys))+
+-			   (share->base.pack_reclength * i));
++			   (max_pack_reclength * i));
+     if (!mi_alloc_rec_buff(info, -1, &sort_param[i].rec_buff))
+     {
+       mi_check_print_error(param,"Not enough memory!");
+@@ -4320,7 +4324,7 @@
+ void update_auto_increment_key(MI_CHECK *param, MI_INFO *info,
+ 			       my_bool repair_only)
+ {
+-  byte *record;
++  byte *record= 0;
+   DBUG_ENTER("update_auto_increment_key");
+ 
+   if (!info->s->base.auto_key ||
+@@ -4340,8 +4344,7 @@
+     We have to use an allocated buffer instead of info->rec_buff as 
+     _mi_put_key_in_record() may use info->rec_buff
+   */
+-  if (!(record= (byte*) my_malloc((uint) info->s->base.pack_reclength,
+-				  MYF(0))))
++  if (!mi_alloc_rec_buff(info, -1, &record))
+   {
+     mi_check_print_error(param,"Not enough memory for extra record");
+     DBUG_VOID_RETURN;
+@@ -4353,7 +4356,7 @@
+     if (my_errno != HA_ERR_END_OF_FILE)
+     {
+       mi_extra(info,HA_EXTRA_NO_KEYREAD,0);
+-      my_free((char*) record, MYF(0));
++      my_free(mi_get_rec_buff_ptr(info, record), MYF(0));
+       mi_check_print_error(param,"%d when reading last record",my_errno);
+       DBUG_VOID_RETURN;
+     }
+@@ -4369,7 +4372,7 @@
+     set_if_bigger(info->s->state.auto_increment,auto_increment);
+   }
+   mi_extra(info,HA_EXTRA_NO_KEYREAD,0);
+-  my_free((char*) record, MYF(0));
++  my_free(mi_get_rec_buff_ptr(info, record), MYF(0));
+   update_state_info(param, info, UPDATE_AUTO_INC);
+   DBUG_VOID_RETURN;
+ }
+diff -urN mysql-4.1.23/myisam/mi_dynrec.c mysql-4.1/myisam/mi_dynrec.c
+--- mysql-4.1.23/myisam/mi_dynrec.c	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/myisam/mi_dynrec.c	2007-11-12 10:00:21.000000000 +0100
+@@ -145,6 +145,29 @@
+   DBUG_ENTER("write_dynamic_record");
+ 
+   flag=0;
++
++  /*
++    Check if we have enough room for the new record.
++    First we do simplified check to make usual case faster.
++    Then we do more precise check for the space left.
++    Though it still is not absolutely precise, as
++    we always use MI_MAX_DYN_BLOCK_HEADER while it can be
++    less in the most of the cases.
++  */
++
++  if (unlikely(info->s->base.max_data_file_length -
++               info->state->data_file_length <
++               reclength + MI_MAX_DYN_BLOCK_HEADER))
++  {
++    if (info->s->base.max_data_file_length - info->state->data_file_length +
++        info->state->empty - info->state->del * MI_MAX_DYN_BLOCK_HEADER <
++        reclength + MI_MAX_DYN_BLOCK_HEADER)
++    {
++      my_errno=HA_ERR_RECORD_FILE_FULL;
++      DBUG_RETURN(1);
++    }
++  }
++
+   do
+   {
+     if (_mi_find_writepos(info,reclength,&filepos,&length))
+@@ -577,6 +600,51 @@
+   DBUG_ENTER("update_dynamic_record");
+ 
+   flag=block_info.second_read=0;
++  /*
++     Check if we have enough room for the record.
++     First we do simplified check to make usual case faster.
++     Then we do more precise check for the space left.
++     Though it still is not absolutely precise, as
++     we always use MI_MAX_DYN_BLOCK_HEADER while it can be
++     less in the most of the cases.
++  */
++
++  /*
++    compare with just the reclength as we're going
++    to get some space from the old replaced record
++  */
++  if (unlikely(info->s->base.max_data_file_length -
++        info->state->data_file_length < reclength))
++  {
++    /*
++       let's read the old record's block to find out the length of the
++       old record
++    */
++    if ((error=_mi_get_block_info(&block_info,info->dfile,filepos))
++        & (BLOCK_DELETED | BLOCK_ERROR | BLOCK_SYNC_ERROR | BLOCK_FATAL_ERROR))
++    {
++      DBUG_PRINT("error",("Got wrong block info"));
++      if (!(error & BLOCK_FATAL_ERROR))
++        my_errno=HA_ERR_WRONG_IN_RECORD;
++      goto err;
++    }
++
++    /*
++      if new record isn't longer, we can go on safely
++    */
++    if (block_info.rec_len < reclength)
++    {
++      if (info->s->base.max_data_file_length - info->state->data_file_length +
++          info->state->empty - info->state->del * MI_MAX_DYN_BLOCK_HEADER <
++          reclength - block_info.rec_len + MI_MAX_DYN_BLOCK_HEADER)
++      {
++        my_errno=HA_ERR_RECORD_FILE_FULL;
++        goto err;
++      }
++    }
++    block_info.second_read=0;
++  }
++
+   while (reclength > 0)
+   {
+     if (filepos != info->s->state.dellink)
+diff -urN mysql-4.1.23/myisam/mi_open.c mysql-4.1/myisam/mi_open.c
+--- mysql-4.1.23/myisam/mi_open.c	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/myisam/mi_open.c	2007-11-07 09:55:27.000000000 +0100
+@@ -659,8 +659,11 @@
+     /* to simplify initial init of info->rec_buf in mi_open and mi_extra */
+     if (length == (ulong) -1)
+     {
+-      length= max(info->s->base.pack_reclength,
+-                  info->s->base.max_key_length);
++      if (info->s->options & HA_OPTION_COMPRESS_RECORD)
++        length= max(info->s->base.pack_reclength, info->s->max_pack_length);
++      else
++        length= info->s->base.pack_reclength;
++      length= max(length, info->s->base.max_key_length);
+       /* Avoid unnecessary realloc */
+       if (newptr && length == old_length)
+ 	return newptr;
+diff -urN mysql-4.1.23/myisam/mi_packrec.c mysql-4.1/myisam/mi_packrec.c
+--- mysql-4.1.23/myisam/mi_packrec.c	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/myisam/mi_packrec.c	2007-11-07 09:55:27.000000000 +0100
+@@ -164,7 +164,6 @@
+   share->pack.header_length=	uint4korr(header+4);
+   share->min_pack_length=(uint) uint4korr(header+8);
+   share->max_pack_length=(uint) uint4korr(header+12);
+-  set_if_bigger(share->base.pack_reclength,share->max_pack_length);
+   elements=uint4korr(header+16);
+   intervall_length=uint4korr(header+20);
+   trees=uint2korr(header+24);
+diff -urN mysql-4.1.23/myisam/mi_rkey.c mysql-4.1/myisam/mi_rkey.c
+--- mysql-4.1.23/myisam/mi_rkey.c	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/myisam/mi_rkey.c	2007-08-01 11:54:13.000000000 +0200
+@@ -95,42 +95,63 @@
+                     myisam_read_vec[search_flag], info->s->state.key_root[inx]))
+     {
+       /*
+-        If we searching for a partial key (or using >, >=, < or <=) and
+-        the data is outside of the data file, we need to continue searching
+-        for the first key inside the data file
++        Found a key, but it might not be usable. We cannot use rows that
++        are inserted by other threads after we got our table lock
++        ("concurrent inserts"). The record may not even be present yet.
++        Keys are inserted into the index(es) before the record is
++        inserted into the data file. When we got our table lock, we
++        saved the current data_file_length. Concurrent inserts always go
++        to the end of the file. So we can test if the found key
++        references a new record.
+       */
+-      if (info->lastpos >= info->state->data_file_length &&
+-          (search_flag != HA_READ_KEY_EXACT ||
+-           last_used_keyseg != keyinfo->seg + keyinfo->keysegs))
++      if (info->lastpos >= info->state->data_file_length)
+       {
+-        do
++        /* The key references a concurrently inserted record. */
++        if (search_flag == HA_READ_KEY_EXACT &&
++            last_used_keyseg == keyinfo->seg + keyinfo->keysegs)
++        {
++          /* Simply ignore the key if it matches exactly. (Bug #29838) */
++          my_errno= HA_ERR_KEY_NOT_FOUND;
++          info->lastpos= HA_OFFSET_ERROR;
++        }
++        else
+         {
+-          uint not_used[2];
+-          /*
+-            Skip rows that are inserted by other threads since we got a lock
+-            Note that this can only happen if we are not searching after an
+-            full length exact key, because the keys are sorted
+-            according to position
+-          */
+-          if  (_mi_search_next(info, keyinfo, info->lastkey,
+-                               info->lastkey_length,
+-                               myisam_readnext_vec[search_flag],
+-                               info->s->state.key_root[inx]))
+-            break;
+           /*
+-            Check that the found key does still match the search.
+-            _mi_search_next() delivers the next key regardless of its
+-            value.
++            If searching for a partial key (or using >, >=, < or <=) and
++            the data is outside of the data file, we need to continue
++            searching for the first key inside the data file.
+           */
+-          if (search_flag == HA_READ_KEY_EXACT &&
+-              ha_key_cmp(keyinfo->seg, key_buff, info->lastkey, use_key_length,
+-                         SEARCH_FIND, not_used))
++          do
+           {
+-            my_errno= HA_ERR_KEY_NOT_FOUND;
+-            info->lastpos= HA_OFFSET_ERROR;
+-            break;
+-          }
+-        } while (info->lastpos >= info->state->data_file_length);
++            uint not_used[2];
++            /*
++              Skip rows that are inserted by other threads since we got
++              a lock. Note that this can only happen if we are not
++              searching after a full length exact key, because the keys
++              are sorted according to position.
++            */
++            if  (_mi_search_next(info, keyinfo, info->lastkey,
++                                 info->lastkey_length,
++                                 myisam_readnext_vec[search_flag],
++                                 info->s->state.key_root[inx]))
++              break; /* purecov: inspected */
++            /*
++              Check that the found key does still match the search.
++              _mi_search_next() delivers the next key regardless of its
++              value.
++            */
++            if (search_flag == HA_READ_KEY_EXACT &&
++                ha_key_cmp(keyinfo->seg, key_buff, info->lastkey,
++                           use_key_length, SEARCH_FIND, not_used))
++            {
++              /* purecov: begin inspected */
++              my_errno= HA_ERR_KEY_NOT_FOUND;
++              info->lastpos= HA_OFFSET_ERROR;
++              break;
++              /* purecov: end */
++            }
++          } while (info->lastpos >= info->state->data_file_length);
++        }
+       }
+     }
+   }
+diff -urN mysql-4.1.23/myisam/myisamchk.c mysql-4.1/myisam/myisamchk.c
+--- mysql-4.1.23/myisam/myisamchk.c	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/myisam/myisamchk.c	2007-11-07 09:55:27.000000000 +0100
+@@ -338,7 +338,7 @@
+     (gptr*) &ft_stopword_file, (gptr*) &ft_stopword_file, 0, GET_STR,
+     REQUIRED_ARG, 0, 0, 0, 0, 0, 0},
+   {"stats_method", OPT_STATS_METHOD,
+-   "Specifies how index statistics collection code should threat NULLs. "
++   "Specifies how index statistics collection code should treat NULLs. "
+    "Possible values of name are \"nulls_unequal\" (default behavior for 4.1/5.0), "
+    "\"nulls_equal\" (emulate 4.0 behavior), and \"nulls_ignored\".",
+    (gptr*) &myisam_stats_method_str, (gptr*) &myisam_stats_method_str, 0,
+@@ -453,7 +453,7 @@
+ 		      MySQL faster.  You can check the calculated distribution\n\
+ 		      by using '--description --verbose table_name'.\n\
+   --stats_method=name Specifies how index statistics collection code should\n\
+-                      threat NULLs. Possible values of name are \"nulls_unequal\"\n\
++                      treat NULLs. Possible values of name are \"nulls_unequal\"\n\
+                       (default for 4.1/5.0), \"nulls_equal\" (emulate 4.0), and \n\
+                       \"nulls_ignored\".\n\
+   -d, --description   Prints some information about table.\n\
+@@ -1543,8 +1543,8 @@
+     mi_check_print_error(param,"Not enough memory for key block");
+     goto err;
+   }
+-  if (!(sort_param.record=(byte*) my_malloc((uint) share->base.pack_reclength,
+-					   MYF(0))))
++
++  if (!mi_alloc_rec_buff(info, -1, &sort_param.record))
+   {
+     mi_check_print_error(param,"Not enough memory for record");
+     goto err;
+@@ -1639,7 +1639,8 @@
+   {
+     my_afree((gptr) temp_buff);
+   }
+-  my_free(sort_param.record,MYF(MY_ALLOW_ZERO_PTR));
++  my_free(mi_get_rec_buff_ptr(info, sort_param.record),
++          MYF(MY_ALLOW_ZERO_PTR));
+   info->opt_flag&= ~(READ_CACHE_USED | WRITE_CACHE_USED);
+   VOID(end_io_cache(&info->rec_cache));
+   my_free(sort_info.buff,MYF(MY_ALLOW_ZERO_PTR));
+diff -urN mysql-4.1.23/myisam/rt_index.c mysql-4.1/myisam/rt_index.c
+--- mysql-4.1.23/myisam/rt_index.c	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/myisam/rt_index.c	2007-10-05 12:40:31.000000000 +0200
+@@ -485,15 +485,16 @@
+ 			     uint key_length, uchar *page_buf, uint nod_flag)
+ {
+   double increase;
+-  double best_incr = DBL_MAX;
++  double best_incr;
+   double area;
+   double best_area;
+-  uchar *best_key;
++  uchar *best_key= NULL;
+   uchar *k = rt_PAGE_FIRST_KEY(page_buf, nod_flag);
+   uchar *last = rt_PAGE_END(page_buf);
+ 
+   LINT_INIT(best_area);
+   LINT_INIT(best_key);
++  LINT_INIT(best_incr);
+ 
+   for (; k < last; k = rt_PAGE_NEXT_KEY(k, key_length, nod_flag))
+   {
+@@ -502,22 +503,13 @@
+                                         &area)) == -1.0)
+       return NULL;
+     /* The following should be safe, even if we compare doubles */
+-    if (increase < best_incr)
++    if (!best_key || increase < best_incr ||
++        ((increase == best_incr) && (area < best_area)))
+     {
+       best_key = k;
+       best_area = area;
+       best_incr = increase;
+     }
+-    else
+-    {
+-      /* The following should be safe, even if we compare doubles */
+-      if ((increase == best_incr) && (area < best_area))
+-      {
+-        best_key = k;
+-        best_area = area;
+-        best_incr = increase;
+-      }
+-    }
+   }
+   return best_key;
+ }
+diff -urN mysql-4.1.23/myisam/rt_mbr.c mysql-4.1/myisam/rt_mbr.c
+--- mysql-4.1.23/myisam/rt_mbr.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/myisam/rt_mbr.c	2007-10-05 12:40:31.000000000 +0200
+@@ -525,7 +525,10 @@
+ }
+ 
+ /*
+-Calculates MBR_AREA(a+b) - MBR_AREA(a)
++  Calculates MBR_AREA(a+b) - MBR_AREA(a)
++  Note: when 'a' and 'b' objects are far from each other,
++  the area increase can be really big, so this function
++  can return 'inf' as a result.
+ */
+ double rtree_area_increase(HA_KEYSEG *keyseg, uchar* a, uchar* b, 
+                           uint key_length, double *ab_area)
+diff -urN mysql-4.1.23/myisam/sort.c mysql-4.1/myisam/sort.c
+--- mysql-4.1.23/myisam/sort.c	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/myisam/sort.c	2007-10-11 12:28:08.000000000 +0200
+@@ -559,9 +559,10 @@
+       if (!mergebuf)
+       {
+         length=param->sort_buffer_length;
+-        while (length >= MIN_SORT_MEMORY && !mergebuf)
++        while (length >= MIN_SORT_MEMORY)
+         {
+-          mergebuf=my_malloc(length, MYF(0));
++          if ((mergebuf= my_malloc(length, MYF(0))))
++              break;
+           length=length*3/4;
+         }
+         if (!mergebuf)
+@@ -897,6 +898,7 @@
+ 
+   count=error=0;
+   maxcount=keys/((uint) (Tb-Fb) +1);
++  DBUG_ASSERT(maxcount > 0);
+   LINT_INIT(to_start_filepos);
+   if (to_file)
+     to_start_filepos=my_b_tell(to_file);
+diff -urN mysql-4.1.23/mysql-test/include/ctype_common.inc mysql-4.1/mysql-test/include/ctype_common.inc
+--- mysql-4.1.23/mysql-test/include/ctype_common.inc	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/include/ctype_common.inc	2007-10-04 07:19:59.000000000 +0200
+@@ -51,6 +51,15 @@
+ SELECT c1 as want1result  from t1 where c1 like 'location%';
+ DROP TABLE t1;
+ 
++#
++# Bug #31070: crash during conversion of charsets
++#
++create table t1 (a set('a') not null);
++insert into t1 values (),();
++select cast(a as char(1)) from t1;
++select a sounds like a from t1;
++drop table t1;
++
+ DROP DATABASE d1;
+ # Restore settings
+ USE test;
+diff -urN mysql-4.1.23/mysql-test/lib/mtr_misc.pl mysql-4.1/mysql-test/lib/mtr_misc.pl
+--- mysql-4.1.23/mysql-test/lib/mtr_misc.pl	2007-12-02 20:38:50.000000000 +0100
++++ mysql-4.1/mysql-test/lib/mtr_misc.pl	2007-08-29 14:39:39.000000000 +0200
+@@ -5,6 +5,7 @@
+ # same name.
+ 
+ use strict;
++use File::Find;
+ 
+ sub mtr_full_hostname ();
+ sub mtr_short_hostname ();
+@@ -17,6 +18,7 @@
+ sub mtr_exe_exists(@);
+ sub mtr_exe_maybe_exists(@);
+ sub mtr_copy_dir($$);
++sub mtr_rmtree($);
+ sub mtr_same_opts($$);
+ sub mtr_cmp_opts($$);
+ 
+@@ -202,6 +204,64 @@
+ }
+ 
+ 
++sub mtr_rmtree($) {
++  my ($dir)= @_;
++  my $need_file_find= 0;
++  mtr_verbose("mtr_rmtree: $dir");
++
++  {
++    # Try to use File::Path::rmtree. Recent versions
++    # handles removal of directories and files that don't
++    # have full permissions, while older versions
++    # may have a problem with that and we use our own version
++
++    local $SIG{__WARN__}= sub {
++      $need_file_find= 1;
++      mtr_warning($_[0]);
++    };
++    rmtree($dir);
++  }
++  if ( $need_file_find ) {
++    mtr_warning("rmtree($dir) failed, trying with File::Find...");
++
++    my $errors= 0;
++
++    # chmod
++    find( {
++	   no_chdir => 1,
++	   wanted => sub {
++	     chmod(0777, $_)
++	       or mtr_warning("couldn't chmod(0777, $_): $!") and $errors++;
++	   }
++	  },
++	  $dir
++	);
++
++    # rm
++    finddepth( {
++	   no_chdir => 1,
++	   wanted => sub {
++	     my $file= $_;
++	     # Use special underscore (_) filehandle, caches stat info
++	     if (!-l $file and -d _ ) {
++	       rmdir($file) or
++		 mtr_warning("couldn't rmdir($file): $!") and $errors++;
++	     } else {
++	       unlink($file)
++		 or mtr_warning("couldn't unlink($file): $!") and $errors++;
++	     }
++	   }
++	  },
++	  $dir
++	);
++
++    mtr_error("Failed to remove '$dir'") if $errors;
++
++    mtr_report("OK, that worked!");
++  }
++}
++
++
+ sub mtr_same_opts ($$) {
+   my $l1= shift;
+   my $l2= shift;
+diff -urN mysql-4.1.23/mysql-test/mysql-test-run.pl mysql-4.1/mysql-test/mysql-test-run.pl
+--- mysql-4.1.23/mysql-test/mysql-test-run.pl	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/mysql-test-run.pl	2007-11-07 09:55:27.000000000 +0100
+@@ -1880,6 +1880,21 @@
+     ($lib_udf_example ?  dirname($lib_udf_example) : "") .
+       ($ENV{'LD_LIBRARY_PATH'} ? ":$ENV{'LD_LIBRARY_PATH'}" : "");
+ 
++  # ----------------------------------------------------
++  # Setup env so childs can execute myisampack and myisamchk
++  # ----------------------------------------------------
++  $ENV{'MYISAMCHK'}= mtr_native_path(mtr_exe_exists(
++                       vs_config_dirs('storage/myisam', 'myisamchk'),
++                       vs_config_dirs('myisam', 'myisamchk'),
++                       "$path_client_bindir/myisamchk",
++                       "$glob_basedir/storage/myisam/myisamchk",
++                       "$glob_basedir/myisam/myisamchk"));
++  $ENV{'MYISAMPACK'}= mtr_native_path(mtr_exe_exists(
++                        vs_config_dirs('storage/myisam', 'myisampack'),
++                        vs_config_dirs('myisam', 'myisampack'),
++                        "$path_client_bindir/myisampack",
++                        "$glob_basedir/storage/myisam/myisampack",
++                        "$glob_basedir/myisam/myisampack"));
+ 
+   # ----------------------------------------------------
+   # We are nice and report a bit about our settings
+@@ -1988,7 +2003,7 @@
+       {
+ 	# Remove the directory which the link points at
+ 	mtr_verbose("Removing " . readlink($opt_vardir));
+-	rmtree(readlink($opt_vardir));
++	mtr_rmtree(readlink($opt_vardir));
+ 
+ 	# Remove the "var" symlink
+ 	mtr_verbose("unlink($opt_vardir)");
+@@ -2016,7 +2031,7 @@
+ 	foreach my $bin ( glob("$opt_vardir/*") )
+ 	{
+ 	  mtr_verbose("Removing bin $bin");
+-	  rmtree($bin);
++	  mtr_rmtree($bin);
+ 	}
+       }
+     }
+@@ -2024,7 +2039,7 @@
+     {
+       # Remove the entire "var" dir
+       mtr_verbose("Removing $opt_vardir/");
+-      rmtree("$opt_vardir/");
++      mtr_rmtree("$opt_vardir/");
+     }
+ 
+     if ( $opt_mem )
+@@ -2033,7 +2048,7 @@
+       # remove the $opt_mem dir to assure the symlink
+       # won't point at an old directory
+       mtr_verbose("Removing $opt_mem");
+-      rmtree($opt_mem);
++      mtr_rmtree($opt_mem);
+     }
+ 
+   }
+@@ -2046,11 +2061,11 @@
+     # Remove the var/ dir in mysql-test dir if any
+     # this could be an old symlink that shouldn't be there
+     mtr_verbose("Removing $default_vardir");
+-    rmtree($default_vardir);
++    mtr_rmtree($default_vardir);
+ 
+     # Remove the "var" dir
+     mtr_verbose("Removing $opt_vardir/");
+-    rmtree("$opt_vardir/");
++    mtr_rmtree("$opt_vardir/");
+   }
+ }
+ 
+@@ -2143,16 +2158,23 @@
+     close FILE;
+   }
+ 
+-  chmod(oct("0755"), $test_file);
+-  unlink($test_file);
++  # Some filesystems( for example CIFS) allows reading a file
++  # although mode was set to 0000, but in that case a stat on
++  # the file will not return 0000
++  my $file_mode= (stat($test_file))[2] & 07777;
+ 
+   $ENV{'MYSQL_TEST_ROOT'}= "NO";
+-  if ($result eq "MySQL")
++  mtr_verbose("result: $result, file_mode: $file_mode");
++  if ($result eq "MySQL" && $file_mode == 0)
+   {
+     mtr_warning("running this script as _root_ will cause some " .
+                 "tests to be skipped");
+     $ENV{'MYSQL_TEST_ROOT'}= "YES";
+   }
++
++  chmod(oct("0755"), $test_file);
++  unlink($test_file);
++
+ }
+ 
+ 
+@@ -2956,7 +2978,7 @@
+     {
+       my $data_dir= $slave->[$idx]->{'path_myddir'};
+       my $name= basename($data_dir);
+-      rmtree($data_dir);
++      mtr_rmtree($data_dir);
+       mtr_copy_dir("$path_snapshot/$name", $data_dir);
+     }
+   }
+@@ -3099,9 +3121,12 @@
+ {
+   my ($tinfo)= @_;
+ 
++  # Set default message
++  $tinfo->{'comment'}= "Detected by testcase(no log file)";
++
+   # Open mysqltest.log
+-  my $F= IO::File->new($path_timefile) or
+-    mtr_error("can't open file \"$path_timefile\": $!");
++  my $F= IO::File->new($path_timefile)
++    or return;
+   my $reason;
+ 
+   while ( my $line= <$F> )
+@@ -3154,8 +3179,8 @@
+   my ($tinfo)= @_;
+ 
+   # Open mysqltest.log
+-  my $F= IO::File->new($path_timefile) or
+-    mtr_error("can't open file \"$path_timefile\": $!");
++  my $F= IO::File->new($path_timefile)
++    or return;
+ 
+   while ( my $line= <$F> )
+   {
+@@ -3300,7 +3325,7 @@
+ sub save_installed_db () {
+ 
+   mtr_report("Saving snapshot of installed databases");
+-  rmtree($path_snapshot);
++  mtr_rmtree($path_snapshot);
+ 
+   foreach my $data_dir (@data_dir_lst)
+   {
+@@ -3347,7 +3372,7 @@
+     {
+       my $name= basename($data_dir);
+       save_files_before_restore($test_name, $data_dir);
+-      rmtree("$data_dir");
++      mtr_rmtree("$data_dir");
+       mtr_copy_dir("$path_snapshot/$name", "$data_dir");
+     }
+ 
+@@ -3357,7 +3382,7 @@
+     {
+       foreach my $ndbd (@{$cluster->{'ndbds'}})
+       {
+-	rmtree("$ndbd->{'path_fs'}" );
++	mtr_rmtree("$ndbd->{'path_fs'}" );
+       }
+     }
+   }
+@@ -3815,6 +3840,9 @@
+     $wait_for_pid_file= 0;
+   }
+ 
++  # Remove the pidfile
++  unlink($mysqld->{'path_pid'});
++
+   if ( defined $exe )
+   {
+     $pid= mtr_spawn($exe, $args, "",
+diff -urN mysql-4.1.23/mysql-test/r/almost_full.result mysql-4.1/mysql-test/r/almost_full.result
+--- mysql-4.1.23/mysql-test/r/almost_full.result	1970-01-01 01:00:00.000000000 +0100
++++ mysql-4.1/mysql-test/r/almost_full.result	2007-11-12 10:00:21.000000000 +0100
+@@ -0,0 +1,29 @@
++drop table if exists t1;
++set global myisam_data_pointer_size=2;
++CREATE TABLE t1 (a int auto_increment primary key not null, b longtext) ENGINE=MyISAM;
++DELETE FROM t1 WHERE a=1 or a=5;
++INSERT INTO t1 SET b=repeat('a',600);
++ERROR HY000: The table 't1' is full
++CHECK TABLE t1 EXTENDED;
++Table	Op	Msg_type	Msg_text
++test.t1	check	warning	Datafile is almost full, 65448 of 65534 used
++test.t1	check	status	OK
++UPDATE t1 SET b=repeat('a', 800) where a=10;
++ERROR HY000: The table 't1' is full
++CHECK TABLE t1 EXTENDED;
++Table	Op	Msg_type	Msg_text
++test.t1	check	warning	Datafile is almost full, 65448 of 65534 used
++test.t1	check	status	OK
++INSERT INTO t1 SET b=repeat('a',400);
++CHECK TABLE t1 EXTENDED;
++Table	Op	Msg_type	Msg_text
++test.t1	check	warning	Datafile is almost full, 65448 of 65534 used
++test.t1	check	status	OK
++DELETE FROM t1 WHERE a=2 or a=6;
++UPDATE t1 SET b=repeat('a', 600) where a=11;
++CHECK TABLE t1 EXTENDED;
++Table	Op	Msg_type	Msg_text
++test.t1	check	warning	Datafile is almost full, 65448 of 65534 used
++test.t1	check	status	OK
++drop table t1;
++set global myisam_data_pointer_size=default;
+diff -urN mysql-4.1.23/mysql-test/r/bigint.result mysql-4.1/mysql-test/r/bigint.result
+--- mysql-4.1.23/mysql-test/r/bigint.result	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/r/bigint.result	2007-11-12 12:51:40.000000000 +0100
+@@ -135,3 +135,9 @@
+ value64	value32	value64	value32
+ 9223372036854775807	2	9223372036854775807	4
+ drop table t1, t2;
++create table t1 (sint64 bigint not null);
++insert into t1 values (-9223372036854775808);
++select * from t1;
++sint64
++-9223372036854775808
++drop table t1;
+diff -urN mysql-4.1.23/mysql-test/r/ctype_big5.result mysql-4.1/mysql-test/r/ctype_big5.result
+--- mysql-4.1.23/mysql-test/r/ctype_big5.result	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/r/ctype_big5.result	2007-10-04 07:19:59.000000000 +0200
+@@ -52,6 +52,17 @@
+ want1result
+ location
+ DROP TABLE t1;
++create table t1 (a set('a') not null);
++insert into t1 values (),();
++select cast(a as char(1)) from t1;
++cast(a as char(1))
++
++
++select a sounds like a from t1;
++a sounds like a
++1
++1
++drop table t1;
+ DROP DATABASE d1;
+ USE test;
+ SET character_set_server= @safe_character_set_server;
+diff -urN mysql-4.1.23/mysql-test/r/ctype_euckr.result mysql-4.1/mysql-test/r/ctype_euckr.result
+--- mysql-4.1.23/mysql-test/r/ctype_euckr.result	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/r/ctype_euckr.result	2007-10-04 07:19:59.000000000 +0200
+@@ -52,6 +52,17 @@
+ want1result
+ location
+ DROP TABLE t1;
++create table t1 (a set('a') not null);
++insert into t1 values (),();
++select cast(a as char(1)) from t1;
++cast(a as char(1))
++
++
++select a sounds like a from t1;
++a sounds like a
++1
++1
++drop table t1;
+ DROP DATABASE d1;
+ USE test;
+ SET character_set_server= @safe_character_set_server;
+diff -urN mysql-4.1.23/mysql-test/r/ctype_gb2312.result mysql-4.1/mysql-test/r/ctype_gb2312.result
+--- mysql-4.1.23/mysql-test/r/ctype_gb2312.result	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/r/ctype_gb2312.result	2007-10-04 07:19:59.000000000 +0200
+@@ -52,6 +52,17 @@
+ want1result
+ location
+ DROP TABLE t1;
++create table t1 (a set('a') not null);
++insert into t1 values (),();
++select cast(a as char(1)) from t1;
++cast(a as char(1))
++
++
++select a sounds like a from t1;
++a sounds like a
++1
++1
++drop table t1;
+ DROP DATABASE d1;
+ USE test;
+ SET character_set_server= @safe_character_set_server;
+diff -urN mysql-4.1.23/mysql-test/r/ctype_gbk.result mysql-4.1/mysql-test/r/ctype_gbk.result
+--- mysql-4.1.23/mysql-test/r/ctype_gbk.result	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/r/ctype_gbk.result	2007-10-04 07:19:59.000000000 +0200
+@@ -52,6 +52,17 @@
+ want1result
+ location
+ DROP TABLE t1;
++create table t1 (a set('a') not null);
++insert into t1 values (),();
++select cast(a as char(1)) from t1;
++cast(a as char(1))
++
++
++select a sounds like a from t1;
++a sounds like a
++1
++1
++drop table t1;
+ DROP DATABASE d1;
+ USE test;
+ SET character_set_server= @safe_character_set_server;
+diff -urN mysql-4.1.23/mysql-test/r/ctype_uca.result mysql-4.1/mysql-test/r/ctype_uca.result
+--- mysql-4.1.23/mysql-test/r/ctype_uca.result	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/r/ctype_uca.result	2007-10-04 07:19:59.000000000 +0200
+@@ -2371,6 +2371,17 @@
+ want1result
+ location
+ DROP TABLE t1;
++create table t1 (a set('a') not null);
++insert into t1 values (),();
++select cast(a as char(1)) from t1;
++cast(a as char(1))
++
++
++select a sounds like a from t1;
++a sounds like a
++1
++1
++drop table t1;
+ DROP DATABASE d1;
+ USE test;
+ SET character_set_server= @safe_character_set_server;
+diff -urN mysql-4.1.23/mysql-test/r/ctype_ucs.result mysql-4.1/mysql-test/r/ctype_ucs.result
+--- mysql-4.1.23/mysql-test/r/ctype_ucs.result	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/r/ctype_ucs.result	2007-10-24 13:09:29.000000000 +0200
+@@ -803,4 +803,10 @@
+ ????????
+ ????????????????
+ drop table bug20536;
++CREATE TABLE t1(a TEXT CHARSET ucs2 COLLATE ucs2_unicode_ci);
++INSERT INTO t1 VALUES('abcd');
++SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abcd' IN BOOLEAN MODE);
++a
++abcd
++DROP TABLE t1;
+ End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/delete.result mysql-4.1/mysql-test/r/delete.result
+--- mysql-4.1.23/mysql-test/r/delete.result	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/mysql-test/r/delete.result	2007-09-10 14:26:49.000000000 +0200
+@@ -193,4 +193,15 @@
+ @a
+ 1
+ drop table t1;
++CREATE TABLE t1 (
++`date` date ,
++`time` time ,
++`seq` int(10) unsigned NOT NULL auto_increment,
++PRIMARY KEY  (`seq`),
++KEY `seq` (`seq`),
++KEY `time` (`time`),
++KEY `date` (`date`)
++);
++DELETE FROM t1 ORDER BY date ASC, time ASC LIMIT 1;
++drop table t1;
+ End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/fulltext.result mysql-4.1/mysql-test/r/fulltext.result
+--- mysql-4.1.23/mysql-test/r/fulltext.result	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/r/fulltext.result	2007-10-30 11:46:42.000000000 +0100
+@@ -454,3 +454,9 @@
+ SELECT * FROM t1 WHERE MATCH(a) AGAINST('test');
+ ERROR HY000: Can't find FULLTEXT index matching the column list
+ DROP TABLE t1;
++CREATE TABLE t1(a TEXT);
++INSERT INTO t1 VALUES(' aaaaa aaaa');
++SELECT * FROM t1 WHERE MATCH(a) AGAINST ('"aaaa"' IN BOOLEAN MODE);
++a
++ aaaaa aaaa
++DROP TABLE t1;
+diff -urN mysql-4.1.23/mysql-test/r/func_str.result mysql-4.1/mysql-test/r/func_str.result
+--- mysql-4.1.23/mysql-test/r/func_str.result	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/r/func_str.result	2007-10-30 09:35:02.000000000 +0100
+@@ -711,9 +711,9 @@
+ show create table t1;
+ Table	Create Table
+ t1	CREATE TABLE `t1` (
+-  `bin(130)` char(64) NOT NULL default '',
+-  `oct(130)` char(64) NOT NULL default '',
+-  `conv(130,16,10)` char(64) NOT NULL default '',
++  `bin(130)` char(64) default NULL,
++  `oct(130)` char(64) default NULL,
++  `conv(130,16,10)` char(64) default NULL,
+   `hex(130)` char(6) NOT NULL default '',
+   `char(130)` char(1) NOT NULL default '',
+   `format(130,10)` char(4) NOT NULL default '',
+@@ -1076,4 +1076,16 @@
+ Warnings:
+ Note	1003	select decode(test.t1.f1,'zxcv') AS `enc` from test.t1
+ drop table t1;
++create table t1 (a bigint not null)engine=myisam;
++insert into t1 set a = 1024*1024*1024*4;
++delete from t1 order by (inet_ntoa(a)) desc limit 10;
++drop table t1;
++create table t1 (a char(36) not null)engine=myisam;
++insert ignore into t1 set a = ' ';
++insert ignore into t1 set a = ' ';
++select * from t1 order by (oct(a));
++a
++
++
++drop table t1;
+ End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/gis.result mysql-4.1/mysql-test/r/gis.result
+--- mysql-4.1.23/mysql-test/r/gis.result	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/r/gis.result	2007-10-03 10:35:33.000000000 +0200
+@@ -724,4 +724,10 @@
+ a
+ NULL
+ DROP TABLE t1;
++CREATE TABLE `t1` ( `col9` set('a'), `col89` date);
++INSERT INTO `t1` VALUES ('','0000-00-00');
++select geomfromtext(col9,col89) as a from t1;
++a
++NULL
++DROP TABLE t1;
+ End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/gis-rtree.result mysql-4.1/mysql-test/r/gis-rtree.result
+--- mysql-4.1.23/mysql-test/r/gis-rtree.result	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/r/gis-rtree.result	2007-10-05 12:40:31.000000000 +0200
+@@ -1420,3 +1420,34 @@
+ Table	Op	Msg_type	Msg_text
+ test.t1	check	status	OK
+ DROP TABLE t1;
++create table t1 (a geometry not null, spatial index(a));
++insert into t1 values (PointFromWKB(POINT(1.1517219314031e+164, 131072)));
++insert into t1 values (PointFromWKB(POINT(9.1248812352444e+192, 2.9740338169556e+284)));
++insert into t1 values (PointFromWKB(POINT(4.7783097267365e-299, -0)));
++insert into t1 values (PointFromWKB(POINT(1.49166814624e-154, 2.0880974297595e-53)));
++insert into t1 values (PointFromWKB(POINT(4.0917382598702e+149, 1.2024538023802e+111)));
++insert into t1 values (PointFromWKB(POINT(2.0349165139404e+236, 2.9993936277913e-241)));
++insert into t1 values (PointFromWKB(POINT(2.5243548967072e-29, 1.2024538023802e+111)));
++insert into t1 values (PointFromWKB(POINT(0, 6.9835074892995e-251)));
++insert into t1 values (PointFromWKB(POINT(2.0880974297595e-53, 3.1050361846014e+231)));
++insert into t1 values (PointFromWKB(POINT(2.8728483499323e-188, 2.4600631144627e+260)));
++insert into t1 values (PointFromWKB(POINT(3.0517578125e-05, 2.0349165139404e+236)));
++insert into t1 values (PointFromWKB(POINT(1.1517219314031e+164, 1.1818212630766e-125)));
++insert into t1 values (PointFromWKB(POINT(2.481040258324e-265, 5.7766220027675e-275)));
++insert into t1 values (PointFromWKB(POINT(2.0880974297595e-53, 2.5243548967072e-29)));
++insert into t1 values (PointFromWKB(POINT(5.7766220027675e-275, 9.9464647281957e+86)));
++insert into t1 values (PointFromWKB(POINT(2.2181357552967e+130, 3.7857669957337e-270)));
++insert into t1 values (PointFromWKB(POINT(4.5767114681874e-246, 3.6893488147419e+19)));
++insert into t1 values (PointFromWKB(POINT(4.5767114681874e-246, 3.7537584144024e+255)));
++insert into t1 values (PointFromWKB(POINT(3.7857669957337e-270, 1.8033161362863e-130)));
++insert into t1 values (PointFromWKB(POINT(0, 5.8774717541114e-39)));
++insert into t1 values (PointFromWKB(POINT(1.1517219314031e+164, 2.2761049594727e-159)));
++insert into t1 values (PointFromWKB(POINT(6.243497100632e+144, 3.7857669957337e-270)));
++insert into t1 values (PointFromWKB(POINT(3.7857669957337e-270, 2.6355494858076e-82)));
++insert into t1 values (PointFromWKB(POINT(2.0349165139404e+236, 3.8518598887745e-34)));
++insert into t1 values (PointFromWKB(POINT(4.6566128730774e-10, 2.0880974297595e-53)));
++insert into t1 values (PointFromWKB(POINT(2.0880974297595e-53, 1.8827498946116e-183)));
++insert into t1 values (PointFromWKB(POINT(1.8033161362863e-130, 9.1248812352444e+192)));
++insert into t1 values (PointFromWKB(POINT(4.7783097267365e-299, 2.2761049594727e-159)));
++insert into t1 values (PointFromWKB(POINT(1.94906280228e+289, 1.2338789709327e-178)));
++drop table t1;
+diff -urN mysql-4.1.23/mysql-test/r/group_by.result mysql-4.1/mysql-test/r/group_by.result
+--- mysql-4.1.23/mysql-test/r/group_by.result	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/r/group_by.result	2007-07-31 07:45:59.000000000 +0200
+@@ -818,3 +818,20 @@
+ 2
+ 1
+ DROP TABLE t1;
++CREATE TABLE t1 (
++f1 int(10) unsigned NOT NULL auto_increment primary key,
++f2 varchar(100) NOT NULL default ''
++);
++CREATE TABLE t2 (
++f1 varchar(10) NOT NULL default '',
++f2 char(3) NOT NULL default '',
++PRIMARY KEY  (`f1`),
++KEY `k1` (`f2`,`f1`)
++);
++INSERT INTO t1 values(NULL, '');
++INSERT INTO `t2` VALUES ('486878','WDT'),('486910','WDT');
++SELECT SQL_BUFFER_RESULT avg(t2.f1) FROM t1, t2 where t2.f2 = 'SIR' GROUP BY t1.f1;
++avg(t2.f1)
++SELECT avg(t2.f1) FROM t1, t2 where t2.f2 = 'SIR' GROUP BY t1.f1;
++avg(t2.f1)
++DROP TABLE t1, t2;
+diff -urN mysql-4.1.23/mysql-test/r/having.result mysql-4.1/mysql-test/r/having.result
+--- mysql-4.1.23/mysql-test/r/having.result	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/r/having.result	2007-07-21 07:55:59.000000000 +0200
+@@ -158,3 +158,22 @@
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+ 1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible HAVING
+ DROP table t1;
++CREATE TABLE t1 (a int PRIMARY KEY);
++CREATE TABLE t2 (b int PRIMARY KEY, a int);
++CREATE TABLE t3 (b int, flag int);
++INSERT INTO t1 VALUES (1);
++INSERT INTO t2 VALUES (1,1), (2,1), (3,1);
++INSERT INTO t3(b,flag) VALUES (2, 1);
++SELECT t1.a
++FROM t1 INNER JOIN t2 ON t1.a=t2.a LEFT JOIN t3 ON t2.b=t3.b
++GROUP BY t1.a, t2.b HAVING MAX(t3.flag)=0;
++a
++SELECT DISTINCT t1.a, MAX(t3.flag)
++FROM t1 INNER JOIN t2 ON t1.a=t2.a LEFT JOIN t3 ON t2.b=t3.b
++GROUP BY t1.a, t2.b HAVING MAX(t3.flag)=0;
++a	MAX(t3.flag)
++SELECT DISTINCT t1.a
++FROM t1 INNER JOIN t2 ON t1.a=t2.a LEFT JOIN t3 ON t2.b=t3.b
++GROUP BY t1.a, t2.b HAVING MAX(t3.flag)=0;
++a
++DROP TABLE t1,t2,t3;
+diff -urN mysql-4.1.23/mysql-test/r/heap_btree.result mysql-4.1/mysql-test/r/heap_btree.result
+--- mysql-4.1.23/mysql-test/r/heap_btree.result	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/r/heap_btree.result	2007-09-13 12:39:15.000000000 +0200
+@@ -307,4 +307,11 @@
+ ) ENGINE= MEMORY DEFAULT CHARSET= utf8;
+ INSERT INTO t1 VALUES('1'), ('2');
+ DROP TABLE t1;
++CREATE TABLE t1 (a INT, KEY USING BTREE(a)) ENGINE=MEMORY;
++INSERT INTO t1 VALUES(1),(2),(2);
++DELETE FROM t1 WHERE a=2;
++SELECT * FROM t1;
++a
++1
++DROP TABLE t1;
+ End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/innodb_mysql.result mysql-4.1/mysql-test/r/innodb_mysql.result
+--- mysql-4.1.23/mysql-test/r/innodb_mysql.result	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/r/innodb_mysql.result	2007-10-04 12:22:30.000000000 +0200
+@@ -182,4 +182,40 @@
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+ 1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE noticed after reading const tables
+ DROP TABLE t1;
++CREATE TABLE t1 (a CHAR(2), KEY (a)) ENGINE = InnoDB DEFAULT CHARSET=UTF8;
++INSERT INTO t1 VALUES ('uk'),('bg');
++SELECT * FROM t1 WHERE a = 'uk';
++a
++uk
++DELETE FROM t1 WHERE a = 'uk';
++SELECT * FROM t1 WHERE a = 'uk';
++a
++UPDATE t1 SET a = 'us' WHERE a = 'uk';
++SELECT * FROM t1 WHERE a = 'uk';
++a
++CREATE TABLE t2 (a CHAR(2), KEY (a)) ENGINE = InnoDB;
++INSERT INTO t2 VALUES ('uk'),('bg');
++SELECT * FROM t2 WHERE a = 'uk';
++a
++uk
++DELETE FROM t2 WHERE a = 'uk';
++SELECT * FROM t2 WHERE a = 'uk';
++a
++INSERT INTO t2 VALUES ('uk');
++UPDATE t2 SET a = 'us' WHERE a = 'uk';
++SELECT * FROM t2 WHERE a = 'uk';
++a
++CREATE TABLE t3 (a CHAR(2), KEY (a)) ENGINE = MyISAM;
++INSERT INTO t3 VALUES ('uk'),('bg');
++SELECT * FROM t3 WHERE a = 'uk';
++a
++uk
++DELETE FROM t3 WHERE a = 'uk';
++SELECT * FROM t3 WHERE a = 'uk';
++a
++INSERT INTO t3 VALUES ('uk');
++UPDATE t3 SET a = 'us' WHERE a = 'uk';
++SELECT * FROM t3 WHERE a = 'uk';
++a
++DROP TABLE t1,t2,t3;
+ End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/insert_select.result mysql-4.1/mysql-test/r/insert_select.result
+--- mysql-4.1.23/mysql-test/r/insert_select.result	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/r/insert_select.result	2007-07-31 07:45:59.000000000 +0200
+@@ -690,3 +690,29 @@
+ INSERT INTO t1 values (1), (2);
+ INSERT INTO t1 SELECT a + 2 FROM t1 LIMIT 1;
+ DROP TABLE t1;
++CREATE TABLE t1 (
++f1 int(10) unsigned NOT NULL auto_increment PRIMARY KEY,
++f2 varchar(100) NOT NULL default ''
++);
++CREATE TABLE t2 (
++f1 varchar(10) NOT NULL default '',
++f2 char(3) NOT NULL default '',
++PRIMARY KEY  (`f1`),
++KEY `k1` (`f2`, `f1`)
++);
++INSERT INTO t1 values(NULL, '');
++INSERT INTO `t2` VALUES ('486878','WDT'),('486910','WDT');
++SELECT COUNT(*) FROM t1;
++COUNT(*)
++1
++SELECT min(t2.f1) FROM t1, t2 where t2.f2 = 'SIR' GROUP BY t1.f1;
++min(t2.f1)
++INSERT INTO t1 (f2)
++SELECT min(t2.f1) FROM t1, t2 where t2.f2 = 'SIR' GROUP BY t1.f1;
++SELECT COUNT(*) FROM t1;
++COUNT(*)
++1
++SELECT * FROM t1;
++f1	f2
++1	
++DROP TABLE t1, t2;
+diff -urN mysql-4.1.23/mysql-test/r/loaddata.result mysql-4.1/mysql-test/r/loaddata.result
+--- mysql-4.1.23/mysql-test/r/loaddata.result	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/r/loaddata.result	2007-07-03 18:44:26.000000000 +0200
+@@ -1,4 +1,4 @@
+-drop table if exists t1;
++drop table if exists t1,t2;
+ create table t1 (a date, b date, c date not null, d date);
+ load data infile '../../std_data/loaddata1.dat' into table t1 fields terminated by ',';
+ Warnings:
+@@ -85,3 +85,57 @@
+ a"b	cd"ef
+ a"b	c"d"e
+ drop table t1;
++CREATE TABLE t1 (
++id INT AUTO_INCREMENT PRIMARY KEY,
++c1 VARCHAR(255)
++);
++CREATE TABLE t2 (
++id INT,
++c2 VARCHAR(255)
++);
++INSERT INTO t1 (c1) VALUES
++('r'),   ('rr'),   ('rrr'),   ('rrrr'),
++('.r'),  ('.rr'),  ('.rrr'),  ('.rrrr'),
++('r.'),  ('rr.'),  ('rrr.'),  ('rrrr.'),
++('.r.'), ('.rr.'), ('.rrr.'), ('.rrrr.');
++SELECT * FROM t1;
++id	c1
++1	r
++2	rr
++3	rrr
++4	rrrr
++5	.r
++6	.rr
++7	.rrr
++8	.rrrr
++9	r.
++10	rr.
++11	rrr.
++12	rrrr.
++13	.r.
++14	.rr.
++15	.rrr.
++16	.rrrr.
++SELECT * INTO OUTFILE 'MYSQL_TEST_DIR/var/tmp/t1' FIELDS ENCLOSED BY 'r' FROM t1;
++r1r	rrrr
++r2r	rrrrrr
++r3r	rrrrrrrr
++r4r	rrrrrrrrrr
++r5r	r.rrr
++r6r	r.rrrrr
++r7r	r.rrrrrrr
++r8r	r.rrrrrrrrr
++r9r	rrr.r
++r10r	rrrrr.r
++r11r	rrrrrrr.r
++r12r	rrrrrrrrr.r
++r13r	r.rr.r
++r14r	r.rrrr.r
++r15r	r.rrrrrr.r
++r16r	r.rrrrrrrr.r
++LOAD DATA INFILE 'MYSQL_TEST_DIR/var/tmp/t1' INTO TABLE t2 FIELDS ENCLOSED BY 'r';
++SELECT t1.id, c1, c2 FROM t1 LEFT  JOIN t2 ON t1.id=t2.id WHERE c1 != c2;
++id	c1	c2
++SELECT t1.id, c1, c2 FROM t1 RIGHT JOIN t2 ON t1.id=t2.id WHERE c1 != c2;
++id	c1	c2
++DROP TABLE t1,t2;
+diff -urN mysql-4.1.23/mysql-test/r/myisampack.result mysql-4.1/mysql-test/r/myisampack.result
+--- mysql-4.1.23/mysql-test/r/myisampack.result	1970-01-01 01:00:00.000000000 +0100
++++ mysql-4.1/mysql-test/r/myisampack.result	2007-11-07 09:55:27.000000000 +0100
+@@ -0,0 +1,29 @@
++CREATE TABLE t1(c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, c4 DOUBLE, c5 DOUBLE,
++c6 DOUBLE, c7 DOUBLE, c8 DOUBLE, c9 DOUBLE, a INT PRIMARY KEY);
++INSERT INTO t1 VALUES
++(-3.31168791059336e-06,-3.19054655887874e-06,-1.06528081684847e-05,-1.227278240089e-06,-1.66718069164799e-06,-2.59038972510885e-06,-2.83145227805303e-06,-4.09678491270648e-07,-2.22610091291797e-06,6),
++(0.0030743000272545,2.53222044316438e-05,2.78674650061845e-05,1.95914465544536e-05,1.7347572525984e-05,1.87513810069614e-05,1.69882826885005e-05,2.44449336987598e-05,1.89914629921774e-05,9),
++(2.85229319423495e-05,3.05970988282259e-05,3.77161100113133e-05,2.3055238978766e-05,2.08241267364615e-05,2.28009504270553e-05,2.12070165658947e-05,2.84350091565409e-05,2.3366822910704e-05,3),
++(0,0,0,0,0,0,0,0,0,12),
++(3.24544577570754e-05,3.44619021870993e-05,4.37561613201124e-05,2.57556808726748e-05,2.3195354640561e-05,2.58532400758869e-05,2.34934241667179e-05,3.1621640063232e-05,2.58229982746189e-05,19),
++(2.53222044316438e-05,0.00445071933455582,2.97447268116016e-05,2.12379514059868e-05,1.86777776502663e-05,2.0170058676712e-05,1.8946030385445e-05,2.66040037173511e-05,2.09161899668946e-05,20),
++(3.03462382611645e-05,3.26517930083994e-05,3.5242025468662e-05,2.53219745106391e-05,2.24384532945004e-05,2.4052346047657e-05,2.23865572957053e-05,3.1634313969082e-05,2.48285463481801e-05,21),
++(1.95914465544536e-05,2.12379514059868e-05,2.27808649037128e-05,0.000341724375366877,1.4512761275113e-05,1.56475828693953e-05,1.44372366441415e-05,2.07952121981765e-05,1.61488256935919e-05,28),
++(1.7347572525984e-05,1.86777776502663e-05,2.04116907052727e-05,1.4512761275113e-05,0.000432162526082388,1.38116514014465e-05,1.2712914948904e-05,1.82503165178506e-05,1.43043075345922e-05,30),
++(1.68339762136661e-05,1.77836497166611e-05,2.36328309295222e-05,1.30183423732016e-05,1.18674654241553e-05,1.32467273128652e-05,1.24581739117775e-05,1.55624190959406e-05,1.33010638508213e-05,31),
++(1.89643062824415e-05,2.06997140070717e-05,2.29045490159364e-05,1.57918175731019e-05,1.39864987449492e-05,1.50580274578455e-05,1.45908734129609e-05,1.95329296993327e-05,1.5814709481221e-05,32),
++(1.69882826885005e-05,1.8946030385445e-05,2.00820439721439e-05,1.44372366441415e-05,1.2712914948904e-05,1.35209686474184e-05,0.00261563314789896,1.78285095864627e-05,1.46699314500019e-05,34),
++(2.0278186540684e-05,2.18923409729654e-05,2.39981539939738e-05,1.71774589459438e-05,1.54654355357383e-05,1.62731485707636e-05,1.49253140625051e-05,2.18229800160297e-05,1.71923561673718e-05,35),
++(2.44449336987598e-05,2.66040037173511e-05,2.84860148925308e-05,2.07952121981765e-05,1.82503165178506e-05,1.97667730441441e-05,1.78285095864627e-05,0.00166478601822712,2.0299952103232e-05,36),
++(1.89914629921774e-05,2.09161899668946e-05,2.26026841007872e-05,1.61488256935919e-05,1.43043075345922e-05,1.52609063290127e-05,1.46699314500019e-05,2.0299952103232e-05,0.00306670170971682,39),
++(0,0,0,0,0,0,0,0,0,41),
++(0,0,0,0,0,0,0,0,0,17),
++(0,0,0,0,0,0,0,0,0,18),
++(2.51880677333017e-05,2.63051795435778e-05,2.79874748974906e-05,2.02888886670845e-05,1.8178636318197e-05,1.91308527003585e-05,1.83260023644133e-05,2.4422300558171e-05,1.96411467520551e-05,44),
++(2.22402118719591e-05,2.37546284320705e-05,2.58463051055541e-05,1.83391609130854e-05,1.6300720519646e-05,1.74559091886791e-05,1.63733785575587e-05,2.26616253279828e-05,1.79541237435621e-05,45),
++(3.01092775359837e-05,3.23865212934412e-05,4.09444584045994e-05,0,2.15470966302776e-05,2.39082636344032e-05,2.28296706429177e-05,2.9007671511595e-05,2.44201138973326e-05,46);
++FLUSH TABLES;
++CHECK TABLE t1 EXTENDED;
++Table	Op	Msg_type	Msg_text
++test.t1	check	status	OK
++DROP TABLE t1;
+diff -urN mysql-4.1.23/mysql-test/r/mysqltest.result mysql-4.1/mysql-test/r/mysqltest.result
+--- mysql-4.1.23/mysql-test/r/mysqltest.result	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/r/mysqltest.result	2007-06-19 11:06:02.000000000 +0200
+@@ -330,6 +330,7 @@
+ 
+ In loop
+ here is the sourced script
++here is the sourced script
+ mysqltest: At line 1: Missing argument to sleep
+ mysqltest: At line 1: Missing argument to real_sleep
+ mysqltest: At line 1: Invalid argument to sleep "abc"
+@@ -655,4 +656,43 @@
+ INSERT INTO t1 SELECT f1 - 512 FROM t1;
+ SELECT * FROM t1;
+ DROP TABLE t1;
++CREATE TABLE t1(
++a int, b varchar(255), c datetime
++);
++SHOW COLUMNS FROM t1;
++Field	Type	Null	Key	Default	Extra
++a	int(11)	YES		NULL	
++b	varchar(255)	YES		NULL	
++c	datetime	YES		NULL	
++statement=SHOW COLUMNS FROM t1 row_number=1, column_name="Type", Value=int(11)
++statement="SHOW COLUMNS FROM t1" row_number=1, column_name="Type", Value=int(11)
++statement=SHOW COLUMNS FROM t1 row_number=1, column_name=Default, Value=NULL
++value= ->A B<-
++value= 1
++mysqltest: At line 1: query_get_value - argument list started with '(' must be ended with ')'
++mysqltest: At line 1: Missing required argument 'query' to command 'query_get_value'
++mysqltest: At line 1: Missing required argument 'column name' to command 'query_get_value'
++mysqltest: At line 1: Missing required argument 'row number' to command 'query_get_value'
++value= No such row
++value= No such row
++mysqltest: At line 1: Invalid row number: 'notnumber'
++mysqltest: At line 1: Could not find column 'column_not_exists' in the result of 'SHOW COLUMNS FROM t1'
++mysqltest: At line 1: Query 'SET @A = 1' didn't return a result set
++mysqltest: At line 1: Could not find column '1 AS B' in the result of 'SELECT 1 AS A'
++value= No such row
++mysqltest: At line 1: Error running query 'SHOW COLNS FROM t1': 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'COLNS FROM t1' at line 1
++
++Field Type Null Key Default Extra
++a int(11) YES -><- NULL 
++b varchar(255) YES -><- NULL 
++c datetime YES -><- NULL 
++
++Number of columns with Default NULL: 3
++
++SHOW COLUMNS FROM t1;
++Field	Type	Null	Key	Default	Extra
++a	int(11)	YES		NULL	
++b	varchar(255)	YES		NULL	
++c	datetime	YES		NULL	
++drop table t1;
+ End of tests
+diff -urN mysql-4.1.23/mysql-test/r/repair.result mysql-4.1/mysql-test/r/repair.result
+--- mysql-4.1.23/mysql-test/r/repair.result	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/r/repair.result	2007-10-17 08:29:45.000000000 +0200
+@@ -83,3 +83,30 @@
+ SET myisam_repair_threads=@@global.myisam_repair_threads;
+ SET myisam_sort_buffer_size=@@global.myisam_sort_buffer_size;
+ DROP TABLE t1;
++CREATE TABLE t1(a CHAR(255), KEY(a));
++SET myisam_sort_buffer_size=4496;
++INSERT INTO t1 VALUES
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0');
++SET myisam_repair_threads=2;
++REPAIR TABLE t1;
++Table	Op	Msg_type	Msg_text
++test.t1	repair	status	OK
++SET myisam_repair_threads=@@global.myisam_repair_threads;
++SET myisam_sort_buffer_size=@@global.myisam_sort_buffer_size;
++DROP TABLE t1;
++End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/rpl_change_master.result mysql-4.1/mysql-test/r/rpl_change_master.result
+--- mysql-4.1.23/mysql-test/r/rpl_change_master.result	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/r/rpl_change_master.result	2007-06-19 12:19:19.000000000 +0200
+@@ -15,12 +15,74 @@
+ n
+ 1
+ show slave status;
+-Slave_IO_State	Master_Host	Master_User	Master_Port	Connect_Retry	Master_Log_File	Read_Master_Log_Pos	Relay_Log_File	Relay_Log_Pos	Relay_Master_Log_File	Slave_IO_Running	Slave_SQL_Running	Replicate_Do_DB	Replicate_Ignore_DB	Replicate_Do_Table	Replicate_Ignore_Table	Replicate_Wild_Do_Table	Replicate_Wild_Ignore_Table	Last_Errno	Last_Error	Skip_Counter	Exec_Master_Log_Pos	Relay_Log_Space	Until_Condition	Until_Log_File	Until_Log_Pos	Master_SSL_Allowed	Master_SSL_CA_File	Master_SSL_CA_Path	Master_SSL_Cert	Master_SSL_Cipher	Master_SSL_Key	Seconds_Behind_Master
+-#	127.0.0.1	root	MASTER_MYPORT	1	master-bin.000001	273	slave-relay-bin.000002	258	master-bin.000001	No	No							0		0	214	317	None		0	No						#
++Slave_IO_State	#
++Master_Host	127.0.0.1
++Master_User	root
++Master_Port	MASTER_MYPORT
++Connect_Retry	1
++Master_Log_File	master-bin.000001
++Read_Master_Log_Pos	273
++Relay_Log_File	slave-relay-bin.000002
++Relay_Log_Pos	258
++Relay_Master_Log_File	master-bin.000001
++Slave_IO_Running	No
++Slave_SQL_Running	No
++Replicate_Do_DB	
++Replicate_Ignore_DB	
++Replicate_Do_Table	
++Replicate_Ignore_Table	
++Replicate_Wild_Do_Table	
++Replicate_Wild_Ignore_Table	
++Last_Errno	0
++Last_Error	
++Skip_Counter	0
++Exec_Master_Log_Pos	214
++Relay_Log_Space	317
++Until_Condition	None
++Until_Log_File	
++Until_Log_Pos	0
++Master_SSL_Allowed	No
++Master_SSL_CA_File	
++Master_SSL_CA_Path	
++Master_SSL_Cert	
++Master_SSL_Cipher	
++Master_SSL_Key	
++Seconds_Behind_Master	#
+ change master to master_user='root';
+ show slave status;
+-Slave_IO_State	Master_Host	Master_User	Master_Port	Connect_Retry	Master_Log_File	Read_Master_Log_Pos	Relay_Log_File	Relay_Log_Pos	Relay_Master_Log_File	Slave_IO_Running	Slave_SQL_Running	Replicate_Do_DB	Replicate_Ignore_DB	Replicate_Do_Table	Replicate_Ignore_Table	Replicate_Wild_Do_Table	Replicate_Wild_Ignore_Table	Last_Errno	Last_Error	Skip_Counter	Exec_Master_Log_Pos	Relay_Log_Space	Until_Condition	Until_Log_File	Until_Log_Pos	Master_SSL_Allowed	Master_SSL_CA_File	Master_SSL_CA_Path	Master_SSL_Cert	Master_SSL_Cipher	Master_SSL_Key	Seconds_Behind_Master
+-#	127.0.0.1	root	MASTER_MYPORT	1	master-bin.000001	214	#	#	master-bin.000001	No	No							0		0	214	#	None		0	No						#
++Slave_IO_State	#
++Master_Host	127.0.0.1
++Master_User	root
++Master_Port	MASTER_MYPORT
++Connect_Retry	1
++Master_Log_File	master-bin.000001
++Read_Master_Log_Pos	214
++Relay_Log_File	#
++Relay_Log_Pos	#
++Relay_Master_Log_File	master-bin.000001
++Slave_IO_Running	No
++Slave_SQL_Running	No
++Replicate_Do_DB	
++Replicate_Ignore_DB	
++Replicate_Do_Table	
++Replicate_Ignore_Table	
++Replicate_Wild_Do_Table	
++Replicate_Wild_Ignore_Table	
++Last_Errno	0
++Last_Error	
++Skip_Counter	0
++Exec_Master_Log_Pos	214
++Relay_Log_Space	#
++Until_Condition	None
++Until_Log_File	
++Until_Log_Pos	0
++Master_SSL_Allowed	No
++Master_SSL_CA_File	
++Master_SSL_CA_Path	
++Master_SSL_Cert	
++Master_SSL_Cipher	
++Master_SSL_Key	
++Seconds_Behind_Master	#
+ select release_lock("a");
+ release_lock("a")
+ 1
+diff -urN mysql-4.1.23/mysql-test/r/select.result mysql-4.1/mysql-test/r/select.result
+--- mysql-4.1.23/mysql-test/r/select.result	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/r/select.result	2007-11-07 16:45:01.000000000 +0100
+@@ -2835,4 +2835,12 @@
+ FFFFFFFFFFFFFFFF	7FFFFFFFFFFFFFFF
+ 8FFFFFFFFFFFFFFF	7FFFFFFFFFFFFFFF
+ drop table t1;
++CREATE TABLE t1 (c0 int);
++CREATE TABLE t2 (c0 int);
++INSERT INTO t1 VALUES(@@connect_timeout);
++INSERT INTO t2 VALUES(@@connect_timeout);
++SELECT * FROM t1 JOIN t2 ON t1.c0 = t2.c0 WHERE (t1.c0 <=> @@connect_timeout);
++c0	c0
++X	X
++DROP TABLE t1, t2;
+ End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/subselect.result mysql-4.1/mysql-test/r/subselect.result
+--- mysql-4.1.23/mysql-test/r/subselect.result	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/r/subselect.result	2007-06-06 15:29:14.000000000 +0200
+@@ -2834,6 +2834,8 @@
+ 4
+ DROP TABLE t1,t2,t3;
+ purge master logs before (select adddate(current_timestamp(), interval -4 day));
++ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'select adddate(current_timestamp(), interval -4 day))' at line 1
++purge master logs before adddate(current_timestamp(), interval -4 day);
+ CREATE TABLE t1 (f1 INT);
+ CREATE TABLE t2 (f2 INT);
+ INSERT INTO t1 VALUES (1);
+diff -urN mysql-4.1.23/mysql-test/r/symlink.result mysql-4.1/mysql-test/r/symlink.result
+--- mysql-4.1.23/mysql-test/r/symlink.result	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/r/symlink.result	2007-11-12 18:51:47.000000000 +0100
+@@ -90,6 +90,12 @@
+   `b` int(11) default NULL
+ ) ENGINE=MyISAM DEFAULT CHARSET=latin1
+ drop table t1;
++CREATE TABLE t1(a INT)
++DATA DIRECTORY='TEST_DIR/master-data/mysql'
++INDEX DIRECTORY='TEST_DIR/master-data/mysql';
++RENAME TABLE t1 TO user;
++ERROR HY000: Can't create/write to file 'TEST_DIR/master-data/mysql/user.MYI' (Errcode: 17)
++DROP TABLE t1;
+ show create table t1;
+ Table	Create Table
+ t1	CREATE TABLE `t1` (
+diff -urN mysql-4.1.23/mysql-test/r/type_enum.result mysql-4.1/mysql-test/r/type_enum.result
+--- mysql-4.1.23/mysql-test/r/type_enum.result	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/r/type_enum.result	2007-06-27 00:41:47.000000000 +0200
+@@ -1778,4 +1778,27 @@
+ create table t1(exhausting_charset enum('ABCDEFGHIJKLMNOPQRSTUVWXYZ','	
+  !"','#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~','xx\','yy\Ä','zzÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ'));
+ ERROR 42000: Field separator argument is not what is expected; check the manual
++CREATE TABLE t1 (
++id INT AUTO_INCREMENT PRIMARY KEY,
++c1 ENUM('a', '', 'b')
++);
++INSERT INTO t1 (c1) VALUES (0), ('a'), (''), ('b');
++Warnings:
++Warning	1265	Data truncated for column 'c1' at row 1
++SELECT id, c1 + 0, c1 FROM t1;
++id	c1 + 0	c1
++1	0	
++2	1	a
++3	2	
++4	3	b
++ALTER TABLE t1 CHANGE c1 c1 ENUM('a', '') NOT NULL;
++Warnings:
++Warning	1265	Data truncated for column 'c1' at row 4
++SELECT id, c1 + 0, c1 FROM t1;
++id	c1 + 0	c1
++1	0	
++2	1	a
++3	2	
++4	0	
++DROP TABLE t1;
+ End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/r/variables.result mysql-4.1/mysql-test/r/variables.result
+--- mysql-4.1.23/mysql-test/r/variables.result	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/r/variables.result	2007-10-18 10:47:51.000000000 +0200
+@@ -561,3 +561,6 @@
+ select @@query_prealloc_size = @test;
+ @@query_prealloc_size = @test
+ 1
++set global sql_mode=repeat('a',80);
++ERROR 42000: Variable 'sql_mode' can't be set to the value of 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
++End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/almost_full.test mysql-4.1/mysql-test/t/almost_full.test
+--- mysql-4.1.23/mysql-test/t/almost_full.test	1970-01-01 01:00:00.000000000 +0100
++++ mysql-4.1/mysql-test/t/almost_full.test	2007-11-12 10:00:21.000000000 +0100
+@@ -0,0 +1,41 @@
++#
++# Some special cases with empty tables
++#
++
++--disable_warnings
++drop table if exists t1;
++--enable_warnings
++
++set global myisam_data_pointer_size=2;
++CREATE TABLE t1 (a int auto_increment primary key not null, b longtext) ENGINE=MyISAM;
++
++--disable_query_log
++let $1= 303;
++while ($1)
++{
++  INSERT INTO t1 SET b=repeat('a',200);
++  dec $1;
++}
++--enable_query_log
++
++DELETE FROM t1 WHERE a=1 or a=5;
++
++--error 1114
++INSERT INTO t1 SET b=repeat('a',600);
++CHECK TABLE t1 EXTENDED;
++
++--error 1114
++UPDATE t1 SET b=repeat('a', 800) where a=10;
++CHECK TABLE t1 EXTENDED;
++
++INSERT INTO t1 SET b=repeat('a',400);
++CHECK TABLE t1 EXTENDED;
++
++DELETE FROM t1 WHERE a=2 or a=6;
++UPDATE t1 SET b=repeat('a', 600) where a=11;
++CHECK TABLE t1 EXTENDED;
++drop table t1;
++
++set global myisam_data_pointer_size=default;
++
++# End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/bigint.test mysql-4.1/mysql-test/t/bigint.test
+--- mysql-4.1.23/mysql-test/t/bigint.test	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/t/bigint.test	2007-11-12 12:51:40.000000000 +0100
+@@ -107,4 +107,13 @@
+ 
+ drop table t1, t2;
+ 
++# Test for BUG#30069, can't handle bigint -9223372036854775808 on
++# x86_64, with some GCC versions and optimizations.
++
++create table t1 (sint64 bigint not null);
++insert into t1 values (-9223372036854775808);
++select * from t1;
++
++drop table t1;
++
+ # End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/ctype_ucs.test mysql-4.1/mysql-test/t/ctype_ucs.test
+--- mysql-4.1.23/mysql-test/t/ctype_ucs.test	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/t/ctype_ucs.test	2007-10-24 13:09:29.000000000 +0200
+@@ -535,4 +535,12 @@
+ 
+ drop table bug20536;
+ 
++#
++# BUG#31159 - fulltext search on ucs2 column crashes server
++#
++CREATE TABLE t1(a TEXT CHARSET ucs2 COLLATE ucs2_unicode_ci);
++INSERT INTO t1 VALUES('abcd');
++SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abcd' IN BOOLEAN MODE);
++DROP TABLE t1;
++
+ --echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/delete.test mysql-4.1/mysql-test/t/delete.test
+--- mysql-4.1.23/mysql-test/t/delete.test	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/mysql-test/t/delete.test	2007-09-10 14:26:49.000000000 +0200
+@@ -184,4 +184,17 @@
+ select @a;
+ drop table t1;
+ 
++# BUG#30385 "Server crash when deleting with order by and limit"
++CREATE TABLE t1 (
++  `date` date ,
++  `time` time ,
++  `seq` int(10) unsigned NOT NULL auto_increment,
++  PRIMARY KEY  (`seq`),
++  KEY `seq` (`seq`),
++  KEY `time` (`time`),
++  KEY `date` (`date`)
++);
++DELETE FROM t1 ORDER BY date ASC, time ASC LIMIT 1;
++drop table t1;
++
+ --echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/disabled.def mysql-4.1/mysql-test/t/disabled.def
+--- mysql-4.1.23/mysql-test/t/disabled.def	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/t/disabled.def	2007-11-02 10:11:26.000000000 +0100
+@@ -10,3 +10,4 @@
+ #
+ ##############################################################################
+ 
++rpl000015       :  Bug#31030 - rpl000015.test fails if $MYSQL_TCP_PORT != 3306
+diff -urN mysql-4.1.23/mysql-test/t/fulltext.test mysql-4.1/mysql-test/t/fulltext.test
+--- mysql-4.1.23/mysql-test/t/fulltext.test	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/t/fulltext.test	2007-10-30 11:46:42.000000000 +0100
+@@ -379,4 +379,12 @@
+ SELECT * FROM t1 WHERE MATCH(a) AGAINST('test');
+ DROP TABLE t1;
+ 
++#
++# BUG#11392 - fulltext search bug
++#
++CREATE TABLE t1(a TEXT);
++INSERT INTO t1 VALUES(' aaaaa aaaa');
++SELECT * FROM t1 WHERE MATCH(a) AGAINST ('"aaaa"' IN BOOLEAN MODE);
++DROP TABLE t1;
++
+ # End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/func_str.test mysql-4.1/mysql-test/t/func_str.test
+--- mysql-4.1.23/mysql-test/t/func_str.test	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/t/func_str.test	2007-10-30 09:35:02.000000000 +0100
+@@ -721,4 +721,17 @@
+ explain extended select decode(f1,'zxcv') as 'enc' from t1;
+ drop table t1;
+ 
++#
++# Bug #31758 inet_ntoa, oct, crashes server with null + filesort 
++#
++create table t1 (a bigint not null)engine=myisam;
++insert into t1 set a = 1024*1024*1024*4;
++delete from t1 order by (inet_ntoa(a)) desc limit 10;
++drop table t1;
++create table t1 (a char(36) not null)engine=myisam;
++insert ignore into t1 set a = ' ';
++insert ignore into t1 set a = ' ';
++select * from t1 order by (oct(a));
++drop table t1;
++
+ --echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/gis-rtree.test mysql-4.1/mysql-test/t/gis-rtree.test
+--- mysql-4.1.23/mysql-test/t/gis-rtree.test	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/t/gis-rtree.test	2007-10-05 12:40:31.000000000 +0200
+@@ -798,4 +798,40 @@
+ CHECK TABLE t1 EXTENDED;
+ DROP TABLE t1;
+ 
++#
++# Bug #30286 spatial index cause corruption and server crash!
++#
++
++create table t1 (a geometry not null, spatial index(a));
++insert into t1 values (PointFromWKB(POINT(1.1517219314031e+164, 131072)));
++insert into t1 values (PointFromWKB(POINT(9.1248812352444e+192, 2.9740338169556e+284)));
++insert into t1 values (PointFromWKB(POINT(4.7783097267365e-299, -0)));
++insert into t1 values (PointFromWKB(POINT(1.49166814624e-154, 2.0880974297595e-53)));
++insert into t1 values (PointFromWKB(POINT(4.0917382598702e+149, 1.2024538023802e+111)));
++insert into t1 values (PointFromWKB(POINT(2.0349165139404e+236, 2.9993936277913e-241)));
++insert into t1 values (PointFromWKB(POINT(2.5243548967072e-29, 1.2024538023802e+111)));
++insert into t1 values (PointFromWKB(POINT(0, 6.9835074892995e-251)));
++insert into t1 values (PointFromWKB(POINT(2.0880974297595e-53, 3.1050361846014e+231)));
++insert into t1 values (PointFromWKB(POINT(2.8728483499323e-188, 2.4600631144627e+260)));
++insert into t1 values (PointFromWKB(POINT(3.0517578125e-05, 2.0349165139404e+236)));
++insert into t1 values (PointFromWKB(POINT(1.1517219314031e+164, 1.1818212630766e-125)));
++insert into t1 values (PointFromWKB(POINT(2.481040258324e-265, 5.7766220027675e-275)));
++insert into t1 values (PointFromWKB(POINT(2.0880974297595e-53, 2.5243548967072e-29)));
++insert into t1 values (PointFromWKB(POINT(5.7766220027675e-275, 9.9464647281957e+86)));
++insert into t1 values (PointFromWKB(POINT(2.2181357552967e+130, 3.7857669957337e-270)));
++insert into t1 values (PointFromWKB(POINT(4.5767114681874e-246, 3.6893488147419e+19)));
++insert into t1 values (PointFromWKB(POINT(4.5767114681874e-246, 3.7537584144024e+255)));
++insert into t1 values (PointFromWKB(POINT(3.7857669957337e-270, 1.8033161362863e-130)));
++insert into t1 values (PointFromWKB(POINT(0, 5.8774717541114e-39)));
++insert into t1 values (PointFromWKB(POINT(1.1517219314031e+164, 2.2761049594727e-159)));
++insert into t1 values (PointFromWKB(POINT(6.243497100632e+144, 3.7857669957337e-270)));
++insert into t1 values (PointFromWKB(POINT(3.7857669957337e-270, 2.6355494858076e-82)));
++insert into t1 values (PointFromWKB(POINT(2.0349165139404e+236, 3.8518598887745e-34)));
++insert into t1 values (PointFromWKB(POINT(4.6566128730774e-10, 2.0880974297595e-53)));
++insert into t1 values (PointFromWKB(POINT(2.0880974297595e-53, 1.8827498946116e-183)));
++insert into t1 values (PointFromWKB(POINT(1.8033161362863e-130, 9.1248812352444e+192)));
++insert into t1 values (PointFromWKB(POINT(4.7783097267365e-299, 2.2761049594727e-159)));
++insert into t1 values (PointFromWKB(POINT(1.94906280228e+289, 1.2338789709327e-178)));
++drop table t1;
++
+ # End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/gis.test mysql-4.1/mysql-test/t/gis.test
+--- mysql-4.1.23/mysql-test/t/gis.test	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/t/gis.test	2007-10-03 10:35:33.000000000 +0200
+@@ -419,4 +419,12 @@
+ SELECT * FROM t1;
+ DROP TABLE t1;
+ 
++#
++# Bug #30955 geomfromtext() crasher
++#
++CREATE TABLE `t1` ( `col9` set('a'), `col89` date);
++INSERT INTO `t1` VALUES ('','0000-00-00');
++select geomfromtext(col9,col89) as a from t1;
++DROP TABLE t1;
++
+ --echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/group_by.test mysql-4.1/mysql-test/t/group_by.test
+--- mysql-4.1.23/mysql-test/t/group_by.test	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/t/group_by.test	2007-07-31 07:45:59.000000000 +0200
+@@ -633,4 +633,27 @@
+ SELECT a FROM t1 ORDER BY "a" DESC;
+ SELECT a FROM t1 ORDER BY `a` DESC;
+ DROP TABLE t1;
++
++
++#
++# Bug #29717 INSERT INTO SELECT inserts values even if SELECT statement itself
++# returns empty
++# 
++CREATE TABLE t1 (
++    f1 int(10) unsigned NOT NULL auto_increment primary key,
++    f2 varchar(100) NOT NULL default ''
++);
++CREATE TABLE t2 (
++    f1 varchar(10) NOT NULL default '',
++    f2 char(3) NOT NULL default '',
++    PRIMARY KEY  (`f1`),
++    KEY `k1` (`f2`,`f1`)
++);
++
++INSERT INTO t1 values(NULL, '');
++INSERT INTO `t2` VALUES ('486878','WDT'),('486910','WDT');
++SELECT SQL_BUFFER_RESULT avg(t2.f1) FROM t1, t2 where t2.f2 = 'SIR' GROUP BY t1.f1;
++SELECT avg(t2.f1) FROM t1, t2 where t2.f2 = 'SIR' GROUP BY t1.f1;
++DROP TABLE t1, t2;
++
+ # End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/having.test mysql-4.1/mysql-test/t/having.test
+--- mysql-4.1.23/mysql-test/t/having.test	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/t/having.test	2007-07-21 07:55:59.000000000 +0200
+@@ -151,4 +151,30 @@
+ 
+ DROP table t1;  
+ 
++#
++# Bug #29911: HAVING clause depending on constant table and evaluated to false
++#
++
++CREATE TABLE t1 (a int PRIMARY KEY);
++CREATE TABLE t2 (b int PRIMARY KEY, a int);
++CREATE TABLE t3 (b int, flag int);
++
++INSERT INTO t1 VALUES (1);
++INSERT INTO t2 VALUES (1,1), (2,1), (3,1);
++INSERT INTO t3(b,flag) VALUES (2, 1);
++
++SELECT t1.a
++  FROM t1 INNER JOIN t2 ON t1.a=t2.a LEFT JOIN t3 ON t2.b=t3.b
++    GROUP BY t1.a, t2.b HAVING MAX(t3.flag)=0;
++
++SELECT DISTINCT t1.a, MAX(t3.flag)
++  FROM t1 INNER JOIN t2 ON t1.a=t2.a LEFT JOIN t3 ON t2.b=t3.b
++    GROUP BY t1.a, t2.b HAVING MAX(t3.flag)=0;
++
++SELECT DISTINCT t1.a
++  FROM t1 INNER JOIN t2 ON t1.a=t2.a LEFT JOIN t3 ON t2.b=t3.b
++    GROUP BY t1.a, t2.b HAVING MAX(t3.flag)=0;
++
++DROP TABLE t1,t2,t3;
++
+ # End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/heap_btree.test mysql-4.1/mysql-test/t/heap_btree.test
+--- mysql-4.1.23/mysql-test/t/heap_btree.test	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/t/heap_btree.test	2007-09-13 12:39:15.000000000 +0200
+@@ -213,4 +213,13 @@
+ INSERT INTO t1 VALUES('1'), ('2');
+ DROP TABLE t1;
+ 
++#
++# BUG#30590 - delete from memory table with composite btree primary key
++#
++CREATE TABLE t1 (a INT, KEY USING BTREE(a)) ENGINE=MEMORY;
++INSERT INTO t1 VALUES(1),(2),(2);
++DELETE FROM t1 WHERE a=2;
++SELECT * FROM t1;
++DROP TABLE t1;
++
+ --echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/innodb_mysql.test mysql-4.1/mysql-test/t/innodb_mysql.test
+--- mysql-4.1.23/mysql-test/t/innodb_mysql.test	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/mysql-test/t/innodb_mysql.test	2007-10-04 12:22:30.000000000 +0200
+@@ -216,4 +216,36 @@
+ 
+ DROP TABLE t1;
+ 
++#
++# Bug #28878: InnoDB tables with UTF8 character set and indexes cause wrong result for DML
++#
++
++CREATE TABLE t1 (a CHAR(2), KEY (a)) ENGINE = InnoDB DEFAULT CHARSET=UTF8;
++INSERT INTO t1 VALUES ('uk'),('bg');
++SELECT * FROM t1 WHERE a = 'uk';
++DELETE FROM t1 WHERE a = 'uk';
++SELECT * FROM t1 WHERE a = 'uk';
++UPDATE t1 SET a = 'us' WHERE a = 'uk';
++SELECT * FROM t1 WHERE a = 'uk';
++
++CREATE TABLE t2 (a CHAR(2), KEY (a)) ENGINE = InnoDB;
++INSERT INTO t2 VALUES ('uk'),('bg');
++SELECT * FROM t2 WHERE a = 'uk';
++DELETE FROM t2 WHERE a = 'uk';
++SELECT * FROM t2 WHERE a = 'uk';
++INSERT INTO t2 VALUES ('uk');
++UPDATE t2 SET a = 'us' WHERE a = 'uk';
++SELECT * FROM t2 WHERE a = 'uk';
++
++CREATE TABLE t3 (a CHAR(2), KEY (a)) ENGINE = MyISAM;
++INSERT INTO t3 VALUES ('uk'),('bg');
++SELECT * FROM t3 WHERE a = 'uk';
++DELETE FROM t3 WHERE a = 'uk';
++SELECT * FROM t3 WHERE a = 'uk';
++INSERT INTO t3 VALUES ('uk');
++UPDATE t3 SET a = 'us' WHERE a = 'uk';
++SELECT * FROM t3 WHERE a = 'uk';
++
++DROP TABLE t1,t2,t3;
++
+ --echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/insert_select.test mysql-4.1/mysql-test/t/insert_select.test
+--- mysql-4.1.23/mysql-test/t/insert_select.test	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/t/insert_select.test	2007-07-31 07:45:59.000000000 +0200
+@@ -239,4 +239,32 @@
+ 
+ DROP TABLE t1;
+ 
++#
++# Bug #29717 INSERT INTO SELECT inserts values even if SELECT statement itself returns empty
++#
++
++CREATE TABLE t1 (
++    f1 int(10) unsigned NOT NULL auto_increment PRIMARY KEY,
++    f2 varchar(100) NOT NULL default ''
++);
++CREATE TABLE t2 (
++    f1 varchar(10) NOT NULL default '',
++    f2 char(3) NOT NULL default '',
++    PRIMARY KEY  (`f1`),
++    KEY `k1` (`f2`, `f1`)
++);
++
++INSERT INTO t1 values(NULL, '');
++INSERT INTO `t2` VALUES ('486878','WDT'),('486910','WDT');
++SELECT COUNT(*) FROM t1;
++
++SELECT min(t2.f1) FROM t1, t2 where t2.f2 = 'SIR' GROUP BY t1.f1;
++
++INSERT INTO t1 (f2)
++  SELECT min(t2.f1) FROM t1, t2 where t2.f2 = 'SIR' GROUP BY t1.f1;
++
++SELECT COUNT(*) FROM t1;
++SELECT * FROM t1;
++DROP TABLE t1, t2;
++
+ # End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/loaddata.test mysql-4.1/mysql-test/t/loaddata.test
+--- mysql-4.1.23/mysql-test/t/loaddata.test	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/mysql-test/t/loaddata.test	2007-07-03 18:38:21.000000000 +0200
+@@ -3,7 +3,7 @@
+ #
+ 
+ --disable_warnings
+-drop table if exists t1;
++drop table if exists t1,t2;
+ --enable_warnings
+ 
+ create table t1 (a date, b date, c date not null, d date);
+@@ -67,4 +67,39 @@
+ select * from t1;
+ drop table t1;
+ 
++#
++# Bug #29294 SELECT INTO OUTFILE/LOAD DATA INFILE with special
++# characters in the FIELDS ENCLOSED BY clause
++#
++
++CREATE TABLE t1 (
++  id INT AUTO_INCREMENT PRIMARY KEY,
++  c1 VARCHAR(255)
++);
++
++CREATE TABLE t2 (
++  id INT,
++  c2 VARCHAR(255)
++);
++
++INSERT INTO t1 (c1) VALUES
++  ('r'),   ('rr'),   ('rrr'),   ('rrrr'),
++  ('.r'),  ('.rr'),  ('.rrr'),  ('.rrrr'),
++  ('r.'),  ('rr.'),  ('rrr.'),  ('rrrr.'),
++  ('.r.'), ('.rr.'), ('.rrr.'), ('.rrrr.');
++SELECT * FROM t1;
++
++--exec rm -f $MYSQL_TEST_DIR/var/tmp/t1
++--replace_result $MYSQL_TEST_DIR MYSQL_TEST_DIR
++eval SELECT * INTO OUTFILE '$MYSQL_TEST_DIR/var/tmp/t1' FIELDS ENCLOSED BY 'r' FROM t1;
++--exec cat $MYSQL_TEST_DIR/var/tmp/t1
++
++--replace_result $MYSQL_TEST_DIR MYSQL_TEST_DIR
++eval LOAD DATA INFILE '$MYSQL_TEST_DIR/var/tmp/t1' INTO TABLE t2 FIELDS ENCLOSED BY 'r';
++SELECT t1.id, c1, c2 FROM t1 LEFT  JOIN t2 ON t1.id=t2.id WHERE c1 != c2;
++SELECT t1.id, c1, c2 FROM t1 RIGHT JOIN t2 ON t1.id=t2.id WHERE c1 != c2;
++
++--exec rm $MYSQL_TEST_DIR/var/tmp/t1
++DROP TABLE t1,t2;
++
+ # End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/myisampack.test mysql-4.1/mysql-test/t/myisampack.test
+--- mysql-4.1.23/mysql-test/t/myisampack.test	1970-01-01 01:00:00.000000000 +0100
++++ mysql-4.1/mysql-test/t/myisampack.test	2007-11-07 09:55:27.000000000 +0100
+@@ -0,0 +1,33 @@
++#
++# BUG#31277 - myisamchk --unpack corrupts a table
++#
++CREATE TABLE t1(c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, c4 DOUBLE, c5 DOUBLE,
++  c6 DOUBLE, c7 DOUBLE, c8 DOUBLE, c9 DOUBLE, a INT PRIMARY KEY);
++INSERT INTO t1 VALUES
++(-3.31168791059336e-06,-3.19054655887874e-06,-1.06528081684847e-05,-1.227278240089e-06,-1.66718069164799e-06,-2.59038972510885e-06,-2.83145227805303e-06,-4.09678491270648e-07,-2.22610091291797e-06,6),
++(0.0030743000272545,2.53222044316438e-05,2.78674650061845e-05,1.95914465544536e-05,1.7347572525984e-05,1.87513810069614e-05,1.69882826885005e-05,2.44449336987598e-05,1.89914629921774e-05,9),
++(2.85229319423495e-05,3.05970988282259e-05,3.77161100113133e-05,2.3055238978766e-05,2.08241267364615e-05,2.28009504270553e-05,2.12070165658947e-05,2.84350091565409e-05,2.3366822910704e-05,3),
++(0,0,0,0,0,0,0,0,0,12),
++(3.24544577570754e-05,3.44619021870993e-05,4.37561613201124e-05,2.57556808726748e-05,2.3195354640561e-05,2.58532400758869e-05,2.34934241667179e-05,3.1621640063232e-05,2.58229982746189e-05,19),
++(2.53222044316438e-05,0.00445071933455582,2.97447268116016e-05,2.12379514059868e-05,1.86777776502663e-05,2.0170058676712e-05,1.8946030385445e-05,2.66040037173511e-05,2.09161899668946e-05,20),
++(3.03462382611645e-05,3.26517930083994e-05,3.5242025468662e-05,2.53219745106391e-05,2.24384532945004e-05,2.4052346047657e-05,2.23865572957053e-05,3.1634313969082e-05,2.48285463481801e-05,21),
++(1.95914465544536e-05,2.12379514059868e-05,2.27808649037128e-05,0.000341724375366877,1.4512761275113e-05,1.56475828693953e-05,1.44372366441415e-05,2.07952121981765e-05,1.61488256935919e-05,28),
++(1.7347572525984e-05,1.86777776502663e-05,2.04116907052727e-05,1.4512761275113e-05,0.000432162526082388,1.38116514014465e-05,1.2712914948904e-05,1.82503165178506e-05,1.43043075345922e-05,30),
++(1.68339762136661e-05,1.77836497166611e-05,2.36328309295222e-05,1.30183423732016e-05,1.18674654241553e-05,1.32467273128652e-05,1.24581739117775e-05,1.55624190959406e-05,1.33010638508213e-05,31),
++(1.89643062824415e-05,2.06997140070717e-05,2.29045490159364e-05,1.57918175731019e-05,1.39864987449492e-05,1.50580274578455e-05,1.45908734129609e-05,1.95329296993327e-05,1.5814709481221e-05,32),
++(1.69882826885005e-05,1.8946030385445e-05,2.00820439721439e-05,1.44372366441415e-05,1.2712914948904e-05,1.35209686474184e-05,0.00261563314789896,1.78285095864627e-05,1.46699314500019e-05,34),
++(2.0278186540684e-05,2.18923409729654e-05,2.39981539939738e-05,1.71774589459438e-05,1.54654355357383e-05,1.62731485707636e-05,1.49253140625051e-05,2.18229800160297e-05,1.71923561673718e-05,35),
++(2.44449336987598e-05,2.66040037173511e-05,2.84860148925308e-05,2.07952121981765e-05,1.82503165178506e-05,1.97667730441441e-05,1.78285095864627e-05,0.00166478601822712,2.0299952103232e-05,36),
++(1.89914629921774e-05,2.09161899668946e-05,2.26026841007872e-05,1.61488256935919e-05,1.43043075345922e-05,1.52609063290127e-05,1.46699314500019e-05,2.0299952103232e-05,0.00306670170971682,39),
++(0,0,0,0,0,0,0,0,0,41),
++(0,0,0,0,0,0,0,0,0,17),
++(0,0,0,0,0,0,0,0,0,18),
++(2.51880677333017e-05,2.63051795435778e-05,2.79874748974906e-05,2.02888886670845e-05,1.8178636318197e-05,1.91308527003585e-05,1.83260023644133e-05,2.4422300558171e-05,1.96411467520551e-05,44),
++(2.22402118719591e-05,2.37546284320705e-05,2.58463051055541e-05,1.83391609130854e-05,1.6300720519646e-05,1.74559091886791e-05,1.63733785575587e-05,2.26616253279828e-05,1.79541237435621e-05,45),
++(3.01092775359837e-05,3.23865212934412e-05,4.09444584045994e-05,0,2.15470966302776e-05,2.39082636344032e-05,2.28296706429177e-05,2.9007671511595e-05,2.44201138973326e-05,46);
++FLUSH TABLES;
++--exec $MYISAMPACK -s $MYSQLTEST_VARDIR/master-data/test/t1
++--exec $MYISAMCHK -srq $MYSQLTEST_VARDIR/master-data/test/t1
++--exec $MYISAMCHK -s --unpack $MYSQLTEST_VARDIR/master-data/test/t1
++CHECK TABLE t1 EXTENDED;
++DROP TABLE t1;
+diff -urN mysql-4.1.23/mysql-test/t/mysqltest.test mysql-4.1/mysql-test/t/mysqltest.test
+--- mysql-4.1.23/mysql-test/t/mysqltest.test	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/t/mysqltest.test	2007-06-19 11:06:02.000000000 +0200
+@@ -807,6 +807,10 @@
+ }
+ --enable_abort_on_error
+ --enable_query_log
++
++# Test source $variable/<filename>
++--source $MYSQLTEST_VARDIR/tmp/sourced.inc
++
+ --remove_file $MYSQLTEST_VARDIR/tmp/sourced.inc
+ 
+ # ----------------------------------------------------------------------------
+@@ -1811,4 +1815,125 @@
+ --enable_result_log
+ DROP TABLE t1;
+ 
++# ----------------------------------------------------------------------------
++# test for query_get_value
++# ----------------------------------------------------------------------------
++
++CREATE TABLE t1(
++ a int, b varchar(255), c datetime
++);
++SHOW COLUMNS FROM t1;
++
++#------------ Positive tests ------------
++# 1. constant parameters
++#    value is simple string without spaces
++let $value= query_get_value(SHOW COLUMNS FROM t1, Type, 1);
++--echo statement=SHOW COLUMNS FROM t1 row_number=1, column_name="Type", Value=$value
++let $value= query_get_value("SHOW COLUMNS FROM t1", Type, 1);
++--echo statement="SHOW COLUMNS FROM t1" row_number=1, column_name="Type", Value=$value
++#
++# 2. $variables as parameters
++#    value IS NULL
++let $my_show= SHOW COLUMNS FROM t1;
++let $column_name= Default;
++let $row_number= 1;
++let $value= query_get_value($my_show, $column_name, $row_number);
++--echo statement=$my_show row_number=$row_number, column_name=$column_name, Value=$value
++#
++# 3. result set of a SELECT (not recommended, because projection and
++#         selection could be done much better by pure SELECT functionality)
++#    value is string with space in the middle
++let $value= query_get_value(SELECT 'A B' AS "MyColumn", MyColumn, 1);
++--echo value= ->$value<-
++#
++# 4. column name with space
++let $value= query_get_value(SELECT 1 AS "My Column", My Column, 1);
++--echo value= $value
++#
++#------------ Negative tests ------------
++# 5. Incomplete statement including missing parameters
++# 5.1 incomplete statement
++--error 1
++--exec echo "let \$value= query_get_value(SHOW;" | $MYSQL_TEST 2>&1
++# 5.2 missing query
++--error 1
++--exec echo "let \$value= query_get_value;" | $MYSQL_TEST 2>&1
++# 5.3 missing column name
++--error 1
++--exec echo "let \$value= query_get_value(SHOW COLUMNS FROM t1);" | $MYSQL_TEST 2>&1
++# 5.4 missing row number
++--error 1
++--exec echo "let \$value= query_get_value(SHOW COLUMNS FROM t1, Field);" | $MYSQL_TEST 2>&1
++#
++# 6. Somehow "wrong" value of parameters
++# 6.1 row parameter
++# 6.1.1 non sense number 0
++let $value= initialized;
++let $value= query_get_value(SHOW COLUMNS FROM t1, Field, 0);
++--echo value= $value
++# 6.1.2 after the last row
++let $value= initialized;
++let $value= query_get_value(SHOW COLUMNS FROM t1, Field, 10);
++--echo value= $value
++# 6.1.3 invalid row number
++--error 1
++--exec echo "let \$value= query_get_value(SHOW COLUMNS FROM t1, Field, notnumber);" | $MYSQL_TEST 2>&1
++# 6.2 column name parameter, name of not existing column
++--error 1
++--exec echo "let \$value= query_get_value(SHOW COLUMNS FROM t1, column_not_exists, 1);" | $MYSQL_TEST 2>&1
++# 6.3. statement which never gives a result set
++--error 1
++--exec echo "let \$value= query_get_value(SET @A = 1, Field, 1);" | $MYSQL_TEST 2>&1
++# 6.4. statement contains a ","
++#      Note: There is no need to improve this, because we need query_get_value
++#            for SHOW commands only.
++--error 1
++--exec echo "let \$value= query_get_value(SELECT 1 AS "A", 1 AS "B", 1);" | $MYSQL_TEST 2>&1
++#
++# 7. empty result set
++let $value= initialized;
++let $value= query_get_value(SELECT a FROM t1, a, 1);
++--echo value= $value
++#
++# 9. failing statement
++--error 1
++--exec echo "let \$value= query_get_value(SHOW COLNS FROM t1, Field, 1);" | $MYSQL_TEST 2>&1
++#
++# 10. Artificial example how to process a complete SHOW result set:
++let $show_statement= SHOW COLUMNS FROM t1;
++let $rowno= 1;
++let $run=1;
++let $count= 0;
++--echo
++--echo Field Type Null Key Default Extra
++while ($run)
++{
++   let $Field=   query_get_value($show_statement, Field,   $rowno);
++   if (`SELECT '$Field' = 'No such row'`)
++   {
++      let $run= 0;
++   }
++   if (`SELECT '$Field' <> 'No such row'`)
++   {
++      let $Type=    query_get_value($show_statement, Type,    $rowno);
++      let $Null=    query_get_value($show_statement, Null,    $rowno);
++      if (`SELECT '$Null' = 'YES'`)
++      {
++         inc $count;
++      }
++      let $Key=     query_get_value($show_statement, Key,     $rowno);
++      let $Default= query_get_value($show_statement, Default, $rowno);
++      let $Extra=   query_get_value($show_statement, Extra,   $rowno);
++      --echo $Field $Type $Null ->$Key<- $Default $Extra
++      inc $rowno;
++   }
++}
++--echo
++--echo Number of columns with Default NULL: $count
++--echo
++eval $show_statement;
++
++drop table t1;
++
+ --echo End of tests
++
+diff -urN mysql-4.1.23/mysql-test/t/repair.test mysql-4.1/mysql-test/t/repair.test
+--- mysql-4.1.23/mysql-test/t/repair.test	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/t/repair.test	2007-10-17 08:29:45.000000000 +0200
+@@ -83,4 +83,33 @@
+ SET myisam_sort_buffer_size=@@global.myisam_sort_buffer_size;
+ DROP TABLE t1;
+ 
+-# End of 4.1 tests
++#
++# BUG#31174 - "Repair" command on MyISAM crashes with small 
++#              myisam_sort_buffer_size
++#
++CREATE TABLE t1(a CHAR(255), KEY(a));
++SET myisam_sort_buffer_size=4496;
++INSERT INTO t1 VALUES
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),('0'),
++('0'),('0'),('0'),('0'),('0'),('0'),('0');
++SET myisam_repair_threads=2;
++REPAIR TABLE t1;
++SET myisam_repair_threads=@@global.myisam_repair_threads;
++SET myisam_sort_buffer_size=@@global.myisam_sort_buffer_size;
++DROP TABLE t1;
++
++--echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/rpl_change_master.test mysql-4.1/mysql-test/t/rpl_change_master.test
+--- mysql-4.1.23/mysql-test/t/rpl_change_master.test	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/t/rpl_change_master.test	2007-06-19 12:19:19.000000000 +0200
+@@ -14,11 +14,11 @@
+ --replace_result $MASTER_MYPORT MASTER_MYPORT
+ --replace_column 1 # 8 # 9 # 23 # 33 #
+ --replace_column 1 # 33 #
+-show slave status;
++query_vertical show slave status;
+ change master to master_user='root';
+ --replace_result $MASTER_MYPORT MASTER_MYPORT
+ --replace_column 1 # 8 # 9 # 23 # 33 #
+-show slave status;
++query_vertical show slave status;
+ # Will restart from after the values(2), which is bug
+ select release_lock("a");
+ start slave;
+diff -urN mysql-4.1.23/mysql-test/t/select.test mysql-4.1/mysql-test/t/select.test
+--- mysql-4.1.23/mysql-test/t/select.test	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/t/select.test	2007-11-07 16:45:01.000000000 +0100
+@@ -2353,4 +2353,25 @@
+ select hex(a), hex(b) from t1;
+ drop table t1;
+ 
++#
++# Bug #32103: optimizer crash when join on int and mediumint with variable in 
++#             where clause
++#
++
++CREATE TABLE t1 (c0 int);
++CREATE TABLE t2 (c0 int);
++
++# We need any variable that:
++# 1. has integer type, 
++# 2. can be used with the "@@name" syntax
++# 3. available in every server build
++INSERT INTO t1 VALUES(@@connect_timeout);
++INSERT INTO t2 VALUES(@@connect_timeout);
++
++# We only need to ensure 1 row is returned to validate the results
++--replace_column 1 X 2 X
++SELECT * FROM t1 JOIN t2 ON t1.c0 = t2.c0 WHERE (t1.c0 <=> @@connect_timeout);
++
++DROP TABLE t1, t2;
++
+ --echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/subselect.test mysql-4.1/mysql-test/t/subselect.test
+--- mysql-4.1.23/mysql-test/t/subselect.test	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysql-test/t/subselect.test	2007-06-06 15:29:14.000000000 +0200
+@@ -1815,11 +1815,12 @@
+ DROP TABLE t1,t2,t3;
+ 
+ #
+-# BUG #10308: purge log with subselect
++# BUG#10308: purge log with subselect
++# Bug#28553: mysqld crash in "purge master log before(select time from information_schema)"
+ #
+-
++--error 1064
+ purge master logs before (select adddate(current_timestamp(), interval -4 day));
+-
++purge master logs before adddate(current_timestamp(), interval -4 day);
+ 
+ #
+ # Bug#18503: Queries with a quantified subquery returning empty set may
+diff -urN mysql-4.1.23/mysql-test/t/symlink.test mysql-4.1/mysql-test/t/symlink.test
+--- mysql-4.1.23/mysql-test/t/symlink.test	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/mysql-test/t/symlink.test	2007-11-12 18:51:28.000000000 +0100
+@@ -119,6 +119,18 @@
+ drop table t1;
+ 
+ #
++# BUG#32111 - Security Breach via DATA/INDEX DIRECORY and RENAME TABLE
++#
++--replace_result $MYSQLTEST_VARDIR TEST_DIR
++eval CREATE TABLE t1(a INT)
++DATA DIRECTORY='$MYSQLTEST_VARDIR/master-data/mysql'
++INDEX DIRECTORY='$MYSQLTEST_VARDIR/master-data/mysql';
++--replace_result $MYSQLTEST_VARDIR TEST_DIR
++--error 1
++RENAME TABLE t1 TO user;
++DROP TABLE t1;
++
++#
+ # Test specifying DATA DIRECTORY that is the same as what would normally
+ # have been chosen. (Bug #8707)
+ #
+diff -urN mysql-4.1.23/mysql-test/t/type_enum.test mysql-4.1/mysql-test/t/type_enum.test
+--- mysql-4.1.23/mysql-test/t/type_enum.test	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/t/type_enum.test	2007-06-27 00:41:46.000000000 +0200
+@@ -156,4 +156,21 @@
+ create table t1(exhausting_charset enum('ABCDEFGHIJKLMNOPQRSTUVWXYZ','	
+  !"','#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~','xx\','yy\Ä','zzÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ'));
+ 
++#
++# Bug #29251: MySQL coerces special 0 enum values to normal '' value
++# when ALTERing the column
++#
++
++CREATE TABLE t1 (
++  id INT AUTO_INCREMENT PRIMARY KEY,
++  c1 ENUM('a', '', 'b')
++);
++INSERT INTO t1 (c1) VALUES (0), ('a'), (''), ('b');
++SELECT id, c1 + 0, c1 FROM t1;
++
++ALTER TABLE t1 CHANGE c1 c1 ENUM('a', '') NOT NULL;
++SELECT id, c1 + 0, c1 FROM t1;
++
++DROP TABLE t1;
++
+ --echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysql-test/t/variables.test mysql-4.1/mysql-test/t/variables.test
+--- mysql-4.1.23/mysql-test/t/variables.test	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysql-test/t/variables.test	2007-10-18 10:47:52.000000000 +0200
+@@ -447,4 +447,11 @@
+ set @@query_prealloc_size = @test;
+ select @@query_prealloc_size = @test;
+ 
+-# End of 4.1 tests
++#
++# Bug#31588 buffer overrun when setting variables
++#
++# Buffer-size Off By One. Should throw valgrind-warning without fix #31588.
++--error 1231
++set global sql_mode=repeat('a',80);
++
++--echo End of 4.1 tests
+diff -urN mysql-4.1.23/mysys/charset.c mysql-4.1/mysys/charset.c
+--- mysql-4.1.23/mysys/charset.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysys/charset.c	2007-10-24 13:09:29.000000000 +0200
+@@ -673,3 +673,43 @@
+   return fs_cset_cache;
+ }
+ #endif
++
++
++/**
++  @brief Find compatible character set with ctype.
++
++  @param[in] original_cs Original character set
++
++  @note
++    128 my_charset_ucs2_general_uca      ->192 my_charset_utf8_general_uca_ci
++    129 my_charset_ucs2_icelandic_uca_ci ->193 my_charset_utf8_icelandic_uca_ci
++    130 my_charset_ucs2_latvian_uca_ci   ->194 my_charset_utf8_latvian_uca_ci
++    131 my_charset_ucs2_romanian_uca_ci  ->195 my_charset_utf8_romanian_uca_ci
++    132 my_charset_ucs2_slovenian_uca_ci ->196 my_charset_utf8_slovenian_uca_ci
++    133 my_charset_ucs2_polish_uca_ci    ->197 my_charset_utf8_polish_uca_ci
++    134 my_charset_ucs2_estonian_uca_ci  ->198 my_charset_utf8_estonian_uca_ci
++    135 my_charset_ucs2_spanish_uca_ci   ->199 my_charset_utf8_spanish_uca_ci
++    136 my_charset_ucs2_swedish_uca_ci   ->200 my_charset_utf8_swedish_uca_ci
++    137 my_charset_ucs2_turkish_uca_ci   ->201 my_charset_utf8_turkish_uca_ci
++    138 my_charset_ucs2_czech_uca_ci     ->202 my_charset_utf8_czech_uca_ci
++    139 my_charset_ucs2_danish_uca_ci    ->203 my_charset_utf8_danish_uca_ci
++    140 my_charset_ucs2_lithuanian_uca_ci->204 my_charset_utf8_lithuanian_uca_ci
++    141 my_charset_ucs2_slovak_uca_ci    ->205 my_charset_utf8_slovak_uca_ci
++    142 my_charset_ucs2_spanish2_uca_ci  ->206 my_charset_utf8_spanish2_uca_ci
++    143 my_charset_ucs2_roman_uca_ci     ->207 my_charset_utf8_roman_uca_ci
++    144 my_charset_ucs2_persian_uca_ci   ->208 my_charset_utf8_persian_uca_ci
++
++  @return Compatible character set or NULL.
++*/
++
++CHARSET_INFO *get_compatible_charset_with_ctype(CHARSET_INFO *original_cs)
++{
++  CHARSET_INFO *compatible_cs= 0;
++  DBUG_ENTER("get_compatible_charset_with_ctype");
++  if (!strcmp(original_cs->csname, "ucs2") &&
++      (compatible_cs= get_charset(original_cs->number + 64, MYF(0))) &&
++      (!compatible_cs->ctype ||
++       strcmp(original_cs->name + 4, compatible_cs->name + 4)))
++    compatible_cs= 0;
++  DBUG_RETURN(compatible_cs);
++}
+diff -urN mysql-4.1.23/mysys/hash.c mysql-4.1/mysys/hash.c
+--- mysql-4.1.23/mysys/hash.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/mysys/hash.c	2007-07-05 08:45:13.000000000 +0200
+@@ -572,6 +572,25 @@
+     previous->next=pos->next;		/* unlink pos */
+ 
+   /* Move data to correct position */
++  if (new_index == empty)
++  {
++    /*
++      At this point record is unlinked from the old chain, thus it holds
++      random position. By the chance this position is equal to position
++      for the first element in the new chain. That means updated record
++      is the only record in the new chain.
++    */
++    if (empty != idx)
++    {
++      /*
++        Record was moved while unlinking it from the old chain.
++        Copy data to a new position.
++      */
++      data[empty]= org_link;
++    }
++    data[empty].next= NO_RECORD;
++    DBUG_RETURN(0);
++  }
+   pos=data+new_index;
+   new_pos_index=hash_rec_mask(hash,pos,blength,records);
+   if (new_index != new_pos_index)
+diff -urN mysql-4.1.23/mysys/my_pthread.c mysql-4.1/mysys/my_pthread.c
+--- mysql-4.1.23/mysys/my_pthread.c	2007-12-02 20:38:50.000000000 +0100
++++ mysql-4.1/mysys/my_pthread.c	2007-07-30 20:38:48.000000000 +0200
+@@ -30,7 +30,7 @@
+ #define SCHED_POLICY SCHED_OTHER
+ #endif
+ 
+-uint thd_lib_detected;
++uint thd_lib_detected= 0;
+ 
+ #ifndef my_pthread_setprio
+ void my_pthread_setprio(pthread_t thread_id,int prior)
+diff -urN mysql-4.1.23/mysys/my_symlink2.c mysql-4.1/mysys/my_symlink2.c
+--- mysql-4.1.23/mysys/my_symlink2.c	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/mysys/my_symlink2.c	2007-11-12 11:55:20.000000000 +0100
+@@ -125,6 +125,7 @@
+   int was_symlink= (!my_disable_symlinks &&
+ 		    !my_readlink(link_name, from, MYF(0)));
+   int result=0;
++  int name_is_different;
+   DBUG_ENTER("my_rename_with_symlink");
+ 
+   if (!was_symlink)
+@@ -133,6 +134,14 @@
+   /* Change filename that symlink pointed to */
+   strmov(tmp_name, to);
+   fn_same(tmp_name,link_name,1);		/* Copy dir */
++  name_is_different= strcmp(link_name, tmp_name);
++  if (name_is_different && !access(tmp_name, F_OK))
++  {
++    my_errno= EEXIST;
++    if (MyFlags & MY_WME)
++      my_error(EE_CANTCREATEFILE, MYF(0), tmp_name, EEXIST);
++    DBUG_RETURN(1);
++  }
+ 
+   /* Create new symlink */
+   if (my_symlink(tmp_name, to, MyFlags))
+@@ -144,7 +153,7 @@
+     the same basename and different directories.
+    */
+ 
+-  if (strcmp(link_name, tmp_name) && my_rename(link_name, tmp_name, MyFlags))
++  if (name_is_different && my_rename(link_name, tmp_name, MyFlags))
+   {
+     int save_errno=my_errno;
+     my_delete(to, MyFlags);			/* Remove created symlink */
+diff -urN mysql-4.1.23/scripts/mysql_config.sh mysql-4.1/scripts/mysql_config.sh
+--- mysql-4.1.23/scripts/mysql_config.sh	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/scripts/mysql_config.sh	2007-08-29 22:24:05.000000000 +0200
+@@ -122,7 +122,7 @@
+ cflags=`echo "$cflags"|sed -e 's/ *\$//'` 
+ 
+ # Same for --libs(_r)
+-for remove in lmtmalloc static-libcxa i-static
++for remove in lmtmalloc static-libcxa i-static static-intel
+ do
+   # We know the strings starts with a space
+   libs=`echo "$libs"|sed -e "s/ -$remove  */ /g"` 
+diff -urN mysql-4.1.23/scripts/mysql_setpermission.sh mysql-4.1/scripts/mysql_setpermission.sh
+--- mysql-4.1.23/scripts/mysql_setpermission.sh	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/scripts/mysql_setpermission.sh	2007-08-01 11:48:53.000000000 +0200
+@@ -19,13 +19,14 @@
+ ## 1.3 Applied patch provided by Martin Mokrejs <mmokrejs@natur.cuni.cz>
+ ##     (General code cleanup, use the GRANT statement instead of updating
+ ##     the privilege tables directly, added option to revoke privileges)
++## 1.4 Remove option 6 which attempted to erroneously grant global privileges
+ 
+ #### TODO
+ #
+ # empty ... suggestions ... mail them to me ...
+ 
+ 
+-$version="1.3";
++$version="1.4";
+ 
+ use DBI;
+ use Getopt::Long;
+@@ -103,13 +104,9 @@
+ 		print "     existing database and host combination (user can do\n";
+ 		print "     SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,INDEX,\n";
+ 		print "     LOCK TABLES,CREATE TEMPORARY TABLES)\n";
+-    print "  6. Create/append database administrative privileges for an\n";
+-		print "     existing database and host combination (user can do\n";
+-		print "     SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,INDEX,LOCK TABLES,\n";
+-		print "     CREATE TEMPORARY TABLES,SHOW DATABASES,PROCESS)\n";
+-    print "  7. Create/append full privileges for an existing database\n";
++    print "  6. Create/append full privileges for an existing database\n";
+ 		print "     and host combination (user has FULL privilege)\n";
+-    print "  8. Remove all privileges for for an existing database and\n";
++    print "  7. Remove all privileges for for an existing database and\n";
+ 		print "     host combination.\n";
+     print "     (user will have all permission fields set to N)\n";
+     print "  0. exit this program\n";
+@@ -117,10 +114,10 @@
+     while (<STDIN>) {
+       $answer = $_;
+       chomp($answer);
+-      if ($answer =~ /^[12345678]$/) {
++      if ($answer =~ /^[1234567]$/) {
+         if ($answer == 1) {
+ 	   setpwd();
+-        } elsif ($answer =~ /^[2345678]$/) {
++        } elsif ($answer =~ /^[234567]$/) {
+ 	   addall($answer);
+ 	} else {
+           print "Sorry, something went wrong. With such option number you should not get here.\n\n";
+@@ -233,7 +230,7 @@
+   }
+   }
+ 
+-  if ( ( !$todo ) or not ( $todo =~ m/^[2-8]$/ ) ) {
++  if ( ( !$todo ) or not ( $todo =~ m/^[2-7]$/ ) ) {
+     print STDERR "Sorry, select option $todo isn't known inside the program .. See ya\n";
+     quit();
+   }
+@@ -256,12 +253,9 @@
+       # user privileges: SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,INDEX,LOCK TABLES,CREATE TEMPORARY TABLES
+       $sth = $dbh->do("GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,INDEX,LOCK TABLES,CREATE TEMPORARY TABLES ON $db.* TO $user@\"$host\" IDENTIFIED BY \'$pass\'") || die $dbh->errstr;
+     } elsif ($todo == 6) {
+-       # admin privileges: GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,INDEX,LOCK TABLES,CREATE TEMPORARY TABLES,SHOW DATABASES,PROCESS
+-       $sth = $dbh->do("GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,INDEX,LOCK TABLES,CREATE TEMPORARY TABLES,SHOW DATABASES,PROCESS ON $db.* TO $user@\"$host\" IDENTIFIED BY \'$pass\'") || die $dbh->errstr;
+-    } elsif ($todo == 7) {
+        # all privileges
+        $sth = $dbh->do("GRANT ALL ON $db.* TO \'$user\'\@\'$host\' IDENTIFIED BY \'$pass\'") || die $dbh->errstr;
+-    } elsif ($todo == 8) {
++    } elsif ($todo == 7) {
+        # all privileges set to N
+        $sth = $dbh->do("REVOKE ALL ON *.* FROM \'$user\'\@\'$host\'") || die $dbh->errstr;
+     }
+diff -urN mysql-4.1.23/sql/field.cc mysql-4.1/sql/field.cc
+--- mysql-4.1.23/sql/field.cc	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/sql/field.cc	2007-10-04 12:22:30.000000000 +0200
+@@ -5211,7 +5211,8 @@
+                           length / field_charset->mbmaxlen);
+   memcpy(buff, ptr, bytes);
+   if (bytes < length)
+-    bzero(buff + bytes, length - bytes);
++    field_charset->cset->fill(field_charset, buff + bytes, length - bytes,
++                              ' ');
+   return bytes;
+ }
+ 
+diff -urN mysql-4.1.23/sql/field_conv.cc mysql-4.1/sql/field_conv.cc
+--- mysql-4.1.23/sql/field_conv.cc	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/field_conv.cc	2007-06-27 00:41:45.000000000 +0200
+@@ -311,6 +311,15 @@
+ }
+ 
+ 
++static void do_field_enum(Copy_field *copy)
++{
++  if (copy->from_field->val_int() == 0)
++    ((Field_enum *) copy->to_field)->store_type((ulonglong) 0);
++  else
++    do_field_string(copy);
++}
++
++
+ static void do_field_int(Copy_field *copy)
+ {
+   longlong value=copy->from_field->val_int();
+@@ -538,7 +547,13 @@
+ 	  to->real_type() == FIELD_TYPE_SET)
+       {
+ 	if (!to->eq_def(from))
+-	  return do_field_string;
++        {
++          if (from->real_type() == MYSQL_TYPE_ENUM &&
++              to->real_type() == MYSQL_TYPE_ENUM)
++            return do_field_enum;
++          else
++            return do_field_string;
++        }
+       }
+       else if (to->charset() != from->charset())
+ 	return do_field_string;
+diff -urN mysql-4.1.23/sql/gstream.cc mysql-4.1/sql/gstream.cc
+--- mysql-4.1.23/sql/gstream.cc	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/gstream.cc	2007-10-03 10:30:31.000000000 +0200
+@@ -45,7 +45,7 @@
+   skip_space();
+   res->str= (char*) m_cur;
+   /* The following will also test for \0 */
+-  if (!my_isvar_start(&my_charset_bin, *m_cur))
++  if ((m_cur >= m_limit) || !my_isvar_start(&my_charset_bin, *m_cur))
+     return 1;
+ 
+   /*
+diff -urN mysql-4.1.23/sql/item_func.cc mysql-4.1/sql/item_func.cc
+--- mysql-4.1.23/sql/item_func.cc	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/sql/item_func.cc	2007-10-24 13:09:29.000000000 +0200
+@@ -2243,7 +2243,7 @@
+   else
+   {
+ #ifdef EMBEDDED_LIBRARY
+-    if (ull->locked && pthread_equal(current_thd->real_id,ull->thread))
++    if (ull->locked && (current_thd->real_id == ull->thread))
+ #else
+     if (ull->locked && pthread_equal(pthread_self(),ull->thread))
+ #endif
+@@ -3135,13 +3135,44 @@
+     my_error(ER_WRONG_ARGUMENTS,MYF(0),"MATCH");
+     return 1;
+   }
+-  table=((Item_field *)item)->field->table;
++  /*
++    With prepared statements Item_func_match::fix_fields is called twice.
++    When it is called first time we have original item tree here and add
++    conversion layer for character sets that do not have ctype array a few
++    lines below. When it is called second time, we already have conversion
++    layer in item tree.
++  */
++  table= (item->type() == Item::FIELD_ITEM) ?
++         ((Item_field *)item)->field->table :
++         ((Item_field *)((Item_func_conv *)item)->key_item())->field->table;
+   if (!(table->file->table_flags() & HA_CAN_FULLTEXT))
+   {
+     my_error(ER_TABLE_CANT_HANDLE_FT, MYF(0));
+     return 1;
+   }
+   table->fulltext_searched=1;
++  /* A workaround for ucs2 character set */
++  if (!args[1]->collation.collation->ctype)
++  {
++    CHARSET_INFO *compatible_cs=
++      get_compatible_charset_with_ctype(args[1]->collation.collation);
++    bool rc= 1;
++    if (compatible_cs)
++    {
++      Item_string *conv_item= new Item_string("", 0, compatible_cs,
++                                              DERIVATION_EXPLICIT);
++      item= args[0];
++      args[0]= conv_item;
++      rc= agg_item_charsets(cmp_collation, func_name(), args, arg_count,
++                            MY_COLL_ALLOW_SUPERSET_CONV |
++                            MY_COLL_ALLOW_COERCIBLE_CONV |
++                            MY_COLL_DISALLOW_NONE);
++      args[0]= item;
++    }
++    else
++      my_error(ER_WRONG_ARGUMENTS, MYF(0), "MATCH");
++    return rc;
++  }
+   return agg_arg_collations_for_comparison(cmp_collation, args+1, arg_count-1);
+ }
+ 
+diff -urN mysql-4.1.23/sql/item.h mysql-4.1/sql/item.h
+--- mysql-4.1.23/sql/item.h	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/item.h	2007-11-07 16:45:01.000000000 +0100
+@@ -690,7 +690,7 @@
+   double val()
+     { DBUG_ASSERT(fixed == 1); return ulonglong2double((ulonglong)value); }
+   String *val_str(String*);
+-  Item *new_item() { return new Item_uint(name,max_length); }
++  Item *new_item() { return new Item_uint(name, value, max_length); }
+   int save_in_field(Field *field, bool no_conversions);
+   void print(String *str);
+   Item_num *neg ();
+diff -urN mysql-4.1.23/sql/item_strfunc.h mysql-4.1/sql/item_strfunc.h
+--- mysql-4.1.23/sql/item_strfunc.h	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/sql/item_strfunc.h	2007-10-30 09:35:02.000000000 +0100
+@@ -531,6 +531,7 @@
+   {
+     collation.set(default_charset());
+     decimals=0; max_length=64;
++    maybe_null= 1;
+   }
+ };
+ 
+@@ -623,7 +624,7 @@
+     }
+   String* val_str(String* str);
+   const char *func_name() const { return "inet_ntoa"; }
+-  void fix_length_and_dec() { decimals = 0; max_length=3*8+7; }
++  void fix_length_and_dec() { decimals = 0; max_length=3*8+7; maybe_null=1;}
+ };
+ 
+ class Item_func_quote :public Item_str_func
+diff -urN mysql-4.1.23/sql/lock.cc mysql-4.1/sql/lock.cc
+--- mysql-4.1.23/sql/lock.cc	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/lock.cc	2007-06-01 10:50:12.000000000 +0200
+@@ -155,6 +155,13 @@
+     if (thr_multi_lock(sql_lock->locks + sql_lock->lock_count,
+                        sql_lock->lock_count))
+     {
++      /*
++        reset_lock_data is required here. If thr_multi_lock fails it
++        resets lock type for tables, which were locked before (and
++        including) one that caused error. Lock type for other tables
++        preserved.
++      */
++      reset_lock_data(sql_lock);
+       thd->some_tables_deleted=1;		// Try again
+       sql_lock->lock_count=0;			// Locks are alread freed
+     }
+diff -urN mysql-4.1.23/sql/mysql_priv.h mysql-4.1/sql/mysql_priv.h
+--- mysql-4.1.23/sql/mysql_priv.h	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/mysql_priv.h	2007-11-09 13:05:01.000000000 +0100
+@@ -59,9 +59,6 @@
+ bool net_request_file(NET* net, const char* fname);
+ char* query_table_status(THD *thd,const char *db,const char *table_name);
+ 
+-void net_set_write_timeout(NET *net, uint timeout);
+-void net_set_read_timeout(NET *net, uint timeout);
+-
+ #define x_free(A)	{ my_free((gptr) (A),MYF(MY_WME | MY_FAE | MY_ALLOW_ZERO_PTR)); }
+ #define safeFree(x)	{ if(x) { my_free((gptr) x,MYF(0)); x = NULL; } }
+ #define PREV_BITS(type,A)	((type) (((type) 1 << (A)) -1))
+@@ -408,6 +405,16 @@
+ int create_table_precheck(THD *thd, TABLE_LIST *tables,
+ 			  TABLE_LIST *create_table);
+ Item *negate_expression(THD *thd, Item *expr);
++
++/* log.cc */
++void sql_perror(const char *message);
++
++void vprint_msg_to_log(enum loglevel level, const char *format, va_list args);
++void sql_print_error(const char *format, ...) ATTRIBUTE_FORMAT(printf, 1, 2);
++void sql_print_warning(const char *format, ...) ATTRIBUTE_FORMAT(printf, 1, 2);
++void sql_print_information(const char *format, ...)
++  ATTRIBUTE_FORMAT(printf, 1, 2);
++
+ #include "sql_class.h"
+ #include "sql_acl.h"
+ #include "tztime.h"
+@@ -842,14 +849,6 @@
+ int key_cmp(KEY_PART_INFO *key_part, const byte *key, uint key_length);
+ 
+ bool init_errmessage(void);
+-void sql_perror(const char *message);
+-
+-void vprint_msg_to_log(enum loglevel level, const char *format, va_list args);
+-void sql_print_error(const char *format, ...) ATTRIBUTE_FORMAT(printf, 1, 2);
+-void sql_print_warning(const char *format, ...) ATTRIBUTE_FORMAT(printf, 1, 2);
+-void sql_print_information(const char *format, ...)
+-  ATTRIBUTE_FORMAT(printf, 1, 2);
+-
+ 
+ bool fn_format_relative_to_data_home(my_string to, const char *name,
+ 				     const char *dir, const char *extension);
+diff -urN mysql-4.1.23/sql/net_serv.cc mysql-4.1/sql/net_serv.cc
+--- mysql-4.1.23/sql/net_serv.cc	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/sql/net_serv.cc	2007-06-19 08:13:10.000000000 +0200
+@@ -111,13 +111,13 @@
+ my_bool my_net_init(NET *net, Vio* vio)
+ {
+   DBUG_ENTER("my_net_init");
++  net->vio = vio;
+   my_net_local_init(net);			/* Set some limits */
+   if (!(net->buff=(uchar*) my_malloc((uint32) net->max_packet+
+ 				     NET_HEADER_SIZE + COMP_HEADER_SIZE,
+ 				     MYF(MY_WME))))
+     DBUG_RETURN(1);
+   net->buff_end=net->buff+net->max_packet;
+-  net->vio = vio;
+   net->no_send_ok = 0;
+   net->error=0; net->return_errno=0; net->return_status=0;
+   net->pkt_nr=net->compress_pkt_nr=0;
+diff -urN mysql-4.1.23/sql/opt_range.cc mysql-4.1/sql/opt_range.cc
+--- mysql-4.1.23/sql/opt_range.cc	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/sql/opt_range.cc	2007-09-10 14:26:49.000000000 +0200
+@@ -825,6 +825,7 @@
+     if (!(table->keys_in_use_for_query.is_set(idx)))
+       continue;
+     KEY_PART_INFO *keyinfo= table->key_info[idx].key_part;
++    uint n_parts=  table->key_info[idx].key_parts;
+     uint partno= 0;
+     
+     /* 
+@@ -834,7 +835,7 @@
+     */
+     if (!(table->file->index_flags(idx, 0, 1) & HA_READ_ORDER))
+       continue;
+-    for (ord= order; ord; ord= ord->next, partno++)
++    for (ord= order; ord && partno < n_parts; ord= ord->next, partno++)
+     {
+       Item *item= order->item[0];
+       if (!(item->type() == Item::FIELD_ITEM &&
+diff -urN mysql-4.1.23/sql/set_var.cc mysql-4.1/sql/set_var.cc
+--- mysql-4.1.23/sql/set_var.cc	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/sql/set_var.cc	2007-10-18 10:47:52.000000000 +0200
+@@ -1573,7 +1573,7 @@
+ 					    &not_used));
+     if (error_len)
+     {
+-      strmake(buff, error, min(sizeof(buff), error_len));
++      strmake(buff, error, min(sizeof(buff) - 1, error_len));
+       goto err;
+     }
+   }
+diff -urN mysql-4.1.23/sql/share/english/errmsg.txt mysql-4.1/sql/share/english/errmsg.txt
+--- mysql-4.1.23/sql/share/english/errmsg.txt	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/sql/share/english/errmsg.txt	2007-07-26 12:49:50.000000000 +0200
+@@ -21,7 +21,7 @@
+ "NO",
+ "YES",
+ "Can't create file '%-.64s' (errno: %d)",
+-"Can't create table '%-.64s' (errno: %d)",
++"Can't create table '%-.150s' (errno: %d)",
+ "Can't create database '%-.64s' (errno: %d)",
+ "Can't create database '%-.64s'; database exists",
+ "Can't drop database '%-.64s'; database doesn't exist",
+@@ -33,7 +33,7 @@
+ "Can't get working directory (errno: %d)",
+ "Can't lock file (errno: %d)",
+ "Can't open file: '%-.64s' (errno: %d)",
+-"Can't find file: '%-.64s' (errno: %d)",
++"Can't find file: '%-.150s' (errno: %d)",
+ "Can't read dir of '%-.64s' (errno: %d)",
+ "Can't change dir to '%-.64s' (errno: %d)",
+ "Record has changed since last read in table '%-.64s'",
+@@ -41,7 +41,7 @@
+ "Can't write; duplicate key in table '%-.64s'",
+ "Error on close of '%-.64s' (errno: %d)",
+ "Error reading file '%-.64s' (errno: %d)",
+-"Error on rename of '%-.64s' to '%-.64s' (errno: %d)",
++"Error on rename of '%-.107s' to '%-.107s' (errno: %d)",
+ "Error writing file '%-.64s' (errno: %d)",
+ "'%-.64s' is locked against change",
+ "Sort aborted",
+diff -urN mysql-4.1.23/sql/sql_class.cc mysql-4.1/sql/sql_class.cc
+--- mysql-4.1.23/sql/sql_class.cc	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/sql_class.cc	2007-07-03 18:04:24.000000000 +0200
+@@ -1020,6 +1020,7 @@
+   field_sep_char= (exchange->enclosed->length() ? (*exchange->enclosed)[0] :
+ 		   field_term_length ? (*exchange->field_term)[0] : INT_MAX);
+   escape_char=	(exchange->escaped->length() ? (*exchange->escaped)[0] : -1);
++  is_ambiguous_field_sep= test(strchr(ESCAPE_CHARS, field_sep_char));
+   line_sep_char= (exchange->line_term->length() ?
+ 		  (*exchange->line_term)[0] : INT_MAX);
+   if (!field_term_length)
+@@ -1113,7 +1114,9 @@
+ 	      (int) *pos == line_sep_char || !*pos)
+ 	  {
+ 	    char tmp_buff[2];
+-	    tmp_buff[0]= escape_char;
++            tmp_buff[0]= ((int) *pos == field_sep_char &&
++                          is_ambiguous_field_sep) ?
++                          field_sep_char : escape_char;
+ 	    tmp_buff[1]= *pos ? *pos : '0';
+ 	    if (my_b_write(&cache,(byte*) start,(uint) (pos-start)) ||
+ 		my_b_write(&cache,(byte*) tmp_buff,2))
+diff -urN mysql-4.1.23/sql/sql_class.h mysql-4.1/sql/sql_class.h
+--- mysql-4.1.23/sql/sql_class.h	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/sql_class.h	2007-07-16 22:38:49.000000000 +0200
+@@ -1018,11 +1018,27 @@
+     proc_info = old_msg;
+     pthread_mutex_unlock(&mysys_var->mutex);
+   }
++
++  static inline void safe_time(time_t *t)
++  {
++    /**
++       Wrapper around time() which retries on error (-1)
++
++       @details
++       This is needed because, despite the documentation, time() may fail
++       in some circumstances.  Here we retry time() until it succeeds, and
++       log the failure so that performance problems related to this can be
++       identified.
++    */
++    while(unlikely(time(t) == ((time_t) -1)))
++      sql_print_information("time() failed with %d", errno);
++  }
++
+   inline time_t query_start() { query_start_used=1; return start_time; }
+-  inline void	set_time()    { if (user_time) start_time=time_after_lock=user_time; else time_after_lock=time(&start_time); }
+-  inline void	end_time()    { time(&start_time); }
++  inline void	set_time()    { if (user_time) start_time=time_after_lock=user_time; else { safe_time(&start_time); time_after_lock= start_time; }}
++  inline void	end_time()    { safe_time(&start_time); }
+   inline void	set_time(time_t t) { time_after_lock=start_time=user_time=t; }
+-  inline void	lock_time()   { time(&time_after_lock); }
++  inline void	lock_time()   { safe_time(&time_after_lock); }
+   inline void	insert_id(ulonglong id_arg)
+   {
+     last_insert_id= id_arg;
+@@ -1224,9 +1240,18 @@
+ };
+ 
+ 
++#define ESCAPE_CHARS "ntrb0ZN" // keep synchronous with READ_INFO::unescape
++
++
+ class select_export :public select_to_file {
+   uint field_term_length;
+   int field_sep_char,escape_char,line_sep_char;
++  /*
++    The is_ambiguous_field_sep field is true if a value of the field_sep_char
++    field is one of the 'n', 't', 'r' etc characters
++    (see the READ_INFO::unescape method and the ESCAPE_CHARS constant value).
++  */
++  bool is_ambiguous_field_sep;
+   bool fixed_row_size;
+ public:
+   select_export(sql_exchange *ex) :select_to_file(ex) {}
+diff -urN mysql-4.1.23/sql/sql_load.cc mysql-4.1/sql/sql_load.cc
+--- mysql-4.1.23/sql/sql_load.cc	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/sql_load.cc	2007-07-03 16:05:06.000000000 +0200
+@@ -611,6 +611,7 @@
+ char
+ READ_INFO::unescape(char chr)
+ {
++  /* keep this switch synchornous with the ESCAPE_CHARS macro */
+   switch(chr) {
+   case 'n': return '\n';
+   case 't': return '\t';
+diff -urN mysql-4.1.23/sql/sql_parse.cc mysql-4.1/sql/sql_parse.cc
+--- mysql-4.1.23/sql/sql_parse.cc	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/sql/sql_parse.cc	2007-06-12 14:47:34.000000000 +0200
+@@ -1445,11 +1445,14 @@
+       Old clients send null-terminated string ('\0' for empty string) for
+       password.  New clients send the size (1 byte) + string (not null
+       terminated, so also '\0' for empty string).
++
++      Cast *passwd to an unsigned char, so that it doesn't extend the sign
++      for *passwd > 127 and become 2**32-127 after casting to uint.
+     */
+     char db_buff[NAME_LEN+1];                 // buffer to store db in utf8 
+     char *db= passwd;
+     uint passwd_len= thd->client_capabilities & CLIENT_SECURE_CONNECTION ? 
+-      *passwd++ : strlen(passwd);
++      (uchar)(*passwd++) : strlen(passwd);
+     db+= passwd_len + 1;
+ #ifndef EMBEDDED_LIBRARY
+     /* Small check for incomming packet */
+diff -urN mysql-4.1.23/sql/sql_select.cc mysql-4.1/sql/sql_select.cc
+--- mysql-4.1.23/sql/sql_select.cc	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/sql/sql_select.cc	2007-07-31 08:00:17.000000000 +0200
+@@ -777,6 +777,7 @@
+     order=0;					// The output has only one row
+     simple_order=1;
+     select_distinct= 0;                       // No need in distinct for 1 row
++    group_optimized_away= 1;
+   }
+ 
+   calc_group_buffer(this, group_list);
+@@ -6896,7 +6897,8 @@
+   if (!join->first_record || end_of_records ||
+       (idx=test_if_group_changed(join->group_fields)) >= 0)
+   {
+-    if (join->first_record || (end_of_records && !join->group))
++    if (join->first_record || 
++        (end_of_records && !join->group && !join->group_optimized_away))
+     {
+       if (join->procedure)
+ 	join->procedure->end_group();
+@@ -8118,7 +8120,7 @@
+       field_count++;
+   }
+ 
+-  if (!field_count && !(join->select_options & OPTION_FOUND_ROWS)) 
++  if (!field_count && !(join->select_options & OPTION_FOUND_ROWS) && !having) 
+   {                    // only const items with no OPTION_FOUND_ROWS
+     join->unit->select_limit_cnt= 1;		// Only send first row
+     DBUG_RETURN(0);
+diff -urN mysql-4.1.23/sql/sql_select.h mysql-4.1/sql/sql_select.h
+--- mysql-4.1.23/sql/sql_select.h	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/sql/sql_select.h	2007-07-31 07:45:59.000000000 +0200
+@@ -180,6 +180,14 @@
+   ROLLUP rollup;				// Used with rollup
+ 
+   bool select_distinct;				// Set if SELECT DISTINCT
++  /*
++    If we have the GROUP BY statement in the query,
++    but the group_list was emptied by optimizer, this
++    flag is TRUE.
++    It happens when fields in the GROUP BY are from
++    constant table
++  */
++  bool group_optimized_away;
+ 
+   /*
+     simple_xxxxx is set if ORDER/GROUP BY doesn't include any references
+@@ -276,6 +284,7 @@
+     ref_pointer_array_size= 0;
+     zero_result_cause= 0;
+     optimized= 0;
++    group_optimized_away= 0;
+ 
+     fields_list= fields_arg;
+     bzero((char*) &keyuse,sizeof(keyuse));
+diff -urN mysql-4.1.23/sql/sql_yacc.yy mysql-4.1/sql/sql_yacc.yy
+--- mysql-4.1.23/sql/sql_yacc.yy	2007-12-02 20:38:27.000000000 +0100
++++ mysql-4.1/sql/sql_yacc.yy	2007-06-06 15:29:14.000000000 +0200
+@@ -3567,7 +3567,8 @@
+ 	  LEX *lex= Lex;
+ 	  lex->derived_tables= 1;
+           if (lex->sql_command == (int)SQLCOM_HA_READ ||
+-              lex->sql_command == (int)SQLCOM_KILL)
++              lex->sql_command == (int)SQLCOM_KILL ||
++              lex->sql_command == (int)SQLCOM_PURGE)
+ 	  {
+ 	    yyerror(ER(ER_SYNTAX_ERROR));
+ 	    YYABORT;
+@@ -4748,6 +4749,7 @@
+ 	{
+ 	  LEX *lex=Lex;
+ 	  lex->type=0;
++          lex->sql_command = SQLCOM_PURGE;
+ 	} purge_options
+ 	{}
+ 	;
+@@ -4759,7 +4761,6 @@
+ purge_option:
+         TO_SYM TEXT_STRING_sys
+         {
+-	   Lex->sql_command = SQLCOM_PURGE;
+ 	   Lex->to_log = $2.str;
+         }
+ 	| BEFORE_SYM expr
+@@ -6212,7 +6213,8 @@
+ 	{
+ 	  LEX *lex=Lex;
+           if (lex->sql_command == (int)SQLCOM_HA_READ ||
+-              lex->sql_command == (int)SQLCOM_KILL)
++              lex->sql_command == (int)SQLCOM_KILL ||
++              lex->sql_command == (int)SQLCOM_PURGE)
+ 	  {
+             yyerror(ER(ER_SYNTAX_ERROR));
+ 	    YYABORT;
+diff -urN mysql-4.1.23/sql-common/client.c mysql-4.1/sql-common/client.c
+--- mysql-4.1.23/sql-common/client.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/sql-common/client.c	2007-11-09 13:05:01.000000000 +0100
+@@ -1176,12 +1176,12 @@
+       /* fields count may be wrong */
+       DBUG_ASSERT ((field - result) < fields);
+       cli_fetch_lengths(&lengths[0], row->data, default_value ? 8 : 7);
+-      field->catalog  = strdup_root(alloc,(char*) row->data[0]);
+-      field->db       = strdup_root(alloc,(char*) row->data[1]);
+-      field->table    = strdup_root(alloc,(char*) row->data[2]);
+-      field->org_table= strdup_root(alloc,(char*) row->data[3]);
+-      field->name     = strdup_root(alloc,(char*) row->data[4]);
+-      field->org_name = strdup_root(alloc,(char*) row->data[5]);
++      field->catalog=   strmake_root(alloc,(char*) row->data[0], lengths[0]);
++      field->db=        strmake_root(alloc,(char*) row->data[1], lengths[1]);
++      field->table=     strmake_root(alloc,(char*) row->data[2], lengths[2]);
++      field->org_table= strmake_root(alloc,(char*) row->data[3], lengths[3]);
++      field->name=      strmake_root(alloc,(char*) row->data[4], lengths[4]);
++      field->org_name=  strmake_root(alloc,(char*) row->data[5], lengths[5]);
+ 
+       field->catalog_length=	lengths[0];
+       field->db_length=		lengths[1];
+@@ -1202,7 +1202,7 @@
+         field->flags|= NUM_FLAG;
+       if (default_value && row->data[7])
+       {
+-        field->def=strdup_root(alloc,(char*) row->data[7]);
++        field->def=strmake_root(alloc,(char*) row->data[7], lengths[7]);
+ 	field->def_length= lengths[7];
+       }
+       else
+@@ -1884,13 +1884,11 @@
+ 
+   /* If user set read_timeout, let it override the default */
+   if (mysql->options.read_timeout)
+-    net->read_timeout= mysql->options.read_timeout;
+-  vio_timeout(net->vio, 0, net->read_timeout);
++    net_set_read_timeout(net, mysql->options.read_timeout);
+ 
+   /* If user set write_timeout, let it override the default */
+   if (mysql->options.write_timeout)
+-    net->write_timeout= mysql->options.write_timeout;
+-  vio_timeout(net->vio, 1, net->write_timeout);
++    net_set_write_timeout(net, mysql->options.write_timeout);
+ 
+   if (mysql->options.max_allowed_packet)
+     net->max_packet_size= mysql->options.max_allowed_packet;
+diff -urN mysql-4.1.23/strings/ctype-big5.c mysql-4.1/strings/ctype-big5.c
+--- mysql-4.1.23/strings/ctype-big5.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/strings/ctype-big5.c	2007-10-04 07:19:59.000000000 +0200
+@@ -6256,12 +6256,12 @@
+ 	      my_wc_t *pwc,const uchar *s,const uchar *e)
+ {
+ 
+-  int hi=s[0];
++  int hi;
+   
+   if (s >= e)
+     return MY_CS_TOOSMALL;
+   
+-  if (hi<0x80)
++  if ((hi= s[0]) < 0x80)
+   {
+     pwc[0]=hi;
+     return 1;
+diff -urN mysql-4.1.23/strings/ctype-cp932.c mysql-4.1/strings/ctype-cp932.c
+--- mysql-4.1.23/strings/ctype-cp932.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/strings/ctype-cp932.c	2007-10-04 07:19:59.000000000 +0200
+@@ -5352,12 +5352,12 @@
+ static int 
+ my_mb_wc_cp932(CHARSET_INFO *cs  __attribute__((unused)),
+ 	      my_wc_t *pwc, const uchar *s, const uchar *e){
+-  int hi=s[0];
++  int hi;
+   
+   if (s >= e)
+     return MY_CS_TOOSMALL;
+   
+-  if (hi < 0x80)
++  if ((hi= s[0]) < 0x80)
+   {
+     pwc[0]=hi;
+     return 1;
+diff -urN mysql-4.1.23/strings/ctype-euc_kr.c mysql-4.1/strings/ctype-euc_kr.c
+--- mysql-4.1.23/strings/ctype-euc_kr.c	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/strings/ctype-euc_kr.c	2007-10-04 07:19:59.000000000 +0200
+@@ -8614,12 +8614,12 @@
+ 		 my_wc_t *pwc, const uchar *s, const uchar *e)
+ {
+   
+-  int hi=s[0];
++  int hi;
+   
+   if (s >= e)
+     return MY_CS_TOOSMALL;
+   
+-  if (hi<0x80)
++  if ((hi= s[0]) < 0x80)
+   {
+     pwc[0]=hi;
+     return 1;
+diff -urN mysql-4.1.23/strings/ctype-gb2312.c mysql-4.1/strings/ctype-gb2312.c
+--- mysql-4.1.23/strings/ctype-gb2312.c	2007-12-02 20:38:26.000000000 +0100
++++ mysql-4.1/strings/ctype-gb2312.c	2007-10-04 07:19:59.000000000 +0200
+@@ -5665,12 +5665,10 @@
+ 		my_wc_t *pwc, const uchar *s, const uchar *e){
+   int hi;
+   
+-  hi=(int) s[0];
+-  
+   if (s >= e)
+     return MY_CS_TOOSMALL;
+   
+-  if (hi<0x80)
++  if ((hi= s[0]) < 0x80)
+   {
+     pwc[0]=hi;
+     return 1;
+diff -urN mysql-4.1.23/strings/ctype-simple.c mysql-4.1/strings/ctype-simple.c
+--- mysql-4.1.23/strings/ctype-simple.c	2007-12-02 20:38:25.000000000 +0100
++++ mysql-4.1/strings/ctype-simple.c	2007-09-28 22:33:23.000000000 +0200
+@@ -802,7 +802,7 @@
+   {
+     if (val < 0)
+     {
+-      val= -val;
++      val= -(unsigned long int)val;
+       *dst++= '-';
+       len--;
+       sign= 1;
+@@ -838,7 +838,7 @@
+   {
+     if (val < 0)
+     {
+-      val = -val;
++      val = -(ulonglong)val;
+       *dst++= '-';
+       len--;
+       sign= 1;
+diff -urN mysql-4.1.23/strings/ctype-sjis.c mysql-4.1/strings/ctype-sjis.c
+--- mysql-4.1.23/strings/ctype-sjis.c	2007-12-02 20:38:52.000000000 +0100
++++ mysql-4.1/strings/ctype-sjis.c	2007-10-04 07:19:59.000000000 +0200
+@@ -4512,12 +4512,12 @@
+ static int 
+ my_mb_wc_sjis(CHARSET_INFO *cs  __attribute__((unused)),
+ 	      my_wc_t *pwc, const uchar *s, const uchar *e){
+-  int hi=s[0];
++  int hi;
+   
+   if (s >= e)
+     return MY_CS_TOOSMALL;
+   
+-  if (hi < 0x80)
++  if ((hi= s[0]) < 0x80)
+   {
+     pwc[0]=hi;
+     return 1;
+diff -urN mysql-4.1.23/support-files/MacOSX/ReadMe.txt mysql-4.1/support-files/MacOSX/ReadMe.txt
+--- mysql-4.1.23/support-files/MacOSX/ReadMe.txt	1970-01-01 01:00:00.000000000 +0100
++++ mysql-4.1/support-files/MacOSX/ReadMe.txt	2007-11-02 01:29:32.000000000 +0100
+@@ -0,0 +1,8 @@
++
++You can find information about how to install on Mac OS X at
++
++  http://dev.mysql.com/doc/refman/4.1/en/mac-os-x-installation.html
++
++The MySQL Reference Manual is also available in various formats on
++http://dev.mysql.com/doc; if you're interested in the DocBook XML
++sources go to http://svn.mysql.com.
+diff -urN mysql-4.1.23/VC++Files/sql/mysqld.dsp mysql-4.1/VC++Files/sql/mysqld.dsp
+--- mysql-4.1.23/VC++Files/sql/mysqld.dsp	2007-12-02 20:38:51.000000000 +0100
++++ mysql-4.1/VC++Files/sql/mysqld.dsp	2007-05-16 23:09:48.000000000 +0200
+@@ -1610,7 +1610,7 @@
+ # End Source File
+ # Begin Source File
+ 
+-SOURCE=.\sql\sql_locale.cpp
++SOURCE=.\sql_locale.cpp
+ # End Source File
+ # Begin Source File
+ 
