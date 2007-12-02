@@ -3,6 +3,7 @@
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
 # - package man1/mysqlman.1, and make programs without manpage '.so mysqlman'
+# - generate and package man pages from svn
 #
 # Conditional build:
 %bcond_with	bdb		# Berkeley DB support
@@ -12,6 +13,7 @@
 %bcond_without	ssl		# Without OpenSSL
 %bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
 %bcond_with	big_tables	# enable '--with-big-tables', some performance loss on 32bit arch, but can do >= 4GB database tables.
+%bcond_with	doc
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -28,8 +30,8 @@ Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Newer releases from bk only, see how to fetch mysql from bk repo tag:
-# http://dev.mysql.com/doc/refman/4.1/en/installing-source-tree.html
-# Manual pages repository location is unfortunately knknown.
+# http://dev.mysql.com/doc/refman/4.1/en/installing-source-tree.html .
+# Manual pages are at http://svn.mysql.com/svnpublic/mysqldoc/refman-4.1/ .
 Source0:	%{name}-%{version}.tar.bz2
 # Source0-md5:	146ab42a1c066156a8dcbd25abbe564a
 Source1:	%{name}.init
@@ -45,6 +47,7 @@ Source10:	%{name}-ndb-mgm.sysconfig
 Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
+Patch100:	%{name}-bk-20071202.patch
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -419,10 +422,11 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
 %setup -q
+%patch100 -p1
 %patch0 -p1
 %{?with_tcpd:%patch1 -p1}
 %patch2 -p1
-%patch3 -p1
+%{?with_doc:%patch3 -p1}
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
@@ -507,7 +511,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %{__make} \
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
-%{__make} -C Docs mysql.info
+%{?with_doc:%{__make} -C Docs mysql.info}
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -526,7 +530,7 @@ install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 	libsdir=/tmp
 # libsdir is to avoid installing innodb static libs in $RPM_BUILD_ROOT../libs
 
-install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
+%{?with_doc:install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}}
 
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
@@ -760,7 +764,7 @@ EOF
 %attr(750,mysql,mysql) %dir /var/log/archiv/mysql
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
 
-%{_infodir}/mysql.info*
+%{?with_doc:%{_infodir}/mysql.info*}
 %dir %{_datadir}/mysql
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/mysql/mysqld.conf
