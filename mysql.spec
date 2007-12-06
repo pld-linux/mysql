@@ -22,13 +22,13 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.45
-Release:	3
+Version:	5.0.51
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	a2a1c5a82bb22b45ab76a8ecab94e10d
+# Source0-md5:	88c39c8cb77810febb83b7ee625364d7
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -56,7 +56,6 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
-Patch14:	%{name}-bug-27694.patch
 Patch15:	%{name}-bug-29082.patch
 Patch16:	%{name}-bug-16470.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
@@ -459,7 +458,6 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
-%patch14 -p1
 %patch15 -p1
 %patch16 -p1
 
