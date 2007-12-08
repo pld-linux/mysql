@@ -11,13 +11,14 @@
 #   /usr/share/mysql/mysqld_multi.server
 #
 # Conditional build:
-%bcond_without	innodb		# Without InnoDB storage engine support
-%bcond_with	sphinx		# Without Sphinx storage engine support
-%bcond_without	raid		# Without raid
-%bcond_without	ssl		# Without OpenSSL
-%bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
+%bcond_without	innodb		# InnoDB storage engine support
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
+%bcond_without	federated	# Federated storage engine support
+%bcond_without	raid		# RAID support
+%bcond_without	ssl		# OpenSSL support
+%bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_with	autodeps	# BR packages needed only for resolving deps
+%bcond_with	sphinx		# Sphinx storage engine support
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -30,7 +31,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.22
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
@@ -517,6 +518,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-archive-storage-engine \
+	%{?with_federated:--with-federated-storage-engine} \
 	--with-fast-mutexes \
 	--with-vio \
 	--with-ndbcluster \
