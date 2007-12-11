@@ -3,13 +3,14 @@
 # - http://bugs.mysql.com/bug.php?id=16470
 #
 # Conditional build:
-%bcond_with	bdb		# Berkeley DB support
+%bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
+%bcond_without	federated	# Federated storage engine support
 %bcond_without	innodb		# InnoDB storage engine support
-%bcond_with	sphinx		# Sphinx storage engine support
 %bcond_without	raid		# Without raid
 %bcond_without	ssl		# Without OpenSSL
 %bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
-%bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
+%bcond_with	bdb		# Berkeley DB support
+%bcond_with	sphinx		# Sphinx storage engine support
 #
 %include	/usr/lib/rpm/macros.perl
 #define	_snap	20060111
@@ -23,7 +24,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.51
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -505,6 +506,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-archive-storage-engine \
 	%{?with_sphinx:--with-sphinx-storage-engine} \
+	%{?with_federated:--with-federated-storage-engine} \
 	--with-vio \
 	--with-ndbcluster \
 	--without-readline \
