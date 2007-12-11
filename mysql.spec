@@ -1,6 +1,11 @@
 # TODO:
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
+# - unpackaged:
+#   /usr/bin/mysqltestmanager
+#   /usr/bin/mysqltestmanager-pwgen
+#   /usr/bin/mysqltestmanagerc
+#   /usr/share/mysql/mysqld_multi.server
 #
 # Conditional build:
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
@@ -10,7 +15,7 @@
 %bcond_without	ssl		# Without OpenSSL
 %bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
 %bcond_with	bdb		# Berkeley DB support
-%bcond_with	sphinx		# Sphinx storage engine support
+%bcond_without	sphinx		# Sphinx storage engine support
 #
 %include	/usr/lib/rpm/macros.perl
 #define	_snap	20060111
@@ -24,7 +29,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.51
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
