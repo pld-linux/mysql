@@ -19,6 +19,7 @@
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_with	autodeps	# BR packages needed only for resolving deps
 %bcond_with	sphinx		# Sphinx storage engine support
+%bcond_with	tests		# FIXME: don't run correctly
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -539,6 +540,8 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
 %{__make} -C Docs mysql.info
+
+%{?with_tests:%{__make} test}
 
 %install
 rm -rf $RPM_BUILD_ROOT
