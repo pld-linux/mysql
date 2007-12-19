@@ -1,0 +1,13 @@
+diff -ru mysql-5.0.51.org/vio/viossl.c mysql-5.0.51/vio/viossl.c
+--- mysql-5.0.51.org/vio/viossl.c	2007-11-15 15:07:13.000000000 +0100
++++ mysql-5.0.51/vio/viossl.c	2007-12-19 15:21:53.211570804 +0100
+@@ -199,6 +199,9 @@
+     vio_blocking(vio, was_blocking, &unused);
+     DBUG_RETURN(1);
+   }
++
++  SSL_set_connect_state(ssl);
++
+   DBUG_PRINT("info", ("ssl: 0x%lx timeout: %ld", (long) ssl, timeout));
+   SSL_clear(ssl);
+   SSL_SESSION_set_timeout(SSL_get_session(ssl), timeout);
