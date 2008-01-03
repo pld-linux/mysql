@@ -35,11 +35,9 @@ Version:	5.1.22
 Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-#Source0:	http://mysql.dataphone.se/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
-#Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-beta.tar.gz
+#Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-rc.tar.gz
 # Source0-md5:	87be813d1b2d76b1c756de0a16fa29fb
-#Source0:	http://dev.mysql.com/get/Downloads/MySQL-5.1/
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
