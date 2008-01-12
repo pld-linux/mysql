@@ -13,7 +13,7 @@
 # Conditional build:
 %bcond_without	innodb		# InnoDB storage engine support
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
-%bcond_without	federated	# Federated storage engine support
+%bcond_with	federated	# Federated storage engine support
 %bcond_without	raid		# RAID support
 %bcond_without	ssl		# OpenSSL support
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
@@ -32,7 +32,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.22
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -82,11 +82,10 @@ BuildRequires:	ncurses-devel >= 4.2
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.268
+BuildRequires:	rpmbuild(macros) >= 1.414
 BuildRequires:	sed >= 4.0
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
-Requires(post,postun):	/sbin/ldconfig
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/groupdel
 Requires(postun):	/usr/sbin/userdel
@@ -640,6 +639,7 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
 rm $RPM_BUILD_ROOT%{_datadir}/mysql/mi_test_all
 rm $RPM_BUILD_ROOT%{_datadir}/mysql/mi_test_all.res
+rm $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld_multi.server
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
@@ -648,8 +648,8 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 
-# afaik not needed
-rm $RPM_BUILD_ROOT%{_libdir}/mysql/ha_{example,blackhole,federated}.{a,la}
+# not needed
+rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/ha_{example,blackhole,federated}.{a,la}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -660,7 +660,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
-/sbin/ldconfig
 /sbin/chkconfig --add mysql
 %service mysql restart
 
@@ -672,7 +671,6 @@ fi
 
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
-/sbin/ldconfig
 
 if [ "$1" = "0" ]; then
 	%userremove mysql
@@ -712,9 +710,12 @@ fi
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
+%if 0
+# rpm 4.4.9 is broken, it invokes the first trigger (4.0.20-2) three times
+# instead all of them (or only last one if compared to 4.4.2).
 %triggerpostun -- mysql <= 4.0.20-2
 # For clusters in /etc/mysql/clusters.conf
-if [ -f "/etc/sysconfig/mysql" ]; then
+if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
 	if [ -n "$MYSQL_DB_CLUSTERS" ]; then
 		for i in "$MYSQL_DB_CLUSTERS"; do
@@ -766,6 +767,8 @@ done
 EOF
 #'
 
+%endif
+
 %triggerpostun -- mysql < 5.1
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
@@ -794,7 +797,7 @@ done
 echo 'You should run MySQL upgrade scripts for all MySQL clusters.'
 echo 'Thus, you should invoke:'
 for config in $configs; do
-	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config)
+	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
 	echo "# mysql_upgrade --datadir=$datadir"
 done
 ) | %banner -e %{name}-5.1
@@ -818,7 +821,7 @@ done
 %dir %{_libdir}/mysql
 %attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
 %attr(755,root,root) %{_libdir}/mysql/ha_example.so.*.*.*
-%attr(755,root,root) %{_libdir}/mysql/ha_federated.so.*.*.*
+%{?with_federated:%attr(755,root,root) %{_libdir}/mysql/ha_federated.so.*.*.*}
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
