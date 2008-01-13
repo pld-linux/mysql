@@ -5,15 +5,13 @@
 # - missing have_archive, have_merge
 # - is plugin_dir lib64 safe?
 # - Using NDB Cluster... could not find sci transporter in /{include, lib}
-# - make service mysql init work again
 # - unpackaged:
 #   /usr/share/man/man1/mysql_tableinfo.1.gz
-#   /usr/share/mysql/mysqld_multi.server
 #
 # Conditional build:
 %bcond_without	innodb		# InnoDB storage engine support
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
-%bcond_with	federated	# Federated storage engine support
+%bcond_without	federated	# Federated storage engine support
 %bcond_without	raid		# RAID support
 %bcond_without	ssl		# OpenSSL support
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
@@ -32,7 +30,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.22
-Release:	4
+Release:	5
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -769,7 +767,7 @@ EOF
 
 %endif
 
-%triggerpostun -- mysql < 5.1
+%triggerpostun -- mysql < 5.1.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
