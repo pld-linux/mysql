@@ -1,11 +1,6 @@
 # TODO:
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
-# - unpackaged:
-#   /usr/bin/mysqltestmanager
-#   /usr/bin/mysqltestmanager-pwgen
-#   /usr/bin/mysqltestmanagerc
-#   /usr/share/mysql/mysqld_multi.server
 #
 # Conditional build:
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
@@ -28,13 +23,13 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	5.0.51
-Release:	6
+Version:	5.0.51a
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	88c39c8cb77810febb83b7ee625364d7
+# Source0-md5:	a83dbdbb91267daf73d2297a9c283dd1
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -623,6 +618,7 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_bin_dist.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_src_distribution.1
+rm $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld_multi.server
 
 # no package for tests
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1
@@ -884,7 +880,12 @@ EOF
 %files libs
 %defattr(644,root,root,755)
 %doc EXCEPTIONS-CLIENT
-%attr(755,root,root) %{_libdir}/lib*.so.*.*
+%attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
+%attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*
+%attr(755,root,root) %{_libdir}/libndbclient.so.*.*
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.15
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.15
+%attr(755,root,root) %ghost %{_libdir}/libndbclient.so.2
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 
@@ -905,8 +906,11 @@ EOF
 
 %files bench
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/mysqltest
 %attr(755,root,root) %{_bindir}/mysql_client_test
+%attr(755,root,root) %{_bindir}/mysqltest
+%attr(755,root,root) %{_bindir}/mysqltestmanager
+%attr(755,root,root) %{_bindir}/mysqltestmanager-pwgen
+%attr(755,root,root) %{_bindir}/mysqltestmanagerc
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
