@@ -24,7 +24,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	5.0.51a
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -58,6 +58,7 @@ Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
 Patch13:	%{name}-ssl.patch
+Patch14:	%{name}-bug-34192.patch
 Patch15:	%{name}-bug-29082.patch
 Patch16:	%{name}-bug-16470.patch
 Patch17:	%{name}-CVE-2007-5925.patch
@@ -462,6 +463,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch11 -p1
 %patch12 -p1
 %patch13 -p1
+%patch14 -p1
 %patch15 -p1
 %patch16 -p1
 %patch17 -p1
