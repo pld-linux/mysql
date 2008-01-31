@@ -30,7 +30,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.22
-Release:	5
+Release:	6
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -57,7 +57,7 @@ Patch3:		%{name}-info.patch
 Patch4:		%{name}-sql-cxx-pic.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-system-users.patch
-
+Patch7:		%{name}-bug-34192.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
@@ -464,7 +464,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %endif
 %patch5 -p1
 %patch6 -p1
-
+%patch7 -p1
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
