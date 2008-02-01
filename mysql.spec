@@ -1,4 +1,7 @@
 # TODO:
+# - sanitize mysql_config:
+#   - kill optflags (-f.*/-g.*/-m.*) from --cflags
+#   - kill -lnsl from --libs/--libs_r/--libmysqld-libs
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
