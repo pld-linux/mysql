@@ -33,7 +33,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.22
-Release:	6
+Release:	7
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -711,10 +711,7 @@ fi
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
-%if 0
-# rpm 4.4.9 is broken, it invokes the first trigger (4.0.20-2) three times
-# instead all of them (or only last one if compared to 4.4.2).
-%triggerpostun -- mysql <= 4.0.20-2
+%triggerpostun -- mysql < 4.0.20-2.4
 # For clusters in /etc/mysql/clusters.conf
 if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
@@ -729,7 +726,7 @@ if [ -f /etc/sysconfig/mysql ]; then
 	fi
 fi
 
-%triggerpostun -- mysql <= 4.1.1
+%triggerpostun -- mysql < 4.1.1
 # For better compatibility with prevoius versions:
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -767,8 +764,6 @@ done
 	mysql -u mysql mysql < %{_datadir}/%{name}/fill_help_tables.sql
 EOF
 #'
-
-%endif
 
 %triggerpostun -- mysql < 5.1.0
 configs=""
