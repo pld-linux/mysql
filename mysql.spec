@@ -813,7 +813,6 @@ done
 %dir %{_libdir}/mysql
 %attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
 %attr(755,root,root) %{_libdir}/mysql/ha_example.so.*.*.*
-%{?with_federated:%attr(755,root,root) %{_libdir}/mysql/ha_federated.so.*.*.*}
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
