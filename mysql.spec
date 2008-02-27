@@ -32,13 +32,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.22
-Release:	7
+Version:	5.1.23
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-rc.tar.gz
-# Source0-md5:	87be813d1b2d76b1c756de0a16fa29fb
+# Source0-md5:	d6ca3009eee24a8e396b8f667b3bd8df
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -66,9 +66,7 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 #Patch12:	%{name}-NDB_CXXFLAGS.patch
-Patch13:	%{name}-min_max.patch
 #Patch14:	%{name}-bug-18156.patch
-Patch15:	%{name}-bug-27694.patch
 Patch16:	%{name}-bug-29082.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -472,9 +470,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch9 -p1
 %patch11 -p1
 #%patch12 -p1 # OUTDATED?
-%patch13 -p1
 #%patch14 -p1 # OUTDATED?
-%patch15 -p1
 %patch16 -p1
 
 %build
