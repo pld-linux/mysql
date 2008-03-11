@@ -10,6 +10,14 @@
 # - Using NDB Cluster... could not find sci transporter in /{include, lib}
 # - unpackaged:
 #   /usr/share/man/man1/mysql_tableinfo.1.gz
+# - check why 32bit lib path is used on 64bit host (having 32bit libs present):
+#ccache x86_64-pld-linux-g++ -O2 -fno-strict-aliasing -fwrapv -march=x86-64 -gdwarf-2 -g2 -felide-constructors -fno-rtti -fno-exceptions -fomit-frame-pointer -fno-implicit-templates -fno-exceptions -fno-rtti -Wl,--as-needed -rdynamic -o .libs/mysql mysql.o readline.o sql_string.o completion_hash.o -fexceptions  -lreadline -lncurses -lpthread ../libmysql/.libs/libmysqlclient.so -lm -L/usr/lib/ /usr/lib/libstdc++.so -lm -lm -lm -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s -lrt -lnsl -lm -lssl -lcrypto -lz  -Wl,--rpath -Wl,/usr/lib64/mysql -Wl,--rpath -Wl,/usr/lib
+#ccache x86_64-pld-linux-gcc -O2 -fno-strict-aliasing -fwrapv -march=x86-64 -gdwarf-2 -g2 -fomit-frame-pointer -DUNIV_LINUX -Wl,--as-needed -rdynamic -o .libs/mysqlcheck mysqlcheck.o  -lpthread ../libmysql/.libs/libmysqlclient.so -L/usr/lib/ -lrt -lnsl -lm -lssl -lcrypto -lz  -Wl,--rpath -Wl,/usr/lib64/mysql
+#/usr/bin/ld: skipping incompatible /usr/lib//libpthread.so when searching for -lpthread
+#/usr/lib/libstdc++.so: could not read symbols: File in wrong format
+#collect2: ld returned 1 exit status
+#make[2]: *** [mysql] Error 1
+#make[2]: *** Waiting for unfinished jobs....
 #
 # Conditional build:
 %bcond_without	innodb		# InnoDB storage engine support
