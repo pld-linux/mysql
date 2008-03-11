@@ -1,0 +1,13 @@
+diff -urN mysql-3.23.55.org/sql/share/polish/errmsg.txt mysql-3.23.55/sql/share/polish/errmsg.txt
+--- mysql-3.23.55.org/sql/share/polish/errmsg.txt	Wed Feb 12 00:40:17 2003
++++ mysql-3.23.55/sql/share/polish/errmsg.txt	Wed Feb 12 00:40:46 2003
+@@ -7,8 +7,8 @@
+ 
+ "hashchk",
+ "isamchk",
+-"TAK",
+ "NIE",
++"TAK",
+ "Nie mo¿na stworzyæ pliku '%-.64s' (Kod b³êdu: %d)",
+ "Nie mo¿na stworzyæ tabeli '%-.64s' (Kod b³êdu: %d)",
+ "Nie mo¿na stworzyæ bazy danych '%-.64s'. B³?d %d",
