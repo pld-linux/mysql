@@ -32,13 +32,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.23
-Release:	2
+Version:	6.0.4
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-#Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
-Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-rc.tar.gz
-# Source0-md5:	d6ca3009eee24a8e396b8f667b3bd8df
+# Source0Download: http://dev.mysql.com/downloads/mysql/6.0.html#source
+Source0:	http://mysql.tonnikala.org/Downloads/MySQL-6.0/mysql-6.0.4-alpha.tar.gz
+# Source0-md5:	3f923f06815129567dd54657f1238271
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -69,7 +69,7 @@ Patch11:	%{name}-upgrade.patch
 Patch13:	%{name}-ssl.patch
 #Patch14:	%{name}-bug-18156.patch
 Patch16:	%{name}-bug-29082.patch
-URL:		http://www.mysql.com/products/database/mysql/community_edition.html
+URL:		http://www.mysql.com/mysql60/
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	doxygen
@@ -448,7 +448,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n %{name}-%{version}-rc %{?with_sphinx:-a100}
+%setup -q -n %{name}-%{version}-alpha %{?with_sphinx:-a100}
 %if %{with sphinx}
 mv sphinx-*/mysqlse storage/sphinx
 %endif

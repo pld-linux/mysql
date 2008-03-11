@@ -1,5 +1,5 @@
---- mysql-5.1.21-beta/configure.in~	2007-08-29 19:00:29.000000000 +0300
-+++ mysql-5.1.21-beta/configure.in	2007-08-29 19:00:35.000000000 +0300
+--- mysql-6.0.4-alpha/configure.in~	2008-03-11 09:57:31.000000000 +0200
++++ mysql-6.0.4-alpha/configure.in	2008-03-11 10:03:02.561189423 +0200
 @@ -787,9 +787,9 @@
  
  AC_CHECK_LIB(m, floor, [], AC_CHECK_LIB(m, __infinity))
@@ -13,7 +13,7 @@
  
  AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt))
  AC_CHECK_FUNC(yp_get_default_domain, ,
-@@ -798,7 +798,11 @@
+@@ -810,7 +810,11 @@
  # This may get things to compile even if bind-8 is installed
  AC_CHECK_FUNC(bind, , AC_CHECK_LIB(bind, bind))
  # Check if crypt() exists in libc or libcrypt, sets LIBS if needed
@@ -24,8 +24,8 @@
 +AC_CHECK_FUNC(crypt, AC_DEFINE([HAVE_CRYPT], [1], [crypt]))
 +LIBS="$save_LIBS"
  
- # For the sched_yield() function on Solaris
- AC_CHECK_FUNC(sched_yield, , AC_CHECK_LIB(posix4, sched_yield))
+ # Check rt for aio_read
+ AC_CHECK_LIB(rt, aio_read)
 --- mysql-5.0.21/libmysql_r/Makefile.am~	2006-05-02 16:55:15.179229923 +0300
 +++ mysql-5.0.21/libmysql_r/Makefile.am	2006-05-02 16:56:08.080408785 +0300
 @@ -30,7 +30,7 @@
@@ -37,14 +37,14 @@
  libmysqlclient_r_la_LDFLAGS = $(target_ldflags)
  
  link_sources:
---- mysql-5.1.21-beta/sql/Makefile.am~	2007-08-29 18:58:33.000000000 +0300
-+++ mysql-5.1.21-beta/sql/Makefile.am	2007-08-29 19:01:33.000000000 +0300
-@@ -43,7 +43,7 @@
- 			@pstack_libs@ \
+--- mysql-6.0.4-alpha/sql/Makefile.am~	2008-03-11 09:57:31.000000000 +0200
++++ mysql-6.0.4-alpha/sql/Makefile.am	2008-03-11 10:04:03.296691076 +0200
+@@ -52,7 +52,7 @@
+ 			@pstack_libs@ $(libevent_libs) \
  			@mysql_plugin_libs@ \
  			$(LDADD)  $(CXXLDFLAGS) $(WRAPLIBS) @LIBDL@ \
--			$(yassl_libs) $(openssl_libs) @MYSQLD_EXTRA_LIBS@
-+			$(yassl_libs) $(openssl_libs) @LIBCRYPT@ @MYSQLD_EXTRA_LIBS@
+-			$(yassl_libs) $(openssl_libs) @MYSQLD_EXTRA_LIBS@ 
++			$(yassl_libs) $(openssl_libs) @LIBCRYPT@ @MYSQLD_EXTRA_LIBS@ 
  
  noinst_HEADERS =	item.h item_func.h item_sum.h item_cmpfunc.h \
  			item_strfunc.h item_timefunc.h \
