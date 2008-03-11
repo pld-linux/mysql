@@ -1,0 +1,88 @@
+From: msvenssonDate: February 7 2008 8:48am
+Subject: bk commit into 5.0 tree (msvensson:1.2573) BUG#33050
+
+Below is the list of changes that have just been committed into a local
+5.0 repository of msvensson.  When msvensson does a push these changes
+will be propagated to the main repository and, within 24 hours after the
+push, to the public repository.
+For information on how to access the public repository
+see http://dev.mysql.com/doc/mysql/en/installing-source-tree.html
+
+ChangeSet@stripped, 2008-02-07 08:48:28+01:00, msvensson@stripped +1 -0
+  Bug#33050 5.0.50 fails many SSL testcases
+
+  vio/viossl.c@stripped, 2008-02-07 08:48:27+01:00, msvensson@stripped +21 -14
+    Bug#33050 5.0.50 fails many SSL testcases
+
+diff -Nrup a/vio/viossl.c b/vio/viossl.c
+--- a/vio/viossl.c	2007-08-28 11:34:42 +02:00
++++ b/vio/viossl.c	2008-02-07 08:48:27 +01:00
+@@ -172,20 +172,15 @@ void vio_ssl_delete(Vio *vio)
+   vio_delete(vio);
+ }
+ 
+-int sslaccept(struct st_VioSSLFd *ptr, Vio *vio, long timeout)
+-{
+-  DBUG_ENTER("sslaccept");
+-  DBUG_RETURN(sslconnect(ptr, vio, timeout));
+-}
+-
+ 
+-int sslconnect(struct st_VioSSLFd *ptr, Vio *vio, long timeout)
++static int ssl_do(struct st_VioSSLFd *ptr, Vio *vio, long timeout,
++                  int (*connect_accept_func)(SSL*))
+ {
+   SSL *ssl;
+   my_bool unused;
+   my_bool was_blocking;
+ 
+-  DBUG_ENTER("sslconnect");
++  DBUG_ENTER("ssl_do");
+   DBUG_PRINT("enter", ("ptr: 0x%lx, sd: %d  ctx: 0x%lx",
+                        (long) ptr, vio->sd, (long) ptr->ssl_context));
+ 
+@@ -204,13 +199,9 @@ int sslconnect(struct st_VioSSLFd *ptr, 
+   SSL_SESSION_set_timeout(SSL_get_session(ssl), timeout);
+   SSL_set_fd(ssl, vio->sd);
+ 
+-  /*
+-    SSL_do_handshake will select between SSL_connect
+-    or SSL_accept depending on server or client side
+-  */
+-  if (SSL_do_handshake(ssl) < 1)
++  if (connect_accept_func(ssl) < 1)
+   {
+-    DBUG_PRINT("error", ("SSL_do_handshake failure"));
++    DBUG_PRINT("error", ("SSL_connect/accept failure"));
+     report_errors(ssl);
+     SSL_free(ssl);
+     vio_blocking(vio, was_blocking, &unused);
+@@ -259,6 +250,20 @@ int sslconnect(struct st_VioSSLFd *ptr, 
+ }
+ 
+ 
++int sslaccept(struct st_VioSSLFd *ptr, Vio *vio, long timeout)
++{
++  DBUG_ENTER("sslaccept");
++  DBUG_RETURN(ssl_do(ptr, vio, timeout, SSL_accept));
++}
++
++
++int sslconnect(struct st_VioSSLFd *ptr, Vio *vio, long timeout)
++{
++  DBUG_ENTER("sslconnect");
++  DBUG_RETURN(ssl_do(ptr, vio, timeout, SSL_connect));
++}
++
++
+ int vio_ssl_blocking(Vio *vio __attribute__((unused)),
+ 		     my_bool set_blocking_mode,
+ 		     my_bool *old_mode)
+@@ -268,5 +273,7 @@ int vio_ssl_blocking(Vio *vio __attribut
+   /* Return error if we try to change to non_blocking mode */
+   return (set_blocking_mode ? 0 : 1);
+ }
++
++
+ 
+ #endif /* HAVE_OPENSSL */
