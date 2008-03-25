@@ -814,7 +814,11 @@ done
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %dir %{_libdir}/mysql
 %attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
+%attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.0
+%attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so
 %attr(755,root,root) %{_libdir}/mysql/ha_example.so.*.*.*
+%attr(755,root,root) %{_libdir}/mysql/ha_example.so.0
+%attr(755,root,root) %{_libdir}/mysql/ha_example.so
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
@@ -934,7 +938,12 @@ done
 %files libs
 %defattr(644,root,root,755)
 %doc EXCEPTIONS-CLIENT
-%attr(755,root,root) %{_libdir}/lib*.so.*.*
+%attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
+%attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*
+%attr(755,root,root) %{_libdir}/libndbclient.so.*.*
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.16
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.16
+%attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 
