@@ -28,17 +28,6 @@
  
  # For the sched_yield() function on Solaris
  AC_CHECK_FUNC(sched_yield, , AC_CHECK_LIB(posix4, sched_yield))
---- mysql-5.0.41.org/libmysql_r/Makefile.am	2007-05-02 16:39:59.000000000 +0200
-+++ mysql-5.0.41/libmysql_r/Makefile.am	2007-05-10 15:00:11.721844431 +0200
-@@ -30,7 +30,7 @@
- include $(top_srcdir)/libmysql/Makefile.shared
- 
- libmysqlclient_r_la_SOURCES = $(target_sources)
--libmysqlclient_r_la_LIBADD = $(target_libadd) $(yassl_las)
-+libmysqlclient_r_la_LIBADD = $(target_libadd) $(yassl_las) -lpthread
- libmysqlclient_r_la_LDFLAGS = $(target_ldflags)
- 
- # This is called from the toplevel makefile
 --- mysql-5.0.51/sql/Makefile.am~	2007-12-06 22:13:15.000000000 +0200
 +++ mysql-5.0.51/sql/Makefile.am	2007-12-06 22:14:55.492574255 +0200
 @@ -43,7 +43,7 @@
