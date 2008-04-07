@@ -24,7 +24,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.56
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -62,6 +62,7 @@ Patch13:	%{name}-ssl.patch
 Patch14:	%{name}-bug-34192.patch
 Patch15:	%{name}-bug-29082.patch
 Patch16:	%{name}-bug-16470.patch
+Patch17:	%{name}-system-users.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -466,6 +467,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
+%patch17 -p1
 
 %build
 %{__libtoolize}
