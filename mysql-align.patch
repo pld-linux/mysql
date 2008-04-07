@@ -35,15 +35,15 @@
  		       opts->u_max_value : value);
  
      if (!result_pos)
-@@ -738,7 +738,7 @@
-     value		Pointer to variable
+@@ -864,7 +864,7 @@
+     value              Pointer to variable
  */
  
--static void init_one_value(const struct my_option *option, gptr *variable,
-+static void init_one_value(const struct my_option *option, gptr variable,
+-static void init_one_value(const struct my_option *optp, gptr *variable,
++static void init_one_value(const struct my_option *optp, gptr variable,
  			   longlong value)
  {
-   switch ((option->var_type & GET_TYPE_MASK)) {
+   DBUG_ENTER("init_one_value");
 @@ -793,12 +793,12 @@
        set the value to default value.
      */
