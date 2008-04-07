@@ -23,13 +23,14 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.51a
-Release:	4
+Version:	5.0.56
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
-Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	a83dbdbb91267daf73d2297a9c283dd1
+#Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/mysql-5.0.56.tar.gz
+# Source0-md5:	73969e4bc47a582c1f41c0dcd57f6c4b
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -61,7 +62,6 @@ Patch13:	%{name}-ssl.patch
 Patch14:	%{name}-bug-34192.patch
 Patch15:	%{name}-bug-29082.patch
 Patch16:	%{name}-bug-16470.patch
-Patch17:	%{name}-CVE-2007-5925.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -466,7 +466,6 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
-%patch17 -p1
 
 %build
 %{__libtoolize}
