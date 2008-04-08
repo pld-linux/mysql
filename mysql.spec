@@ -29,7 +29,7 @@ License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 #Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/mysql-5.0.56.tar.gz
+Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	73969e4bc47a582c1f41c0dcd57f6c4b
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
