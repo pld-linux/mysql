@@ -117,7 +117,7 @@ diff -Nrup a/sql/sql_select.cc b/sql/sql_select.cc
  
 +  /* Initialize the index first */
 +  if (!table->file->inited)
-+    table->file->ha_index_init(tab->ref.key);
++    table->file->ha_index_init(tab->ref.key, tab->sorted);
 +
 +  /* Perform "Late NULLs Filtering" (see internals manual for explanations) */
    for (uint i= 0 ; i < tab->ref.key_parts ; i++)
