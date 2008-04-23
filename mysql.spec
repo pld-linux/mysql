@@ -32,13 +32,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.23
-Release:	6
+Version:	5.1.24
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://mysql.tonnikala.org/Downloads/MySQL-5.1/%{name}-%{version}-rc.tar.gz
-# Source0-md5:	d6ca3009eee24a8e396b8f667b3bd8df
+# Source0-md5:	5f75d7593af35be125fa3fc21509337a
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -65,13 +65,7 @@ Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
-#Patch12:	%{name}-NDB_CXXFLAGS.patch
-Patch13:	%{name}-ssl.patch
-#Patch14:	%{name}-bug-18156.patch
-Patch16:	%{name}-bug-29082.patch
-Patch17:	%{name}-bug-34655.patch
-Patch18:	%{name}-bug-34945.patch
-Patch19:	%{name}-bug-35298.patch
+Patch12:	%{name}-bug-35298.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -473,13 +467,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
-#%patch12 -p1 # OUTDATED?
-%patch13 -p1
-#%patch14 -p1 # OUTDATED?
-%patch16 -p1
-%patch17 -p1
-%patch18 -p1
-%patch19 -p1
+%patch12 -p1
 
 %build
 %{__libtoolize}
@@ -521,6 +509,7 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
 	--with-archive-storage-engine \
+	--with-plugins=max \
 	%{?with_federated:--with-federated-storage-engine} \
 	--with-fast-mutexes \
 	--with-vio \
@@ -819,12 +808,10 @@ done
 %attr(755,root,root) %{_sbindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %dir %{_libdir}/mysql
-%attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.*.*.*
-%attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so.0
-%attr(755,root,root) %{_libdir}/mysql/ha_blackhole.so
-%attr(755,root,root) %{_libdir}/mysql/ha_example.so.*.*.*
-%attr(755,root,root) %{_libdir}/mysql/ha_example.so.0
-%attr(755,root,root) %{_libdir}/mysql/ha_example.so
+%dir %{_libdir}/mysql/plugin
+%attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so.*.*.*
+%attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so.0
+%attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
@@ -985,8 +972,8 @@ done
 %attr(755,root,root) %{_sbindir}/ndbd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb
-%{_mandir}/man1/ndbd.1*
 %{_mandir}/man1/ndbd_redo_log_reader.1*
+%{_mandir}/man8/ndbd.8*
 
 %files ndb-client
 %defattr(644,root,root,755)
@@ -1029,7 +1016,7 @@ done
 %attr(755,root,root) %{_sbindir}/ndb_mgmd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-mgm
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-mgm
-%{_mandir}/man1/ndb_mgmd.1*
+%{_mandir}/man8/ndb_mgmd.8*
 
 %files ndb-cpc
 %defattr(644,root,root,755)
