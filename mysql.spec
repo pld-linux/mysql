@@ -23,14 +23,14 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.56
-Release:	3
+Version:	5.0.60
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 #Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	73969e4bc47a582c1f41c0dcd57f6c4b
+# Source0-md5:	2709a53f3da6f1cd868825ed2ea80431
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -58,11 +58,9 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-ndb-ldflags.patch
 Patch12:	%{name}-bug-20153.patch
-Patch13:	%{name}-ssl.patch
-Patch14:	%{name}-bug-34192.patch
-Patch15:	%{name}-bug-29082.patch
-Patch16:	%{name}-bug-16470.patch
-Patch17:	%{name}-system-users.patch
+Patch13:	%{name}-bug-34192.patch
+Patch14:	%{name}-bug-16470.patch
+Patch15:	%{name}-system-users.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -466,8 +464,6 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch13 -p1
 %patch14 -p1
 %patch15 -p1
-%patch16 -p1
-%patch17 -p1
 
 %build
 %{__libtoolize}
@@ -920,6 +916,7 @@ EOF
 # wrong dir?
 %{_datadir}/mysql/mi_test_all.res
 %attr(755,root,root) %{_datadir}/mysql/mi_test_all
+%{_mandir}/man1/mysqlbug.1*
 %{_mandir}/man1/mysqltest*.1*
 %{_mandir}/man1/mysql_client_test.1*
 
@@ -932,22 +929,21 @@ EOF
 %attr(755,root,root) %{_sbindir}/ndbd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb
-%{_mandir}/man1/ndbd.1*
+%{_mandir}/man8/ndbd.8*
 
 %files ndb-client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/ndb_*
 %attr(755,root,root) %{_datadir}/mysql/ndb_size.tmpl
 %{_mandir}/man1/ndb_*.1*
-%exclude %{_mandir}/man1/ndb_mgmd.1*
-%exclude %{_mandir}/man1/ndb_cpcd.1*
+%exclude %{_mandir}/man8/ndb_mgmd.8*
 
 %files ndb-mgm
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_sbindir}/ndb_mgmd
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-mgm
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-mgm
-%{_mandir}/man1/ndb_mgmd.1*
+%{_mandir}/man8/ndb_mgmd.8*
 
 %files ndb-cpc
 %defattr(644,root,root,755)
