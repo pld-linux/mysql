@@ -64,7 +64,9 @@ Patch15:	%{name}-system-users.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
+BuildRequires:	bison
 %{?with_bdb:BuildRequires:	db3-devel}
+BuildRequires:	flex
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
 %{?with_tcpd:BuildRequires:	libwrap-devel}
