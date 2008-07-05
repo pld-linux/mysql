@@ -22,7 +22,7 @@ Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
 Version:	4.0.30
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mirror.provenscaling.com/mysql/community/source/4.0/%{name}-%{version}.tar.gz
