@@ -99,6 +99,7 @@ Provides:	msqlormysql
 Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
+Suggests:	mysql-client
 Conflicts:	logrotate < 3.7-4
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
