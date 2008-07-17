@@ -32,13 +32,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.25
-Release:	2
+Version:	5.1.26
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://mysql.easynet.be/Downloads/MySQL-5.1/%{name}-%{version}-rc.tar.gz
-# Source0-md5:	3d9e8bf4f02b983d13be4ba3d33ae6ed
+# Source0-md5:	db4b30ef40493e0bfe9ca17dd8220cf5
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
