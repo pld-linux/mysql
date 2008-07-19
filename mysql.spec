@@ -642,7 +642,7 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 
 # not needed
-rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/ha_{example,blackhole,federated}.{a,la}
+rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_example.{a,la}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -919,6 +919,7 @@ done
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqlbinlog.1*
+%{_mandir}/man1/mysqlbug.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
 #%{_mandir}/man1/mysqlmanagerc.1*
