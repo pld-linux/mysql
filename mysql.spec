@@ -32,8 +32,8 @@ Group:		Applications/Databases
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
 Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	7164483a5ffb8f7aa59b761c13cdbd6e
-Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
-# Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
+Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.8.tar.gz
+# Source100-md5:	347e547b79b733778d7553ede34e0aac
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
