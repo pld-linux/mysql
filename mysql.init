@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 #
 # mysql         A very fast and reliable SQL database engine
 #
@@ -7,6 +6,8 @@
 #
 # description:  A very fast and reliable SQL database engine.
 #
+# $Id$
+
 # Source function library
 . /etc/rc.d/init.d/functions
 
@@ -350,7 +351,7 @@ mysqlinit() {
 		MYSQL_CONFIG="$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
 
-	nls "Initializing cluster %s" "$clusterdir"
+	show "Initializing cluster %s" "$clusterdir"; echo
 
 	# Check if not exist init database
 	if [ -d "$MYSQL_DATA_DIR/mysql" ]; then
@@ -366,6 +367,7 @@ mysqlinit() {
 
 	# Install this in the user table, too
 	hostname="`hostname --fqdn 2> /dev/null | tr -d '[:space:]'`"
+	[ "$hostname" = "localhost" -o -z "$hostname" ] && hostname="`hostname 2> /dev/null | tr -d '[:space:]'`"
 	[ -z "$hostname" ] && hostname="localhost-unknown"
 
 	# Check if hostname is valid
@@ -522,6 +524,7 @@ case "$action" in
 		mysqlstatus "$mysqldir"
 		if [ "$MYSQL_STATUS" = "running" ]; then
 			show "MySQL cluster %s, PID %s" "$mysqldir" "$MYSQL_PID"
+			pids="$pids/$MYSQL_PID/"
 			progress "$MYSQL_STATUS"
 		else
 			show "MySQL cluster %s" "$mysqldir"
@@ -529,7 +532,30 @@ case "$action" in
 		fi
 		echo
 	done
-	exit $?
+
+	for pid in $(/sbin/pidof mysqld); do
+		if [[ $pids != */$pid/* ]]; then
+			running="$running $pid"
+		fi
+	done
+	if [ "$running" ]; then
+		nls "Warning: MySQL Daemon processes not under clusters.conf control:"
+		# see if we can display their status
+		for pid in $running; do
+			datadir=$(cat /proc/14165/cmdline | tr '\0' '\n' | fgrep -- --datadir=)
+			datadir=${datadir#--datadir=} # strip --datadir
+			mysqldir=${datadir%/mysqldb/db} # strip /mysqldb/db
+			mysqlstatus "$mysqldir"
+			if [ "$MYSQL_STATUS" = "running" ]; then
+				show "MySQL cluster %s, PID %s" "$mysqldir" "$pid"
+				progress "$MYSQL_STATUS"
+			else
+				show "MySQL cluster %s" "$mysqldir"
+				progress "$MYSQL_STATUS" "$CFAIL"
+			fi
+			echo
+		done
+	fi
 	;;
   restart|force-reload)
 	stop
@@ -556,5 +582,3 @@ case "$action" in
 esac
 
 exit $RETVAL
-
-# vi: shiftwidth=4 tabstop=4
