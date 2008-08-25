@@ -931,11 +931,11 @@ done
 %files libs
 %defattr(644,root,root,755)
 %doc EXCEPTIONS-CLIENT
-%attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
-%attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*
-%attr(755,root,root) %{_libdir}/libndbclient.so.*.*
+%attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.16
+%attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.16
+%attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
@@ -943,16 +943,30 @@ done
 %files devel
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_config
-%attr(755,root,root) %{_libdir}/lib*.so
-%{_libdir}/lib*.la
-%{_libdir}/lib*[!tr].a
+%attr(755,root,root) %{_libdir}/libmysqlclient.so
+%attr(755,root,root) %{_libdir}/libmysqlclient_r.so
+%attr(755,root,root) %{_libdir}/libndbclient.so
+%{_libdir}/libmysqlclient.la
+%{_libdir}/libmysqlclient_r.la
+%{_libdir}/libndbclient.la
+# static-only
+%{_libdir}/libdbug.a
+%{_libdir}/libheap.a
+%{_libdir}/libmyisam.a
+%{_libdir}/libmyisammrg.a
+%{_libdir}/libmysqld.a
+%{_libdir}/libmystrings.a
+%{_libdir}/libmysys.a
+%{_libdir}/libvio.a
 %{_includedir}/mysql
 %{_aclocaldir}/mysql.m4
 %{_mandir}/man1/mysql_config.1*
 
 %files static
 %defattr(644,root,root,755)
-%{_libdir}/lib*[tr].a
+%{_libdir}/libmysqlclient.a
+%{_libdir}/libmysqlclient_r.a
+%{_libdir}/libndbclient.a
 
 %files bench
 %defattr(644,root,root,755)
