@@ -1,15 +1,9 @@
 # TODO:
-# - sanitize mysql_config:
-#   - kill optflags (-f.*/-g.*/-m.*) from --cflags
-#   - kill -lnsl from --libs/--libs_r/--libmysqld-libs
-# - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
 # - missing have_archive, have_merge
 # - is plugin_dir lib64 safe?
 # - Using NDB Cluster... could not find sci transporter in /{include, lib}
-# - unpackaged:
-#   /usr/share/man/man1/mysql_tableinfo.1.gz
 #
 # Conditional build:
 %bcond_without	innodb		# InnoDB storage engine support
@@ -65,6 +59,7 @@ Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
+Patch12:	%{name}-config.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -467,6 +462,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
+%patch12 -p1
 
 %build
 %{__libtoolize}
