@@ -1,0 +1,1 @@
+- fix for bug #39021: SELECT REGEXP BINARY NULL never returns; rel 2
