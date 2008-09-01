@@ -24,7 +24,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.67
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -62,8 +62,7 @@ Patch12:	%{name}-bug-20153.patch
 Patch13:	%{name}-bug-34192.patch
 Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
-# http://bugs.mysql.com/bug.php?id=39021
-Patch16:	%{name}-bug-52904.patch
+Patch16:	%{name}-bug-39021.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
