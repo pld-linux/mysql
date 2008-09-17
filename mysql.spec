@@ -64,15 +64,14 @@ Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
 Patch16:	%{name}-bug-39021.patch
 # Percona patches, http://www.percona.com/percona-lab.html
-#Patch17:	%{name}-acc-pslist.patch
-Patch18:	%{name}-control_flush_and_merge_and_read.patch
-Patch19:	%{name}-control_io-threads.patch
-Patch20:	%{name}-microslow_innodb.patch
-Patch21:	%{name}d-safe_syslog.patch
-Patch22:	%{name}-show_patches.patch
-Patch23:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
-Patch24:	%{name}-userstats-testsuite.patch
-Patch25:	%{name}-userstats.patch
+Patch17:	%{name}-control_flush_and_merge_and_read.patch
+Patch18:	%{name}-control_io-threads.patch
+Patch19:	%{name}-microslow_innodb.patch
+Patch21:	%{name}-show_patches.patch
+Patch22:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
+Patch23:	%{name}-userstats-testsuite.patch
+Patch24:	%{name}-userstats.patch
+#Patch25:	%{name}-acc-pslist.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -479,15 +478,14 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
-#%patch17 -p1
+%patch17 -p1
 %patch18 -p1
 %patch19 -p1
-%patch20 -p1
 %patch21 -p1
 %patch22 -p1
 %patch23 -p1
 %patch24 -p1
-%patch25 -p1
+#%patch25 -p1
 
 %build
 %{__libtoolize}
