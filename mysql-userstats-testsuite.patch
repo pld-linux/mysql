@@ -1,0 +1,222 @@
+diff -r 0029211e0356 mysql-test/r/information_schema.result
+--- a/mysql-test/r/information_schema.result	Mon Sep 08 16:38:54 2008 -0700
++++ b/mysql-test/r/information_schema.result	Mon Sep 08 16:39:00 2008 -0700
+@@ -41,6 +41,7 @@
+ COLLATION_CHARACTER_SET_APPLICABILITY
+ COLUMNS
+ COLUMN_PRIVILEGES
++INDEX_STATISTICS
+ KEY_COLUMN_USAGE
+ ROUTINES
+ SCHEMATA
+@@ -49,8 +50,10 @@
+ TABLES
+ TABLE_CONSTRAINTS
+ TABLE_PRIVILEGES
++TABLE_STATISTICS
+ TRIGGERS
+ USER_PRIVILEGES
++USER_STATISTICS
+ VIEWS
+ columns_priv
+ db
+@@ -82,6 +85,7 @@
+ TABLES	TABLES
+ TABLE_CONSTRAINTS	TABLE_CONSTRAINTS
+ TABLE_PRIVILEGES	TABLE_PRIVILEGES
++TABLE_STATISTICS	TABLE_STATISTICS
+ TRIGGERS	TRIGGERS
+ tables_priv	tables_priv
+ time_zone	time_zone
+@@ -101,6 +105,7 @@
+ TABLES	TABLES
+ TABLE_CONSTRAINTS	TABLE_CONSTRAINTS
+ TABLE_PRIVILEGES	TABLE_PRIVILEGES
++TABLE_STATISTICS	TABLE_STATISTICS
+ TRIGGERS	TRIGGERS
+ tables_priv	tables_priv
+ time_zone	time_zone
+@@ -120,6 +125,7 @@
+ TABLES	TABLES
+ TABLE_CONSTRAINTS	TABLE_CONSTRAINTS
+ TABLE_PRIVILEGES	TABLE_PRIVILEGES
++TABLE_STATISTICS	TABLE_STATISTICS
+ TRIGGERS	TRIGGERS
+ tables_priv	tables_priv
+ time_zone	time_zone
+@@ -599,6 +605,7 @@
+ TABLES
+ TABLE_CONSTRAINTS
+ TABLE_PRIVILEGES
++TABLE_STATISTICS
+ TRIGGERS
+ create database information_schema;
+ ERROR 42000: Access denied for user 'root'@'localhost' to database 'information_schema'
+@@ -608,6 +615,7 @@
+ TABLES	SYSTEM VIEW
+ TABLE_CONSTRAINTS	SYSTEM VIEW
+ TABLE_PRIVILEGES	SYSTEM VIEW
++TABLE_STATISTICS	SYSTEM VIEW
+ TRIGGERS	SYSTEM VIEW
+ create table t1(a int);
+ ERROR 42S02: Unknown table 't1' in information_schema
+@@ -620,6 +628,7 @@
+ TABLES
+ TABLE_CONSTRAINTS
+ TABLE_PRIVILEGES
++TABLE_STATISTICS
+ TRIGGERS
+ select table_name from tables where table_name='user';
+ table_name
+@@ -729,7 +738,7 @@
+ CREATE VIEW a1 (t_CRASHME) AS SELECT f1 FROM t_crashme GROUP BY f1;
+ CREATE VIEW a2 AS SELECT t_CRASHME FROM a1;
+ count(*)
+-101
++104
+ drop view a2, a1;
+ drop table t_crashme;
+ select table_schema,table_name, column_name from
+@@ -794,13 +803,14 @@
+ TABLES	TABLE_NAME	select
+ TABLE_CONSTRAINTS	TABLE_NAME	select
+ TABLE_PRIVILEGES	TABLE_NAME	select
++TABLE_STATISTICS	TABLE_NAME	select
+ VIEWS	TABLE_NAME	select
+ delete from mysql.user where user='mysqltest_4';
+ delete from mysql.db where user='mysqltest_4';
+ flush privileges;
+ SELECT table_schema, count(*) FROM information_schema.TABLES GROUP BY TABLE_SCHEMA;
+ table_schema	count(*)
+-information_schema	16
++information_schema	19
+ mysql	17
+ create table t1 (i int, j int);
+ create trigger trg1 before insert on t1 for each row
+@@ -1190,6 +1200,7 @@
+ COLLATION_CHARACTER_SET_APPLICABILITY	COLLATION_NAME
+ COLUMNS	TABLE_SCHEMA
+ COLUMN_PRIVILEGES	TABLE_SCHEMA
++INDEX_STATISTICS	INDEX_NAME
+ KEY_COLUMN_USAGE	CONSTRAINT_SCHEMA
+ ROUTINES	ROUTINE_SCHEMA
+ SCHEMATA	SCHEMA_NAME
+@@ -1198,8 +1209,10 @@
+ TABLES	TABLE_SCHEMA
+ TABLE_CONSTRAINTS	CONSTRAINT_SCHEMA
+ TABLE_PRIVILEGES	TABLE_SCHEMA
++TABLE_STATISTICS	TABLE_NAME
+ TRIGGERS	TRIGGER_SCHEMA
+ USER_PRIVILEGES	GRANTEE
++USER_STATISTICS	USER
+ VIEWS	TABLE_SCHEMA
+ SELECT t.table_name, c1.column_name
+ FROM information_schema.tables t
+@@ -1221,6 +1234,7 @@
+ COLLATION_CHARACTER_SET_APPLICABILITY	COLLATION_NAME
+ COLUMNS	TABLE_SCHEMA
+ COLUMN_PRIVILEGES	TABLE_SCHEMA
++INDEX_STATISTICS	INDEX_NAME
+ KEY_COLUMN_USAGE	CONSTRAINT_SCHEMA
+ ROUTINES	ROUTINE_SCHEMA
+ SCHEMATA	SCHEMA_NAME
+@@ -1229,8 +1243,10 @@
+ TABLES	TABLE_SCHEMA
+ TABLE_CONSTRAINTS	CONSTRAINT_SCHEMA
+ TABLE_PRIVILEGES	TABLE_SCHEMA
++TABLE_STATISTICS	TABLE_NAME
+ TRIGGERS	TRIGGER_SCHEMA
+ USER_PRIVILEGES	GRANTEE
++USER_STATISTICS	USER
+ VIEWS	TABLE_SCHEMA
+ SELECT MAX(table_name) FROM information_schema.tables;
+ MAX(table_name)
+@@ -1303,6 +1319,7 @@
+ COLLATION_CHARACTER_SET_APPLICABILITY	information_schema.COLLATION_CHARACTER_SET_APPLICABILITY	1
+ COLUMNS	information_schema.COLUMNS	1
+ COLUMN_PRIVILEGES	information_schema.COLUMN_PRIVILEGES	1
++INDEX_STATISTICS	information_schema.INDEX_STATISTICS	1
+ KEY_COLUMN_USAGE	information_schema.KEY_COLUMN_USAGE	1
+ ROUTINES	information_schema.ROUTINES	1
+ SCHEMATA	information_schema.SCHEMATA	1
+@@ -1311,8 +1328,10 @@
+ TABLES	information_schema.TABLES	1
+ TABLE_CONSTRAINTS	information_schema.TABLE_CONSTRAINTS	1
+ TABLE_PRIVILEGES	information_schema.TABLE_PRIVILEGES	1
++TABLE_STATISTICS	information_schema.TABLE_STATISTICS	1
+ TRIGGERS	information_schema.TRIGGERS	1
+ USER_PRIVILEGES	information_schema.USER_PRIVILEGES	1
++USER_STATISTICS	information_schema.USER_STATISTICS	1
+ VIEWS	information_schema.VIEWS	1
+ create table t1(f1 int);
+ create view v1 as select f1+1 as a from t1;
+diff -r 0029211e0356 mysql-test/r/information_schema_db.result
+--- a/mysql-test/r/information_schema_db.result	Mon Sep 08 16:38:54 2008 -0700
++++ b/mysql-test/r/information_schema_db.result	Mon Sep 08 16:39:00 2008 -0700
+@@ -10,6 +10,7 @@
+ COLLATION_CHARACTER_SET_APPLICABILITY
+ COLUMNS
+ COLUMN_PRIVILEGES
++INDEX_STATISTICS
+ KEY_COLUMN_USAGE
+ ROUTINES
+ SCHEMATA
+@@ -18,14 +19,17 @@
+ TABLES
+ TABLE_CONSTRAINTS
+ TABLE_PRIVILEGES
++TABLE_STATISTICS
+ TRIGGERS
+ USER_PRIVILEGES
++USER_STATISTICS
+ VIEWS
+ show tables from INFORMATION_SCHEMA like 'T%';
+ Tables_in_information_schema (T%)
+ TABLES
+ TABLE_CONSTRAINTS
+ TABLE_PRIVILEGES
++TABLE_STATISTICS
+ TRIGGERS
+ create database `inf%`;
+ create database mbase;
+diff -r 0029211e0356 mysql-test/r/mysqlshow.result
+--- a/mysql-test/r/mysqlshow.result	Mon Sep 08 16:38:54 2008 -0700
++++ b/mysql-test/r/mysqlshow.result	Mon Sep 08 16:39:00 2008 -0700
+@@ -84,6 +84,7 @@
+ | COLLATION_CHARACTER_SET_APPLICABILITY |
+ | COLUMNS                               |
+ | COLUMN_PRIVILEGES                     |
++| INDEX_STATISTICS                      |
+ | KEY_COLUMN_USAGE                      |
+ | ROUTINES                              |
+ | SCHEMATA                              |
+@@ -92,8 +93,10 @@
+ | TABLES                                |
+ | TABLE_CONSTRAINTS                     |
+ | TABLE_PRIVILEGES                      |
++| TABLE_STATISTICS                      |
+ | TRIGGERS                              |
+ | USER_PRIVILEGES                       |
++| USER_STATISTICS                       |
+ | VIEWS                                 |
+ +---------------------------------------+
+ Database: INFORMATION_SCHEMA
+@@ -105,6 +108,7 @@
+ | COLLATION_CHARACTER_SET_APPLICABILITY |
+ | COLUMNS                               |
+ | COLUMN_PRIVILEGES                     |
++| INDEX_STATISTICS                      |
+ | KEY_COLUMN_USAGE                      |
+ | ROUTINES                              |
+ | SCHEMATA                              |
+@@ -113,8 +117,10 @@
+ | TABLES                                |
+ | TABLE_CONSTRAINTS                     |
+ | TABLE_PRIVILEGES                      |
++| TABLE_STATISTICS                      |
+ | TRIGGERS                              |
+ | USER_PRIVILEGES                       |
++| USER_STATISTICS                       |
+ | VIEWS                                 |
+ +---------------------------------------+
+ Wildcard: inf_rmation_schema

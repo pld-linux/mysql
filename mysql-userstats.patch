@@ -1,0 +1,1453 @@
+diff -r a910f1746b0c include/mysql_com.h
+--- a/include/mysql_com.h	Mon Sep 08 16:38:46 2008 -0700
++++ b/include/mysql_com.h	Mon Sep 08 16:38:54 2008 -0700
+@@ -106,6 +106,8 @@
+ 					   thread */
+ #define REFRESH_MASTER          128     /* Remove all bin logs in the index
+ 					   and truncate the index */
++#define REFRESH_TABLE_STATS     256     /* Refresh table stats hash table */
++#define REFRESH_INDEX_STATS     512     /* Refresh index stats hash table */
+ 
+ /* The following can't be set with mysql_refresh() */
+ #define REFRESH_READ_LOCK	16384	/* Lock tables for read */
+diff -r a910f1746b0c patch_info/userstats.info
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/patch_info/userstats.info	Mon Sep 08 16:38:54 2008 -0700
+@@ -0,0 +1,6 @@
++File=userstats.patch
++Name=SHOW USER/TABLE/INDEX statistics
++Version=1.0
++Author=Google
++License=GPL
++Comment=Added INFORMATION_SCHEMA.*_STATISTICS
+diff -r a910f1746b0c sql/ha_innodb.cc
+--- a/sql/ha_innodb.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/ha_innodb.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -3289,6 +3289,8 @@
+ 
+ 	error = row_insert_for_mysql((byte*) record, prebuilt);
+ 
++        if (error == DB_SUCCESS) rows_changed++;
++
+ 	if (error == DB_SUCCESS && auto_inc_used) {
+ 
+         	/* Fetch the value that was set in the autoincrement field */
+@@ -3561,6 +3563,8 @@
+ 		}
+ 	}
+ 
++	if (error == DB_SUCCESS) rows_changed++;
++
+ 	innodb_srv_conc_exit_innodb(prebuilt->trx);
+ 
+ 	error = convert_error_code_to_mysql(error, user_thd);
+@@ -3608,6 +3612,8 @@
+ 	innodb_srv_conc_enter_innodb(prebuilt->trx);
+ 
+ 	error = row_update_for_mysql((byte*) record, prebuilt);
++
++	if (error == DB_SUCCESS) rows_changed++;
+ 
+ 	innodb_srv_conc_exit_innodb(prebuilt->trx);
+ 
+@@ -3888,6 +3894,9 @@
+ 	if (ret == DB_SUCCESS) {
+ 		error = 0;
+ 		table->status = 0;
++                rows_read++;
++                if (active_index >= 0 && active_index < MAX_KEY)
++                        index_rows_read[active_index]++;
+ 
+ 	} else if (ret == DB_RECORD_NOT_FOUND) {
+ 		error = HA_ERR_KEY_NOT_FOUND;
+@@ -4041,6 +4050,9 @@
+ 	if (ret == DB_SUCCESS) {
+ 		error = 0;
+ 		table->status = 0;
++                rows_read++;
++                if (active_index >= 0 && active_index < MAX_KEY)
++                        index_rows_read[active_index]++;
+ 
+ 	} else if (ret == DB_RECORD_NOT_FOUND) {
+ 		error = HA_ERR_END_OF_FILE;
+diff -r a910f1746b0c sql/ha_myisam.cc
+--- a/sql/ha_myisam.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/ha_myisam.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -670,7 +670,9 @@
+     if ((error= update_auto_increment()))
+       return error;
+   }
+-  return mi_write(file,buf);
++  int error=mi_write(file,buf);
++  if (!error) rows_changed++;
++  return error;
+ }
+ 
+ int ha_myisam::check(THD* thd, HA_CHECK_OPT* check_opt)
+@@ -1518,13 +1520,17 @@
+   statistic_increment(table->in_use->status_var.ha_update_count,&LOCK_status);
+   if (table->timestamp_field_type & TIMESTAMP_AUTO_SET_ON_UPDATE)
+     table->timestamp_field->set_time();
+-  return mi_update(file,old_data,new_data);
++  int error=mi_update(file,old_data,new_data);
++  if (!error) rows_changed++;
++  return error;
+ }
+ 
+ int ha_myisam::delete_row(const byte * buf)
+ {
+   statistic_increment(table->in_use->status_var.ha_delete_count,&LOCK_status);
+-  return mi_delete(file,buf);
++  int error=mi_delete(file,buf);
++  if (!error) rows_changed++;
++  return error;
+ }
+ 
+ int ha_myisam::index_read(byte * buf, const byte * key,
+@@ -1535,6 +1541,13 @@
+ 		      &LOCK_status);
+   int error=mi_rkey(file,buf,active_index, key, key_len, find_flag);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) {
++    rows_read++;
++
++    int inx = (active_index == -1) ? file->lastinx : active_index;
++    if (inx >= 0 && inx < MAX_KEY)
++      index_rows_read[inx]++;
++  }
+   return error;
+ }
+ 
+@@ -1545,6 +1558,14 @@
+ 		      &LOCK_status);
+   int error=mi_rkey(file,buf,index, key, key_len, find_flag);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) {
++    rows_read++;
++
++//    int inx = (active_index == -1) ? file->lastinx : active_index;
++    int inx = index;
++    if (inx >= 0 && inx < MAX_KEY)
++      index_rows_read[inx]++;
++  }
+   return error;
+ }
+ 
+@@ -1555,6 +1576,13 @@
+ 		      &LOCK_status);
+   int error=mi_rkey(file,buf,active_index, key, key_len, HA_READ_PREFIX_LAST);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) {
++    rows_read++;
++
++    int inx = (active_index == -1) ? file->lastinx : active_index;
++    if (inx >= 0 && inx < MAX_KEY)
++      index_rows_read[inx]++;
++  }
+   return error;
+ }
+ 
+@@ -1565,6 +1593,13 @@
+ 		      &LOCK_status);
+   int error=mi_rnext(file,buf,active_index);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) {
++    rows_read++;
++
++    int inx = (active_index == -1) ? file->lastinx : active_index;
++    if (inx >= 0 && inx < MAX_KEY)
++      index_rows_read[inx]++;
++  }
+   return error;
+ }
+ 
+@@ -1575,6 +1610,13 @@
+ 		      &LOCK_status);
+   int error=mi_rprev(file,buf, active_index);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) {
++    rows_read++;
++
++    int inx = (active_index == -1) ? file->lastinx : active_index;
++    if (inx >= 0 && inx < MAX_KEY)
++      index_rows_read[inx]++;
++  }
+   return error;
+ }
+ 
+@@ -1585,6 +1627,13 @@
+ 		      &LOCK_status);
+   int error=mi_rfirst(file, buf, active_index);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) {
++    rows_read++;
++
++    int inx = (active_index == -1) ? file->lastinx : active_index;
++    if (inx >= 0 && inx < MAX_KEY)
++      index_rows_read[inx]++;
++  }
+   return error;
+ }
+ 
+@@ -1595,6 +1644,13 @@
+ 		      &LOCK_status);
+   int error=mi_rlast(file, buf, active_index);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) {
++    rows_read++;
++
++    int inx = (active_index == -1) ? file->lastinx : active_index;
++    if (inx >= 0 && inx < MAX_KEY)
++      index_rows_read[inx]++;
++  }
+   return error;
+ }
+ 
+@@ -1611,6 +1667,13 @@
+     error= mi_rnext_same(file,buf);
+   } while (error == HA_ERR_RECORD_DELETED);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) {
++    rows_read++;
++
++    int inx = (active_index == -1) ? file->lastinx : active_index;
++    if (inx >= 0 && inx < MAX_KEY)
++      index_rows_read[inx]++;
++  }
+   return error;
+ }
+ 
+@@ -1628,6 +1691,7 @@
+ 		      &LOCK_status);
+   int error=mi_scan(file, buf);
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) rows_read++;
+   return error;
+ }
+ 
+@@ -1642,6 +1706,7 @@
+ 		      &LOCK_status);
+   int error=mi_rrnd(file, buf, my_get_ptr(pos,ref_length));
+   table->status=error ? STATUS_NOT_FOUND: 0;
++  if (!error) rows_read++;
+   return error;
+ }
+ 
+diff -r a910f1746b0c sql/handler.cc
+--- a/sql/handler.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/handler.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -756,6 +756,7 @@
+         error=1;
+       }
+       statistic_increment(thd->status_var.ha_commit_count,&LOCK_status);
++      thd->diff_commit_trans++;
+       *ht= 0;
+     }
+     trans->nht=0;
+@@ -812,6 +813,7 @@
+         error=1;
+       }
+       statistic_increment(thd->status_var.ha_rollback_count,&LOCK_status);
++      thd->diff_rollback_trans++;
+       *ht= 0;
+     }
+     trans->nht=0;
+@@ -1205,6 +1207,7 @@
+       error=1;
+     }
+     statistic_increment(thd->status_var.ha_rollback_count,&LOCK_status);
++    thd->diff_rollback_trans++;
+     *ht=0; // keep it conveniently zero-filled
+   }
+   DBUG_RETURN(error);
+@@ -1437,6 +1440,8 @@
+     else
+       dupp_ref=ref+ALIGN_SIZE(ref_length);
+   }
++  rows_read = rows_changed = 0;
++  memset(index_rows_read, 0, sizeof(index_rows_read));
+   DBUG_RETURN(error);
+ }
+ 
+@@ -2222,6 +2227,97 @@
+   return error;
+ }
+ 
++// Updates the global table stats with the TABLE this handler represents.
++void handler::update_global_table_stats() {
++  if (!rows_read && !rows_changed) return;  // Nothing to update.
++  // table_cache_key is db_name + '\0' + table_name + '\0'.
++  if (!table->s || !table->s->table_cache_key || !table->s->table_name) return;
++
++  TABLE_STATS* table_stats;
++  char key[NAME_LEN * 2 + 2];
++  // [db] + '.' + [table]
++  sprintf(key, "%s.%s", table->s->table_cache_key, table->s->table_name);
++
++  pthread_mutex_lock(&LOCK_global_table_stats);
++  // Gets the global table stats, creating one if necessary.
++  if (!(table_stats = (TABLE_STATS*)hash_search(&global_table_stats,
++                                                (byte*)key,
++                                                strlen(key)))) {
++    if (!(table_stats = ((TABLE_STATS*)
++                         my_malloc(sizeof(TABLE_STATS), MYF(MY_WME))))) {
++      // Out of memory.
++      sql_print_error("Allocating table stats failed.");
++      goto end;
++    }
++    strncpy(table_stats->table, key, sizeof(table_stats->table));
++    table_stats->rows_read = 0;
++    table_stats->rows_changed = 0;
++    table_stats->rows_changed_x_indexes = 0;
++
++    if (my_hash_insert(&global_table_stats, (byte*)table_stats)) {
++      // Out of memory.
++      sql_print_error("Inserting table stats failed.");
++      my_free((char*)table_stats, 0);
++      goto end;
++    }
++  }
++  // Updates the global table stats.
++  table_stats->rows_read += rows_read;
++  table_stats->rows_changed += rows_changed;
++  table_stats->rows_changed_x_indexes +=
++      rows_changed * (table->s->keys ? table->s->keys : 1);
++  rows_read = rows_changed = 0;
++end:
++  pthread_mutex_unlock(&LOCK_global_table_stats);
++}
++
++// Updates the global index stats with this handler's accumulated index reads.
++void handler::update_global_index_stats() {
++  // table_cache_key is db_name + '\0' + table_name + '\0'.
++  if (!table->s || !table->s->table_cache_key || !table->s->table_name) return;
++
++  for (int x = 0; x < table->s->keys; x++) {
++    if (index_rows_read[x]) {
++      // Rows were read using this index.
++      KEY* key_info = &table->key_info[x];
++
++      if (!key_info->name) continue;
++
++      INDEX_STATS* index_stats;
++      char key[NAME_LEN * 3 + 3];
++      // [db] + '.' + [table] + '.' + [index]
++      sprintf(key, "%s.%s.%s",  table->s->table_cache_key,
++              table->s->table_name, key_info->name);
++
++      pthread_mutex_lock(&LOCK_global_index_stats);
++      // Gets the global index stats, creating one if necessary.
++      if (!(index_stats = (INDEX_STATS*)hash_search(&global_index_stats,
++                                                    (byte*)key,
++                                                    strlen(key)))) {
++        if (!(index_stats = ((INDEX_STATS*)
++                             my_malloc(sizeof(INDEX_STATS), MYF(MY_WME))))) {
++          // Out of memory.
++          sql_print_error("Allocating index stats failed.");
++          goto end;
++        }
++        strncpy(index_stats->index, key, sizeof(index_stats->index));
++        index_stats->rows_read = 0;
++
++        if (my_hash_insert(&global_index_stats, (byte*)index_stats)) {
++          // Out of memory.
++          sql_print_error("Inserting index stats failed.");
++          my_free((char*)index_stats, 0);
++          goto end;
++        }
++      }
++      // Updates the global index stats.
++      index_stats->rows_read += index_rows_read[x];
++      index_rows_read[x] = 0;
++end:
++      pthread_mutex_unlock(&LOCK_global_index_stats);
++    }
++  }
++}
+ 
+ /****************************************************************************
+ ** Some general functions that isn't in the handler class
+diff -r a910f1746b0c sql/handler.h
+--- a/sql/handler.h	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/handler.h	Mon Sep 08 16:38:54 2008 -0700
+@@ -30,6 +30,10 @@
+ #if defined(HAVE_BERKELEY_DB) || defined(HAVE_INNOBASE_DB) || \
+     defined(HAVE_NDBCLUSTER_DB)
+ #define USING_TRANSACTIONS
++#endif
++
++#if MAX_KEY > 128
++#error MAX_KEY is too large.  Values up to 128 are supported.
+ #endif
+ 
+ // the following is for checking tables
+@@ -604,6 +608,9 @@
+   bool  auto_increment_column_changed;
+   bool implicit_emptied;                /* Can be !=0 only if HEAP */
+   const COND *pushed_cond;
++  ulonglong rows_read;
++  ulonglong rows_changed;
++  ulonglong index_rows_read[MAX_KEY];
+ 
+   handler(const handlerton *ht_arg, TABLE *table_arg) :table(table_arg),
+     ht(ht_arg),
+@@ -615,8 +622,10 @@
+     ref_length(sizeof(my_off_t)), block_size(0),
+     raid_type(0), ft_handler(0), inited(NONE),
+     locked(FALSE), implicit_emptied(0),
+-    pushed_cond(NULL)
+-    {}
++    pushed_cond(NULL), rows_read(0), rows_changed(0)
++    {
++      memset(index_rows_read, 0, sizeof(index_rows_read));
++    }
+   virtual ~handler(void) { DBUG_ASSERT(locked == FALSE); /* TODO: DBUG_ASSERT(inited == NONE); */ }
+   virtual handler *clone(MEM_ROOT *mem_root);
+   int ha_open(const char *name, int mode, int test_if_locked);
+@@ -625,7 +634,11 @@
+   virtual void print_error(int error, myf errflag);
+   virtual bool get_error_message(int error, String *buf);
+   uint get_dup_key(int error);
+-  void change_table_ptr(TABLE *table_arg) { table=table_arg; }
++  void change_table_ptr(TABLE *table_arg) {
++    table=table_arg;
++    rows_read = rows_changed = 0;
++    memset(index_rows_read, 0, sizeof(index_rows_read));
++  }
+   virtual double scan_time()
+     { return ulonglong2double(data_file_length) / IO_SIZE + 2; }
+   virtual double read_time(uint index, uint ranges, ha_rows rows)
+@@ -885,6 +898,9 @@
+   virtual bool is_crashed() const  { return 0; }
+   virtual bool auto_repair() const { return 0; }
+ 
++  void update_global_table_stats();
++  void update_global_index_stats();
++
+   /*
+     default rename_table() and delete_table() rename/delete files with a
+     given name and extensions from bas_ext()
+diff -r a910f1746b0c sql/lex.h
+--- a/sql/lex.h	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/lex.h	Mon Sep 08 16:38:54 2008 -0700
+@@ -234,6 +234,7 @@
+   { "IN",		SYM(IN_SYM)},
+   { "INDEX",		SYM(INDEX_SYM)},
+   { "INDEXES",		SYM(INDEXES)},
++  { "INDEX_STATISTICS",	SYM(INDEX_STATS_SYM)},
+   { "INFILE",		SYM(INFILE)},
+   { "INNER",		SYM(INNER_SYM)},
+   { "INNOBASE",		SYM(INNOBASE_SYM)},
+@@ -475,6 +476,7 @@
+   { "TABLE",		SYM(TABLE_SYM)},
+   { "TABLES",		SYM(TABLES)},
+   { "TABLESPACE",	SYM(TABLESPACE)},
++  { "TABLE_STATISTICS",	SYM(TABLE_STATS_SYM)},
+   { "TEMPORARY",	SYM(TEMPORARY)},
+   { "TEMPTABLE",	SYM(TEMPTABLE_SYM)},
+   { "TERMINATED",	SYM(TERMINATED)},
+@@ -512,6 +514,7 @@
+   { "USE",		SYM(USE_SYM)},
+   { "USER",		SYM(USER)},
+   { "USER_RESOURCES",	SYM(RESOURCES)},
++  { "USER_STATISTICS",	SYM(USER_STATS_SYM)},
+   { "USE_FRM",		SYM(USE_FRM)},
+   { "USING",		SYM(USING)},
+   { "UTC_DATE",         SYM(UTC_DATE_SYM)},
+diff -r a910f1746b0c sql/mysql_priv.h
+--- a/sql/mysql_priv.h	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/mysql_priv.h	Mon Sep 08 16:38:54 2008 -0700
+@@ -798,7 +798,15 @@
+ bool multi_delete_set_locks_and_link_aux_tables(LEX *lex);
+ void init_max_user_conn(void);
+ void init_update_queries(void);
++void init_global_user_stats(void);
++void init_global_table_stats(void);
++void init_global_index_stats(void);
+ void free_max_user_conn(void);
++void free_global_user_stats(void);
++void free_global_table_stats(void);
++void free_global_index_stats(void);
++// Set stats for concurrent connections displayed by mysqld_show().
++void set_concurrent_connections_stats();
+ pthread_handler_t handle_one_connection(void *arg);
+ pthread_handler_t handle_bootstrap(void *arg);
+ void end_thread(THD *thd,bool put_in_cache);
+@@ -1445,6 +1453,12 @@
+ extern struct system_variables max_system_variables;
+ extern struct system_status_var global_status_var;
+ extern struct rand_struct sql_rand;
++extern HASH global_user_stats;
++extern pthread_mutex_t LOCK_global_user_stats;
++extern HASH global_table_stats;
++extern pthread_mutex_t LOCK_global_table_stats;
++extern HASH global_index_stats;
++extern pthread_mutex_t LOCK_global_index_stats;
+ 
+ extern const char *opt_date_time_formats[];
+ extern KNOWN_DATE_TIME_FORMAT known_date_time_formats[];
+diff -r a910f1746b0c sql/mysqld.cc
+--- a/sql/mysqld.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/mysqld.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -545,6 +545,9 @@
+ 		LOCK_crypt, LOCK_bytes_sent, LOCK_bytes_received,
+ 	        LOCK_global_system_variables,
+ 		LOCK_user_conn, LOCK_slave_list, LOCK_active_mi;
++pthread_mutex_t LOCK_global_user_stats;
++pthread_mutex_t LOCK_global_table_stats;
++pthread_mutex_t LOCK_global_index_stats;
+ /*
+   The below lock protects access to two global server variables:
+   max_prepared_stmt_count and prepared_stmt_count. These variables
+@@ -1186,6 +1189,9 @@
+   x_free(opt_secure_file_priv);
+   bitmap_free(&temp_pool);
+   free_max_user_conn();
++  free_global_user_stats();
++  free_global_table_stats();
++  free_global_index_stats();
+ #ifdef HAVE_REPLICATION
+   end_slave_list();
+   free_list(&replicate_do_db);
+@@ -1300,6 +1306,9 @@
+   (void) pthread_cond_destroy(&COND_thread_cache);
+   (void) pthread_cond_destroy(&COND_flush_thread_cache);
+   (void) pthread_cond_destroy(&COND_manager);
++  (void) pthread_mutex_destroy(&LOCK_global_user_stats);
++  (void) pthread_mutex_destroy(&LOCK_global_table_stats);
++  (void) pthread_mutex_destroy(&LOCK_global_index_stats);
+ }
+ 
+ #endif /*EMBEDDED_LIBRARY*/
+@@ -3145,6 +3154,9 @@
+   (void) pthread_mutex_init(&LOCK_rpl_status, MY_MUTEX_INIT_FAST);
+   (void) pthread_cond_init(&COND_rpl_status, NULL);
+ #endif
++  (void) pthread_mutex_init(&LOCK_global_user_stats, MY_MUTEX_INIT_FAST);
++  (void) pthread_mutex_init(&LOCK_global_table_stats, MY_MUTEX_INIT_FAST);
++  (void) pthread_mutex_init(&LOCK_global_index_stats, MY_MUTEX_INIT_FAST);
+   sp_cache_init();
+   /* Parameter for threads created for connections */
+   (void) pthread_attr_init(&connection_attrib);
+@@ -3416,6 +3428,10 @@
+     sql_print_error("Out of memory");
+     unireg_abort(1);
+   }
++
++  init_global_table_stats();
++  init_global_index_stats();
++
+   if (ha_init())
+   {
+     sql_print_error("Can't init databases");
+@@ -3498,6 +3514,7 @@
+ 
+   init_max_user_conn();
+   init_update_queries();
++  init_global_user_stats();
+   DBUG_RETURN(0);
+ }
+ 
+diff -r a910f1746b0c sql/sql_base.cc
+--- a/sql/sql_base.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_base.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -625,6 +625,12 @@
+   DBUG_ASSERT(table->key_read == 0);
+   DBUG_ASSERT(!table->file || table->file->inited == handler::NONE);
+ 
++  if(table->file)
++  {
++    table->file->update_global_table_stats();
++    table->file->update_global_index_stats();
++  }
++
+   *table_ptr=table->next;
+   if (table->needs_reopen_or_name_lock() ||
+       thd->version != refresh_version || !table->db_stat)
+@@ -670,6 +676,9 @@
+ {
+   DBUG_ENTER("close_temporary");
+   char path[FN_REFLEN];
++
++  table->file->update_global_table_stats();
++  table->file->update_global_index_stats();
+   db_type table_type=table->s->db_type;
+   strmov(path,table->s->path);
+   free_io_cache(table);
+diff -r a910f1746b0c sql/sql_class.cc
+--- a/sql/sql_class.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_class.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -222,6 +222,8 @@
+   bzero(ha_data, sizeof(ha_data));
+   mysys_var=0;
+   binlog_evt_union.do_union= FALSE;
++  busy_time = 0;
++  updated_row_count = 0;
+ #ifndef DBUG_OFF
+   dbug_sentry=THD_SENTRY_MAGIC;
+ #endif
+@@ -352,8 +354,55 @@
+   total_warn_count= 0;
+   update_charset();
+   bzero((char *) &status_var, sizeof(status_var));
++  reset_stats();
+ }
+ 
++// Resets stats in a THD.
++void THD::reset_stats(void) {
++  current_connect_time = time(NULL);
++  last_global_update_time = current_connect_time;
++  reset_diff_stats();
++}
++
++// Resets the 'diff' stats, which are used to update global stats.
++void THD::reset_diff_stats(void) {
++  diff_total_busy_time = 0;
++  diff_total_sent_rows = 0;
++  diff_total_updated_rows = 0;
++  diff_select_commands = 0;
++  diff_update_commands = 0;
++  diff_other_commands = 0;
++  diff_commit_trans = 0;
++  diff_rollback_trans = 0;
++}
++
++// Updates 'diff' stats of a THD.
++void THD::update_stats() {
++  diff_total_busy_time += busy_time;
++  diff_total_sent_rows += sent_row_count;
++  diff_total_updated_rows += updated_row_count;
++  // The replication thread has the COM_CONNECT command.
++  if ((old_command == COM_QUERY || command == COM_CONNECT) &&
++      (lex->sql_command >= 0 && lex->sql_command < SQLCOM_END)) {
++    // A SQL query.
++    if (lex->sql_command == SQLCOM_SELECT) {
++      if (lex->orig_sql_command == SQLCOM_END) {
++        diff_select_commands++;
++      } else {
++        // 'SHOW ' commands become SQLCOM_SELECT.
++        diff_other_commands++;
++        // 'SHOW ' commands shouldn't inflate total sent row count.
++        diff_total_sent_rows -= sent_row_count;
++      }
++    } else if (is_update_query(lex->sql_command)) {
++      diff_update_commands++;
++    } else {
++      diff_other_commands++;
++    }
++  }
++  // diff_commit_trans is updated in handler.cc.
++  // diff_rollback_trans is updated in handler.cc.
++}
+ 
+ /*
+   Init THD for query processing.
+@@ -2386,4 +2435,3 @@
+   hash_delete(&xid_cache, (byte *)xid_state);
+   pthread_mutex_unlock(&LOCK_xid_cache);
+ }
+-
+diff -r a910f1746b0c sql/sql_class.h
+--- a/sql/sql_class.h	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_class.h	Mon Sep 08 16:38:54 2008 -0700
+@@ -1285,6 +1285,8 @@
+     first byte of the packet in do_command()
+   */
+   enum enum_server_command command;
++  // Used to save the command, before it is set to COM_SLEEP.
++  enum enum_server_command old_command;
+   uint32     server_id;
+   uint32     file_id;			// for LOAD DATA INFILE
+   /*
+@@ -1412,6 +1414,7 @@
+   ulonglong  options;           /* Bitmap of states */
+   longlong   row_count_func;    /* For the ROW_COUNT() function */
+   ha_rows    cuted_fields;
++  ha_rows    updated_row_count;
+ 
+   /*
+     number of rows we actually sent to the client, including "synthetic"
+@@ -1576,6 +1579,27 @@
+   */
+   LOG_INFO*  current_linfo;
+   NET*       slave_net;			// network connection from slave -> m.
++
++  /*
++    Used to update global user stats.  The global user stats are updated
++    occasionally with the 'diff' variables.  After the update, the 'diff'
++    variables are reset to 0.
++   */
++  // Time when the current thread connected to MySQL.
++  time_t current_connect_time;
++  // Last time when THD stats were updated in global_user_stats.
++  time_t last_global_update_time;
++  // Busy (non-idle) time for just one command.
++  double busy_time;
++  // Busy time not updated in global_user_stats yet.
++  double diff_total_busy_time;
++  // Number of rows not reflected in global_user_stats yet.
++  ha_rows diff_total_sent_rows, diff_total_updated_rows;
++  // Number of commands not reflected in global_user_stats yet.
++  ulonglong diff_select_commands, diff_update_commands, diff_other_commands;
++  // Number of transactions not reflected in global_user_stats yet.
++  ulonglong diff_commit_trans, diff_rollback_trans;
++
+   /* Used by the sys_var class to store temporary values */
+   union
+   {
+@@ -1631,6 +1655,9 @@
+     alloc_root.
+   */
+   void init_for_queries();
++  void reset_stats(void);
++  void reset_diff_stats(void);
++  void update_stats(void);
+   void change_user(void);
+   void cleanup(void);
+   void cleanup_after_query();
+diff -r a910f1746b0c sql/sql_delete.cc
+--- a/sql/sql_delete.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_delete.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -358,6 +358,7 @@
+     send_ok(thd,deleted);
+     DBUG_PRINT("info",("%ld records deleted",(long) deleted));
+   }
++  thd->updated_row_count += deleted;
+   DBUG_RETURN(error >= 0 || thd->net.report_error);
+ }
+ 
+@@ -869,6 +870,7 @@
+     thd->row_count_func= deleted;
+     ::send_ok(thd, deleted);
+   }
++  thd->updated_row_count += deleted;
+   return 0;
+ }
+ 
+diff -r a910f1746b0c sql/sql_insert.cc
+--- a/sql/sql_insert.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_insert.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -985,6 +985,7 @@
+     thd->row_count_func= info.copied + info.deleted + updated;
+     ::send_ok(thd, (ulong) thd->row_count_func, id, buff);
+   }
++  thd->updated_row_count += thd->row_count_func;
+   thd->abort_on_warning= 0;
+   DBUG_RETURN(FALSE);
+ 
+diff -r a910f1746b0c sql/sql_lex.h
+--- a/sql/sql_lex.h	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_lex.h	Mon Sep 08 16:38:54 2008 -0700
+@@ -94,6 +94,8 @@
+   SQLCOM_XA_START, SQLCOM_XA_END, SQLCOM_XA_PREPARE,
+   SQLCOM_XA_COMMIT, SQLCOM_XA_ROLLBACK, SQLCOM_XA_RECOVER,
+   SQLCOM_SHOW_PROC_CODE, SQLCOM_SHOW_FUNC_CODE,
++ SQLCOM_SHOW_USER_STATS, SQLCOM_SHOW_TABLE_STATS, SQLCOM_SHOW_INDEX_STATS,
++
+   /* This should be the last !!! */
+ 
+   SQLCOM_END
+diff -r a910f1746b0c sql/sql_parse.cc
+--- a/sql/sql_parse.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_parse.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -79,6 +79,12 @@
+ static bool check_show_create_table_access(THD *thd, TABLE_LIST *table);
+ static bool test_if_data_home_dir(const char *dir);
+ 
++// Increments connection count for user.
++static int increment_connection_count(THD* thd, bool use_lock);
++
++// Uses the THD to update the global stats.
++static void update_global_user_stats(THD* thd);
++
+ const char *any_db="*any*";	// Special symbol for check_access
+ 
+ const char *command_name[]={
+@@ -98,6 +104,15 @@
+ #ifndef EMBEDDED_LIBRARY
+ static bool do_command(THD *thd);
+ #endif // EMBEDDED_LIBRARY
++
++HASH global_user_stats;
++extern pthread_mutex_t LOCK_global_user_stats;
++
++HASH global_table_stats;
++extern pthread_mutex_t LOCK_global_table_stats;
++
++HASH global_index_stats;
++extern pthread_mutex_t LOCK_global_index_stats;
+ 
+ #ifdef __WIN__
+ extern void win_install_sigabrt_handler(void);
+@@ -489,13 +504,81 @@
+ void init_max_user_conn(void)
+ {
+ #ifndef NO_EMBEDDED_ACCESS_CHECKS
+-  (void) hash_init(&hash_user_connections,system_charset_info,max_connections,
+-		   0,0,
+-		   (hash_get_key) get_key_conn, (hash_free_key) free_user,
+-		   0);
+-#endif
+-}
+-
++  if (hash_init(&hash_user_connections,system_charset_info,max_connections,
++                0,0,
++                (hash_get_key) get_key_conn, (hash_free_key) free_user,
++                0)) {
++    sql_print_error("Initializing hash_user_connections failed.");
++    exit(1);
++  }
++#endif
++}
++
++extern "C" byte *get_key_user_stats(USER_STATS *user_stats, uint *length,
++                                    my_bool not_used __attribute__((unused)))
++{
++  *length = strlen(user_stats->user);
++  return (byte*)user_stats->user;
++}
++
++extern "C" void free_user_stats(USER_STATS* user_stats)
++{
++  my_free((char*)user_stats, MYF(0));
++}
++
++void init_global_user_stats(void)
++{
++  if (hash_init(&global_user_stats, system_charset_info, max_connections,
++                0, 0, (hash_get_key)get_key_user_stats,
++                (hash_free_key)free_user_stats, 0)) {
++    sql_print_error("Initializing global_user_stats failed.");
++    exit(1);
++  }
++}
++
++extern "C" byte *get_key_table_stats(TABLE_STATS *table_stats, uint *length,
++                                     my_bool not_used __attribute__((unused)))
++{
++  *length = strlen(table_stats->table);
++  return (byte*)table_stats->table;
++}
++
++extern "C" void free_table_stats(TABLE_STATS* table_stats)
++{
++  my_free((char*)table_stats, MYF(0));
++}
++
++void init_global_table_stats(void)
++{
++  if (hash_init(&global_table_stats, system_charset_info, max_connections,
++                0, 0, (hash_get_key)get_key_table_stats,
++                (hash_free_key)free_table_stats, 0)) {
++    sql_print_error("Initializing global_table_stats failed.");
++    exit(1);
++  }
++}
++
++extern "C" byte *get_key_index_stats(INDEX_STATS *index_stats, uint *length,
++                                     my_bool not_used __attribute__((unused)))
++{
++  *length = strlen(index_stats->index);
++  return (byte*)index_stats->index;
++}
++
++extern "C" void free_index_stats(INDEX_STATS* index_stats)
++{
++  my_free((char*)index_stats, MYF(0));
++}
++
++void init_global_index_stats(void)
++{
++  if (hash_init(&global_index_stats, system_charset_info, max_connections,
++                0, 0, (hash_get_key)get_key_index_stats,
++                (hash_free_key)free_index_stats, 0)) {
++    sql_print_error("Initializing global_index_stats failed.");
++    exit(1);
++  }
++}
+ 
+ /*
+   check if user has already too many connections
+@@ -599,6 +682,20 @@
+ #endif /* NO_EMBEDDED_ACCESS_CHECKS */
+ }
+ 
++void free_global_user_stats(void)
++{
++  hash_free(&global_user_stats);
++}
++
++void free_global_table_stats(void)
++{
++  hash_free(&global_table_stats);
++}
++
++void free_global_index_stats(void)
++{
++  hash_free(&global_index_stats);
++}
+ 
+ 
+ /*
+@@ -651,6 +748,129 @@
+   return uc_update_queries[command] != 0;
+ }
+ 
++// 'mysql_system_user' is used for when the user is not defined for a THD.
++static char mysql_system_user[] = "#mysql_system#";
++
++// Returns 'user' if it's not NULL.  Returns 'mysql_system_user' otherwise.
++static char* get_valid_user_string(char* user) {
++  return user ? user : mysql_system_user;
++}
++
++// Increments the global user stats connection count.  If 'use_lock' is true,
++// 'LOCK_global_user_stats' will be locked/unlocked.  Returns 0 on success,
++// 1 on error.
++static int increment_connection_count(THD* thd, bool use_lock) {
++  char* user_string = get_valid_user_string(thd->main_security_ctx.user);
++
++  USER_STATS* user_stats;
++  int return_value = 0;
++
++  if (use_lock) pthread_mutex_lock(&LOCK_global_user_stats);
++  if (!(user_stats = (USER_STATS*)hash_search(&global_user_stats,
++                                              (byte*)user_string,
++                                              strlen(user_string)))) {
++    // First connection for this user.
++    if (!(user_stats = ((USER_STATS*)
++                        my_malloc(sizeof(USER_STATS), MYF(MY_WME))))) {
++      // Out of memory.
++      return_value = 1;
++      goto end;
++    }
++    strncpy(user_stats->user, user_string, sizeof(user_stats->user));
++    user_stats->total_connections = 0;
++    user_stats->concurrent_connections = 0;
++    user_stats->connected_time = 0;
++    user_stats->busy_time = 0;
++    user_stats->rows_fetched = 0;
++    user_stats->rows_updated = 0;
++    user_stats->select_commands = 0;
++    user_stats->update_commands = 0;
++    user_stats->other_commands = 0;
++    user_stats->commit_trans = 0;
++    user_stats->rollback_trans = 0;
++
++    if (my_hash_insert(&global_user_stats, (byte*)user_stats)) {
++      // Out of memory.
++      my_free((char*)user_stats, 0);
++      return_value = 1;
++      goto end;
++    }
++  }
++  user_stats->total_connections++;
++end:
++  if (use_lock) pthread_mutex_unlock(&LOCK_global_user_stats);
++  return return_value;
++}
++
++// Used to update the global user stats.
++static void update_global_user_stats_with_user(THD* thd,
++                                               USER_STATS* user_stats) {
++  time_t current_time = time(NULL);
++  user_stats->connected_time += current_time - thd->last_global_update_time;
++  thd->last_global_update_time = current_time;
++  user_stats->busy_time += thd->diff_total_busy_time;
++  user_stats->rows_fetched += thd->diff_total_sent_rows;
++  user_stats->rows_updated += thd->diff_total_updated_rows;
++  user_stats->select_commands += thd->diff_select_commands;
++  user_stats->update_commands += thd->diff_update_commands;
++  user_stats->other_commands += thd->diff_other_commands;
++  user_stats->commit_trans += thd->diff_commit_trans;
++  user_stats->rollback_trans += thd->diff_rollback_trans;
++}
++
++// Updates the global stats of a thread/user.
++static void update_global_user_stats(THD* thd) {
++  char* user_string = get_valid_user_string(thd->main_security_ctx.user);
++
++  USER_STATS* user_stats;
++  pthread_mutex_lock(&LOCK_global_user_stats);
++  if ((user_stats = (USER_STATS*)hash_search(&global_user_stats,
++                                             (byte*)user_string,
++                                             strlen(user_string)))) {
++    // Found user.
++    update_global_user_stats_with_user(thd, user_stats);
++    thd->reset_diff_stats();
++  } else {
++    // The user name should exist.
++    increment_connection_count(thd, false);
++  }
++  pthread_mutex_unlock(&LOCK_global_user_stats);
++}
++
++// Determines the concurrent number of connections of current threads.
++void set_concurrent_connections_stats() {
++  USER_STATS* user_stats;
++
++  pthread_mutex_lock(&LOCK_global_user_stats);
++  pthread_mutex_lock(&LOCK_thread_count);
++
++  // Resets all concurrent connections to 0.
++  for (int i = 0; i < global_user_stats.records; ++i) {
++    user_stats = (USER_STATS*)hash_element(&global_user_stats, i);
++    user_stats->concurrent_connections = 0;
++  }
++
++  I_List_iterator<THD> it(threads);
++  THD* thd;
++  // Iterates through the current threads.
++  while ((thd = it++)) {
++    char* user_string = get_valid_user_string(thd->main_security_ctx.user);
++    if ((user_stats = (USER_STATS*)hash_search(&global_user_stats,
++                                               (byte*)user_string,
++                                               strlen(user_string)))) {
++      // Found user.
++      user_stats->concurrent_connections++;
++      update_global_user_stats_with_user(thd, user_stats);
++      thd->reset_diff_stats();
++    } else {
++      // The user name should exist.
++      increment_connection_count(thd, false);
++    }
++  }
++  pthread_mutex_unlock(&LOCK_thread_count);
++  pthread_mutex_unlock(&LOCK_global_user_stats);
++}
++
+ /*
+   Reset per-hour user resource limits when it has been more than
+   an hour since they were last checked
+@@ -1148,6 +1368,14 @@
+       statistic_increment(aborted_connects,&LOCK_status);
+       goto end_thread;
+     }
++
++    thd->reset_stats();
++    // Updates global user connection stats.
++    if (increment_connection_count(thd, true)) {
++      net_send_error(thd, ER_OUTOFMEMORY);  // Out of memory
++      goto end_thread;
++    }
++
+ #ifdef __NETWARE__
+     netware_reg_user(sctx->ip, sctx->user, "MySQL");
+ #endif
+@@ -1223,6 +1451,8 @@
+ 
+ end_thread:
+     close_connection(thd, 0, 1);
++    thd->update_stats();
++    update_global_user_stats(thd);
+     end_thread(thd,1);
+     /*
+       If end_thread returns, we are either running with --one-thread
+@@ -1692,6 +1922,9 @@
+   }
+ 
+   thd->command=command;
++  // To increment the corrent command counter for user stats, 'command' must
++  // be saved because it is set to COM_SLEEP at the end of this function.
++  thd->old_command = command;
+   /*
+     Commands which always take a long time are logged into
+     the slow log only if opt_log_slow_admin_statements is set.
+@@ -2429,6 +2662,9 @@
+   case SCH_COLUMN_PRIVILEGES:
+   case SCH_TABLE_CONSTRAINTS:
+   case SCH_KEY_COLUMN_USAGE:
++  case SCH_USER_STATS:
++  case SCH_TABLE_STATS:
++  case SCH_INDEX_STATS:
+   default:
+     break;
+   }
+@@ -5981,6 +6217,8 @@
+       reset_dynamic(&thd->user_var_events);
+       thd->user_var_events_alloc= thd->mem_root;
+     }
++    thd->updated_row_count=0;
++    thd->busy_time=0;
+     thd->clear_error();
+     thd->total_warn_count=0;			// Warnings for this query
+     thd->rand_used= 0;
+@@ -6163,6 +6401,16 @@
+   DBUG_ENTER("mysql_parse");
+ 
+   DBUG_EXECUTE_IF("parser_debug", turn_parser_debug_on(););
++
++  int start_time_error = 0;
++  int end_time_error = 0;
++  struct timeval start_time, end_time;
++  double start_usecs = 0;
++  double end_usecs = 0;
++  // Gets the start time, in order to measure how long this command takes.
++  if (!(start_time_error = gettimeofday(&start_time, NULL))) {
++    start_usecs = start_time.tv_sec * 1000000.0 + start_time.tv_usec;
++  }
+ 
+   /*
+     Warning.
+@@ -6261,6 +6509,27 @@
+     *found_semicolon= NULL;
+   }
+ 
++  // Gets the end time.
++  if (!(end_time_error = gettimeofday(&end_time, NULL))) {
++    end_usecs = end_time.tv_sec * 1000000.0 + end_time.tv_usec;
++  }
++
++  // Calculates the difference between the end and start times.
++  if (end_usecs >= start_usecs && !start_time_error && !end_time_error) {
++    thd->busy_time = (end_usecs - start_usecs) / 1000000;
++    // In case there are bad values, 2629743 is the #seconds in a month.
++    if (thd->busy_time > 2629743) {
++      thd->busy_time = 0;
++    }
++  } else {
++    // end time went back in time, or gettimeofday() failed.
++    thd->busy_time = 0;
++  }
++
++  // Updates THD stats and the global user stats.
++  thd->update_stats();
++  update_global_user_stats(thd);
++
+   DBUG_VOID_RETURN;
+ }
+ 
+@@ -6890,6 +7159,7 @@
+     tables->lock_type= lock_type;
+     tables->updating=  for_update;
+   }
++
+   DBUG_VOID_RETURN;
+ }
+ 
+@@ -7272,8 +7542,22 @@
+    pthread_mutex_unlock(&LOCK_active_mi);
+  }
+ #endif
+- if (options & REFRESH_USER_RESOURCES)
+-   reset_mqh((LEX_USER *) NULL);
++  if (options & REFRESH_USER_RESOURCES)
++    reset_mqh((LEX_USER *) NULL);
++  if (options & REFRESH_TABLE_STATS)
++  {
++    pthread_mutex_lock(&LOCK_global_table_stats);
++    free_global_table_stats();
++    init_global_table_stats();
++    pthread_mutex_unlock(&LOCK_global_table_stats);
++  }
++  if (options & REFRESH_INDEX_STATS)
++  {
++    pthread_mutex_lock(&LOCK_global_index_stats);
++    free_global_index_stats();
++    init_global_index_stats();
++    pthread_mutex_unlock(&LOCK_global_index_stats);
++  }
+  *write_to_binlog= tmp_write_to_binlog;
+  return result;
+ }
+diff -r a910f1746b0c sql/sql_show.cc
+--- a/sql/sql_show.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_show.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -1853,6 +1853,91 @@
+   DBUG_RETURN(FALSE);
+ }
+ 
++// Sends the global user stats back to the client.
++int fill_schema_user_stats(THD* thd, TABLE_LIST* tables, COND* cond)
++{
++  TABLE *table= tables->table;
++  DBUG_ENTER("fill_schema_user_stats");
++
++  set_concurrent_connections_stats();
++
++  pthread_mutex_lock(&LOCK_global_user_stats);
++  for (int i = 0; i < global_user_stats.records; ++i) {
++    restore_record(table, s->default_values);
++    USER_STATS *user_stats = (USER_STATS*)hash_element(&global_user_stats, i);
++    table->field[0]->store(user_stats->user, strlen(user_stats->user), system_charset_info);
++    table->field[1]->store((longlong)user_stats->total_connections, TRUE);
++    table->field[2]->store((longlong)user_stats->concurrent_connections, TRUE);
++    table->field[3]->store((longlong)user_stats->connected_time, TRUE);
++    table->field[4]->store((longlong)user_stats->busy_time, TRUE);
++    table->field[5]->store((longlong)user_stats->rows_fetched, TRUE);
++    table->field[6]->store((longlong)user_stats->rows_updated, TRUE);
++    table->field[7]->store((longlong)user_stats->select_commands, TRUE);
++    table->field[8]->store((longlong)user_stats->update_commands, TRUE);
++    table->field[9]->store((longlong)user_stats->other_commands, TRUE);
++    table->field[10]->store((longlong)user_stats->commit_trans, TRUE);
++    table->field[11]->store((longlong)user_stats->rollback_trans, TRUE);
++
++    if (schema_table_store_record(thd, table))
++    {
++      VOID(pthread_mutex_unlock(&LOCK_global_user_stats));
++      DBUG_RETURN(1);
++    }
++  }
++  pthread_mutex_unlock(&LOCK_global_user_stats);
++  DBUG_RETURN(0);
++}
++
++// Sends the global table stats back to the client.
++int fill_schema_table_stats(THD* thd, TABLE_LIST* tables, COND* cond)
++{
++  TABLE *table= tables->table;
++  DBUG_ENTER("fill_schema_table_stats");
++
++  pthread_mutex_lock(&LOCK_global_table_stats);
++  for (int i = 0; i < global_table_stats.records; ++i) {
++    restore_record(table, s->default_values);
++    TABLE_STATS *table_stats = 
++      (TABLE_STATS*)hash_element(&global_table_stats, i);
++    table->field[0]->store(table_stats->table, strlen(table_stats->table), system_charset_info);
++    table->field[1]->store((longlong)table_stats->rows_read, TRUE);
++    table->field[2]->store((longlong)table_stats->rows_changed, TRUE);
++    table->field[3]->store((longlong)table_stats->rows_changed_x_indexes, TRUE);
++
++    if (schema_table_store_record(thd, table))
++    {
++      VOID(pthread_mutex_unlock(&LOCK_global_table_stats));
++      DBUG_RETURN(1);
++    }
++  }
++  pthread_mutex_unlock(&LOCK_global_table_stats);
++  DBUG_RETURN(0);
++}
++
++// Sends the global index stats back to the client.
++int fill_schema_index_stats(THD* thd, TABLE_LIST* tables, COND* cond)
++{
++  TABLE *table= tables->table;
++  DBUG_ENTER("fill_schema_index_stats");
++
++  pthread_mutex_lock(&LOCK_global_index_stats);
++  for (int i = 0; i < global_index_stats.records; ++i) {
++    restore_record(table, s->default_values);
++    INDEX_STATS *index_stats = 
++      (INDEX_STATS*)hash_element(&global_index_stats, i);
++    table->field[0]->store(index_stats->index, strlen(index_stats->index), system_charset_info);
++    table->field[1]->store((longlong)index_stats->rows_read, TRUE);
++
++    if (schema_table_store_record(thd, table))
++    {
++      VOID(pthread_mutex_unlock(&LOCK_global_index_stats));
++      DBUG_RETURN(1);
++    }
++  }
++  pthread_mutex_unlock(&LOCK_global_index_stats);
++  DBUG_RETURN(0);
++}
++
+ 
+ /* collect status for all running threads */
+ 
+@@ -4420,6 +4505,38 @@
+   {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
+ };
+ 
++ST_FIELD_INFO user_stats_fields_info[]=
++{
++  {"USER", 16, MYSQL_TYPE_STRING, 0, 0, "User"},
++  {"TOTAL_CONNECTIONS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Total_connections"},
++  {"CONCURRENT_CONNECTIONS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Concurrent_connections"},
++  {"CONNECTED_TIME", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Connected_time"},
++  {"BUSY_TIME", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Busy_time"},
++  {"ROWS_FETCHED", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Rows_fetched"},
++  {"ROWS_UPDATED", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Rows_updated"},
++  {"SELECT_COMMANDS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Select_commands"},
++  {"UPDATE_COMMANDS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Update_commands"},
++  {"OTHER_COMMANDS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Other_commands"},
++  {"COMMIT_TRANSACTIONS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Commit_transactions"},
++  {"ROLLBACK_TRANSACTIONS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Rollback_transactions"},
++  {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
++};
++
++ST_FIELD_INFO table_stats_fields_info[]=
++{
++  {"TABLE_NAME", NAME_LEN, MYSQL_TYPE_STRING, 0, 0, "Table_name"},
++  {"ROWS_READ", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Rows_read"},
++  {"ROWS_CHANGED", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Rows_changed"},
++  {"ROWS_CHANGED_INDEXES", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Rows_changed_x_#indexes"},
++  {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
++};
++
++ST_FIELD_INFO index_stats_fields_info[]=
++{
++  {"INDEX_NAME", NAME_LEN, MYSQL_TYPE_STRING, 0, 0, "Index_name"},
++  {"ROWS_READ", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Rows_read"},
++  {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
++};
+ 
+ /*
+   Description of ST_FIELD_INFO in table.h
+@@ -4437,6 +4554,8 @@
+    get_all_tables, make_columns_old_format, get_schema_column_record, 1, 2, 0},
+   {"COLUMN_PRIVILEGES", column_privileges_fields_info, create_schema_table,
+     fill_schema_column_privileges, 0, 0, -1, -1, 0},
++  {"INDEX_STATISTICS", index_stats_fields_info, create_schema_table,
++   fill_schema_index_stats, make_old_format, 0, -1, -1, 0},
+   {"KEY_COLUMN_USAGE", key_column_usage_fields_info, create_schema_table,
+     get_all_tables, 0, get_schema_key_column_usage_record, 4, 5, 0},
+   {"OPEN_TABLES", open_tables_fields_info, create_schema_table,
+@@ -4459,10 +4578,14 @@
+    get_all_tables, make_table_names_old_format, 0, 1, 2, 1},
+   {"TABLE_PRIVILEGES", table_privileges_fields_info, create_schema_table,
+     fill_schema_table_privileges, 0, 0, -1, -1, 0},
++  {"TABLE_STATISTICS", table_stats_fields_info, create_schema_table,
++   fill_schema_table_stats, make_old_format, 0, -1, -1, 0},
+   {"TRIGGERS", triggers_fields_info, create_schema_table,
+    get_all_tables, make_old_format, get_schema_triggers_record, 5, 6, 0},
+   {"USER_PRIVILEGES", user_privileges_fields_info, create_schema_table, 
+     fill_schema_user_privileges, 0, 0, -1, -1, 0},
++  {"USER_STATISTICS", user_stats_fields_info, create_schema_table, 
++   fill_schema_user_stats, make_old_format, 0, -1, -1, 0},
+   {"VARIABLES", variables_fields_info, create_schema_table, fill_variables,
+    make_old_format, 0, -1, -1, 1},
+   {"VIEWS", view_fields_info, create_schema_table, 
+diff -r a910f1746b0c sql/sql_update.cc
+--- a/sql/sql_update.cc	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_update.cc	Mon Sep 08 16:38:54 2008 -0700
+@@ -601,7 +601,8 @@
+       (thd->client_capabilities & CLIENT_FOUND_ROWS) ? found : updated;
+     send_ok(thd, (ulong) thd->row_count_func,
+ 	    thd->insert_id_used ? thd->last_insert_id : 0L,buff);
+-    DBUG_PRINT("info",("%ld records updated", (long) updated));
++    thd->updated_row_count += thd->row_count_func;
++    DBUG_PRINT("info",("%d records updated",updated));
+   }
+   thd->count_cuted_fields= CHECK_FIELD_IGNORE;		/* calc cuted fields */
+   thd->abort_on_warning= 0;
+@@ -1775,5 +1776,6 @@
+     (thd->client_capabilities & CLIENT_FOUND_ROWS) ? found : updated;
+   ::send_ok(thd, (ulong) thd->row_count_func,
+ 	    thd->insert_id_used ? thd->last_insert_id : 0L,buff);
++  thd->updated_row_count += thd->row_count_func;
+   return FALSE;
+ }
+diff -r a910f1746b0c sql/sql_yacc.yy
+--- a/sql/sql_yacc.yy	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/sql_yacc.yy	Mon Sep 08 16:38:54 2008 -0700
+@@ -676,6 +676,7 @@
+ %token  IMPORT
+ %token  INDEXES
+ %token  INDEX_SYM
++%token	INDEX_STATS_SYM
+ %token  INFILE
+ %token  INNER_SYM
+ %token  INNOBASE_SYM
+@@ -936,6 +937,7 @@
+ %token  TABLES
+ %token  TABLESPACE
+ %token  TABLE_SYM
++%token	TABLE_STATS_SYM
+ %token  TEMPORARY
+ %token  TEMPTABLE_SYM
+ %token  TERMINATED
+@@ -978,6 +980,7 @@
+ %token  UPGRADE_SYM
+ %token  USAGE
+ %token  USER
++%token	USER_STATS_SYM
+ %token  USE_FRM
+ %token  USE_SYM
+ %token  USING
+@@ -8163,6 +8166,30 @@
+           {
+ 	    Lex->sql_command = SQLCOM_SHOW_SLAVE_STAT;
+           }
++        | USER_STATS_SYM wild_and_where
++          {
++           LEX *lex= Lex;
++           lex->sql_command= SQLCOM_SELECT;
++           lex->orig_sql_command= SQLCOM_SHOW_USER_STATS;
++           if (prepare_schema_table(YYTHD, lex, 0, SCH_USER_STATS))
++             MYSQL_YYABORT;
++          }
++        | TABLE_STATS_SYM wild_and_where
++          {
++           LEX *lex= Lex;
++           lex->sql_command= SQLCOM_SELECT;
++           lex->orig_sql_command= SQLCOM_SHOW_TABLE_STATS;
++           if (prepare_schema_table(YYTHD, lex, 0, SCH_TABLE_STATS))
++             MYSQL_YYABORT;
++          }
++        | INDEX_STATS_SYM wild_and_where
++          {
++           LEX *lex= Lex;
++           lex->sql_command= SQLCOM_SELECT;
++           lex->orig_sql_command= SQLCOM_SHOW_INDEX_STATS;
++           if (prepare_schema_table(YYTHD, lex, 0, SCH_INDEX_STATS))
++             MYSQL_YYABORT;
++          }
+ 	| CREATE PROCEDURE sp_name
+ 	  {
+ 	    LEX *lex= Lex;
+@@ -8369,7 +8396,9 @@
+         | SLAVE         { Lex->type|= REFRESH_SLAVE; }
+         | MASTER_SYM    { Lex->type|= REFRESH_MASTER; }
+ 	| DES_KEY_FILE	{ Lex->type|= REFRESH_DES_KEY_FILE; }
+- 	| RESOURCES     { Lex->type|= REFRESH_USER_RESOURCES; };
++ 	| RESOURCES     { Lex->type|= REFRESH_USER_RESOURCES; }
++ 	| TABLE_STATS_SYM { Lex->type|= REFRESH_TABLE_STATS; }
++ 	| INDEX_STATS_SYM { Lex->type|= REFRESH_INDEX_STATS; };
+ 
+ opt_table_list:
+ 	/* empty */  {;}
+diff -r a910f1746b0c sql/structs.h
+--- a/sql/structs.h	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/structs.h	Mon Sep 08 16:38:54 2008 -0700
+@@ -272,6 +272,28 @@
+   time_t intime;
+ } USER_CONN;
+ 
++typedef struct st_user_stats {
++  char user[USERNAME_LENGTH + 1];
++  uint total_connections;
++  uint concurrent_connections;
++  time_t connected_time;  // in seconds
++  double busy_time;       // in seconds
++  ha_rows rows_fetched, rows_updated;
++  ulonglong select_commands, update_commands, other_commands;
++  ulonglong commit_trans, rollback_trans;
++} USER_STATS;
++
++typedef struct st_table_stats {
++  char table[NAME_LEN * 2 + 2];  // [db] + '.' + [table] + '\0'
++  ulonglong rows_read, rows_changed;
++  ulonglong rows_changed_x_indexes;
++} TABLE_STATS;
++
++typedef struct st_index_stats {
++  char index[NAME_LEN * 3 + 3];  // [db] + '.' + [table] + '.' + [index] + '\0'
++  ulonglong rows_read;
++} INDEX_STATS;
++
+ 	/* Bits in form->update */
+ #define REG_MAKE_DUPP		1	/* Make a copy of record when read */
+ #define REG_NEW_RECORD		2	/* Write a new record if not found */
+diff -r a910f1746b0c sql/table.h
+--- a/sql/table.h	Mon Sep 08 16:38:46 2008 -0700
++++ b/sql/table.h	Mon Sep 08 16:38:54 2008 -0700
+@@ -374,6 +374,7 @@
+   SCH_COLLATION_CHARACTER_SET_APPLICABILITY,
+   SCH_COLUMNS,
+   SCH_COLUMN_PRIVILEGES,
++  SCH_INDEX_STATS,
+   SCH_KEY_COLUMN_USAGE,
+   SCH_OPEN_TABLES,
+   SCH_PROCEDURES,
+@@ -385,8 +386,10 @@
+   SCH_TABLE_CONSTRAINTS,
+   SCH_TABLE_NAMES,
+   SCH_TABLE_PRIVILEGES,
++  SCH_TABLE_STATS,
+   SCH_TRIGGERS,
+   SCH_USER_PRIVILEGES,
++  SCH_USER_STATS,
+   SCH_VARIABLES,
+   SCH_VIEWS
+ };

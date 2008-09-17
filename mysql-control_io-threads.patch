@@ -1,0 +1,69 @@
+diff -r 4dca80df8ee3 innobase/os/os0file.c
+--- a/innobase/os/os0file.c	Mon Sep 08 16:40:14 2008 -0700
++++ b/innobase/os/os0file.c	Mon Sep 08 16:40:20 2008 -0700
+@@ -3180,6 +3180,13 @@
+ 	struct aiocb*	control;
+ #endif
+ 	ulint		i;
++	ulint		prim_segment;
++	ulint		n;
++
++	n = array->n_slots / array->n_segments;
++	/* 64 blocks' striping ( aligning max(BUF_READ_AHEAD_AREA) ) */
++	prim_segment = ( offset >> (UNIV_PAGE_SIZE_SHIFT + 6) ) % (array->n_segments);
++
+ loop:
+ 	os_mutex_enter(array->mutex);
+ 
+@@ -3198,11 +3205,22 @@
+ 		goto loop;
+ 	}
+ 
+-	for (i = 0;; i++) {
++	for (i = prim_segment * n; i < array->n_slots; i++) {
+ 		slot = os_aio_array_get_nth_slot(array, i);
+ 
+ 		if (slot->reserved == FALSE) {
+ 			break;
++		}
++	}
++
++	if (slot->reserved == TRUE){
++		/* Not found after the intended segment. So we should search before. */
++		for (i = 0;; i++) {
++			slot = os_aio_array_get_nth_slot(array, i);
++
++			if (slot->reserved == FALSE) {
++				break;
++			}
+ 		}
+ 	}
+ 
+diff -r 4dca80df8ee3 innobase/srv/srv0start.c
+--- a/innobase/srv/srv0start.c	Mon Sep 08 16:40:14 2008 -0700
++++ b/innobase/srv/srv0start.c	Mon Sep 08 16:40:20 2008 -0700
+@@ -1213,12 +1213,12 @@
+ 
+ 	if (!os_aio_use_native_aio) {
+  		/* In simulated aio we currently have use only for 4 threads */
+-		srv_n_file_io_threads = 4;
++		/*srv_n_file_io_threads = 4;*/
+ 
+ 		os_aio_init(8 * SRV_N_PENDING_IOS_PER_THREAD
+ 						* srv_n_file_io_threads,
+ 					srv_n_file_io_threads,
+-					SRV_MAX_N_PENDING_SYNC_IOS);
++					SRV_MAX_N_PENDING_SYNC_IOS * srv_n_file_io_threads / 4);
+ 	} else {
+ 		os_aio_init(SRV_N_PENDING_IOS_PER_THREAD
+ 						* srv_n_file_io_threads,
+diff -r 4dca80df8ee3 patch_info/control_io-threads.info
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/patch_info/control_io-threads.info	Mon Sep 08 16:40:20 2008 -0700
+@@ -0,0 +1,6 @@
++File=control_io-threads.patch
++Name=InnoDB patch to control count of IO threads
++Version=1.0
++Author=Yasufumi Kinoshita
++License=BSD
++Comment=
