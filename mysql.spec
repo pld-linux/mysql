@@ -23,15 +23,15 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.67
-Release:	3
+Version:	5.0.68
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 #Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-#Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
-Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	7164483a5ffb8f7aa59b761c13cdbd6e
+#Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
+# Source0-md5:	b3351d755bd62fd203bae777a77ccfef
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.8.tar.gz
 # Source100-md5:	347e547b79b733778d7553ede34e0aac
 Source1:	%{name}.init
@@ -63,6 +63,16 @@ Patch13:	%{name}-bug-34192.patch
 Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
 Patch16:	%{name}-bug-39021.patch
+# Percona patches, http://www.percona.com/percona-lab.html
+#Patch17:	%{name}-acc-pslist.patch
+Patch18:	%{name}-control_flush_and_merge_and_read.patch
+Patch19:	%{name}-control_io-threads.patch
+Patch20:	%{name}-microslow_innodb.patch
+Patch21:	%{name}d-safe_syslog.patch
+Patch22:	%{name}-show_patches.patch
+Patch23:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
+Patch24:	%{name}-userstats-testsuite.patch
+Patch25:	%{name}-userstats.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -469,6 +479,15 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
+#%patch17 -p1
+%patch18 -p1
+%patch19 -p1
+%patch20 -p1
+%patch21 -p1
+%patch22 -p1
+%patch23 -p1
+%patch24 -p1
+%patch25 -p1
 
 %build
 %{__libtoolize}
