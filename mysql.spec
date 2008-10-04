@@ -101,6 +101,7 @@ Requires(pre):	/usr/sbin/useradd
 Requires(triggerpostun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	/usr/bin/setsid
+Requires:	logrotate
 Requires:	rc-scripts >= 0.2.0
 Provides:	MySQL-server
 Provides:	group(mysql)
