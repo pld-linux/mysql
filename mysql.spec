@@ -624,6 +624,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/resolveip
 rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_bin_dist.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
+rm $RPM_BUILD_ROOT%{_datadir}/mysql/ChangeLog
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
@@ -789,7 +790,7 @@ done
 
 %files
 %defattr(644,root,root,755)
-%doc support-files/*.cnf support-files/*.ini
+%doc support-files/*.cnf support-files/*.ini ChangeLog
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
