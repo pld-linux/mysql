@@ -780,7 +780,7 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 done
 
 (
-echo 'You should run MySQL upgrade scripts for all MySQL clusters.'
+echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
 echo 'Thus, you should invoke:'
 for config in $configs; do
 	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
