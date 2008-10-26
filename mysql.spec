@@ -87,16 +87,16 @@ Requires(pre):	/usr/sbin/useradd
 Requires(triggerpostun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	/usr/bin/setsid
+Requires:	logrotate >= 3.7-4
 Requires:	rc-scripts >= 0.2.0
+Suggests:	mysql-client
+%{?with_tcpd:Suggests:	tcp_wrappers}
 Provides:	MySQL-server
 Provides:	group(mysql)
 Provides:	msqlormysql
 Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
-Suggests:	mysql-client
-%{?with_tcpd:Suggests:	tcp_wrappers}
-Conflicts:	logrotate < 3.7-4
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
