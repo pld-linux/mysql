@@ -24,7 +24,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.68
-Release:	0.1
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -101,8 +101,10 @@ Requires(pre):	/usr/sbin/useradd
 Requires(triggerpostun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	/usr/bin/setsid
-Requires:	logrotate
+Requires:	logrotate >= 3.7-4
 Requires:	rc-scripts >= 0.2.0
+Suggests:	mysql-client
+%{?with_tcpd:Suggests:	tcp_wrappers}
 Provides:	MySQL-server
 Provides:	group(mysql)
 Provides:	msqlormysql
@@ -553,7 +555,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,ssl/certs/mysql} \
-	   $RPM_BUILD_ROOT/var/{log/{archiv,}/mysql,lib/mysql} \
+	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
 %if %{with bdb}
@@ -578,20 +580,19 @@ install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
-%if !%{with innodb}
-	echo "BASE_TABLETYPE=MyISAM" >> $RPM_BUILD_ROOT/etc/sysconfig/mysql
+%if %{without innodb}
 	cp mysqld.conf mysqld.tmp
 	awk 'BEGIN { RS="\n\n" } !/innodb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 %endif
 
 # remove berkeley-db directives from mysqld.conf if mysqld is configured without
-%if !%{with bdb}
+%if %{without bdb}
 	cp mysqld.conf mysqld.tmp
 	awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 %endif
 
 install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
-install %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
+cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
 
 # NDB
 install %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
@@ -600,20 +601,20 @@ install %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
 install %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
 install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
-# remove .txt variants for .sys messages
-rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
 
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT{%{_libdir}/libmysqlclient{,_r}.la,%{_bindir}/mysql_config}
+sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # remove known unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
 
+# remove .txt variants for .sys messages
+rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
+
 # rename not to be so generic name
-mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}comp_err
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
-mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}comp_err.1
 
 # not useful without -debug build
 %{!?debug:rm -f $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
@@ -623,8 +624,19 @@ mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}comp_err.1
 # http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.sym}
 
-# functionality in initscript / rpm / other os
+# do not clobber users $PATH
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_upgrade
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/innochecksum
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
+
+# functionality in initscript / rpm
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
+rm $RPM_BUILD_ROOT%{_bindir}/mysql_upgrade_shell
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
@@ -636,7 +648,11 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
+rm $RPM_BUILD_ROOT%{_bindir}/resolveip
+rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_bin_dist.1
+rm $RPM_BUILD_ROOT%{_bindir}/comp_err
+rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_src_distribution.1
@@ -646,6 +662,13 @@ rm $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld_multi.server
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1
+# orphaned manuals
+rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_backup_file.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_schema_file.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_sys_file.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlmanager-pwgen.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlmanagerc.1
+rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqltest_embedded.1
 
 # in %doc
 rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
@@ -770,22 +793,23 @@ EOF
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
 %dir /etc/ssl/certs/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
-%attr(755,root,root) %{_bindir}/innochecksum
-%attr(755,root,root) %{_bindir}/myisamchk
-%attr(755,root,root) %{_bindir}/myisamlog
-%attr(755,root,root) %{_bindir}/myisampack
-%attr(755,root,root) %{_bindir}/mysql_fix_privilege_tables
-%attr(755,root,root) %{_bindir}/my_print_defaults
-%attr(755,root,root) %{_bindir}/mysql_upgrade
-%attr(755,root,root) %{_bindir}/mysql_upgrade_shell
+%attr(755,root,root) %{_sbindir}/innochecksum
+%attr(755,root,root) %{_sbindir}/my_print_defaults
+%attr(755,root,root) %{_sbindir}/myisamchk
+%attr(755,root,root) %{_sbindir}/myisamlog
+%attr(755,root,root) %{_sbindir}/myisampack
+%attr(755,root,root) %{_sbindir}/mysql_fix_privilege_tables
+%attr(755,root,root) %{_sbindir}/mysql_upgrade
+%attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
-%{_mandir}/man1/mysql_fix_privilege_tables.1*
+%{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
+%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysql_upgrade.1*
-%{_mandir}/man1/innochecksum.1*
+%{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man8/mysqld.8*
 
 %if %{?debug:1}0
@@ -795,23 +819,22 @@ EOF
 %endif
 
 %attr(700,mysql,mysql) %{_mysqlhome}
-# root:root is proper here for AC mysql.rpm while mysql:mysql is potential security hole
+# root:root is proper here for mysql.rpm while mysql:mysql is potential security hole
 %attr(751,root,root) /var/lib/mysql
 %attr(750,mysql,mysql) %dir /var/log/mysql
-%attr(750,mysql,mysql) %dir /var/log/archiv/mysql
+%attr(750,mysql,mysql) %dir /var/log/archive/mysql
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
 
 %{_infodir}/mysql.info*
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/mysql/mysqld.conf
-
-%{_datadir}/mysql/fill_help_tables.sql
-%{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %{_datadir}/mysql/mysql_system_tables.sql
 %{_datadir}/mysql/mysql_system_tables_data.sql
 %{_datadir}/mysql/mysql_test_data_timezone.sql
 
 %{_datadir}/mysql/english
+%{_datadir}/mysql/fill_help_tables.sql
+%{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
 %lang(de) %{_datadir}/mysql/german
@@ -846,18 +869,14 @@ EOF
 %attr(755,root,root) %{_bindir}/myisam_ftdump
 %attr(755,root,root) %{_bindir}/mysql_secure_installation
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
-%attr(755,root,root) %{_bindir}/mysqlcheck
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/replace
-%attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
 %{_mandir}/man1/mysql_secure_installation.1*
 %{_mandir}/man1/mysql_tzinfo_to_sql.1*
-%{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
-%{_mandir}/man1/resolveip.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -871,61 +890,73 @@ EOF
 %attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysqldumpslow
 %attr(755,root,root) %{_bindir}/mysqlhotcopy
+%{_mandir}/man1/mysql_convert_table_format.1*
 %{_mandir}/man1/mysql_explain_log.1*
+%{_mandir}/man1/mysql_find_rows.1*
+%{_mandir}/man1/mysql_fix_extensions.1*
+%{_mandir}/man1/mysql_setpermission.1*
+%{_mandir}/man1/mysql_tableinfo.1*
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqlhotcopy.1*
-%{_mandir}/man1/mysql_setpermission.1*
-%{_mandir}/man1/mysql_tableinfo.1*
-%{_mandir}/man1/mysql_fix_extensions.1*
-%{_mandir}/man1/mysql_find_rows.1*
-%{_mandir}/man1/mysql_convert_table_format.1*
 
 %files client
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql
+%attr(755,root,root) %{_bindir}/mysqladmin
+%attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
-%attr(755,root,root) %{_sbindir}/mysqlmanager*
 %attr(755,root,root) %{_bindir}/mysqlshow
-%attr(755,root,root) %{_bindir}/mysqlbinlog
-%attr(755,root,root) %{_bindir}/mysqladmin
+%attr(755,root,root) %{_sbindir}/mysqlmanager
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
-%{_mandir}/man1/mysqldump.1*
-%{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlbinlog.1*
+%{_mandir}/man1/mysqlbug.1*
+%{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
-%{_mandir}/man1/mysqlmanager*.1*
+%{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man8/mysqlmanager.8*
 
 %files libs
 %defattr(644,root,root,755)
 %doc EXCEPTIONS-CLIENT
-%attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
-%attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*
-%attr(755,root,root) %{_libdir}/libndbclient.so.*.*
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.15
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.15
-%attr(755,root,root) %ghost %{_libdir}/libndbclient.so.2
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
+%attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.15
+%attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.15
+%attr(755,root,root) %{_libdir}/libndbclient.so.*.*
+%attr(755,root,root) %ghost %{_libdir}/libndbclient.so.2
 
 %files devel
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_config
-%attr(755,root,root) %{_libdir}/lib*.so
-%attr(755,root,root) %{_bindir}/*comp_err
-%{_libdir}/lib*.la
-%{_libdir}/lib*[!tr].a
+%attr(755,root,root) %{_libdir}/libmysqlclient.so
+%attr(755,root,root) %{_libdir}/libmysqlclient_r.so
+%attr(755,root,root) %{_libdir}/libndbclient.so
+%{_libdir}/libmysqlclient.la
+%{_libdir}/libmysqlclient_r.la
+%{_libdir}/libndbclient.la
+# static-only
+%{_libdir}/libdbug.a
+%{_libdir}/libheap.a
+%{_libdir}/libmyisam.a
+%{_libdir}/libmyisammrg.a
+%{_libdir}/libmysqld.a
+%{_libdir}/libmystrings.a
+%{_libdir}/libmysys.a
+%{_libdir}/libvio.a
 %{_includedir}/mysql
 %{_mandir}/man1/mysql_config.1*
-%{_mandir}/man1/*comp_err.1*
 
 %files static
 %defattr(644,root,root,755)
-%{_libdir}/lib*[tr].a
+%{_libdir}/libmysqlclient.a
+%{_libdir}/libmysqlclient_r.a
+%{_libdir}/libndbclient.a
 
 %files bench
 %defattr(644,root,root,755)
@@ -940,9 +971,8 @@ EOF
 # wrong dir?
 %{_datadir}/mysql/mi_test_all.res
 %attr(755,root,root) %{_datadir}/mysql/mi_test_all
-%{_mandir}/man1/mysqlbug.1*
-%{_mandir}/man1/mysqltest*.1*
 %{_mandir}/man1/mysql_client_test.1*
+%{_mandir}/man1/mysqltest.1*
 
 #%files doc
 #%defattr(644,root,root,755)
@@ -957,10 +987,34 @@ EOF
 
 %files ndb-client
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/ndb_*
+%attr(755,root,root) %{_bindir}/ndb_config
+%attr(755,root,root) %{_bindir}/ndb_delete_all
+%attr(755,root,root) %{_bindir}/ndb_desc
+%attr(755,root,root) %{_bindir}/ndb_drop_index
+%attr(755,root,root) %{_bindir}/ndb_drop_table
+%attr(755,root,root) %{_bindir}/ndb_error_reporter
+%attr(755,root,root) %{_bindir}/ndb_mgm
+%attr(755,root,root) %{_bindir}/ndb_restore
+%attr(755,root,root) %{_bindir}/ndb_select_all
+%attr(755,root,root) %{_bindir}/ndb_select_count
+%attr(755,root,root) %{_bindir}/ndb_show_tables
+%attr(755,root,root) %{_bindir}/ndb_size.pl
+%attr(755,root,root) %{_bindir}/ndb_test_platform
+%attr(755,root,root) %{_bindir}/ndb_waiter
 %attr(755,root,root) %{_datadir}/mysql/ndb_size.tmpl
-%{_mandir}/man1/ndb_*.1*
-%exclude %{_mandir}/man8/ndb_mgmd.8*
+%{_mandir}/man1/ndb_config.1*
+%{_mandir}/man1/ndb_delete_all.1*
+%{_mandir}/man1/ndb_desc.1*
+%{_mandir}/man1/ndb_drop_index.1*
+%{_mandir}/man1/ndb_drop_table.1*
+%{_mandir}/man1/ndb_error_reporter.1*
+%{_mandir}/man1/ndb_mgm.1*
+%{_mandir}/man1/ndb_restore.1*
+%{_mandir}/man1/ndb_select_all.1*
+%{_mandir}/man1/ndb_select_count.1*
+%{_mandir}/man1/ndb_show_tables.1*
+%{_mandir}/man1/ndb_size.pl.1*
+%{_mandir}/man1/ndb_waiter.1*
 
 %files ndb-mgm
 %defattr(644,root,root,755)
