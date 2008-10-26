@@ -532,7 +532,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,ssl/certs/mysql} \
 	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
@@ -794,29 +794,30 @@ done
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
+%dir /etc/ssl/certs/mysql
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
 %attr(755,root,root) %{_sbindir}/innochecksum
+%attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
 %attr(755,root,root) %{_sbindir}/myisamlog
 %attr(755,root,root) %{_sbindir}/myisampack
-%attr(755,root,root) %{_sbindir}/my_print_defaults
-%attr(755,root,root) %{_sbindir}/mysqlcheck
-%attr(755,root,root) %{_sbindir}/mysqld
 %attr(755,root,root) %{_sbindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
+%attr(755,root,root) %{_sbindir}/mysqlcheck
+%attr(755,root,root) %{_sbindir}/mysqld
 %dir %{_libdir}/mysql
 %dir %{_libdir}/mysql/plugin
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so.*.*.*
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so.0
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so
 %{_mandir}/man1/innochecksum.1*
+%{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
-%{_mandir}/man1/my_print_defaults.1*
-%{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysql_upgrade.1*
+%{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man8/mysqld.8*
 
 %if %{?debug:1}0
@@ -887,21 +888,21 @@ done
 
 %files extras-perl
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysql_convert_table_format
-%attr(755,root,root) %{_bindir}/mysqldumpslow
 %attr(755,root,root) %{_bindir}/mysql_find_rows
 %attr(755,root,root) %{_bindir}/mysql_fix_extensions
-%attr(755,root,root) %{_bindir}/mysqlhotcopy
 %attr(755,root,root) %{_bindir}/mysql_setpermission
 %attr(755,root,root) %{_bindir}/mysql_zap
-%{_mandir}/man1/mysqlaccess.1*
+%attr(755,root,root) %{_bindir}/mysqlaccess
+%attr(755,root,root) %{_bindir}/mysqldumpslow
+%attr(755,root,root) %{_bindir}/mysqlhotcopy
 %{_mandir}/man1/mysql_convert_table_format.1*
 %{_mandir}/man1/mysql_find_rows.1*
 %{_mandir}/man1/mysql_fix_extensions.1*
-%{_mandir}/man1/mysqlhotcopy.1*
 %{_mandir}/man1/mysql_setpermission.1*
 %{_mandir}/man1/mysql_zap.1*
+%{_mandir}/man1/mysqlaccess.1*
+%{_mandir}/man1/mysqlhotcopy.1*
 
 %files client
 %defattr(644,root,root,755)
@@ -920,8 +921,6 @@ done
 %{_mandir}/man1/mysqlbug.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
-#%{_mandir}/man1/mysqlmanagerc.1*
-#%{_mandir}/man1/mysqlmanager-pwgen.1*
 %{_mandir}/man1/mysqlshow.1*
 %{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man8/mysqlmanager.8*
@@ -929,14 +928,14 @@ done
 %files libs
 %defattr(644,root,root,755)
 %doc EXCEPTIONS-CLIENT
+%attr(751,root,root) %dir %{_sysconfdir}/mysql
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.16
 %attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.16
 %attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
-%attr(751,root,root) %dir %{_sysconfdir}/mysql
-%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 
 %files devel
 %defattr(644,root,root,755)
