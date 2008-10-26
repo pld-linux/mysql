@@ -914,7 +914,6 @@ done
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
 %attr(755,root,root) %{_bindir}/mysqlshow
-%attr(755,root,root) %{_bindir}/mysqlslap
 %attr(755,root,root) %{_sbindir}/mysqlmanager
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
@@ -923,7 +922,6 @@ done
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
 %{_mandir}/man1/mysqlshow.1*
-%{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man8/mysqlmanager.8*
 
 %files libs
@@ -968,10 +966,12 @@ done
 
 %files bench
 %defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/mysqlslap
 %attr(755,root,root) %{_bindir}/mysqltest
 %dir %{_datadir}/sql-bench
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
+%{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man1/mysqltest.1*
 %{_mandir}/man1/mysqltest_embedded.1*
 
