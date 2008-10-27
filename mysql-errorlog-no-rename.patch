@@ -1,6 +1,6 @@
---- mysql-5.0.68/libmysqld/log.cc~	2008-08-13 12:14:31.000000000 +0300
-+++ mysql-5.0.68/libmysqld/log.cc	2008-10-27 15:02:24.136737667 +0200
-@@ -2543,11 +2543,11 @@
+--- mysql-5.1.28-rc/sql/log.cc~	2008-08-28 18:40:55.000000000 +0300
++++ mysql-5.1.28-rc/sql/log.cc	2008-10-27 15:06:13.528944807 +0200
+@@ -4606,11 +4606,11 @@
    bool result=0;
    if (opt_error_log)
    {
@@ -14,7 +14,7 @@
      char err_temp[FN_REFLEN+4];
      /*
       On Windows is necessary a temporary file for to rename
-@@ -2575,7 +2575,6 @@
+@@ -4642,7 +4642,6 @@
      else
       result= 1;
  #else
