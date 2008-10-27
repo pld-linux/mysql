@@ -27,7 +27,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.28
-Release:	4
+Release:	5
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -60,6 +60,7 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
+Patch13:	%{name}-errorlog-no-rename.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -465,6 +466,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
+%patch13 -p1
 
 %build
 %{__libtoolize}
