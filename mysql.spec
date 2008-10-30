@@ -73,6 +73,7 @@ Patch22:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
 Patch23:	%{name}-userstats-testsuite.patch
 Patch24:	%{name}-userstats.patch
 Patch25:	%{name}-errorlog-no-rename.patch
+Patch26:	%{name}-alpha-stack.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -491,6 +492,9 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch23 -p1
 %patch24 -p1
 %patch25 -p1
+%ifarch alpha
+%patch26 -p1
+%endif
 
 %build
 %{__libtoolize}
