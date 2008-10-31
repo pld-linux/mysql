@@ -24,17 +24,17 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.68
-Release:	2
+Version:	5.0.70
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 #Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	b3351d755bd62fd203bae777a77ccfef
-Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.8.tar.gz
-# Source100-md5:	347e547b79b733778d7553ede34e0aac
+# Source0-md5:	bd3228c70f9ae91f2dd72c7d7393fa43
+Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.8.1.tar.gz
+# Source100-md5:	428a14df41fb425e664d9e2d6178c037
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -63,17 +63,15 @@ Patch12:	%{name}-bug-20153.patch
 Patch13:	%{name}-bug-34192.patch
 Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
-Patch16:	%{name}-bug-39021.patch
 # Percona patches, http://www.percona.com/percona-lab.html
-Patch17:	%{name}-control_flush_and_merge_and_read.patch
-Patch18:	%{name}-control_io-threads.patch
-Patch19:	%{name}-microslow_innodb.patch
-Patch21:	%{name}-show_patches.patch
-Patch22:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
-Patch23:	%{name}-userstats-testsuite.patch
-Patch24:	%{name}-userstats.patch
-Patch25:	%{name}-errorlog-no-rename.patch
-Patch26:	%{name}-alpha-stack.patch
+Patch16:	%{name}-control_flush_and_merge_and_read.patch
+Patch17:	%{name}-control_io-threads.patch
+Patch18:	%{name}-microslow_innodb.patch
+Patch19:	%{name}-show_patches.patch
+Patch20:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
+Patch21:	%{name}-userstatv2.patch
+Patch22:	%{name}-errorlog-no-rename.patch
+Patch23:	%{name}-alpha-stack.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -487,13 +485,11 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch17 -p1
 %patch18 -p1
 %patch19 -p1
+%patch20 -p1
 %patch21 -p1
 %patch22 -p1
-%patch23 -p1
-%patch24 -p1
-%patch25 -p1
 %ifarch alpha
-%patch26 -p1
+%patch23 -p1
 %endif
 
 %build
@@ -672,8 +668,6 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_backup_file.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_schema_file.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_sys_file.1
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlmanager-pwgen.1
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlmanagerc.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqltest_embedded.1
 
 # in %doc
