@@ -26,13 +26,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.29
-Release:	2
+Version:	5.1.30
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
-Source0:	http://mysql.easynet.be/Downloads/MySQL-5.1/%{name}-%{version}-rc.tar.gz
-# Source0-md5:	4cb2369d141c0e3dfb2f76af4e21b085
+Source0:	http://mysql.easynet.be/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
+# Source0-md5:	b658e58887a74dce65224ae0fc8ee06a
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -443,7 +443,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n %{name}-%{version}-rc %{?with_sphinx:-a100}
+%setup -q %{?with_sphinx:-a100}
 %if %{with sphinx}
 mv sphinx-*/mysqlse storage/sphinx
 %endif
