@@ -63,13 +63,14 @@ Patch12:	%{name}-bug-20153.patch
 Patch13:	%{name}-bug-34192.patch
 Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
-# Percona patches, http://www.percona.com/percona-lab.html
+# <percona patches, http://www.percona.com/percona-lab.html>
 Patch16:	%{name}-control_flush_and_merge_and_read.patch
 Patch17:	%{name}-control_io-threads.patch
 Patch18:	%{name}-microslow_innodb.patch
 Patch19:	%{name}-show_patches.patch
 Patch20:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
 Patch21:	%{name}-userstatv2.patch
+# </percona>
 Patch22:	%{name}-errorlog-no-rename.patch
 Patch23:	%{name}-alpha-stack.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
