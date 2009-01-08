@@ -1,6 +1,19 @@
-diff -r bb81fcdd7db2 include/my_time.h
---- a/include/my_time.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/include/my_time.h	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e include/my_getopt.h
+--- a/include/my_getopt.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/include/my_getopt.h	Mon Dec 22 00:26:39 2008 -0800
+@@ -28,7 +28,8 @@
+ #define GET_ULL        8
+ #define GET_STR        9
+ #define GET_STR_ALLOC 10
+-#define GET_DISABLED  11
++#define GET_DOUBLE    11
++#define GET_DISABLED  12
+ 
+ #define GET_ASK_ADDR	 128
+ #define GET_TYPE_MASK	 127
+diff -r 25523be1816e include/my_time.h
+--- a/include/my_time.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/include/my_time.h	Mon Dec 22 00:26:39 2008 -0800
 @@ -140,7 +140,7 @@
  int my_date_to_str(const MYSQL_TIME *l_time, char *to);
  int my_datetime_to_str(const MYSQL_TIME *l_time, char *to);
@@ -10,18 +23,20 @@ diff -r bb81fcdd7db2 include/my_time.h
  C_MODE_END
  
  #endif /* _my_time_h_ */
-diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
---- a/innobase/buf/buf0buf.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/buf/buf0buf.c	Mon Sep 08 16:38:46 2008 -0700
-@@ -37,6 +37,7 @@
+diff -r 25523be1816e innobase/buf/buf0buf.c
+--- a/innobase/buf/buf0buf.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/buf/buf0buf.c	Mon Dec 22 00:26:39 2008 -0800
+@@ -37,6 +37,9 @@
  #include "log0log.h"
  #include "trx0undo.h"
  #include "srv0srv.h"
-+#include "thr0loc.h"
++
++/* prototypes for new functions added to ha_innodb.cc */
++trx_t* innobase_get_trx();
  
  /*
  		IMPLEMENTATION OF THE BUFFER POOL
-@@ -1086,6 +1087,31 @@
+@@ -1086,6 +1089,36 @@
  	return(block);
  }
  
@@ -33,8 +48,13 @@ diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
 +
 +	ut_ad(block);
 +
-+	if (!trx || !trx->distinct_page_access_hash)
++	if (!srv_slow_log || !trx || !trx->take_stats)
 +		return;
++
++	if (!trx->distinct_page_access_hash) {
++		trx->distinct_page_access_hash = mem_alloc(DPAH_SIZE);
++		memset(trx->distinct_page_access_hash, 0, DPAH_SIZE);
++	}
 +
 +        block_hash = ut_hash_ulint((block->space << 20) + block->space +
 +					block->offset, DPAH_SIZE << 3);
@@ -53,11 +73,11 @@ diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
  /************************************************************************
  This is the general function used to get access to a database page. */
  
-@@ -1108,6 +1134,11 @@
+@@ -1108,6 +1141,11 @@
  	ulint		fix_type;
  	ibool		success;
  	ibool		must_read;
-+	trx_t*          trx;
++	trx_t*          trx = NULL;
 +	ulint           sec;
 +	ulint           ms;
 +	ib_longlong     start_time;
@@ -65,15 +85,17 @@ diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
  	
  	ut_ad(mtr);
  	ut_ad((rw_latch == RW_S_LATCH)
-@@ -1119,6 +1150,7 @@
+@@ -1119,6 +1157,9 @@
  #ifndef UNIV_LOG_DEBUG
  	ut_ad(!ibuf_inside() || ibuf_page(space, offset));
  #endif
-+	trx = thr_local_get_trx(os_thread_get_curr_id());
++	if (srv_slow_log) {
++		trx = innobase_get_trx();
++	}
  	buf_pool->n_page_gets++;
  loop:
  	block = NULL;
-@@ -1148,7 +1180,7 @@
+@@ -1148,7 +1189,7 @@
  			return(NULL);
  		}
  
@@ -82,11 +104,11 @@ diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
  
  #ifdef UNIV_DEBUG
  		buf_dbg_counter++;
-@@ -1261,6 +1293,11 @@
+@@ -1261,6 +1302,11 @@
  		        /* Let us wait until the read operation
  			completes */
  
-+			if (trx)
++			if (srv_slow_log && trx && trx->take_stats)
 +			{
 +				ut_usectime(&sec, &ms);
 +				start_time = (ib_longlong)sec * 1000000 + ms;
@@ -94,12 +116,12 @@ diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
  		        for (;;) {
  				mutex_enter(&block->mutex);
  
-@@ -1275,6 +1312,12 @@
+@@ -1275,6 +1321,12 @@
  
  				       break;
  				}
 +			}
-+                	if (trx)
++                	if (srv_slow_log && trx && trx->take_stats && start_time)
 +			{
 +				ut_usectime(&sec, &ms);
 +        	        	finish_time = (ib_longlong)sec * 1000000 + ms;
@@ -107,7 +129,7 @@ diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
  			}
  		}
  
-@@ -1296,12 +1339,15 @@
+@@ -1296,12 +1348,17 @@
  		/* In the case of a first access, try to apply linear
  		read-ahead */
  
@@ -119,20 +141,22 @@ diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
  	ut_a(ibuf_count_get(block->space, block->offset) == 0);
  #endif
 +
-+	_increment_page_get_statistics(block, trx);
++	if (srv_slow_log) {
++		_increment_page_get_statistics(block, trx);
++	}
 +	
  	return(block->frame);		
  }
  
-@@ -1326,6 +1372,7 @@
+@@ -1326,6 +1383,7 @@
  	ibool		accessed;
  	ibool		success;
  	ulint		fix_type;
-+	trx_t*          trx;
++	trx_t*          trx = NULL;
  
  	ut_ad(mtr && block);
  	ut_ad((rw_latch == RW_S_LATCH) || (rw_latch == RW_X_LATCH));
-@@ -1440,13 +1487,16 @@
+@@ -1440,13 +1498,18 @@
  		read-ahead */
  
  		buf_read_ahead_linear(buf_frame_get_space_id(guess),
@@ -145,32 +169,36 @@ diff -r bb81fcdd7db2 innobase/buf/buf0buf.c
  #endif
  	buf_pool->n_page_gets++;
 +
-+	trx = thr_local_get_trx(os_thread_get_curr_id());
-+	_increment_page_get_statistics(block, trx);
++	if (srv_slow_log) {
++		trx = innobase_get_trx();
++		_increment_page_get_statistics(block, trx);
++	}
  
  	return(TRUE);
  }
-@@ -1470,6 +1520,7 @@
+@@ -1470,6 +1533,7 @@
  	buf_block_t*	block;
  	ibool		success;
  	ulint		fix_type;
-+	trx_t*		trx;
++	trx_t*		trx = NULL;
  
  	ut_ad(mtr);
  	ut_ad((rw_latch == RW_S_LATCH) || (rw_latch == RW_X_LATCH));
-@@ -1558,6 +1609,9 @@
+@@ -1558,6 +1622,11 @@
  		|| (ibuf_count_get(block->space, block->offset) == 0));
  #endif
  	buf_pool->n_page_gets++;
 +
-+	trx = thr_local_get_trx(os_thread_get_curr_id());
-+	_increment_page_get_statistics(block, trx);
++	if (srv_slow_log) {
++		trx = innobase_get_trx();
++		_increment_page_get_statistics(block, trx);
++	}
  
  	return(TRUE);
  }
-diff -r bb81fcdd7db2 innobase/buf/buf0rea.c
---- a/innobase/buf/buf0rea.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/buf/buf0rea.c	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e innobase/buf/buf0rea.c
+--- a/innobase/buf/buf0rea.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/buf/buf0rea.c	Mon Dec 22 00:26:39 2008 -0800
 @@ -70,7 +70,8 @@
  			treat the tablespace as dropped; this is a timestamp we
  			use to stop dangling page reads from a tablespace
@@ -287,9 +315,9 @@ diff -r bb81fcdd7db2 innobase/buf/buf0rea.c
  		}
  	}
  	
-diff -r bb81fcdd7db2 innobase/fil/fil0fil.c
---- a/innobase/fil/fil0fil.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/fil/fil0fil.c	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e innobase/fil/fil0fil.c
+--- a/innobase/fil/fil0fil.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/fil/fil0fil.c	Mon Dec 22 00:26:39 2008 -0800
 @@ -3527,7 +3527,7 @@
  			node->name, node->handle, buf,
  			offset_low, offset_high,
@@ -328,9 +356,9 @@ diff -r bb81fcdd7db2 innobase/fil/fil0fil.c
  #endif
  	ut_a(ret);
  
-diff -r bb81fcdd7db2 innobase/include/buf0rea.h
---- a/innobase/include/buf0rea.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/include/buf0rea.h	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e innobase/include/buf0rea.h
+--- a/innobase/include/buf0rea.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/include/buf0rea.h	Mon Dec 22 00:26:39 2008 -0800
 @@ -10,6 +10,7 @@
  #define buf0rea_h
  
@@ -360,9 +388,9 @@ diff -r bb81fcdd7db2 innobase/include/buf0rea.h
  /************************************************************************
  Issues read requests for pages which the ibuf module wants to read in, in
  order to contract the insert buffer tree. Technically, this function is like
-diff -r bb81fcdd7db2 innobase/include/fil0fil.h
---- a/innobase/include/fil0fil.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/include/fil0fil.h	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e innobase/include/fil0fil.h
+--- a/innobase/include/fil0fil.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/include/fil0fil.h	Mon Dec 22 00:26:39 2008 -0800
 @@ -534,8 +534,11 @@
  /************************************************************************
  Reads or writes data. This operation is asynchronous (aio). */
@@ -387,9 +415,9 @@ diff -r bb81fcdd7db2 innobase/include/fil0fil.h
  /************************************************************************
  Reads data from a space to a buffer. Remember that the possible incomplete
  blocks at the end of file are ignored: they are not taken into account when
-diff -r bb81fcdd7db2 innobase/include/os0file.h
---- a/innobase/include/os0file.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/include/os0file.h	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e innobase/include/os0file.h
+--- a/innobase/include/os0file.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/include/os0file.h	Mon Dec 22 00:26:39 2008 -0800
 @@ -10,6 +10,8 @@
  #define os0file_h
  
@@ -432,56 +460,26 @@ diff -r bb81fcdd7db2 innobase/include/os0file.h
  /****************************************************************************
  Wakes up all async i/o threads so that they know to exit themselves in
  shutdown. */
-diff -r bb81fcdd7db2 innobase/include/thr0loc.h
---- a/innobase/include/thr0loc.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/include/thr0loc.h	Mon Sep 08 16:38:46 2008 -0700
-@@ -15,6 +15,7 @@
- 
- #include "univ.i"
- #include "os0thread.h"
-+#include "trx0trx.h"
- 
- /********************************************************************
- Initializes the thread local storage module. */
-@@ -36,6 +37,14 @@
- /*===========*/
- 	os_thread_id_t	id);	/* in: thread id */
- /***********************************************************************
-+Gets trx */
+diff -r 25523be1816e innobase/include/srv0srv.h
+--- a/innobase/include/srv0srv.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/include/srv0srv.h	Mon Dec 22 00:26:39 2008 -0800
+@@ -26,6 +26,8 @@
+ at a time */
+ #define SRV_AUTO_EXTEND_INCREMENT	\
+ 	(srv_auto_extend_increment * ((1024 * 1024) / UNIV_PAGE_SIZE))
 +
-+trx_t*
-+thr_local_get_trx(
-+/*==================*/
-+				/* out: trx for mysql */
-+	os_thread_id_t	id);	/* in: thread id of the thread */
-+/***********************************************************************
- Gets the slot number in the thread table of a thread. */
++extern ibool	srv_slow_log;
  
- ulint
-@@ -43,6 +52,14 @@
- /*==================*/
- 				/* out: slot number */
- 	os_thread_id_t	id);	/* in: thread id of the thread */
-+/***********************************************************************
-+Sets in the local storage the slot number in the thread table of a thread. */
-+
-+void
-+thr_local_set_trx(
-+/*==================*/
-+	os_thread_id_t	id,	/* in: thread id of the thread */
-+	trx_t*		trx);	/* in: slot number */
- /***********************************************************************
- Sets in the local storage the slot number in the thread table of a thread. */
- 
-diff -r bb81fcdd7db2 innobase/include/trx0trx.h
---- a/innobase/include/trx0trx.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/include/trx0trx.h	Mon Sep 08 16:38:46 2008 -0700
+ /* This is set to TRUE if the MySQL user has set it in MySQL */
+ extern ibool	srv_lower_case_table_names;
+diff -r 25523be1816e innobase/include/trx0trx.h
+--- a/innobase/include/trx0trx.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/include/trx0trx.h	Mon Dec 22 00:26:39 2008 -0800
 @@ -668,6 +668,17 @@
  	/*------------------------------*/
  	char detailed_error[256];	/* detailed error message for last
  					error, or empty. */
 +	/*------------------------------*/
-+	os_thread_id_t	trx_thread_id;
 +	ulint		io_reads;
 +	ib_longlong     io_read;
 +	ulint		io_reads_wait_timer;
@@ -491,12 +489,13 @@ diff -r bb81fcdd7db2 innobase/include/trx0trx.h
 +	ulint           distinct_page_access;
 +#define	DPAH_SIZE	8192
 +	byte*		distinct_page_access_hash;
++	ibool		take_stats;
  };
  
  #define TRX_MAX_N_THREADS	32	/* maximum number of concurrent
-diff -r bb81fcdd7db2 innobase/lock/lock0lock.c
---- a/innobase/lock/lock0lock.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/lock/lock0lock.c	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e innobase/lock/lock0lock.c
+--- a/innobase/lock/lock0lock.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/lock/lock0lock.c	Mon Dec 22 00:26:39 2008 -0800
 @@ -1806,6 +1806,8 @@
  {
  	lock_t*	lock;
@@ -506,16 +505,18 @@ diff -r bb81fcdd7db2 innobase/lock/lock0lock.c
  	
  #ifdef UNIV_SYNC_DEBUG
  	ut_ad(mutex_own(&kernel_mutex));
-@@ -1861,6 +1863,8 @@
+@@ -1861,6 +1863,10 @@
  	trx->que_state = TRX_QUE_LOCK_WAIT;
  	trx->was_chosen_as_deadlock_victim = FALSE;
  	trx->wait_started = time(NULL);
-+	ut_usectime(&sec, &ms);
-+	trx->lock_que_wait_ustarted = (ib_longlong)sec * 1000000 + ms;
++	if (srv_slow_log && trx->take_stats) {
++		ut_usectime(&sec, &ms);
++		trx->lock_que_wait_ustarted = (ib_longlong)sec * 1000000 + ms;
++	}
  
  	ut_a(que_thr_stop(thr));
  
-@@ -3514,7 +3518,9 @@
+@@ -3514,7 +3520,9 @@
  {
  	lock_t*	lock;
  	trx_t*	trx;
@@ -526,30 +527,20 @@ diff -r bb81fcdd7db2 innobase/lock/lock0lock.c
  #ifdef UNIV_SYNC_DEBUG
  	ut_ad(mutex_own(&kernel_mutex));
  #endif /* UNIV_SYNC_DEBUG */
-@@ -3563,7 +3569,10 @@
- 	
+@@ -3564,6 +3572,10 @@
  		return(DB_SUCCESS);
  	}
--	
-+
-+	trx->wait_started = time(NULL);
-+	ut_usectime(&sec, &ms);
-+	trx->lock_que_wait_ustarted = (ib_longlong)sec * 1000000 + ms;
+ 	
++	if (srv_slow_log && trx->take_stats) {
++		ut_usectime(&sec, &ms);
++		trx->lock_que_wait_ustarted = (ib_longlong)sec * 1000000 + ms;
++	}
  	trx->que_state = TRX_QUE_LOCK_WAIT;
  	trx->was_chosen_as_deadlock_victim = FALSE;
  	trx->wait_started = time(NULL);
-@@ -4289,7 +4298,7 @@
- 	ulint	i;
- 	mtr_t	mtr;
- 	trx_t*	trx;
--
-+	
- 	fprintf(file, "LIST OF TRANSACTIONS FOR EACH SESSION:\n");
- 
- 	/* First print info on non-active transactions */
-diff -r bb81fcdd7db2 innobase/os/os0file.c
---- a/innobase/os/os0file.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/os/os0file.c	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e innobase/os/os0file.c
+--- a/innobase/os/os0file.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/os/os0file.c	Mon Dec 22 00:26:39 2008 -0800
 @@ -14,6 +14,7 @@
  #include "srv0start.h"
  #include "fil0fil.h"
@@ -558,15 +549,7 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  
  #if defined(UNIV_HOTBACKUP) && defined(__WIN__)
  /* Add includes for the _stat() call to compile on Windows */
-@@ -101,6 +102,7 @@
- 	struct aiocb	control;	/* Posix control block for aio
- 					request */
- #endif
-+        trx_t*		trx;
- };
- 
- /* The aio array structure */
-@@ -1903,9 +1905,13 @@
+@@ -1903,9 +1904,13 @@
  #ifndef __WIN__
  /***********************************************************************
  Does a synchronous read operation in Posix. */
@@ -581,7 +564,7 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  /*==========*/
  				/* out: number of bytes read, -1 if error */
  	os_file_t	file,	/* in: handle to a file */
-@@ -1913,12 +1919,17 @@
+@@ -1913,12 +1918,17 @@
  	ulint		n,	/* in: number of bytes to read */	
  	ulint		offset,	/* in: least significant 32 bits of file
  				offset from where to read */
@@ -602,12 +585,12 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  	ut_a((offset & 0xFFFFFFFFUL) == offset);
          
          /* If off_t is > 4 bytes in size, then we assume we can pass a
-@@ -1937,7 +1948,13 @@
+@@ -1937,7 +1947,13 @@
          }
  
  	os_n_file_reads++;
 -
-+	if (trx)
++	if (srv_slow_log && trx && trx->take_stats)
 +	{
 +	        trx->io_reads++;
 +		trx->io_read += n;
@@ -617,11 +600,11 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  #if defined(HAVE_PREAD) && !defined(HAVE_BROKEN_PREAD)
          os_mutex_enter(os_file_count_mutex);
  	os_file_n_pending_preads++;
-@@ -1951,6 +1968,13 @@
+@@ -1951,6 +1967,13 @@
  	os_n_pending_reads--;
          os_mutex_exit(os_file_count_mutex);
  
-+        if (trx)
++        if (srv_slow_log && trx && trx->take_stats && start_time)
 +        {
 +		ut_usectime(&sec, &ms);
 +        	finish_time = (ib_longlong)sec * 1000000 + ms;
@@ -631,12 +614,12 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  	return(n_bytes);
  #else
  	{
-@@ -1980,6 +2004,13 @@
+@@ -1980,6 +2003,13 @@
          os_mutex_enter(os_file_count_mutex);
  	os_n_pending_reads--;
          os_mutex_exit(os_file_count_mutex);
 +
-+        if (trx)
++        if (srv_slow_log && trx && trx->take_stats && start_time)
 +        {
 +		ut_usectime(&sec, &ms);
 +        	finish_time = (ib_longlong)sec * 1000000 + ms;
@@ -645,7 +628,7 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  
  	return(ret);
  	}
-@@ -2103,7 +2134,7 @@
+@@ -2103,7 +2133,7 @@
  Requests a synchronous positioned read operation. */
  
  ibool
@@ -654,7 +637,7 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  /*=========*/
  				/* out: TRUE if request was
  				successful, FALSE if fail */
-@@ -2113,7 +2144,8 @@
+@@ -2113,7 +2143,8 @@
  				offset where to read */
  	ulint		offset_high, /* in: most significant 32 bits of
  				offset */
@@ -664,16 +647,6 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  {
  #ifdef __WIN__
  	BOOL		ret;
-@@ -2128,8 +2160,7 @@
- 
- 	os_n_file_reads++;
- 	os_bytes_read_since_printout += n;
--
--try_again:	
-+try_again:
- 	ut_ad(file);
- 	ut_ad(buf);
- 	ut_ad(n > 0);
 @@ -2177,7 +2208,7 @@
  	os_bytes_read_since_printout += n;
  
@@ -693,15 +666,6 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  {
  	os_aio_slot_t*	slot;
  #ifdef WIN_ASYNC_IO
-@@ -3196,7 +3228,7 @@
- 	slot->offset   = offset;
- 	slot->offset_high = offset_high;
- 	slot->io_already_done = FALSE;
--	
-+
- #ifdef WIN_ASYNC_IO		
- 	control = &(slot->control);
- 	control->Offset = (DWORD)offset;
 @@ -3390,7 +3422,8 @@
  				can be used to identify a completed aio
  				operation); if mode is OS_AIO_SYNC, these
@@ -723,7 +687,7 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  		}
  
  		ut_a(type == OS_FILE_WRITE);
-@@ -3463,14 +3496,19 @@
+@@ -3463,8 +3496,13 @@
  		ut_error;
  	}
  	
@@ -738,37 +702,19 @@ diff -r bb81fcdd7db2 innobase/os/os0file.c
  	if (type == OS_FILE_READ) {
  		if (os_aio_use_native_aio) {
  #ifdef WIN_ASYNC_IO
- 			os_n_file_reads++;
- 			os_bytes_read_since_printout += len;
--			
+diff -r 25523be1816e innobase/srv/srv0srv.c
+--- a/innobase/srv/srv0srv.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/srv/srv0srv.c	Mon Dec 22 00:26:39 2008 -0800
+@@ -47,6 +47,8 @@
+ #include "dict0boot.h"
+ #include "srv0start.h"
+ #include "row0mysql.h"
 +
- 			ret = ReadFile(file, buf, (DWORD)n, &len,
- 							&(slot->control));
- #elif defined(POSIX_ASYNC_IO)
-@@ -4038,7 +4076,7 @@
++ibool	srv_slow_log = 0;
  
- 			ut_memcpy(consecutive_ios[i]->buf, combined_buf + offs, 
- 						consecutive_ios[i]->len);
--			offs += consecutive_ios[i]->len;
-+			offs += consecutive_ios[i]->len;			
- 		}
- 	}
- 
-@@ -4050,9 +4088,8 @@
- 
- 	/* Mark the i/os done in slots */
- 
--	for (i = 0; i < n_consecutive; i++) {
-+	for (i = 0; i < n_consecutive; i++) 
- 		consecutive_ios[i]->io_already_done = TRUE;
--	}
- 
- 	/* We return the messages for the first slot now, and if there were
- 	several slots, the messages will be returned with subsequent calls
-diff -r bb81fcdd7db2 innobase/srv/srv0srv.c
---- a/innobase/srv/srv0srv.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/srv/srv0srv.c	Mon Sep 08 16:38:46 2008 -0700
-@@ -996,6 +996,10 @@
+ /* This is set to TRUE if the MySQL user has set it in MySQL; currently
+ affects only FOREIGN KEY definition parsing */
+@@ -996,6 +998,10 @@
  	ibool			has_slept = FALSE;
  	srv_conc_slot_t*	slot	  = NULL;
  	ulint			i;
@@ -779,7 +725,7 @@ diff -r bb81fcdd7db2 innobase/srv/srv0srv.c
  
  	/* If trx has 'free tickets' to enter the engine left, then use one
  	such ticket */
-@@ -1054,6 +1058,7 @@
+@@ -1054,6 +1060,7 @@
      if (SRV_THREAD_SLEEP_DELAY > 0)
      {
        os_thread_sleep(SRV_THREAD_SLEEP_DELAY);
@@ -787,12 +733,14 @@ diff -r bb81fcdd7db2 innobase/srv/srv0srv.c
      }
  
  		trx->op_info = "";
-@@ -1109,11 +1114,18 @@
+@@ -1109,11 +1116,22 @@
  	/* Go to wait for the event; when a thread leaves InnoDB it will
  	release this thread */
  
-+	ut_usectime(&sec, &ms);
-+	start_time = (ib_longlong)sec * 1000000 + ms;
++	if (srv_slow_log && trx->take_stats) {
++		ut_usectime(&sec, &ms);
++		start_time = (ib_longlong)sec * 1000000 + ms;
++	}
 +
  	trx->op_info = "waiting in InnoDB queue";
  
@@ -800,99 +748,18 @@ diff -r bb81fcdd7db2 innobase/srv/srv0srv.c
  
  	trx->op_info = "";
 +
-+	ut_usectime(&sec, &ms);
-+	finish_time = (ib_longlong)sec * 1000000 + ms;
-+	trx->innodb_que_wait_timer += (ulint)(finish_time - start_time);
++	if (srv_slow_log && trx->take_stats && start_time) {
++		ut_usectime(&sec, &ms);
++		finish_time = (ib_longlong)sec * 1000000 + ms;
++		trx->innodb_que_wait_timer += (ulint)(finish_time - start_time);
++	}
  
  	os_fast_mutex_lock(&srv_conc_mutex);
  
-diff -r bb81fcdd7db2 innobase/thr/thr0loc.c
---- a/innobase/thr/thr0loc.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/thr/thr0loc.c	Mon Sep 08 16:38:46 2008 -0700
-@@ -45,6 +45,7 @@
- 				for this thread */
- 	ibool		in_ibuf;/* TRUE if the the thread is doing an ibuf
- 				operation */
-+	trx_t*          trx;
- 	hash_node_t	hash;	/* hash chain node */
- 	ulint		magic_n;
- };
-@@ -113,6 +114,29 @@
- }
- 
- /***********************************************************************
-+Gets trx */
-+
-+trx_t*
-+thr_local_get_trx(
-+/*==================*/
-+				/* out: trx for mysql */
-+	os_thread_id_t	id)	/* in: thread id of the thread */
-+{
-+	trx_t*          trx;
-+	thr_local_t*	local;
-+
-+	mutex_enter(&thr_local_mutex);
-+
-+	local = thr_local_get(id);
-+
-+	trx = local->trx;
-+
-+	mutex_exit(&thr_local_mutex);
-+
-+	return(trx);
-+}
-+
-+/***********************************************************************
- Sets the slot number in the thread table of a thread. */
- 
- void
-@@ -124,11 +148,31 @@
- 	thr_local_t*	local;
- 
- 	mutex_enter(&thr_local_mutex);
--	
-+
- 	local = thr_local_get(id);
- 
- 	local->slot_no = slot_no;
--	
-+
-+	mutex_exit(&thr_local_mutex);
-+}
-+
-+/***********************************************************************
-+Sets trx */
-+
-+void
-+thr_local_set_trx(
-+/*==================*/
-+	os_thread_id_t	id,	/* in: thread id of the thread */
-+	trx_t*		trx)	/* in: trx */
-+{
-+	thr_local_t*	local;
-+
-+	mutex_enter(&thr_local_mutex);
-+
-+	local = thr_local_get(id);
-+
-+	local->trx = trx;
-+
- 	mutex_exit(&thr_local_mutex);
- }
- 
-@@ -172,6 +216,7 @@
- 	local->magic_n = THR_LOCAL_MAGIC_N;
- 
-  	local->in_ibuf = FALSE;
-+ 	local->trx = NULL;
- 	
- 	mutex_enter(&thr_local_mutex);
- 
-diff -r bb81fcdd7db2 innobase/trx/trx0trx.c
---- a/innobase/trx/trx0trx.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/innobase/trx/trx0trx.c	Mon Sep 08 16:38:46 2008 -0700
-@@ -190,6 +190,16 @@
+diff -r 25523be1816e innobase/trx/trx0trx.c
+--- a/innobase/trx/trx0trx.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/innobase/trx/trx0trx.c	Mon Dec 22 00:26:39 2008 -0800
+@@ -190,6 +190,15 @@
  	trx->global_read_view_heap = mem_heap_create(256);
  	trx->global_read_view = NULL;
  	trx->read_view = NULL;
@@ -904,32 +771,23 @@ diff -r bb81fcdd7db2 innobase/trx/trx0trx.c
 +	trx->innodb_que_wait_timer = 0;
 +	trx->distinct_page_access = 0;
 +	trx->distinct_page_access_hash = NULL;
-+	trx->trx_thread_id = os_thread_get_curr_id();
-+	thr_local_set_trx(trx->trx_thread_id, NULL);
++	trx->take_stats = FALSE;
  
  	/* Set X/Open XA transaction identification to NULL */
  	memset(&trx->xid, 0, sizeof(trx->xid));
-@@ -230,6 +240,10 @@
+@@ -230,6 +239,11 @@
  
  	trx->mysql_process_no = os_proc_get_number();
  	
-+	trx->distinct_page_access_hash = mem_alloc(DPAH_SIZE);
-+	memset(trx->distinct_page_access_hash, 0, DPAH_SIZE);
-+	thr_local_set_trx(trx->mysql_thread_id, trx);
++	if (srv_slow_log && trx->take_stats) {
++		trx->distinct_page_access_hash = mem_alloc(DPAH_SIZE);
++		memset(trx->distinct_page_access_hash, 0, DPAH_SIZE);
++	}
 +
  	return(trx);
  }
  
-@@ -355,6 +369,8 @@
- 
- 	ut_a(trx->read_view == NULL);
- 	
-+	thr_local_free(trx->trx_thread_id);
-+	
- 	mem_free(trx);
- }
- 
-@@ -366,6 +382,12 @@
+@@ -366,6 +380,12 @@
  /*===============*/
  	trx_t*	trx)	/* in, own: trx object */
  {
@@ -942,7 +800,20 @@ diff -r bb81fcdd7db2 innobase/trx/trx0trx.c
  	thr_local_free(trx->mysql_thread_id);
  
  	mutex_enter(&kernel_mutex);
-@@ -1064,7 +1086,10 @@
+@@ -389,6 +409,12 @@
+ /*====================*/
+ 	trx_t*	trx)	/* in, own: trx object */
+ {
++	if (trx->distinct_page_access_hash)
++	{
++		mem_free(trx->distinct_page_access_hash);
++		trx->distinct_page_access_hash= NULL;
++	}
++
+ 	mutex_enter(&kernel_mutex);
+ 	
+ 	trx_free(trx);
+@@ -1064,7 +1090,10 @@
  	trx_t*	trx)	/* in: transaction */
  {
  	que_thr_t*	thr;
@@ -954,17 +825,19 @@ diff -r bb81fcdd7db2 innobase/trx/trx0trx.c
  #ifdef UNIV_SYNC_DEBUG
  	ut_ad(mutex_own(&kernel_mutex));
  #endif /* UNIV_SYNC_DEBUG */
-@@ -1080,6 +1105,9 @@
+@@ -1080,6 +1109,11 @@
  		thr = UT_LIST_GET_FIRST(trx->wait_thrs);
  	}
  
-+	ut_usectime(&sec, &ms);
-+	now = (ib_longlong)sec * 1000000 + ms;
-+	trx->lock_que_wait_timer += (ulint)(now - trx->lock_que_wait_ustarted);
++	if (srv_slow_log && trx->take_stats) {
++		ut_usectime(&sec, &ms);
++		now = (ib_longlong)sec * 1000000 + ms;
++		trx->lock_que_wait_timer += (ulint)(now - trx->lock_que_wait_ustarted);
++	}
  	trx->que_state = TRX_QUE_RUNNING;
  }
  
-@@ -1093,6 +1121,9 @@
+@@ -1093,6 +1127,9 @@
  	trx_t*	trx)	/* in: transaction in the TRX_QUE_LOCK_WAIT state */
  {
  	que_thr_t*	thr;
@@ -974,29 +847,53 @@ diff -r bb81fcdd7db2 innobase/trx/trx0trx.c
  
  #ifdef UNIV_SYNC_DEBUG
  	ut_ad(mutex_own(&kernel_mutex));
-@@ -1109,6 +1140,9 @@
+@@ -1109,6 +1146,11 @@
  		thr = UT_LIST_GET_FIRST(trx->wait_thrs);
  	}
  
-+	ut_usectime(&sec, &ms);
-+	now = (ib_longlong)sec * 1000000 + ms;
-+	trx->lock_que_wait_timer += (ulint)(now - trx->lock_que_wait_ustarted);
++	if (srv_slow_log && trx->take_stats) {
++		ut_usectime(&sec, &ms);
++		now = (ib_longlong)sec * 1000000 + ms;
++		trx->lock_que_wait_timer += (ulint)(now - trx->lock_que_wait_ustarted);
++	}
  	trx->que_state = TRX_QUE_RUNNING;
  }
  
-diff -r bb81fcdd7db2 patch_info/microslow_innodb.info
+diff -r 25523be1816e mysys/my_getopt.c
+--- a/mysys/my_getopt.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/mysys/my_getopt.c	Mon Dec 22 00:26:39 2008 -0800
+@@ -1061,6 +1061,9 @@
+       case GET_ULONG:
+ 	printf("%lu\n", *((ulong*) value));
+ 	break;
++      case GET_DOUBLE:
++	printf("%6f\n", *((double*) value));
++	break;
+       case GET_LL:
+ 	printf("%s\n", llstr(*((longlong*) value), buff));
+ 	break;
+diff -r 25523be1816e patch_info/microslow_innodb.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/microslow_innodb.info	Mon Sep 08 16:38:46 2008 -0700
-@@ -0,0 +1,6 @@
++++ b/patch_info/microslow_innodb.info	Mon Dec 22 00:26:39 2008 -0800
+@@ -0,0 +1,15 @@
 +File=microslow_innodb.patch
 +Name=Extended statistics in slow.log
-+Version=1.0
++Version=1.1
 +Author=Percona <info@percona.com>
 +License=GPL
 +Comment=
-diff -r bb81fcdd7db2 scripts/mysqldumpslow.sh
---- a/scripts/mysqldumpslow.sh	Mon Sep 08 16:38:33 2008 -0700
-+++ b/scripts/mysqldumpslow.sh	Mon Sep 08 16:38:46 2008 -0700
++Changelog
++2008-11-26
++YK: Fix inefficient determination of trx, Make not to call useless gettimeofday when don't use slow log. Make log_slow_queries dynamic (bool).
++
++2008-11-07
++VT: Moved log_slow_rate_limit in SHOW VARIABLE into right place
++
++2008-11
++Arjen Lentz: Fixups (backward compatibility) by Arjen Lentz <arjen@openquery.com.au>
+diff -r 25523be1816e scripts/mysqldumpslow.sh
+--- a/scripts/mysqldumpslow.sh	Mon Dec 22 00:25:06 2008 -0800
++++ b/scripts/mysqldumpslow.sh	Mon Dec 22 00:26:39 2008 -0800
 @@ -83,8 +83,8 @@
      s/^#? Time: \d{6}\s+\d+:\d+:\d+.*\n//;
      my ($user,$host) = s/^#? User\@Host:\s+(\S+)\s+\@\s+(\S+).*\n// ? ($1,$2) : ('','');
@@ -1008,9 +905,9 @@ diff -r bb81fcdd7db2 scripts/mysqldumpslow.sh
      $t -= $l unless $opt{l};
  
      # remove fluff that mysqld writes to log when it (re)starts:
-diff -r bb81fcdd7db2 sql-common/my_time.c
---- a/sql-common/my_time.c	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql-common/my_time.c	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e sql-common/my_time.c
+--- a/sql-common/my_time.c	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql-common/my_time.c	Mon Dec 22 00:26:39 2008 -0800
 @@ -1252,3 +1252,37 @@
    return 0;
  }
@@ -1049,9 +946,9 @@ diff -r bb81fcdd7db2 sql-common/my_time.c
 +    *ltime= newtime;
 +  return newtime;
 +}
-diff -r bb81fcdd7db2 sql/filesort.cc
---- a/sql/filesort.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/filesort.cc	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e sql/filesort.cc
+--- a/sql/filesort.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/filesort.cc	Mon Dec 22 00:26:39 2008 -0800
 @@ -180,6 +180,7 @@
    {
      statistic_increment(thd->status_var.filesort_scan_count, &LOCK_status);
@@ -1076,15 +973,111 @@ diff -r bb81fcdd7db2 sql/filesort.cc
    if (param->not_killable)
    {
      killed= &not_killable;
-diff -r bb81fcdd7db2 sql/ha_innodb.cc
---- a/sql/ha_innodb.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/ha_innodb.cc	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e sql/ha_innodb.cc
+--- a/sql/ha_innodb.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/ha_innodb.cc	Mon Dec 22 00:26:39 2008 -0800
 @@ -1,3 +1,4 @@
 +
  /* Copyright (C) 2000-2005 MySQL AB & Innobase Oy
  
     This program is free software; you can redistribute it and/or modify
-@@ -6098,6 +6099,7 @@
+@@ -805,9 +806,34 @@
+ 		trx->check_unique_secondary = TRUE;
+ 	}
+ 
++	if (thd->variables.log_slow_verbosity & SLOG_V_INNODB) {
++		trx->take_stats = TRUE;
++	} else {
++		trx->take_stats = FALSE;
++	}
++
+ 	return(trx);
+ }
+ 
++/*************************************************************************
++Gets current trx. */
++extern "C"
++trx_t*
++innobase_get_trx()
++{
++	THD *thd=current_thd;
++	if (likely(thd != 0)) {
++		return((trx_t*) thd->ha_data[innobase_hton.slot]);
++	} else {
++		return(NULL);
++	}
++}
++
++void
++innobase_update_var_slow_log()
++{
++	srv_slow_log = (ibool) opt_slow_log;
++}
+ 
+ /*************************************************************************
+ Construct ha_innobase handler. */
+@@ -1309,6 +1335,8 @@
+ 	}
+ 
+ 	/* -------------- Log files ---------------------------*/
++
++	srv_slow_log = (ibool) opt_slow_log;
+ 
+ 	/* The default dir for log files is the datadir of MySQL */
+ 
+@@ -4673,6 +4701,12 @@
+ 		trx->check_unique_secondary = FALSE;
+ 	}
+ 
++	if (thd->variables.log_slow_verbosity & SLOG_V_INNODB) {
++		trx->take_stats = TRUE;
++	} else {
++		trx->take_stats = FALSE;
++	}
++
+ 	if (lower_case_table_names) {
+ 		srv_lower_case_table_names = TRUE;
+ 	} else {
+@@ -4938,6 +4972,12 @@
+ 		trx->check_unique_secondary = FALSE;
+ 	}
+ 
++	if (thd->variables.log_slow_verbosity & SLOG_V_INNODB) {
++		trx->take_stats = TRUE;
++	} else {
++		trx->take_stats = FALSE;
++	}
++
+ 	name_len = strlen(name);
+ 
+ 	assert(name_len < 1000);
+@@ -5025,6 +5065,12 @@
+ 		trx->check_foreigns = FALSE;
+ 	}
+ 
++	if (current_thd->variables.log_slow_verbosity & SLOG_V_INNODB) {
++		trx->take_stats = TRUE;
++	} else {
++		trx->take_stats = FALSE;
++	}
++
+   	error = row_drop_database_for_mysql(namebuf, trx);
+ 	my_free(namebuf, MYF(0));
+ 
+@@ -5089,6 +5135,12 @@
+ 
+ 	if (current_thd->options & OPTION_NO_FOREIGN_KEY_CHECKS) {
+ 		trx->check_foreigns = FALSE;
++	}
++
++	if (current_thd->variables.log_slow_verbosity & SLOG_V_INNODB) {
++		trx->take_stats = TRUE;
++	} else {
++		trx->take_stats = FALSE;
+ 	}
+ 
+ 	name_len1 = strlen(from);
+@@ -6098,6 +6150,7 @@
  {
  	row_prebuilt_t* prebuilt = (row_prebuilt_t*) innobase_prebuilt;
  	trx_t*		trx;
@@ -1092,7 +1085,7 @@ diff -r bb81fcdd7db2 sql/ha_innodb.cc
  
    	DBUG_ENTER("ha_innobase::external_lock");
  	DBUG_PRINT("enter",("lock_type: %d", lock_type));
-@@ -6221,7 +6223,24 @@
+@@ -6221,7 +6274,24 @@
  
  	if (trx->n_mysql_tables_in_use == 0) {
  
@@ -1118,10 +1111,22 @@ diff -r bb81fcdd7db2 sql/ha_innodb.cc
  		prebuilt->used_in_HANDLER = FALSE;
  
  		if (!(thd->options & (OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN))) {
-diff -r bb81fcdd7db2 sql/log.cc
---- a/sql/log.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/log.cc	Mon Sep 08 16:38:46 2008 -0700
-@@ -2229,10 +2229,11 @@
+diff -r 25523be1816e sql/ha_innodb.h
+--- a/sql/ha_innodb.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/ha_innodb.h	Mon Dec 22 00:26:39 2008 -0800
+@@ -266,6 +266,8 @@
+ 
+ int innobase_start_trx_and_assign_read_view(THD* thd);
+ 
++void innobase_update_var_slow_log();
++
+ /***********************************************************************
+ This function is used to prepare X/Open XA distributed transaction   */
+ 
+diff -r 25523be1816e sql/log.cc
+--- a/sql/log.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/log.cc	Mon Dec 22 00:26:39 2008 -0800
+@@ -2229,11 +2229,12 @@
  */
  
  bool MYSQL_LOG::write(THD *thd,const char *query, uint query_length,
@@ -1130,10 +1135,12 @@ diff -r bb81fcdd7db2 sql/log.cc
  {
    bool error=0;
    time_t current_time;
+-  if (!is_open())
 +  ulonglong current_timer;
-   if (!is_open())
++  if (!opt_slow_log || !is_open())
      return 0;
    DBUG_ENTER("MYSQL_LOG::write");
+ 
 @@ -2243,7 +2244,8 @@
      int tmp_errno=0;
      char buff[80],*end;
@@ -1144,7 +1151,7 @@ diff -r bb81fcdd7db2 sql/log.cc
      {
        VOID(pthread_mutex_unlock(&LOCK_log));
        DBUG_RETURN(0);
-@@ -2273,22 +2275,69 @@
+@@ -2273,22 +2275,71 @@
        if (my_b_printf(&log_file, "# User@Host: %s[%s] @ %s [%s]\n",
                        sctx->priv_user ?
                        sctx->priv_user : "",
@@ -1176,11 +1183,14 @@ diff -r bb81fcdd7db2 sql/log.cc
 -                      (ulong) (current_time - query_start_arg),
 -                      (ulong) (thd->time_after_lock - query_start_arg),
 +                      "# Thread_id: %lu  Schema: %s\n" \
-+                      "# Query_time: %s  Lock_time: %s  Rows_sent: %lu  Rows_examined: %lu\n", 
++                      "# Query_time: %s  Lock_time: %s  Rows_sent: %lu  Rows_examined: %lu  Rows_affected: %lu  Rows_read: %lu\n", 
 +                      (ulong) thd->thread_id, (thd->db ? thd->db : ""),
 +                      buf[0], buf[1],
                        (ulong) thd->sent_row_count,
-                       (ulong) thd->examined_row_count) == (uint) -1)
+-                      (ulong) thd->examined_row_count) == (uint) -1)
++                      (ulong) thd->examined_row_count,
++                      ((long) thd->row_count_func > 0 ) ? (ulong) thd->row_count_func : 0,
++                      (ulong) thd->row_count) == (uint) -1)
          tmp_errno=errno;
 +      if ((thd->variables.log_slow_verbosity & SLOG_V_QUERY_PLAN) &&
 +           my_b_printf(&log_file,
@@ -1219,9 +1229,9 @@ diff -r bb81fcdd7db2 sql/log.cc
      }
      if (thd->db && strcmp(thd->db,db))
      {						// Database changed
-diff -r bb81fcdd7db2 sql/log_event.cc
---- a/sql/log_event.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/log_event.cc	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e sql/log_event.cc
+--- a/sql/log_event.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/log_event.cc	Mon Dec 22 00:26:39 2008 -0800
 @@ -2039,6 +2039,7 @@
        /* Execute the query (note that we bypass dispatch_command()) */
        const char* found_semicolon= NULL;
@@ -1230,10 +1240,10 @@ diff -r bb81fcdd7db2 sql/log_event.cc
  
      }
      else
-diff -r bb81fcdd7db2 sql/mysql_priv.h
---- a/sql/mysql_priv.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/mysql_priv.h	Mon Sep 08 16:38:46 2008 -0700
-@@ -484,6 +484,78 @@
+diff -r 25523be1816e sql/mysql_priv.h
+--- a/sql/mysql_priv.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/mysql_priv.h	Mon Dec 22 00:26:39 2008 -0800
+@@ -489,6 +489,78 @@
  #define WEEK_FIRST_WEEKDAY   4
  
  #define STRING_BUFFER_USUAL_SIZE 80
@@ -1312,7 +1322,15 @@ diff -r bb81fcdd7db2 sql/mysql_priv.h
  
  enum enum_parsing_place
  {
-@@ -1333,7 +1405,7 @@
+@@ -1345,6 +1417,7 @@
+ extern bool using_update_log, opt_large_files, server_id_supplied;
+ extern bool opt_update_log, opt_bin_log, opt_error_log;
+ extern my_bool opt_log, opt_slow_log, opt_log_queries_not_using_indexes;
++extern char *opt_slow_logname;
+ extern bool opt_disable_networking, opt_skip_show_db;
+ extern my_bool opt_character_set_client_handshake;
+ extern bool volatile abort_loop, shutdown_in_progress, grant_option;
+@@ -1356,7 +1429,7 @@
  extern my_bool opt_enable_named_pipe, opt_sync_frm, opt_allow_suspicious_udfs;
  extern my_bool opt_secure_auth;
  extern char* opt_secure_file_priv;
@@ -1321,9 +1339,9 @@ diff -r bb81fcdd7db2 sql/mysql_priv.h
  extern my_bool sp_automatic_privileges, opt_noacl;
  extern my_bool opt_old_style_user_limits, trust_function_creators;
  extern uint opt_crash_binlog_innodb;
-diff -r bb81fcdd7db2 sql/mysqld.cc
---- a/sql/mysqld.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/mysqld.cc	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e sql/mysqld.cc
+--- a/sql/mysqld.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/mysqld.cc	Mon Dec 22 00:26:39 2008 -0800
 @@ -175,7 +175,6 @@
  static void getvolumename();
  static void getvolumeID(BYTE *volumeName);
@@ -1332,7 +1350,7 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
  
  #ifdef _AIX41
  int initgroups(const char *,unsigned int);
-@@ -406,6 +405,7 @@
+@@ -409,10 +408,12 @@
  my_bool opt_secure_auth= 0;
  char* opt_secure_file_priv= 0;
  my_bool opt_log_slow_admin_statements= 0;
@@ -1340,7 +1358,12 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
  my_bool lower_case_file_system= 0;
  my_bool opt_large_pages= 0;
  uint    opt_large_page_size= 0;
-@@ -503,6 +503,7 @@
+ my_bool opt_old_style_user_limits= 0, trust_function_creators= 0;
++char* opt_slow_logname= 0;
+ /*
+   True if there is at least one per-hour limit for some user, so we should
+   check them before each query (and possibly reset counters when hour is
+@@ -507,6 +508,7 @@
  Ge_creator ge_creator;
  Le_creator le_creator;
  
@@ -1348,7 +1371,16 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
  
  FILE *bootstrap_file;
  int bootstrap_error;
-@@ -3649,6 +3650,8 @@
+@@ -584,7 +586,7 @@
+ static int cleanup_done;
+ static ulong opt_specialflag, opt_myisam_block_size;
+ static char *opt_logname, *opt_update_logname, *opt_binlog_index_name;
+-static char *opt_slow_logname, *opt_tc_heuristic_recover;
++static char *opt_tc_heuristic_recover;
+ static char *mysql_home_ptr, *pidfile_name_ptr;
+ static char **defaults_argv;
+ static char *opt_bin_logname;
+@@ -3655,6 +3657,8 @@
        unireg_abort(1);
      }
    }
@@ -1357,7 +1389,7 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
  #endif /* __WIN__ */
  
    if (init_common_variables(MYSQL_CONFIG_NAME,
-@@ -4892,7 +4895,7 @@
+@@ -4901,7 +4905,7 @@
    OPT_INTERACTIVE_TIMEOUT, OPT_JOIN_BUFF_SIZE,
    OPT_KEY_BUFFER_SIZE, OPT_KEY_CACHE_BLOCK_SIZE,
    OPT_KEY_CACHE_DIVISION_LIMIT, OPT_KEY_CACHE_AGE_THRESHOLD,
@@ -1366,7 +1398,7 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
    OPT_LOWER_CASE_TABLE_NAMES, OPT_MAX_ALLOWED_PACKET,
    OPT_MAX_BINLOG_CACHE_SIZE, OPT_MAX_BINLOG_SIZE,
    OPT_MAX_CONNECTIONS, OPT_MAX_CONNECT_ERRORS,
-@@ -4983,6 +4986,10 @@
+@@ -4992,11 +4996,17 @@
    OPT_TIMED_MUTEXES,
    OPT_OLD_STYLE_USER_LIMITS,
    OPT_LOG_SLOW_ADMIN_STATEMENTS,
@@ -1375,24 +1407,52 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
 +  OPT_LOG_SLOW_VERBOSITY,
 +  OPT_LOG_SLOW_FILTER,
    OPT_TABLE_LOCK_WAIT_TIMEOUT,
+   OPT_PLUGIN_DIR,
    OPT_PORT_OPEN_TIMEOUT,
    OPT_MERGE,
-@@ -5374,6 +5381,11 @@
-    "Log slow OPTIMIZE, ANALYZE, ALTER and other administrative statements to the slow log if it is open.",
+   OPT_PROFILING,
++  OPT_SLOW_LOG,
++  OPT_SLOW_QUERY_LOG_FILE,
+   OPT_INNODB_ROLLBACK_ON_TIMEOUT,
+   OPT_SECURE_FILE_PRIV,
+   OPT_KEEP_FILES_ON_CREATE,
+@@ -5386,8 +5396,17 @@
     (gptr*) &opt_log_slow_admin_statements,
     (gptr*) &opt_log_slow_admin_statements,
-+   0, GET_BOOL, NO_ARG, 0, 0, 0, 0, 0, 0},
+    0, GET_BOOL, NO_ARG, 0, 0, 0, 0, 0, 0},
 +  {"log-slow-slave-statements", OPT_LOG_SLOW_SLAVE_STATEMENTS,
 +   "Log slow replicated statements to the slow log if it is open.",
 +   (gptr*) &opt_log_slow_slave_statements,
 +   (gptr*) &opt_log_slow_slave_statements,
-    0, GET_BOOL, NO_ARG, 0, 0, 0, 0, 0, 0},
++   0, GET_BOOL, NO_ARG, 0, 0, 0, 0, 0, 0},
    {"log-slow-queries", OPT_SLOW_QUERY_LOG,
      "Log slow queries to this log file. Defaults logging to hostname-slow.log file. Must be enabled to activate other slow log options.",
-@@ -6038,11 +6050,27 @@
++   (gptr*) &opt_slow_logname, (gptr*) &opt_slow_logname, 0, GET_STR, OPT_ARG,
++   0, 0, 0, 0, 0, 0},
++  {"slow_query_log_file", OPT_SLOW_QUERY_LOG_FILE,
++    "Log slow queries to given log file. Defaults logging to hostname-slow.log. Must be enabled to activate other slow log options.",
+    (gptr*) &opt_slow_logname, (gptr*) &opt_slow_logname, 0, GET_STR, OPT_ARG,
+    0, 0, 0, 0, 0, 0},
+   {"log-tc", OPT_LOG_TC,
+@@ -5753,6 +5772,9 @@
+    "Tells the slave thread to continue replication when a query returns an error from the provided list.",
+    0, 0, 0, GET_STR, REQUIRED_ARG, 0, 0, 0, 0, 0, 0},
+ #endif
++  {"slow-query-log", OPT_SLOW_LOG,
++   "Enable|disable slow query log", (gptr*) &opt_slow_log,
++   (gptr*) &opt_slow_log, 0, GET_BOOL, OPT_ARG, 0, 0, 0, 0, 0, 0},
+   {"socket", OPT_SOCKET, "Socket file to use for connection.",
+    (gptr*) &mysqld_unix_port, (gptr*) &mysqld_unix_port, 0, GET_STR,
+    REQUIRED_ARG, 0, 0, 0, 0, 0, 0},
+@@ -6055,11 +6077,27 @@
     (gptr*) 0,
     0, (GET_ULONG | GET_ASK_ADDR) , REQUIRED_ARG, 100,
     1, 100, 0, 1, 0},
+-  {"long_query_time", OPT_LONG_QUERY_TIME,
+-   "Log all queries that have taken more than long_query_time seconds to execute to file.",
+-   (gptr*) &global_system_variables.long_query_time,
+-   (gptr*) &max_system_variables.long_query_time, 0, GET_ULONG,
+-   REQUIRED_ARG, 10, 1, LONG_TIMEOUT, 0, 1, 0},
 +  {"log_slow_filter", OPT_LOG_SLOW_FILTER,
 +    "Log only the queries that followed certain execution plan. Multiple flags allowed in a comma-separated string. [qc_miss, full_scan, full_join, tmp_table, tmp_table_on_disk, filesort, filesort_on_disk]",
 +    0, 0, 0, GET_STR, REQUIRED_ARG, 0, 0, 0, SLOG_F_NONE, 0, 0},
@@ -1400,36 +1460,37 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
 +    "Rate limit statement writes to slow log to only those from every (1/log_slow_rate_limit) session.",
 +    (gptr*) &global_system_variables.log_slow_rate_limit,
 +    (gptr*) &max_system_variables.log_slow_rate_limit, 0, GET_ULONG,
-+    REQUIRED_ARG, 1, 1, ~0L, 0, 1L, 0},
++    REQUIRED_ARG, 1, 1, LONG_MAX, 0, 1L, 0},
 +  {"log_slow_verbosity", OPT_LOG_SLOW_VERBOSITY,
 +    "Choose how verbose the messages to your slow log will be. Multiple flags allowed in a comma-separated string. [microtime, query_plan, innodb]",
 +    0, 0, 0, GET_STR, REQUIRED_ARG, 0, 0, 0, SLOG_V_MICROTIME, 0, 0},
-   {"long_query_time", OPT_LONG_QUERY_TIME,
-    "Log all queries that have taken more than long_query_time seconds to execute to file.",
-    (gptr*) &global_system_variables.long_query_time,
-    (gptr*) &max_system_variables.long_query_time, 0, GET_ULONG,
--   REQUIRED_ARG, 10, 1, LONG_TIMEOUT, 0, 1, 0},
++   {"long_query_time", OPT_LONG_QUERY_TIME,
++    "Log all queries that have taken more than long_query_time seconds to execute to file.",
++    (gptr*) &global_system_variables.long_query_time,
++    (gptr*) &max_system_variables.long_query_time, 0, GET_DOUBLE,
 +    REQUIRED_ARG, 10000000, 0, LONG_TIMEOUT * 1000000, 0, 1, 0},
 +  {"min_examined_row_limit", OPT_MIN_EXAMINED_ROW_LIMIT,
 +    "Don't log queries which examine less than min_examined_row_limit rows to file.",
 +    (gptr*) &global_system_variables.min_examined_row_limit,
 +    (gptr*) &max_system_variables.min_examined_row_limit, 0, GET_ULONG,
-+    REQUIRED_ARG, 0, 0, ~0L, 0, 1L, 0},
++    REQUIRED_ARG, 0, 0, LONG_MAX, 0, 1L, 0},
    {"lower_case_table_names", OPT_LOWER_CASE_TABLE_NAMES,
     "If set to 1 table names are stored in lowercase on disk and table names will be case-insensitive.  Should be set to 2 if you are using a case insensitive file system",
     (gptr*) &lower_case_table_names,
-@@ -6810,7 +6838,9 @@
+@@ -6835,7 +6873,11 @@
    global_system_variables.max_join_size= (ulonglong) HA_POS_ERROR;
    max_system_variables.max_join_size=   (ulonglong) HA_POS_ERROR;
    global_system_variables.old_passwords= 0;
 -
++  global_system_variables.long_query_time = 10000000;
++  max_system_variables.long_query_time = LONG_TIMEOUT * 1000000;
 +  global_system_variables.log_slow_verbosity= SLOG_V_MICROTIME;
 +  global_system_variables.log_slow_filter= SLOG_F_NONE;
 +  
    /*
      Default behavior for 4.1 and 5.0 is to treat NULL values as unequal
      when collecting index statistics for MyISAM tables.
-@@ -7271,6 +7301,24 @@
+@@ -7296,6 +7338,35 @@
    case OPT_BOOTSTRAP:
      opt_noacl=opt_bootstrap=1;
      break;
@@ -1438,7 +1499,7 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
 +          msl_flag_resolve_by_name(slog_filter, argument,
 +                                   SLOG_F_NONE, SLOG_F_INVALID)) == SLOG_F_INVALID)
 +    {
-+      fprintf(stderr,"Invalid argument to log_slow_filter\n");
++      fprintf(stderr,"Invalid argument in log_slow_filter: %s\n", argument);
 +      exit(1);
 +    }
 +    break;
@@ -1447,14 +1508,25 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
 +         msl_flag_resolve_by_name(slog_verb, argument,
 +                                  SLOG_V_NONE, SLOG_V_INVALID)) == SLOG_V_INVALID)
 +    {
-+      fprintf(stderr,"Invalid argument to log_slow_verbosity\n");
++      fprintf(stderr,"Invalid argument in log_slow_verbosity: %s\n", argument);
 +      exit(1);
 +    }
 +    break;
++  case OPT_LONG_QUERY_TIME:
++  {
++    double doubleslow = strtod(argument,NULL);
++    if (doubleslow < 0 || doubleslow > (LONG_TIMEOUT))
++    {
++      fprintf(stderr,"Out of range long_query_time value: %s\n", argument);
++      exit(1);
++    }
++    global_system_variables.long_query_time = (ulonglong) (doubleslow * 1000000);
++    break;
++  }
    case OPT_STORAGE_ENGINE:
    {
      if ((enum db_type)((global_system_variables.table_type=
-@@ -7603,10 +7651,14 @@
+@@ -7628,10 +7699,14 @@
    if (opt_bdb)
      sql_print_warning("this binary does not contain BDB storage engine");
  #endif
@@ -1472,19 +1544,23 @@ diff -r bb81fcdd7db2 sql/mysqld.cc
    if (argc > 0)
    {
      fprintf(stderr, "%s: Too many arguments (first extra is '%s').\nUse --help to get a list of available options\n", my_progname, *argv);
-diff -r bb81fcdd7db2 sql/set_var.cc
---- a/sql/set_var.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/set_var.cc	Mon Sep 08 16:38:46 2008 -0700
-@@ -215,7 +215,7 @@
+diff -r 25523be1816e sql/set_var.cc
+--- a/sql/set_var.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/set_var.cc	Mon Dec 22 00:26:39 2008 -0800
+@@ -217,9 +217,11 @@
    sys_log_queries_not_using_indexes("log_queries_not_using_indexes",
                                      &opt_log_queries_not_using_indexes);
  sys_var_thd_ulong	sys_log_warnings("log_warnings", &SV::log_warnings);
 -sys_var_thd_ulong	sys_long_query_time("long_query_time",
-+sys_var_thd_ulonglong  sys_long_query_time("long_query_time",
++sys_var_thd_microtime  sys_long_query_time("long_query_time",
  					     &SV::long_query_time);
  sys_var_bool_const_ptr sys_log_slow("log_slow_queries", &opt_slow_log);
++sys_var_log_slow	sys_slow_query_log("slow_query_log", &opt_slow_log);
++sys_var_const_str_ptr	sys_slow_query_log_file("slow_query_log_file", &opt_slow_logname);
  sys_var_thd_bool	sys_low_priority_updates("low_priority_updates",
-@@ -281,6 +281,8 @@
+ 						 &SV::low_priority_updates,
+ 						 fix_low_priority_updates);
+@@ -283,6 +285,8 @@
  					   &SV::max_tmp_tables);
  sys_var_long_ptr	sys_max_write_lock_count("max_write_lock_count",
  						 &max_write_lock_count);
@@ -1493,7 +1569,7 @@ diff -r bb81fcdd7db2 sql/set_var.cc
  sys_var_thd_ulong       sys_multi_range_count("multi_range_count",
                                                &SV::multi_range_count);
  sys_var_long_ptr	sys_myisam_data_pointer_size("myisam_data_pointer_size",
-@@ -324,6 +326,20 @@
+@@ -327,6 +331,20 @@
  sys_var_bool_ptr	sys_relay_log_purge("relay_log_purge",
                                              &relay_log_purge);
  #endif
@@ -1514,7 +1590,7 @@ diff -r bb81fcdd7db2 sql/set_var.cc
  sys_var_long_ptr	sys_rpl_recovery_rank("rpl_recovery_rank",
  					      &rpl_recovery_rank);
  sys_var_long_ptr	sys_query_cache_size("query_cache_size",
-@@ -675,6 +691,9 @@
+@@ -694,6 +712,9 @@
    &sys_log_off,
    &sys_log_queries_not_using_indexes,
    &sys_log_slow,
@@ -1524,7 +1600,7 @@ diff -r bb81fcdd7db2 sql/set_var.cc
    &sys_log_update,
    &sys_log_warnings,
    &sys_long_query_time,
-@@ -698,6 +717,7 @@
+@@ -717,6 +738,7 @@
    &sys_max_tmp_tables,
    &sys_max_user_connections,
    &sys_max_write_lock_count,
@@ -1532,16 +1608,29 @@ diff -r bb81fcdd7db2 sql/set_var.cc
    &sys_multi_range_count,
    &sys_myisam_data_pointer_size,
    &sys_myisam_max_sort_file_size,
-@@ -963,6 +983,8 @@
+@@ -770,6 +792,8 @@
+   &sys_slave_skip_counter,
+ #endif
+   &sys_slow_launch_time,
++  &sys_slow_query_log,
++  &sys_slow_query_log_file,
+   &sys_sort_buffer,
+   &sys_sql_big_tables,
+   &sys_sql_low_priority_updates,
+@@ -986,8 +1010,11 @@
    {"log_slave_updates",       (char*) &opt_log_slave_updates,       SHOW_MY_BOOL},
  #endif
    {sys_log_slow.name,         (char*) &sys_log_slow,                SHOW_SYS},
 +  {sys_log_slow_filter.name, (char*) &sys_log_slow_filter, SHOW_SYS},
++  {sys_log_slow_rate_limit.name, (char*) &sys_log_slow_rate_limit, SHOW_SYS},
 +  {sys_log_slow_verbosity.name, (char*) &sys_log_slow_verbosity, SHOW_SYS},
    {sys_log_warnings.name,     (char*) &sys_log_warnings,	    SHOW_SYS},
-   {sys_long_query_time.name,  (char*) &sys_long_query_time, 	    SHOW_SYS},
+-  {sys_long_query_time.name,  (char*) &sys_long_query_time, 	    SHOW_SYS},
++  {sys_long_query_time.name,  (char*) &sys_long_query_time, 	    SHOW_MICROTIME},
    {sys_low_priority_updates.name, (char*) &sys_low_priority_updates, SHOW_SYS},
-@@ -991,6 +1013,7 @@
+   {"lower_case_file_system",  (char*) &lower_case_file_system,      SHOW_MY_BOOL},
+   {"lower_case_table_names",  (char*) &lower_case_table_names,      SHOW_INT},
+@@ -1014,6 +1041,7 @@
    {sys_max_tmp_tables.name,	(char*) &sys_max_tmp_tables,	    SHOW_SYS},
    {sys_max_user_connections.name,(char*) &sys_max_user_connections, SHOW_SYS},
    {sys_max_write_lock_count.name, (char*) &sys_max_write_lock_count,SHOW_SYS},
@@ -1549,73 +1638,85 @@ diff -r bb81fcdd7db2 sql/set_var.cc
    {sys_multi_range_count.name,  (char*) &sys_multi_range_count,     SHOW_SYS},
    {sys_myisam_data_pointer_size.name, (char*) &sys_myisam_data_pointer_size, SHOW_SYS},
    {sys_myisam_max_sort_file_size.name, (char*) &sys_myisam_max_sort_file_size,
-@@ -1043,6 +1066,7 @@
-   {sys_query_prealloc_size.name, (char*) &sys_query_prealloc_size,  SHOW_SYS},
-   {sys_range_alloc_block_size.name, (char*) &sys_range_alloc_block_size,
-    SHOW_SYS},
-+  {sys_log_slow_rate_limit.name, (char*) &sys_log_slow_rate_limit, SHOW_SYS},
-   {sys_read_buff_size.name,   (char*) &sys_read_buff_size,	    SHOW_SYS},
-   {sys_readonly.name,         (char*) &sys_readonly,                SHOW_SYS},
-   {sys_read_rnd_buff_size.name,(char*) &sys_read_rnd_buff_size,	    SHOW_SYS},
-@@ -1639,6 +1663,57 @@
-   return (byte*) &(thd->variables.*offset);
+@@ -1101,6 +1129,8 @@
+   {sys_slave_trans_retries.name,(char*) &sys_slave_trans_retries,   SHOW_SYS},
+ #endif
+   {sys_slow_launch_time.name, (char*) &sys_slow_launch_time,        SHOW_SYS},
++  {sys_slow_query_log.name,   (char*) &sys_slow_query_log,          SHOW_SYS},
++  {sys_slow_query_log_file.name,(char*) &sys_slow_query_log_file,   SHOW_SYS},
+ #ifdef HAVE_SYS_UN_H
+   {"socket",                  (char*) &mysqld_unix_port,             SHOW_CHAR_PTR},
+ #endif
+@@ -1769,6 +1799,17 @@
  }
  
-+void sys_var_thd_microtime::set_default(THD *thd, enum_var_type type)
-+{
-+  pthread_mutex_lock(&LOCK_global_system_variables);
-+  global_system_variables.*offset= (ulonglong) option_limits->def_value;
-+  pthread_mutex_unlock(&LOCK_global_system_variables);
-+}
-+
+ 
 +bool sys_var_thd_microtime::check(THD *thd, set_var *var)
 +{
 +  if (var->value->result_type() == DECIMAL_RESULT)
 +    var->save_result.ulonglong_value= (ulonglong)(var->value->val_real() * 1000000);
-+  else 
-+    var->save_result.ulonglong_value= (ulonglong)var->value->val_int() * 1000000;
-+  return 0;
-+}
-+
-+byte *sys_var_thd_microtime::value_ptr(THD *thd, enum_var_type type,
-+				   LEX_STRING *base)
-+{
-+  if (type == OPT_GLOBAL)
-+    return (byte*) &(global_system_variables.*offset);
-+  return (byte*) &(thd->variables.*offset);
-+}
-+
-+bool sys_var_thd_microtime::update(THD *thd,  set_var *var)
-+{
-+  bool fixed= FALSE;
-+  ulonglong tmp= var->save_result.ulonglong_value;
-+
-+  if (tmp > max_system_variables.*offset)
-+    tmp= max_system_variables.*offset;
-+
-+  if (option_limits)
-+    tmp= getopt_ull_limit_value(tmp, option_limits, &fixed);
-+
-+  if (fixed)
-+    throw_bounds_warning(thd, option_limits->name, tmp);
-+  
-+  /* Lock is needed to make things safe on 32 bit systems */
-+  if (var->type == OPT_GLOBAL)
-+  {
-+    /* Lock is needed to make things safe on 32 bit systems */
-+    pthread_mutex_lock(&LOCK_global_system_variables);
-+    global_system_variables.*offset= tmp;
-+    pthread_mutex_unlock(&LOCK_global_system_variables);
-+  }
 +  else
-+    thd->variables.*offset= (ulonglong) tmp;
++    var->save_result.ulonglong_value= (ulonglong)(var->value->val_int() * 1000000);
 +
 +  return 0;
 +}
- 
- bool sys_var_thd_ha_rows::update(THD *thd, set_var *var)
++
++
+ bool sys_var_thd_bool::update(THD *thd,  set_var *var)
  {
-@@ -3483,6 +3558,191 @@
+   if (var->type == OPT_GLOBAL)
+@@ -1924,6 +1965,19 @@
+     value= *(longlong*) value_ptr(thd, var_type, base);
+     pthread_mutex_unlock(&LOCK_global_system_variables);
+     return new Item_int(value);
++  }
++  case SHOW_MICROTIME:
++  {
++    longlong value;
++    char buff[80];
++    int len;
++
++    pthread_mutex_lock(&LOCK_global_system_variables);
++    value= *(longlong*) value_ptr(thd, var_type, base);
++    pthread_mutex_unlock(&LOCK_global_system_variables);
++
++    len = snprintf(buff, 80, "%f", ((double) value) / 1000000.0);
++    return new Item_float(buff,len);
+   }
+   case SHOW_HA_ROWS:
+   {
+@@ -2757,6 +2811,30 @@
+ }
+ 
+ 
++bool sys_var_log_slow::update(THD *thd, set_var *var)
++{
++  bool ret;
++
++  pthread_mutex_lock(&LOCK_global_system_variables);
++  if (var->save_result.ulong_value)
++  {
++    if(!mysql_slow_log.is_open())
++    {
++      mysql_slow_log.open_slow_log(opt_slow_logname);
++    }
++  }
++  pthread_mutex_unlock(&LOCK_global_system_variables);
++
++  ret = sys_var_bool_ptr::update(thd, var);
++
++#ifdef HAVE_INNOBASE_DB
++  innobase_update_var_slow_log();
++#endif
++
++  return(ret);
++}
++
++
+ #ifdef HAVE_REPLICATION
+ bool sys_var_slave_skip_counter::check(THD *thd, set_var *var)
+ {
+@@ -3519,6 +3597,191 @@
  #endif
  }
  
@@ -1807,10 +1908,10 @@ diff -r bb81fcdd7db2 sql/set_var.cc
  /****************************************************************************
   Functions to handle table_type
  ****************************************************************************/
-diff -r bb81fcdd7db2 sql/set_var.h
---- a/sql/set_var.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/set_var.h	Mon Sep 08 16:38:46 2008 -0700
-@@ -123,6 +123,7 @@
+diff -r 25523be1816e sql/set_var.h
+--- a/sql/set_var.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/set_var.h	Mon Dec 22 00:26:39 2008 -0800
+@@ -132,6 +132,7 @@
  };
  
  
@@ -1818,7 +1919,21 @@ diff -r bb81fcdd7db2 sql/set_var.h
  class sys_var_ulonglong_ptr :public sys_var
  {
  public:
-@@ -309,7 +310,6 @@
+@@ -168,6 +169,13 @@
+   bool check_update_type(Item_result type) { return 0; }
+ };
+ 
++class sys_var_log_slow :public sys_var_bool_ptr
++{
++public:
++  sys_var_log_slow(const char *name_arg, my_bool *value_arg)
++    :sys_var_bool_ptr(name_arg, value_arg) {}
++  bool update(THD *thd, set_var *var);
++};
+ 
+ class sys_var_bool_const_ptr : public sys_var
+ {
+@@ -340,7 +348,6 @@
    }
  };
  
@@ -1826,31 +1941,15 @@ diff -r bb81fcdd7db2 sql/set_var.h
  class sys_var_thd_ulong :public sys_var_thd
  {
    sys_check_func check_func;
-@@ -329,6 +329,23 @@
+@@ -360,7 +367,6 @@
    byte *value_ptr(THD *thd, enum_var_type type, LEX_STRING *base);
  };
  
-+class sys_var_thd_microtime :public sys_var_thd
-+{
-+public:
-+  ulonglong SV::*offset;
-+  sys_var_thd_microtime(const char *name_arg, ulonglong SV::*offset_arg)
-+    :sys_var_thd(name_arg), offset(offset_arg)
-+  {}
-+  bool update(THD *thd, set_var *var);
-+  void set_default(THD *thd, enum_var_type type);
-+  SHOW_TYPE type() { return SHOW_MICROTIME; }
-+  byte *value_ptr(THD *thd, enum_var_type type, LEX_STRING *base);
-+  bool check(THD *thd, set_var *var);
-+  bool check_update_type(Item_result type)
-+  { 
-+    return type != INT_RESULT && type != DECIMAL_RESULT;
-+  }
-+};
- 
+-
  class sys_var_thd_ha_rows :public sys_var_thd
  {
-@@ -346,7 +363,6 @@
+ public:
+@@ -377,7 +383,6 @@
    SHOW_TYPE show_type() { return SHOW_HA_ROWS; }
    byte *value_ptr(THD *thd, enum_var_type type, LEX_STRING *base);
  };
@@ -1858,15 +1957,27 @@ diff -r bb81fcdd7db2 sql/set_var.h
  
  class sys_var_thd_ulonglong :public sys_var_thd
  {
-@@ -376,7 +392,6 @@
+@@ -407,6 +412,19 @@
    }
  };
  
--
++class sys_var_thd_microtime :public sys_var_thd_ulonglong
++{
++public:
++  sys_var_thd_microtime(const char *name_arg, ulonglong SV::*offset_arg)
++    :sys_var_thd_ulonglong(name_arg, offset_arg)
++  {}
++  SHOW_TYPE show_type() { return SHOW_MICROTIME; }
++  bool check(THD *thd, set_var *var);
++  bool check_update_type(Item_result type)
++  {
++    return type != INT_RESULT && type != DECIMAL_RESULT;
++  }
++};
+ 
  class sys_var_thd_bool :public sys_var_thd
  {
- public:
-@@ -446,6 +461,66 @@
+@@ -477,6 +495,66 @@
                                              ulong *length);
  };
  
@@ -1933,7 +2044,7 @@ diff -r bb81fcdd7db2 sql/set_var.h
  
  class sys_var_thd_storage_engine :public sys_var_thd
  {
-@@ -1042,3 +1117,11 @@
+@@ -1087,3 +1165,11 @@
  bool process_key_caches(int (* func) (const char *name, KEY_CACHE *));
  void delete_elements(I_List<NAMED_LIST> *list,
  		     void (*free_element)(const char*, gptr));
@@ -1945,9 +2056,9 @@ diff -r bb81fcdd7db2 sql/set_var.h
 +                               const ulong none_val, const ulong invalid_val);
 +const char *msl_option_get_name(const struct msl_opts *opts, ulong val);
 +char *msl_flag_get_name(const struct msl_opts *opts, char *buf, ulong val);
-diff -r bb81fcdd7db2 sql/slave.cc
---- a/sql/slave.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/slave.cc	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e sql/slave.cc
+--- a/sql/slave.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/slave.cc	Mon Dec 22 00:26:39 2008 -0800
 @@ -2925,6 +2925,12 @@
      + MAX_LOG_EVENT_HEADER;  /* note, incr over the global not session var */
    thd->slave_thread = 1;
@@ -1961,10 +2072,10 @@ diff -r bb81fcdd7db2 sql/slave.cc
    thd->client_capabilities = CLIENT_LOCAL_FILES;
    thd->real_id=pthread_self();
    pthread_mutex_lock(&LOCK_thread_count);
-diff -r bb81fcdd7db2 sql/sql_cache.cc
---- a/sql/sql_cache.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/sql_cache.cc	Mon Sep 08 16:38:46 2008 -0700
-@@ -1334,6 +1334,7 @@
+diff -r 25523be1816e sql/sql_cache.cc
+--- a/sql/sql_cache.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/sql_cache.cc	Mon Dec 22 00:26:39 2008 -0800
+@@ -1341,6 +1341,7 @@
  
    thd->limit_found_rows = query->found_rows();
    thd->status_var.last_query_cost= 0.0;
@@ -1972,7 +2083,7 @@ diff -r bb81fcdd7db2 sql/sql_cache.cc
  
    BLOCK_UNLOCK_RD(query_block);
    DBUG_RETURN(1);				// Result sent to client
-@@ -1341,6 +1342,7 @@
+@@ -1348,6 +1349,7 @@
  err_unlock:
    STRUCT_UNLOCK(&structure_guard_mutex);
  err:
@@ -1980,10 +2091,10 @@ diff -r bb81fcdd7db2 sql/sql_cache.cc
    DBUG_RETURN(0);				// Query was not cached
  }
  
-diff -r bb81fcdd7db2 sql/sql_class.cc
---- a/sql/sql_class.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/sql_class.cc	Mon Sep 08 16:38:46 2008 -0700
-@@ -174,7 +174,7 @@
+diff -r 25523be1816e sql/sql_class.cc
+--- a/sql/sql_class.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/sql_class.cc	Mon Dec 22 00:26:39 2008 -0800
+@@ -188,7 +188,7 @@
     lock_id(&main_lock_id),
     user_time(0), in_sub_stmt(0), global_read_lock(0), is_fatal_error(0),
     transaction_rollback_request(0), is_fatal_sub_stmt_error(0),
@@ -1992,7 +2103,7 @@ diff -r bb81fcdd7db2 sql/sql_class.cc
     last_insert_id_used(0), last_insert_id_used_bin_log(0), insert_id_used(0),
     clear_next_insert_id(0), in_lock_tables(0), bootstrap(0),
     derived_tables_processing(FALSE), spcont(NULL),
-@@ -2198,6 +2198,12 @@
+@@ -2224,6 +2224,12 @@
    backup->cuted_fields=     cuted_fields;
    backup->client_capabilities= client_capabilities;
    backup->savepoints= transaction.savepoints;
@@ -2005,7 +2116,7 @@ diff -r bb81fcdd7db2 sql/sql_class.cc
  
    if (!lex->requires_prelocking() || is_update_query(lex->sql_command))
      options&= ~OPTION_BIN_LOG;
-@@ -2214,7 +2220,13 @@
+@@ -2240,7 +2246,13 @@
    sent_row_count= 0;
    cuted_fields= 0;
    transaction.savepoints= 0;
@@ -2020,7 +2131,7 @@ diff -r bb81fcdd7db2 sql/sql_class.cc
    /* Surpress OK packets in case if we will execute statements */
    net.no_send_ok= TRUE;
  }
-@@ -2267,6 +2279,12 @@
+@@ -2293,6 +2305,12 @@
    */
    examined_row_count+= backup->examined_row_count;
    cuted_fields+=       backup->cuted_fields;
@@ -2033,20 +2144,14 @@ diff -r bb81fcdd7db2 sql/sql_class.cc
  }
  
  
-diff -r bb81fcdd7db2 sql/sql_class.h
---- a/sql/sql_class.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/sql_class.h	Mon Sep 08 16:38:46 2008 -0700
-@@ -43,6 +43,13 @@
+diff -r ea2366a3ea79 sql/sql_class.h
+--- a/sql/sql_class.h	Thu Dec 04 00:30:51 2008 -0800
++++ b/sql/sql_class.h	Thu Dec 04 00:32:56 2008 -0800
+@@ -43,6 +43,7 @@
  extern char internal_table_name[2];
  extern char empty_c_string[1];
  extern const char **errmesg;
-+#ifdef __cplusplus
-+__BEGIN_DECLS
-+#endif
 +extern ulonglong frequency;
-+#ifdef __cplusplus
-+__END_DECLS
-+#endif
  
  #define TC_LOG_PAGE_SIZE   8192
  #define TC_LOG_MIN_SIZE    (3*TC_LOG_PAGE_SIZE)
@@ -2075,9 +2180,9 @@ diff -r bb81fcdd7db2 sql/sql_class.h
    ulong multi_range_count;
    ulong myisam_repair_threads;
    ulong myisam_sort_buff_size;
-@@ -541,10 +549,13 @@
-   ulong optimizer_search_depth;
+@@ -542,10 +550,13 @@
    ulong preload_buff_size;
+   ulong profiling_history_size;
    ulong query_cache_type;
 +  ulong log_slow_rate_limit;
    ulong read_buff_size;
@@ -2089,7 +2194,7 @@ diff -r bb81fcdd7db2 sql/sql_class.h
    ulong table_type;
    ulong tx_isolation;
    ulong completion_type;
-@@ -1111,6 +1122,12 @@
+@@ -1121,6 +1132,12 @@
    uint in_sub_stmt;
    bool enable_slow_log, insert_id_used, clear_next_insert_id;
    bool last_insert_id_used;
@@ -2102,7 +2207,7 @@ diff -r bb81fcdd7db2 sql/sql_class.h
    my_bool no_send_ok;
    SAVEPOINT *savepoints;
  };
-@@ -1167,6 +1184,11 @@
+@@ -1177,6 +1194,11 @@
  class THD :public Statement,
             public Open_tables_state
  {
@@ -2114,7 +2219,7 @@ diff -r bb81fcdd7db2 sql/sql_class.h
  public:
    /*
      Constant for THD::where initialization in the beginning of every query.
-@@ -1272,10 +1294,24 @@
+@@ -1285,10 +1307,24 @@
    */
    const char *where;
    time_t     start_time,time_after_lock,user_time;
@@ -2139,7 +2244,7 @@ diff -r bb81fcdd7db2 sql/sql_class.h
    /* <> 0 if we are inside of trigger or stored function. */
    uint in_sub_stmt;
  
-@@ -1661,11 +1697,11 @@
+@@ -1678,11 +1714,11 @@
        sql_print_information("time() failed with %d", errno);
    }
  
@@ -2156,9 +2261,9 @@ diff -r bb81fcdd7db2 sql/sql_class.h
    inline void	insert_id(ulonglong id_arg)
    {
      last_insert_id= id_arg;
-diff -r bb81fcdd7db2 sql/sql_parse.cc
---- a/sql/sql_parse.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/sql_parse.cc	Mon Sep 08 16:38:46 2008 -0700
+diff -r 25523be1816e sql/sql_parse.cc
+--- a/sql/sql_parse.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/sql_parse.cc	Mon Dec 22 00:26:39 2008 -0800
 @@ -20,6 +20,7 @@
  #include <m_ctype.h>
  #include <myisam.h>
@@ -2167,7 +2272,7 @@ diff -r bb81fcdd7db2 sql/sql_parse.cc
  
  #ifdef HAVE_INNOBASE_DB
  #include "ha_innodb.h"
-@@ -1180,6 +1181,15 @@
+@@ -1227,6 +1228,15 @@
      my_net_set_read_timeout(net, thd->variables.net_read_timeout);
      my_net_set_write_timeout(net, thd->variables.net_write_timeout);
  
@@ -2183,7 +2288,7 @@ diff -r bb81fcdd7db2 sql/sql_parse.cc
      while (!net->error && net->vio != 0 &&
             !(thd->killed == THD::KILL_CONNECTION))
      {
-@@ -2255,26 +2265,52 @@
+@@ -2353,27 +2363,53 @@
      return;                                     // Don't set time for sub stmt
  
    start_of_query= thd->start_time;
@@ -2221,7 +2326,7 @@ diff -r bb81fcdd7db2 sql/sql_parse.cc
 +      (!thd->user_time || (thd->slave_thread && opt_log_slow_slave_statements))
 +     )
    {
-     thd->proc_info="logging slow query";
+     thd_proc_info(thd, "logging slow query");
  
 -    if ((ulong) (thd->start_time - thd->time_after_lock) >
 -	thd->variables.long_query_time ||
@@ -2239,13 +2344,14 @@ diff -r bb81fcdd7db2 sql/sql_parse.cc
 +         thd->lex->orig_sql_command == SQLCOM_END) &&
 +        thd->examined_row_count >= thd->variables.min_examined_row_limit)
      {
+       thd_proc_info(thd, "logging slow query");
        thd->status_var.long_query_count++;
 -      mysql_slow_log.write(thd, thd->query, thd->query_length, start_of_query);
 +      mysql_slow_log.write(thd, thd->query, thd->query_length, start_of_query, start_of_query_timer);
      }
    }
  }
-@@ -5949,6 +5985,15 @@
+@@ -6084,6 +6120,15 @@
      thd->total_warn_count=0;			// Warnings for this query
      thd->rand_used= 0;
      thd->sent_row_count= thd->examined_row_count= 0;
@@ -2261,10 +2367,10 @@ diff -r bb81fcdd7db2 sql/sql_parse.cc
    }
    DBUG_VOID_RETURN;
  }
-diff -r bb81fcdd7db2 sql/sql_select.cc
---- a/sql/sql_select.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/sql_select.cc	Mon Sep 08 16:38:46 2008 -0700
-@@ -6198,8 +6198,11 @@
+diff -r 25523be1816e sql/sql_select.cc
+--- a/sql/sql_select.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/sql_select.cc	Mon Dec 22 00:26:39 2008 -0800
+@@ -6221,8 +6221,11 @@
  	  {
  	    join->thd->server_status|=SERVER_QUERY_NO_INDEX_USED;
  	    if (statistics)
@@ -2276,7 +2382,7 @@ diff -r bb81fcdd7db2 sql/sql_select.cc
  	  }
  	}
  	else
-@@ -6214,8 +6217,11 @@
+@@ -6237,8 +6240,11 @@
  	  {
  	    join->thd->server_status|=SERVER_QUERY_NO_INDEX_USED;
  	    if (statistics)
@@ -2288,7 +2394,7 @@ diff -r bb81fcdd7db2 sql/sql_select.cc
  	  }
  	}
  	if (!table->no_keyread)
-@@ -9265,6 +9271,7 @@
+@@ -9302,6 +9308,7 @@
  		      (ulong) rows_limit,test(group)));
  
    statistic_increment(thd->status_var.created_tmp_tables, &LOCK_status);
@@ -2296,7 +2402,7 @@ diff -r bb81fcdd7db2 sql/sql_select.cc
  
    if (use_temp_pool && !(test_flags & TEST_KEEP_TMP_TABLES))
      temp_pool_slot = bitmap_set_next(&temp_pool);
-@@ -10125,6 +10132,7 @@
+@@ -10162,6 +10169,7 @@
    }
    statistic_increment(table->in_use->status_var.created_tmp_disk_tables,
  		      &LOCK_status);
@@ -2304,28 +2410,33 @@ diff -r bb81fcdd7db2 sql/sql_select.cc
    table->s->db_record_offset= 1;
    DBUG_RETURN(0);
   err:
-diff -r bb81fcdd7db2 sql/sql_show.cc
---- a/sql/sql_show.cc	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/sql_show.cc	Mon Sep 08 16:38:46 2008 -0700
-@@ -1531,6 +1531,9 @@
+diff -r 25523be1816e sql/sql_show.cc
+--- a/sql/sql_show.cc	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/sql_show.cc	Mon Dec 22 00:26:39 2008 -0800
+@@ -1532,6 +1532,12 @@
            value= ((char *) status_var + (ulonglong) value);
          case SHOW_LONGLONG:
            end= longlong10_to_str(*(longlong*) value, buff, 10);
 +          break;
 +        case SHOW_MICROTIME:
-+          end= buff + sprintf(buff, "%.6f", (*(ulonglong*)value) / 1000000.0);
++          show_type= ((sys_var*) value)->show_type();
++          value=     (char*) ((sys_var*) value)->value_ptr(thd, value_type,
++                                                           &null_lex_str);
++          end= buff + sprintf(buff, "%f", (((double) (*(ulonglong*)value))) / 1000000.0);
            break;
          case SHOW_HA_ROWS:
            end= longlong10_to_str((longlong) *(ha_rows*) value, buff, 10);
-diff -r bb81fcdd7db2 sql/structs.h
---- a/sql/structs.h	Mon Sep 08 16:38:33 2008 -0700
-+++ b/sql/structs.h	Mon Sep 08 16:38:46 2008 -0700
-@@ -168,7 +168,7 @@
+diff -r 25523be1816e sql/structs.h
+--- a/sql/structs.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/structs.h	Mon Dec 22 00:26:39 2008 -0800
+@@ -168,8 +168,8 @@
  enum SHOW_TYPE
  {
    SHOW_UNDEF,
 -  SHOW_LONG, SHOW_LONGLONG, SHOW_INT, SHOW_CHAR, SHOW_CHAR_PTR, 
+-  SHOW_DOUBLE_STATUS,
 +  SHOW_LONG, SHOW_LONGLONG, SHOW_MICROTIME, SHOW_INT, SHOW_CHAR, SHOW_CHAR_PTR, 
-   SHOW_DOUBLE_STATUS,
++  SHOW_DOUBLE_STATUS, 
    SHOW_BOOL, SHOW_MY_BOOL, SHOW_OPENTABLES, SHOW_STARTTIME, 
    SHOW_LONG_CONST, SHOW_INT_CONST, SHOW_HAVE, SHOW_SYS, SHOW_HA_ROWS,
+   SHOW_VARS,
