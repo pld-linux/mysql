@@ -25,15 +25,15 @@ Summary(ru):	MySQL - быстрый SQL-сервер
 Summary(uk):	MySQL - швидкий SQL-сервер
 Summary(zh_CN):	MySQLйЩ╬щ©Б╥ЧнЯфВ
 Name:		mysql
-Version:	4.1.23
-Release:	2
+Version:	4.1.25
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Newer releases from bk only, see how to fetch mysql from bk repo tag:
 # http://dev.mysql.com/doc/refman/4.1/en/installing-source-tree.html .
 # Manual pages are at http://svn.mysql.com/svnpublic/mysqldoc/refman-4.1/ .
-Source0:	%{name}-%{version}.tar.bz2
-# Source0-md5:	146ab42a1c066156a8dcbd25abbe564a
+Source0:	http://download.snake.de/dist/%{name}-%{version}.tar.gz
+# Source0-md5:	8a83f3024667f2b83e394107d4ef3269
 Source100:	%{name}-4.1.22-man.tar.bz2
 # Source100-md5:	6d79b8bdbf65feb68a84c1e350675473
 Source1:	%{name}.init
@@ -49,7 +49,6 @@ Source10:	%{name}-ndb-mgm.sysconfig
 Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
-Patch100:	%{name}-bk-20071202.patch
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -424,7 +423,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
 %setup -q -a100
-%patch100 -p1
 %patch0 -p1
 %{?with_tcpd:%patch1 -p1}
 %patch2 -p1
