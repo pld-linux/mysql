@@ -173,7 +173,7 @@ diff -r 327ce7a34c91 sql/sql_show.cc
 +        table->field[4]->store(command_name[tmp->command],
 +                               strlen(command_name[tmp->command]), cs);
 +      /* MYSQL_TIME */
-+      const ulonglong utime= tmp->start_timer ? current_timer - tmp->start_timer : 0; 
++      const ulonglong utime= (tmp->start_timer && current_timer) ? current_timer - tmp->start_timer : 0; 
 +      table->field[5]->store(utime / 1000000, TRUE);
 +      /* STATE */
 +#ifndef EMBEDDED_LIBRARY

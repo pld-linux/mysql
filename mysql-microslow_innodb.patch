@@ -878,7 +878,7 @@ diff -r 25523be1816e patch_info/microslow_innodb.info
 @@ -0,0 +1,15 @@
 +File=microslow_innodb.patch
 +Name=Extended statistics in slow.log
-+Version=1.1
++Version=1.2
 +Author=Percona <info@percona.com>
 +License=GPL
 +Comment=
@@ -939,8 +939,8 @@ diff -r 25523be1816e sql-common/my_time.c
 +    newtime= (GetTickCount() * 1000; /* GetTickCount only returns milliseconds */
 +#else
 +  struct timeval t;
-+  gettimeofday(&t, NULL);
-+  newtime= (ulonglong)t.tv_sec * 1000000 + t.tv_usec;
++  if (gettimeofday(&t, NULL) != -1)
++    newtime= (ulonglong)t.tv_sec * 1000000 + t.tv_usec;
 +#endif
 +  if (ltime)
 +    *ltime= newtime;
@@ -1151,7 +1151,7 @@ diff -r 25523be1816e sql/log.cc
      {
        VOID(pthread_mutex_unlock(&LOCK_log));
        DBUG_RETURN(0);
-@@ -2273,22 +2275,71 @@
+@@ -2273,22 +2275,72 @@
        if (my_b_printf(&log_file, "# User@Host: %s[%s] @ %s [%s]\n",
                        sctx->priv_user ?
                        sctx->priv_user : "",
@@ -1167,11 +1167,12 @@ diff -r 25523be1816e sql/log.cc
      {
 +      char buf[5][20];
 +      ulonglong current_timer= my_timer(&current_timer, frequency);
-+      sprintf(buf[0], "%.6f", (current_timer - query_start_timer) / 1000000.0);
-+      sprintf(buf[1], "%.6f", (thd->timer_after_lock - query_start_timer) / 1000000.0);
++      snprintf(buf[0], 20, "%.6f", (current_timer ? (current_timer - query_start_timer):0) / 1000000.0);
++      snprintf(buf[1], 20, "%.6f", (thd->timer_after_lock - query_start_timer) / 1000000.0);
 +      if (!query_length)
 +      {
 +        thd->sent_row_count= thd->examined_row_count= 0;
++        thd->row_count= 0;
 +        thd->innodb_was_used= FALSE;
 +        thd->query_plan_flags= QPLAN_NONE;
 +        thd->query_plan_fsort_passes= 0;
@@ -1207,9 +1208,9 @@ diff -r 25523be1816e sql/log.cc
 +        tmp_errno=errno;
 +      if ((thd->variables.log_slow_verbosity & SLOG_V_INNODB) && thd->innodb_was_used)
 +      {
-+        sprintf(buf[2], "%.6f", thd->innodb_io_reads_wait_timer / 1000000.0);
-+        sprintf(buf[3], "%.6f", thd->innodb_lock_que_wait_timer / 1000000.0);
-+        sprintf(buf[4], "%.6f", thd->innodb_innodb_que_wait_timer / 1000000.0);
++        snprintf(buf[2], 20, "%.6f", thd->innodb_io_reads_wait_timer / 1000000.0);
++        snprintf(buf[3], 20, "%.6f", thd->innodb_lock_que_wait_timer / 1000000.0);
++        snprintf(buf[4], 20, "%.6f", thd->innodb_innodb_que_wait_timer / 1000000.0);
 +        if (my_b_printf(&log_file,
 +                        "#   InnoDB_IO_r_ops: %lu  InnoDB_IO_r_bytes: %lu  InnoDB_IO_r_wait: %s\n" \
 +                        "#   InnoDB_rec_lock_wait: %s  InnoDB_queue_wait: %s\n" \
@@ -1330,12 +1331,13 @@ diff -r 25523be1816e sql/mysql_priv.h
  extern bool opt_disable_networking, opt_skip_show_db;
  extern my_bool opt_character_set_client_handshake;
  extern bool volatile abort_loop, shutdown_in_progress, grant_option;
-@@ -1356,7 +1429,7 @@
+@@ -1356,7 +1429,8 @@
  extern my_bool opt_enable_named_pipe, opt_sync_frm, opt_allow_suspicious_udfs;
  extern my_bool opt_secure_auth;
  extern char* opt_secure_file_priv;
 -extern my_bool opt_log_slow_admin_statements;
 +extern my_bool opt_log_slow_admin_statements, opt_log_slow_slave_statements;
++extern my_bool opt_use_global_long_query_time;
  extern my_bool sp_automatic_privileges, opt_noacl;
  extern my_bool opt_old_style_user_limits, trust_function_creators;
  extern uint opt_crash_binlog_innodb;
@@ -1350,11 +1352,12 @@ diff -r 25523be1816e sql/mysqld.cc
  
  #ifdef _AIX41
  int initgroups(const char *,unsigned int);
-@@ -409,10 +408,12 @@
+@@ -409,10 +408,13 @@
  my_bool opt_secure_auth= 0;
  char* opt_secure_file_priv= 0;
  my_bool opt_log_slow_admin_statements= 0;
 +my_bool opt_log_slow_slave_statements= 0;
++my_bool opt_use_global_long_query_time= 0;
  my_bool lower_case_file_system= 0;
  my_bool opt_large_pages= 0;
  uint    opt_large_page_size= 0;
@@ -1398,7 +1401,7 @@ diff -r 25523be1816e sql/mysqld.cc
    OPT_LOWER_CASE_TABLE_NAMES, OPT_MAX_ALLOWED_PACKET,
    OPT_MAX_BINLOG_CACHE_SIZE, OPT_MAX_BINLOG_SIZE,
    OPT_MAX_CONNECTIONS, OPT_MAX_CONNECT_ERRORS,
-@@ -4992,11 +4996,17 @@
+@@ -4992,11 +4996,18 @@
    OPT_TIMED_MUTEXES,
    OPT_OLD_STYLE_USER_LIMITS,
    OPT_LOG_SLOW_ADMIN_STATEMENTS,
@@ -1413,6 +1416,7 @@ diff -r 25523be1816e sql/mysqld.cc
    OPT_PROFILING,
 +  OPT_SLOW_LOG,
 +  OPT_SLOW_QUERY_LOG_FILE,
++  OPT_USE_GLOBAL_LONG_QUERY_TIME,
    OPT_INNODB_ROLLBACK_ON_TIMEOUT,
    OPT_SECURE_FILE_PRIV,
    OPT_KEEP_FILES_ON_CREATE,
@@ -1444,7 +1448,7 @@ diff -r 25523be1816e sql/mysqld.cc
    {"socket", OPT_SOCKET, "Socket file to use for connection.",
     (gptr*) &mysqld_unix_port, (gptr*) &mysqld_unix_port, 0, GET_STR,
     REQUIRED_ARG, 0, 0, 0, 0, 0, 0},
-@@ -6055,11 +6077,27 @@
+@@ -6055,11 +6077,31 @@
     (gptr*) 0,
     0, (GET_ULONG | GET_ASK_ADDR) , REQUIRED_ARG, 100,
     1, 100, 0, 1, 0},
@@ -1474,6 +1478,10 @@ diff -r 25523be1816e sql/mysqld.cc
 +    (gptr*) &global_system_variables.min_examined_row_limit,
 +    (gptr*) &max_system_variables.min_examined_row_limit, 0, GET_ULONG,
 +    REQUIRED_ARG, 0, 0, LONG_MAX, 0, 1L, 0},
++  {"use_global_long_query_time", OPT_USE_GLOBAL_LONG_QUERY_TIME,
++   "Control always use global long_query_time or local long_query_time.",
++   (gptr*) &opt_use_global_long_query_time, (gptr*) &opt_use_global_long_query_time,
++   0, GET_BOOL, NO_ARG, 0, 0, 1, 0, 1, 0},
    {"lower_case_table_names", OPT_LOWER_CASE_TABLE_NAMES,
     "If set to 1 table names are stored in lowercase on disk and table names will be case-insensitive.  Should be set to 2 if you are using a case insensitive file system",
     (gptr*) &lower_case_table_names,
@@ -1547,13 +1555,15 @@ diff -r 25523be1816e sql/mysqld.cc
 diff -r 25523be1816e sql/set_var.cc
 --- a/sql/set_var.cc	Mon Dec 22 00:25:06 2008 -0800
 +++ b/sql/set_var.cc	Mon Dec 22 00:26:39 2008 -0800
-@@ -217,9 +217,11 @@
+@@ -217,9 +217,13 @@
    sys_log_queries_not_using_indexes("log_queries_not_using_indexes",
                                      &opt_log_queries_not_using_indexes);
  sys_var_thd_ulong	sys_log_warnings("log_warnings", &SV::log_warnings);
 -sys_var_thd_ulong	sys_long_query_time("long_query_time",
 +sys_var_thd_microtime  sys_long_query_time("long_query_time",
  					     &SV::long_query_time);
++sys_var_bool_ptr	sys_use_global_long_query_time("use_global_long_query_time",
++                                                       &opt_use_global_long_query_time);
  sys_var_bool_const_ptr sys_log_slow("log_slow_queries", &opt_slow_log);
 +sys_var_log_slow	sys_slow_query_log("slow_query_log", &opt_slow_log);
 +sys_var_const_str_ptr	sys_slow_query_log_file("slow_query_log_file", &opt_slow_logname);
@@ -1590,13 +1600,14 @@ diff -r 25523be1816e sql/set_var.cc
  sys_var_long_ptr	sys_rpl_recovery_rank("rpl_recovery_rank",
  					      &rpl_recovery_rank);
  sys_var_long_ptr	sys_query_cache_size("query_cache_size",
-@@ -694,6 +712,9 @@
+@@ -694,6 +712,10 @@
    &sys_log_off,
    &sys_log_queries_not_using_indexes,
    &sys_log_slow,
 +  &sys_log_slow_filter,
 +  &sys_log_slow_rate_limit,
 +  &sys_log_slow_verbosity,
++  &sys_use_global_long_query_time,
    &sys_log_update,
    &sys_log_warnings,
    &sys_long_query_time,
@@ -1647,6 +1658,14 @@ diff -r 25523be1816e sql/set_var.cc
  #ifdef HAVE_SYS_UN_H
    {"socket",                  (char*) &mysqld_unix_port,             SHOW_CHAR_PTR},
  #endif
+@@ -1141,6 +1171,7 @@
+   {sys_tx_isolation.name,     (char*) &sys_tx_isolation,	    SHOW_SYS},
+   {sys_updatable_views_with_limit.name,
+                               (char*) &sys_updatable_views_with_limit,SHOW_SYS},
++  {sys_use_global_long_query_time.name, (char*) &sys_use_global_long_query_time, SHOW_SYS},
+   {sys_version.name,          (char*) &sys_version,                 SHOW_SYS},
+ #ifdef HAVE_BERKELEY_DB
+   {sys_version_bdb.name,      (char*) &sys_version_bdb,             SHOW_SYS},
 @@ -1769,6 +1799,17 @@
  }
  
@@ -2144,9 +2163,9 @@ diff -r 25523be1816e sql/sql_class.cc
  }
  
  
-diff -r ea2366a3ea79 sql/sql_class.h
---- a/sql/sql_class.h	Thu Dec 04 00:30:51 2008 -0800
-+++ b/sql/sql_class.h	Thu Dec 04 00:32:56 2008 -0800
+diff -r 25523be1816e sql/sql_class.h
+--- a/sql/sql_class.h	Mon Dec 22 00:25:06 2008 -0800
++++ b/sql/sql_class.h	Mon Dec 22 00:26:39 2008 -0800
 @@ -43,6 +43,7 @@
  extern char internal_table_name[2];
  extern char empty_c_string[1];
@@ -2288,7 +2307,7 @@ diff -r 25523be1816e sql/sql_parse.cc
      while (!net->error && net->vio != 0 &&
             !(thd->killed == THD::KILL_CONNECTION))
      {
-@@ -2353,27 +2363,53 @@
+@@ -2353,27 +2363,55 @@
      return;                                     // Don't set time for sub stmt
  
    start_of_query= thd->start_time;
@@ -2309,6 +2328,8 @@ diff -r 25523be1816e sql/sql_parse.cc
 +    limit, if one of them takes long enough (>= 1 second) it will be sensible 
 +    to make an exception and write to slow log anyway.
 +  */
++  if (opt_use_global_long_query_time)
++    thd->variables.long_query_time = global_system_variables.long_query_time;
 +  if (thd->write_to_slow_log != TRUE && thd->variables.long_query_time < 1000000 &&
 +      (ulong) (thd->start_timer - thd->timer_after_lock) >= 1000000)
 +    thd->write_to_slow_log= TRUE;
@@ -2351,6 +2372,15 @@ diff -r 25523be1816e sql/sql_parse.cc
      }
    }
  }
+@@ -2664,6 +2702,8 @@
+     context.resolve_in_table_list_only((TABLE_LIST*)select_lex->
+                                        table_list.first);
+ 
++  /* Reset the counter at all cases for the extended slow query log */
++  thd->row_count= 1;
+   /*
+     Reset warning count for each query that uses tables
+     A better approach would be to reset this for any commands
 @@ -6084,6 +6120,15 @@
      thd->total_warn_count=0;			// Warnings for this query
      thd->rand_used= 0;
