@@ -15,6 +15,7 @@
 %bcond_with	autodeps	# BR packages needed only for resolving deps
 %bcond_with	sphinx		# Sphinx storage engine support
 %bcond_with	tests		# FIXME: don't run correctly
+%bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -26,13 +27,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.30
-Release:	3
+Version:	5.1.31
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://mysql.easynet.be/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	b658e58887a74dce65224ae0fc8ee06a
+# Source0-md5:	a077387e04ea24e67a93cff5f05bc3ba
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -507,7 +508,6 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	%{?with_big_tables:--with-big-tables} \
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--with%{!?debug:out}-debug%{?debug:=full} \
-	--with%{!?debug:out}-ndb-debug \
 	--with-embedded-server \
 	--with-extra-charsets=all \
 	--with-low-memory \
@@ -520,10 +520,15 @@ CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
 	%{?with_federated:--with-federated-storage-engine} \
 	--with-fast-mutexes \
 	--with-vio \
-	--with-ndbcluster \
 	--without-readline \
 	--without-libedit \
+%if %{with ndb}
+	--with%{!?debug:out}-ndb-debug \
+	--with-ndbcluster \
 	--with-ndb-docs \
+%else
+	--without-ndbcluster \
+%endif
 	--with-docs
 
 #--with-error-inject
@@ -912,6 +917,7 @@ done
 %{_mandir}/man1/mysql_setpermission.1*
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
+%{_mandir}/man1/mysqldumpslow.1*
 %{_mandir}/man1/mysqlhotcopy.1*
 
 %files client
@@ -942,18 +948,22 @@ done
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.16
 %attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.16
+%if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
+%endif
 
 %files devel
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/libmysqlclient.so
 %attr(755,root,root) %{_libdir}/libmysqlclient_r.so
+%if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so
+%{_libdir}/libndbclient.la
+%endif
 %{_libdir}/libmysqlclient.la
 %{_libdir}/libmysqlclient_r.la
-%{_libdir}/libndbclient.la
 # static-only
 %{_libdir}/libdbug.a
 %{_libdir}/libheap.a
@@ -971,7 +981,9 @@ done
 %defattr(644,root,root,755)
 %{_libdir}/libmysqlclient.a
 %{_libdir}/libmysqlclient_r.a
+%if %{with ndb}
 %{_libdir}/libndbclient.a
+%endif
 
 %files bench
 %defattr(644,root,root,755)
@@ -988,6 +1000,7 @@ done
 #%defattr(644,root,root,755)
 #%doc Docs/manual.html Docs/manual_toc.html
 
+%if %{with ndb}
 %files ndb
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_sbindir}/ndbd
@@ -1045,3 +1058,4 @@ done
 %attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-cpc
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-cpc
 %{_mandir}/man1/ndb_cpcd.1*
+%endif
