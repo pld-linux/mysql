@@ -1100,10 +1100,10 @@ diff -r ab66c8ca382a sql/sql_show.cc
  
  /*
    Description of ST_FIELD_INFO in table.h
-@@ -6601,6 +6717,8 @@
-    fill_status, make_old_format, 0, -1, -1, 0, 0},
+@@ -6798,6 +6798,8 @@
+    fill_status, make_old_format, 0, 0, -1, 0, 0},
    {"GLOBAL_VARIABLES", variables_fields_info, create_schema_table,
-    fill_variables, make_old_format, 0, -1, -1, 0, 0},
+    fill_variables, make_old_format, 0, 0, -1, 0, 0},
 +  {"INDEX_STATISTICS", index_stats_fields_info, create_schema_table,
 +   fill_schema_index_stats, make_old_format, 0, -1, -1, 0, 0},
    {"KEY_COLUMN_USAGE", key_column_usage_fields_info, create_schema_table,
