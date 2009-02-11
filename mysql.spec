@@ -4,6 +4,8 @@
 # - missing have_archive, have_merge
 # - is plugin_dir lib64 safe?
 # - Using NDB Cluster... could not find sci transporter in /{include, lib}
+# - configure: WARNING: unrecognized options: --with-innodb, --with-raid, --with-archive-storage-engine, --with-federated-storage-engine, --with-vio, --without-ndbcluster
+# - !!! Makefiles for libmysqld.so !!!
 #
 # Conditional build:
 %bcond_without	innodb		# InnoDB storage engine support
@@ -484,8 +486,8 @@ mv sphinx-*/mysqlse storage/sphinx
 %{__autoconf}
 
 # The compiler flags are as per their "official" spec ;)
-CXXFLAGS="%{rpmcflags} -felide-constructors -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
-CFLAGS="%{rpmcflags} %{!?debug:-fomit-frame-pointer}"
+CXXFLAGS="%{rpmcflags} -fPIC -felide-constructors -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
+CFLAGS="%{rpmcflags} -fPIC %{!?debug:-fomit-frame-pointer}"
 
 # NOTE: the PS, FIND_PROC, KILL, CHECK_PID are not used by PLD Linux
 # and therefore do not add BR on these. These are here just to satisfy
