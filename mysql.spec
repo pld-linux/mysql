@@ -12,6 +12,7 @@
 %bcond_without	autodeps	# BR packages needed only for resolving deps
 %bcond_with	bdb		# Berkeley DB support
 %bcond_without	sphinx		# Sphinx storage engine support
+%bcond_with	xtrabackup		# XtraBackup
 #
 %include	/usr/lib/rpm/macros.perl
 #define	_snap	20060111
@@ -78,9 +79,9 @@ Patch26:	%{name}-show_patches.patch
 Patch27:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
 Patch28:	%{name}-innodb_check_fragmentation.patch
 # </percona>
-
 Patch29:	%{name}-errorlog-no-rename.patch
 Patch30:	%{name}-alpha-stack.patch
+Patch31:	%{name}-xtrabackup.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -507,6 +508,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %ifarch alpha
 %patch30 -p1
 %endif
+%{?with_xtrabackup:%patch31 -p1}
 
 %build
 %{__libtoolize}
@@ -567,6 +569,11 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %{__make} \
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
+
+%if %{with xtrabackup}
+%{__make} -C innobase/xtrabackup \
+	CC="%{__cc}"
+%endif
 
 %{__make} -C Docs mysql.info
 
