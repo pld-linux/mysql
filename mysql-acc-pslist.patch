@@ -21,31 +21,6 @@ diff -r 174803e7e869 mysql-test/r/create.result
  ) ENGINE=MyISAM DEFAULT CHARSET=utf8
  drop table t1;
  create table t1 like information_schema.character_sets;
-diff -r 174803e7e869 mysql-test/r/not_embedded_server.result
---- a/mysql-test/r/not_embedded_server.result	Thu Sep 04 12:17:56 2008 -0700
-+++ b/mysql-test/r/not_embedded_server.result	Thu Sep 04 12:20:19 2008 -0700
-@@ -1,7 +1,7 @@
- prepare stmt1 from ' SELECT * FROM INFORMATION_SCHEMA.PROCESSLIST WHERE COMMAND!=\'Daemon\' ';
- execute stmt1;
--ID	USER	HOST	DB	COMMAND	TIME	STATE	INFO
--number	root	localhost	test	Query	time	executing	SELECT * FROM INFORMATION_SCHEMA.PROCESSLIST WHERE COMMAND!='Daemon'
-+ID	USER	HOST	DB	COMMAND	TIME	STATE	INFO	TIME_MS
-+number	root	localhost	test	Query	time	executing	SELECT * FROM INFORMATION_SCHEMA.PROCESSLIST WHERE COMMAND!='Daemon'	time_ms
- deallocate prepare stmt1;
- FLUSH STATUS;
- SHOW GLOBAL STATUS LIKE 'com_select';
-diff -r 174803e7e869 mysql-test/t/not_embedded_server.test
---- a/mysql-test/t/not_embedded_server.test	Thu Sep 04 12:17:56 2008 -0700
-+++ b/mysql-test/t/not_embedded_server.test	Thu Sep 04 12:20:19 2008 -0700
-@@ -16,7 +16,7 @@
- # End of 4.1 tests
- 
- prepare stmt1 from ' SELECT * FROM INFORMATION_SCHEMA.PROCESSLIST WHERE COMMAND!=\'Daemon\' ';
----replace_column 1 number 6 time 3 localhost
-+--replace_column 1 number 6 time 3 localhost 9 time_ms
- execute stmt1;
- deallocate prepare stmt1;
- 
 diff -r 174803e7e869 patch_info/acc-pslist.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
 +++ b/patch_info/acc-pslist.info	Thu Sep 04 12:20:19 2008 -0700
