@@ -3,6 +3,8 @@
 # - trigger /etc/mysqld.conf into /etc/mysql/mysqld.conf. Solve possible
 #   conflict with /var/lib/mysql/mysqld.conf
 # - what's the libwrapper constistent name, i see in specs 'libwrap', 'tcpd', 'tcp_wrappers'
+# - hangs on memcpy() (even mysql client does that) when built on Th, probably some problems
+#   with overlaping areas. Note that Ac binaries run fine on Th
 #
 # Conditional build:
 %bcond_with	bdb	# Berkeley DB support
