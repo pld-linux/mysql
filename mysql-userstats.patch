@@ -399,9 +399,9 @@ diff -r ab66c8ca382a sql/sql_class.cc
  #ifndef DBUG_OFF
    dbug_sentry=THD_SENTRY_MAGIC;
 @@ -761,8 +763,55 @@
-   update_charset();
    reset_current_stmt_binlog_row_based();
    bzero((char *) &status_var, sizeof(status_var));
+   sql_log_bin_toplevel= options & OPTION_BIN_LOG;
 +  reset_stats();
  }
  
