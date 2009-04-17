@@ -30,7 +30,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.33
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -64,10 +64,11 @@ Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
 Patch13:	%{name}-errorlog-no-rename.patch
+Patch14:	%{name}-bug-43594.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
-Patch14:	%{name}-userstats.patch
-Patch15:	%{name}-microslow.patch
-Patch16:	%{name}-acc-pslist.patch
+Patch15:	%{name}-userstats.patch
+Patch16:	%{name}-microslow.patch
+Patch17:	%{name}-acc-pslist.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -475,9 +476,10 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch11 -p1
 %patch12 -p1
 %patch13 -p1
-%patch14 -p1
+%patch14 -p0
 %patch15 -p1
 %patch16 -p1
+%patch17 -p1
 
 %build
 %{__libtoolize}
