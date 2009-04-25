@@ -47,8 +47,8 @@ diff -r 174803e7e869 sql/sql_show.cc
          table->field[4]->store(command_name[tmp->command].str,
                                 command_name[tmp->command].length, cs);
        /* MYSQL_TIME */
--      table->field[5]->store((uint32)(tmp->start_time ?
--                                      now - tmp->start_time : 0), TRUE);
+-      table->field[5]->store((longlong)(tmp->start_time ?
+-                                      now - tmp->start_time : 0), FALSE);
 +      const ulonglong utime= tmp->start_utime ? unow - tmp->start_utime : 0;
 +      table->field[5]->store(utime / 1000000, TRUE);
        /* STATE */
