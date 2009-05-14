@@ -571,7 +571,7 @@ install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'
 install %{SOURCE4} mysqld.conf
 install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
-touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
+touch $RPM_BUILD_ROOT/var/log/mysql/{mysqld,query,slow}.log
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
