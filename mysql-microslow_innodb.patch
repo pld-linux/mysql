@@ -2349,21 +2349,18 @@ diff -r 04958490fc6d sql/sql_parse.cc
    {
      thd_proc_info(thd, "logging slow query");
  
--    if ((ulong) (thd->start_time - thd->time_after_lock) >
--	thd->variables.long_query_time ||
--        (thd->server_status &
--	  (SERVER_QUERY_NO_INDEX_USED | SERVER_QUERY_NO_GOOD_INDEX_USED)) &&
--        opt_log_queries_not_using_indexes &&
--        /* == SQLCOM_END unless this is a SHOW command */
+-    if ((thd->start_time > thd->time_after_lock && 
+-         (ulong) (thd->start_time - thd->time_after_lock) >
++    if (((thd->start_time > thd->time_after_lock && 
++         (ulong) (thd->start_time - thd->time_after_lock) >=
+ 	thd->variables.long_query_time) ||
+         (thd->server_status &
+ 	  (SERVER_QUERY_NO_INDEX_USED | SERVER_QUERY_NO_GOOD_INDEX_USED)) &&
+         opt_log_queries_not_using_indexes &&
+         /* == SQLCOM_END unless this is a SHOW command */
 -        thd->lex->orig_sql_command == SQLCOM_END)
-+    if (((ulong) (thd->start_timer - thd->timer_after_lock) >=
-+         thd->variables.long_query_time ||
-+         (thd->server_status &
-+              (SERVER_QUERY_NO_INDEX_USED | SERVER_QUERY_NO_GOOD_INDEX_USED)) &&
-+         opt_log_queries_not_using_indexes &&
-+         /* == SQLCOM_END unless this is a SHOW command */
-+         thd->lex->orig_sql_command == SQLCOM_END) &&
-+        thd->examined_row_count >= thd->variables.min_examined_row_limit)
++        thd->lex->orig_sql_command == SQLCOM_END) &&
++	    thd->examined_row_count >= thd->variables.min_examined_row_limit)
      {
        thd_proc_info(thd, "logging slow query");
        thd->status_var.long_query_count++;

@@ -25,13 +25,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.77
-Release:	2
+Version:	5.0.81
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	6c30a20c9059daf053a301e927eb1667
+# Source0-md5:	2d35e4980f279c839172a6efdb0f0b15
 #Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9-rc1.tar.gz
@@ -82,6 +82,7 @@ Patch28:	%{name}-innodb_check_fragmentation.patch
 Patch29:	%{name}-errorlog-no-rename.patch
 Patch30:	%{name}-alpha-stack.patch
 Patch31:	%{name}-xtrabackup.patch
+Patch32:	%{name}-fixes.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -509,6 +510,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch30 -p1
 %endif
 %{?with_xtrabackup:%patch31 -p1}
+%patch32 -p1
 
 %build
 %{__libtoolize}

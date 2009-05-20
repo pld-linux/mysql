@@ -2271,16 +2271,6 @@ diff -r 23e5576aa59a sql/sql_class.cc
  }
  
  
-@@ -408,6 +497,9 @@
- 
- void THD::change_user(void)
- {
-+  pthread_mutex_lock(&LOCK_status);
-+  add_to_status(&global_status_var, &status_var);
-+  pthread_mutex_unlock(&LOCK_status);
-   cleanup();
-   cleanup_done= 0;
-   init();
 @@ -892,6 +984,33 @@
  }
  #endif
