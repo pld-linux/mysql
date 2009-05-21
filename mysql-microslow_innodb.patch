@@ -2280,9 +2280,8 @@ diff -r 04958490fc6d sql/sql_class.h
    inline void	insert_id(ulonglong id_arg)
    {
      last_insert_id= id_arg;
-diff -r 04958490fc6d sql/sql_parse.cc
---- a/sql/sql_parse.cc	Tue Feb 17 22:32:27 2009 -0800
-+++ b/sql/sql_parse.cc	Tue Feb 17 22:33:00 2009 -0800
+--- mysql-5.0.81-inno/sql/sql_parse.cc	2009-05-21 19:11:27.050444461 +0300
++++ mysql-5.0.81/sql/sql_parse.cc	2009-05-21 19:12:17.201898080 +0300
 @@ -20,6 +20,7 @@
  #include <m_ctype.h>
  #include <myisam.h>
@@ -2291,7 +2290,7 @@ diff -r 04958490fc6d sql/sql_parse.cc
  
  #ifdef HAVE_INNOBASE_DB
  #include "ha_innodb.h"
-@@ -1227,6 +1228,15 @@
+@@ -1230,6 +1231,15 @@
      my_net_set_read_timeout(net, thd->variables.net_read_timeout);
      my_net_set_write_timeout(net, thd->variables.net_write_timeout);
  
@@ -2307,13 +2306,13 @@ diff -r 04958490fc6d sql/sql_parse.cc
      while (!net->error && net->vio != 0 &&
             !(thd->killed == THD::KILL_CONNECTION))
      {
-@@ -2353,27 +2363,55 @@
+@@ -2356,28 +2366,56 @@
      return;                                     // Don't set time for sub stmt
  
    start_of_query= thd->start_time;
 +  ulonglong start_of_query_timer= thd->start_timer;
    thd->end_time();				// Set start time
-+
+ 
 +
 +  /* Follow the slow log filter configuration. */
 +  if (thd->variables.log_slow_filter != SLOG_F_NONE && 
@@ -2337,7 +2336,7 @@ diff -r 04958490fc6d sql/sql_parse.cc
 +  /* Do not log this thread's queries due to rate limiting. */
 +  if (thd->write_to_slow_log != TRUE)
 +    return;
- 
++
    /*
      Do not log administrative statements unless the appropriate option is
      set; do not log into slow log if reading from backup.
@@ -2368,31 +2367,6 @@ diff -r 04958490fc6d sql/sql_parse.cc
 +      mysql_slow_log.write(thd, thd->query, thd->query_length, start_of_query, start_of_query_timer);
      }
    }
- }
-@@ -2664,6 +2702,8 @@
-     context.resolve_in_table_list_only((TABLE_LIST*)select_lex->
-                                        table_list.first);
- 
-+  /* Reset the counter at all cases for the extended slow query log */
-+  thd->row_count= 1;
-   /*
-     Reset warning count for each query that uses tables
-     A better approach would be to reset this for any commands
-@@ -6084,6 +6124,15 @@
-     thd->total_warn_count=0;			// Warnings for this query
-     thd->rand_used= 0;
-     thd->sent_row_count= thd->examined_row_count= 0;
-+    thd->innodb_was_used= FALSE;
-+    thd->innodb_io_reads= 0;
-+    thd->innodb_io_read= 0;
-+    thd->innodb_io_reads_wait_timer= 0;
-+    thd->innodb_lock_que_wait_timer= 0;
-+    thd->innodb_innodb_que_wait_timer= 0;
-+    thd->innodb_page_access= 0;
-+    thd->query_plan_flags= QPLAN_NONE;
-+    thd->query_plan_fsort_passes= 0;
-   }
-   DBUG_VOID_RETURN;
  }
 diff -r 04958490fc6d sql/sql_select.cc
 --- a/sql/sql_select.cc	Tue Feb 17 22:32:27 2009 -0800
