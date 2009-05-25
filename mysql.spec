@@ -30,7 +30,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.34
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -232,6 +232,21 @@ and server.
 %description charsets -l pl.UTF-8
 Ten pakiet zawiera definicje kodowań znaków potrzebne dla serwera i
 klienta.
+
+%package -n mysqlhotcopy
+Summary:	mysqlhotcopy - A MySQL database backup program
+Group:		Applications/Databases
+Requires:	%{name}-libs = %{version}-%{release}
+Requires:	perl-DBD-mysql
+
+%description -n mysqlhotcopy
+mysqlhotcopy uses LOCK TABLES, FLUSH TABLES, and cp or scp to make a
+database backup quickly. It is the fastest way to make a backup of the
+database or single tables, but it can be run only on the same machine
+where the database directories are located. mysqlhotcopy works only
+for backing up MyISAM and ARCHIVE tables.
+
+See innobackup package to backup InnoDB tables.
 
 %package extras
 Summary:	MySQL additional utilities
@@ -907,6 +922,11 @@ done
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 
+%files -n mysqlhotcopy
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/mysqlhotcopy
+%{_mandir}/man1/mysqlhotcopy.1*
+
 %files extras-perl
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_convert_table_format
@@ -916,7 +936,6 @@ done
 %attr(755,root,root) %{_bindir}/mysql_zap
 %attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysqldumpslow
-%attr(755,root,root) %{_bindir}/mysqlhotcopy
 %{_mandir}/man1/mysql_convert_table_format.1*
 %{_mandir}/man1/mysql_find_rows.1*
 %{_mandir}/man1/mysql_fix_extensions.1*
@@ -924,7 +943,6 @@ done
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqldumpslow.1*
-%{_mandir}/man1/mysqlhotcopy.1*
 
 %files client
 %defattr(644,root,root,755)
