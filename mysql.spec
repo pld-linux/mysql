@@ -30,7 +30,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.34
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -267,6 +267,8 @@ Summary:	MySQL additional utilities written in Perl
 Summary(pl.UTF-8):	Dodatkowe narzędzia do MySQL napisane w Perlu
 Group:		Applications/Databases
 Requires:	%{name}-extras = %{version}-%{release}
+# this is just for the sake of smooth upgrade, not to break systems
+Requires:	mysqlhotcopy = %{version}-%{release}
 Requires:	perl(DBD::mysql)
 
 %description extras-perl
