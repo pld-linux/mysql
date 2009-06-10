@@ -6,6 +6,8 @@
 # - Using NDB Cluster... could not find sci transporter in /{include, lib}
 # - configure: WARNING: unrecognized options: --with-innodb, --with-raid, --with-archive-storage-engine, --with-federated-storage-engine, --with-vio, --without-ndbcluster
 # - !!! Makefiles for libmysqld.so !!!
+# - segfaults on select from non-mysql user (caused by builder environment):
+#     https://bugs.launchpad.net/pld-linux/+bug/381904
 #
 # Conditional build:
 %bcond_without	innodb		# InnoDB storage engine support
