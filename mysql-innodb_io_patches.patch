@@ -465,9 +465,9 @@ diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
  extern long innobase_open_files;
  extern char *innobase_data_home_dir, *innobase_data_file_path;
 @@ -234,6 +235,13 @@
- extern ulong srv_thread_concurrency;
- extern ulong srv_commit_concurrency;
- extern ulong srv_flush_log_at_trx_commit;
+ running with the fix disabled because MySQL 5.1 is frozen for such
+ behavioral changes. */
+ extern char srv_use_legacy_cardinality_algorithm;
 +extern ulong srv_io_capacity;
 +extern long long srv_ibuf_max_size;
 +extern ulong srv_ibuf_active_contract;
@@ -617,9 +617,9 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
    &sys_trust_routine_creators,
    &sys_trust_function_creators,
 @@ -982,6 +1000,15 @@
-   {sys_innodb_table_locks.name, (char*) &sys_innodb_table_locks, SHOW_SYS},
-   {sys_innodb_thread_concurrency.name, (char*) &sys_innodb_thread_concurrency, SHOW_SYS},
    {sys_innodb_thread_sleep_delay.name, (char*) &sys_innodb_thread_sleep_delay, SHOW_SYS},
+   {sys_innodb_use_legacy_cardinality_algorithm.name,
+    (char*) &sys_innodb_use_legacy_cardinality_algorithm, SHOW_SYS},
 +  {sys_innodb_io_capacity.name, (char*) &sys_innodb_io_capacity, SHOW_SYS},
 +  {"innodb_ibuf_max_size", (char*) &srv_ibuf_max_size, SHOW_LONGLONG},
 +  {sys_innodb_ibuf_active_contract.name, (char*) &sys_innodb_ibuf_active_contract, SHOW_SYS},
