@@ -83,6 +83,7 @@ Patch29:	%{name}-errorlog-no-rename.patch
 Patch30:	%{name}-alpha-stack.patch
 Patch31:	%{name}-xtrabackup.patch
 Patch32:	%{name}-fixes.patch
+Patch33:	%{name}-gcc3.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -98,7 +99,7 @@ BuildRequires:	ncurses-devel >= 4.2
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.414
+BuildRequires:	rpmbuild(macros) >= 1.453
 BuildRequires:	sed >= 4.0
 BuildRequires:	texinfo
 BuildRequires:	zlib-devel
@@ -528,6 +529,9 @@ mv sphinx-*/mysqlse sql/sphinx
 %endif
 %{?with_xtrabackup:%patch31 -p1}
 %patch32 -p1
+%if "%{cxx_version}" < "4.1"
+%patch33 -p1
+%endif
 
 %build
 %{__libtoolize}

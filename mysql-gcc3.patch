@@ -1,0 +1,15 @@
+--- mysql-5.0.81/innobase/include/sync0rw.h~	2009-05-26 00:35:13.000000000 +0300
++++ mysql-5.0.81/innobase/include/sync0rw.h	2009-06-16 19:09:27.587270045 +0300
+@@ -421,12 +421,6 @@
+ #ifdef HAVE_ATOMIC_BUILTINS
+ /* This value means NOT_LOCKED */
+ #define RW_LOCK_BIAS		0x00100000
+-#else
+-#error HAVE_ATOMIC_BUILTINS is not defined. Do you use enough new GCC or compatibles?
+-#error Or do you use exact options for CFLAGS?
+-#error e.g. (for x86_32): "-m32 -march=i586 -mtune=i686"
+-#error e.g. (for Sparc_64): "-m64 -mcpu=v9"
+-#error Otherwise, this build may be slower than normal version.
+ #endif
+ 
+ /* NOTE! The structure appears here only for the compiler to know its size.
