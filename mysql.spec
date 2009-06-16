@@ -13,7 +13,7 @@
 %bcond_with	bdb		# Berkeley DB support
 %bcond_without	sphinx		# Sphinx storage engine support
 %bcond_with	xtrabackup		# XtraBackup
-#
+
 %include	/usr/lib/rpm/macros.perl
 #define	_snap	20060111
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -247,6 +247,21 @@ and server.
 Ten pakiet zawiera definicje kodowań znaków potrzebne dla serwera i
 klienta.
 
+%package -n mysqlhotcopy
+Summary:	mysqlhotcopy - A MySQL database backup program
+Group:		Applications/Databases
+Requires:	%{name}-libs = %{version}-%{release}
+Requires:	perl-DBD-mysql
+
+%description -n mysqlhotcopy
+mysqlhotcopy uses LOCK TABLES, FLUSH TABLES, and cp or scp to make a
+database backup quickly. It is the fastest way to make a backup of the
+database or single tables, but it can be run only on the same machine
+where the database directories are located. mysqlhotcopy works only
+for backing up MyISAM and ARCHIVE tables.
+
+See innobackup package to backup InnoDB tables.
+
 %package extras
 Summary:	MySQL additional utilities
 Summary(pl.UTF-8):	Dodatkowe narzędzia do MySQL
@@ -266,6 +281,8 @@ Summary:	MySQL additional utilities written in Perl
 Summary(pl.UTF-8):	Dodatkowe narzędzia do MySQL napisane w Perlu
 Group:		Applications/Databases
 Requires:	%{name}-extras = %{version}-%{release}
+# this is just for the sake of smooth upgrade, not to break systems
+Requires:	mysqlhotcopy = %{version}-%{release}
 Requires:	perl(DBD::mysql)
 
 %description extras-perl
@@ -903,6 +920,11 @@ EOF
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 
+%files -n mysqlhotcopy
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/mysqlhotcopy
+%{_mandir}/man1/mysqlhotcopy.1*
+
 %files extras-perl
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_convert_table_format
@@ -914,7 +936,6 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_zap
 %attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysqldumpslow
-%attr(755,root,root) %{_bindir}/mysqlhotcopy
 %{_mandir}/man1/mysql_convert_table_format.1*
 %{_mandir}/man1/mysql_explain_log.1*
 %{_mandir}/man1/mysql_find_rows.1*
@@ -924,7 +945,6 @@ EOF
 %{_mandir}/man1/mysql_zap.1*
 %{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqldumpslow.1*
-%{_mandir}/man1/mysqlhotcopy.1*
 
 %files client
 %defattr(644,root,root,755)
