@@ -1,16 +1,6 @@
-diff -r debbd352c16a patch_info/microslow.info
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/microslow.info	Thu Sep 04 12:16:10 2008 -0700
-@@ -0,0 +1,6 @@
-+File=microslow.patch
-+Name=Extended statistics in slow.log
-+Version=1.0
-+Author=Percona <info@percona.com>
-+License=GPL
-+Comment=
-diff -r debbd352c16a sql/event_scheduler.cc
---- a/sql/event_scheduler.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/event_scheduler.cc	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/event_scheduler.cc
+--- a/sql/event_scheduler.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/event_scheduler.cc	Thu Dec 04 08:55:29 2008 -0800
 @@ -192,6 +192,7 @@
    thd->client_capabilities|= CLIENT_MULTI_RESULTS;
    pthread_mutex_lock(&LOCK_thread_count);
@@ -19,9 +9,9 @@ diff -r debbd352c16a sql/event_scheduler.cc
    pthread_mutex_unlock(&LOCK_thread_count);
  
    /*
-diff -r debbd352c16a sql/filesort.cc
---- a/sql/filesort.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/filesort.cc	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/filesort.cc
+--- a/sql/filesort.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/filesort.cc	Thu Dec 04 08:55:29 2008 -0800
 @@ -188,6 +188,7 @@
    {
      status_var_increment(thd->status_var.filesort_scan_count);
@@ -38,7 +28,7 @@ diff -r debbd352c16a sql/filesort.cc
      if (table_sort.buffpek && table_sort.buffpek_len < maxbuffer)
      {
        x_free(table_sort.buffpek);
-@@ -1162,6 +1164,7 @@
+@@ -1202,6 +1204,7 @@
    DBUG_ENTER("merge_buffers");
  
    status_var_increment(current_thd->status_var.filesort_merge_passes);
@@ -46,10 +36,10 @@ diff -r debbd352c16a sql/filesort.cc
    if (param->not_killable)
    {
      killed= &not_killable;
-diff -r debbd352c16a sql/log.cc
---- a/sql/log.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/log.cc	Thu Sep 04 12:16:10 2008 -0700
-@@ -955,7 +955,7 @@
+diff -r 0b1f42e1aacf sql/log.cc
+--- a/sql/log.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/log.cc	Thu Dec 04 08:55:29 2008 -0800
+@@ -963,7 +963,7 @@
      /* fill in user_host value: the format is "%s[%s] @ %s [%s]" */
      user_host_len= (strxnmov(user_host_buff, MAX_USER_HOST_SIZE,
                               sctx->priv_user ? sctx->priv_user : "", "[",
@@ -58,7 +48,7 @@ diff -r debbd352c16a sql/log.cc
                               sctx->host ? sctx->host : "", " [",
                               sctx->ip ? sctx->ip : "", "]", NullS) -
                      user_host_buff);
-@@ -977,6 +977,13 @@
+@@ -985,6 +985,13 @@
        query= command_name[thd->command].str;
        query_length= command_name[thd->command].length;
      }
@@ -72,7 +62,7 @@ diff -r debbd352c16a sql/log.cc
  
      for (current_handler= slow_log_handler_list; *current_handler ;)
        error= (*current_handler++)->log_slow(thd, current_time, thd->start_time,
-@@ -2233,16 +2240,31 @@
+@@ -2242,16 +2249,31 @@
        if (my_b_write(&log_file, (uchar*) "\n", 1))
          tmp_errno= errno;
      }
@@ -106,10 +96,10 @@ diff -r debbd352c16a sql/log.cc
      if (thd->db && strcmp(thd->db, db))
      {						// Database changed
        if (my_b_printf(&log_file,"use %s;\n",thd->db) == (uint) -1)
-diff -r debbd352c16a sql/mysql_priv.h
---- a/sql/mysql_priv.h	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/mysql_priv.h	Thu Sep 04 12:16:10 2008 -0700
-@@ -595,6 +595,73 @@
+diff -r 0b1f42e1aacf sql/mysql_priv.h
+--- a/sql/mysql_priv.h	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/mysql_priv.h	Thu Dec 04 08:55:29 2008 -0800
+@@ -597,6 +597,73 @@
  #define WEEK_FIRST_WEEKDAY   4
  
  #define STRING_BUFFER_USUAL_SIZE 80
@@ -183,9 +173,9 @@ diff -r debbd352c16a sql/mysql_priv.h
  
  /*
    Some defines for exit codes for ::is_equal class functions.
-diff -r debbd352c16a sql/mysqld.cc
---- a/sql/mysqld.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/mysqld.cc	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/mysqld.cc
+--- a/sql/mysqld.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/mysqld.cc	Thu Dec 04 08:55:29 2008 -0800
 @@ -5553,6 +5553,9 @@
    OPT_SECURE_FILE_PRIV,
    OPT_MIN_EXAMINED_ROW_LIMIT,
@@ -194,9 +184,9 @@ diff -r debbd352c16a sql/mysqld.cc
 +  OPT_LOG_SLOW_VERBOSITY, 
 +  OPT_LOG_SLOW_FILTER, 
    OPT_OLD_MODE,
-   OPT_SLAVE_EXEC_MODE
- };
-@@ -6467,6 +6470,17 @@
+   OPT_SLAVE_EXEC_MODE,
+   OPT_GENERAL_LOG_FILE,
+@@ -6480,6 +6483,17 @@
     (uchar**) 0,
     0, (GET_ULONG | GET_ASK_ADDR) , REQUIRED_ARG, 100,
     1, 100, 0, 1, 0},
@@ -214,7 +204,7 @@ diff -r debbd352c16a sql/mysqld.cc
    {"long_query_time", OPT_LONG_QUERY_TIME,
     "Log all queries that have taken more than long_query_time seconds to execute to file. "
     "The argument will be treated as a decimal value with microsecond precission.",
-@@ -7542,6 +7556,10 @@
+@@ -7556,6 +7570,10 @@
    global_system_variables.old_passwords= 0;
    global_system_variables.old_alter_table= 0;
    global_system_variables.binlog_format= BINLOG_FORMAT_UNSPEC;
@@ -225,7 +215,7 @@ diff -r debbd352c16a sql/mysqld.cc
    /*
      Default behavior for 4.1 and 5.0 is to treat NULL values as unequal
      when collecting index statistics for MyISAM tables.
-@@ -7988,6 +8006,24 @@
+@@ -8007,6 +8025,24 @@
    case OPT_BOOTSTRAP:
      opt_noacl=opt_bootstrap=1;
      break;
@@ -250,9 +240,9 @@ diff -r debbd352c16a sql/mysqld.cc
    case OPT_SERVER_ID:
      server_id_supplied = 1;
      break;
-diff -r debbd352c16a sql/set_var.cc
---- a/sql/set_var.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/set_var.cc	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/set_var.cc
+--- a/sql/set_var.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/set_var.cc	Thu Dec 04 08:55:29 2008 -0800
 @@ -336,6 +336,20 @@
  					      &SV::max_join_size,
  					      fix_max_join_size);
@@ -274,7 +264,7 @@ diff -r debbd352c16a sql/set_var.cc
  static sys_var_long_ptr_global
  sys_max_prepared_stmt_count(&vars, "max_prepared_stmt_count",
                              &max_prepared_stmt_count,
-@@ -3605,6 +3619,192 @@
+@@ -3631,6 +3645,192 @@
  #endif
  }
  
@@ -467,9 +457,9 @@ diff -r debbd352c16a sql/set_var.cc
  /****************************************************************************
   Functions to handle table_type
  ****************************************************************************/
-diff -r debbd352c16a sql/set_var.h
---- a/sql/set_var.h	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/set_var.h	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/set_var.h
+--- a/sql/set_var.h	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/set_var.h	Thu Dec 04 08:55:29 2008 -0800
 @@ -1057,6 +1057,68 @@
    bool update(THD *thd, set_var *var);
  };
@@ -539,7 +529,7 @@ diff -r debbd352c16a sql/set_var.h
  
  /**
    Handler for setting the system variable --read-only.
-@@ -1322,3 +1384,10 @@
+@@ -1323,3 +1385,10 @@
  bool process_key_caches(process_key_cache_t func);
  void delete_elements(I_List<NAMED_LIST> *list,
  		     void (*free_element)(const char*, uchar*));
@@ -550,9 +540,9 @@ diff -r debbd352c16a sql/set_var.h
 +                               const ulong none_val, const ulong invalid_val);
 +const char *msl_option_get_name(const struct msl_opts *opts, ulong val);
 +char *msl_flag_get_name(const struct msl_opts *opts, char *buf, ulong val);
-diff -r debbd352c16a sql/slave.cc
---- a/sql/slave.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/slave.cc	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/slave.cc
+--- a/sql/slave.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/slave.cc	Thu Dec 04 08:55:29 2008 -0800
 @@ -1561,6 +1561,7 @@
      + MAX_LOG_EVENT_HEADER;  /* note, incr over the global not session var */
    thd->slave_thread = 1;
@@ -561,9 +551,9 @@ diff -r debbd352c16a sql/slave.cc
    set_slave_thread_options(thd);
    thd->client_capabilities = CLIENT_LOCAL_FILES;
    pthread_mutex_lock(&LOCK_thread_count);
-diff -r debbd352c16a sql/sql_cache.cc
---- a/sql/sql_cache.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/sql_cache.cc	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/sql_cache.cc
+--- a/sql/sql_cache.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/sql_cache.cc	Thu Dec 04 08:55:29 2008 -0800
 @@ -1465,6 +1465,7 @@
  
    thd->limit_found_rows = query->found_rows();
@@ -580,22 +570,22 @@ diff -r debbd352c16a sql/sql_cache.cc
    DBUG_RETURN(0);				// Query was not cached
  }
  
-diff -r debbd352c16a sql/sql_class.h
---- a/sql/sql_class.h	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/sql_class.h	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/sql_class.h
+--- a/sql/sql_class.h	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/sql_class.h	Thu Dec 04 08:55:29 2008 -0800
 @@ -396,6 +396,11 @@
    DATE_TIME_FORMAT *datetime_format;
    DATE_TIME_FORMAT *time_format;
    my_bool sysdate_is_now;
 +
-+  ulong log_slow_rate_limit;
-+  ulong log_slow_filter;
-+  ulong log_slow_verbosity;
-+
++  ulong log_slow_rate_limit; 
++  ulong log_slow_filter; 
++  ulong log_slow_verbosity; 
++            
  };
  
  
-@@ -1322,6 +1326,11 @@
+@@ -1339,6 +1344,11 @@
    
    thr_lock_type update_lock_default;
    Delayed_insert *di;
@@ -607,9 +597,9 @@ diff -r debbd352c16a sql/sql_class.h
  
    /* <> 0 if we are inside of trigger or stored function. */
    uint in_sub_stmt;
-diff -r debbd352c16a sql/sql_connect.cc
---- a/sql/sql_connect.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/sql_connect.cc	Thu Sep 04 12:16:10 2008 -0700
+diff -r 0b1f42e1aacf sql/sql_connect.cc
+--- a/sql/sql_connect.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/sql_connect.cc	Thu Dec 04 08:55:29 2008 -0800
 @@ -1124,6 +1124,15 @@
  
      prepare_new_connection_state(thd);
@@ -626,10 +616,10 @@ diff -r debbd352c16a sql/sql_connect.cc
      while (!net->error && net->vio != 0 &&
             !(thd->killed == THD::KILL_CONNECTION))
      {
-diff -r debbd352c16a sql/sql_parse.cc
---- a/sql/sql_parse.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/sql_parse.cc	Thu Sep 04 12:16:10 2008 -0700
-@@ -1629,6 +1629,27 @@
+diff -r 0b1f42e1aacf sql/sql_parse.cc
+--- a/sql/sql_parse.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/sql_parse.cc	Thu Dec 04 08:55:29 2008 -0800
+@@ -1692,6 +1692,27 @@
    if (unlikely(thd->in_sub_stmt))
      DBUG_VOID_RETURN;                           // Don't set time for sub stmt
  
@@ -657,7 +647,7 @@ diff -r debbd352c16a sql/sql_parse.cc
    /*
      Do not log administrative statements unless the appropriate option is
      set; do not log into slow log if reading from backup.
-@@ -5640,6 +5661,9 @@
+@@ -5773,6 +5794,9 @@
    thd->total_warn_count=0;			// Warnings for this query
    thd->rand_used= 0;
    thd->sent_row_count= thd->examined_row_count= 0;
@@ -667,10 +657,10 @@ diff -r debbd352c16a sql/sql_parse.cc
  
    /*
      Because we come here only for start of top-statements, binlog format is
-diff -r debbd352c16a sql/sql_select.cc
---- a/sql/sql_select.cc	Thu Sep 04 12:13:31 2008 -0700
-+++ b/sql/sql_select.cc	Thu Sep 04 12:16:10 2008 -0700
-@@ -6479,7 +6479,10 @@
+diff -r 0b1f42e1aacf sql/sql_select.cc
+--- a/sql/sql_select.cc	Thu Dec 04 08:55:22 2008 -0800
++++ b/sql/sql_select.cc	Thu Dec 04 08:55:29 2008 -0800
+@@ -6480,7 +6480,10 @@
  	  {
  	    join->thd->server_status|=SERVER_QUERY_NO_INDEX_USED;
  	    if (statistics)
@@ -681,7 +671,7 @@ diff -r debbd352c16a sql/sql_select.cc
  	  }
  	}
  	else
-@@ -6493,7 +6496,10 @@
+@@ -6494,7 +6497,10 @@
  	  {
  	    join->thd->server_status|=SERVER_QUERY_NO_INDEX_USED;
  	    if (statistics)
@@ -692,7 +682,7 @@ diff -r debbd352c16a sql/sql_select.cc
  	  }
  	}
  	if (!table->no_keyread)
-@@ -9629,6 +9635,7 @@
+@@ -9638,6 +9644,7 @@
                (ulong) rows_limit,test(group)));
  
    status_var_increment(thd->status_var.created_tmp_tables);
@@ -700,7 +690,7 @@ diff -r debbd352c16a sql/sql_select.cc
  
    if (use_temp_pool && !(test_flags & TEST_KEEP_TMP_TABLES))
      temp_pool_slot = bitmap_lock_set_next(&temp_pool);
-@@ -10499,6 +10506,7 @@
+@@ -10508,6 +10515,7 @@
      goto err;
    }
    status_var_increment(table->in_use->status_var.created_tmp_disk_tables);

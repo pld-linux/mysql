@@ -32,7 +32,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.35
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -71,6 +71,8 @@ Patch14:	%{name}-bug-43594.patch
 Patch15:	%{name}-userstats.patch
 Patch16:	%{name}-microslow.patch
 Patch17:	%{name}-acc-pslist.patch
+Patch18:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
+Patch19:	%{name}-innodb_rw_lock.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -499,6 +501,8 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch15 -p1
 %patch16 -p1
 %patch17 -p1
+%patch18 -p1
+%patch19 -p1
 
 %build
 %{__libtoolize}

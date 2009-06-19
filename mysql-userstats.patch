@@ -1,6 +1,6 @@
-diff -r ab66c8ca382a include/mysql_com.h
---- a/include/mysql_com.h	Thu Sep 04 12:08:00 2008 -0700
-+++ b/include/mysql_com.h	Thu Sep 04 12:12:44 2008 -0700
+diff -r 3ed7e96969f9 include/mysql_com.h
+--- a/include/mysql_com.h	Thu Dec 04 08:54:17 2008 -0800
++++ b/include/mysql_com.h	Thu Dec 04 08:54:27 2008 -0800
 @@ -115,6 +115,8 @@
  					   thread */
  #define REFRESH_MASTER          128     /* Remove all bin logs in the index
@@ -10,20 +10,10 @@ diff -r ab66c8ca382a include/mysql_com.h
  
  /* The following can't be set with mysql_refresh() */
  #define REFRESH_READ_LOCK	16384	/* Lock tables for read */
-diff -r ab66c8ca382a patch_info/userstats.info
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/userstats.info	Thu Sep 04 12:12:44 2008 -0700
-@@ -0,0 +1,6 @@
-+File=userstats.patch
-+Name=SHOW USER/TABLE/INDEX statistics
-+Version=1.0
-+Author=Google
-+License=GPL
-+Comment=Added INFORMATION_SCHEMA.*_STATISTICS
-diff -r ab66c8ca382a sql/handler.cc
---- a/sql/handler.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/handler.cc	Thu Sep 04 12:12:44 2008 -0700
-@@ -1168,6 +1168,7 @@
+diff -r 3ed7e96969f9 sql/handler.cc
+--- a/sql/handler.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/handler.cc	Thu Dec 04 08:54:27 2008 -0800
+@@ -1205,6 +1205,7 @@
          error=1;
        }
        status_var_increment(thd->status_var.ha_commit_count);
@@ -31,7 +21,7 @@ diff -r ab66c8ca382a sql/handler.cc
        ha_info_next= ha_info->next();
        ha_info->reset(); /* keep it conveniently zero-filled */
      }
-@@ -1235,6 +1236,7 @@
+@@ -1272,6 +1273,7 @@
          error=1;
        }
        status_var_increment(thd->status_var.ha_rollback_count);
@@ -39,7 +29,7 @@ diff -r ab66c8ca382a sql/handler.cc
        ha_info_next= ha_info->next();
        ha_info->reset(); /* keep it conveniently zero-filled */
      }
-@@ -1682,6 +1684,7 @@
+@@ -1724,6 +1726,7 @@
        error=1;
      }
      status_var_increment(thd->status_var.ha_rollback_count);
@@ -47,7 +37,7 @@ diff -r ab66c8ca382a sql/handler.cc
      ha_info_next= ha_info->next();
      ha_info->reset(); /* keep it conveniently zero-filled */
    }
-@@ -2016,6 +2019,8 @@
+@@ -2058,6 +2061,8 @@
        dup_ref=ref+ALIGN_SIZE(ref_length);
      cached_table_flags= table_flags();
    }
@@ -56,7 +46,7 @@ diff -r ab66c8ca382a sql/handler.cc
    DBUG_RETURN(error);
  }
  
-@@ -3448,6 +3453,97 @@
+@@ -3487,6 +3492,97 @@
    return;
  }
  
@@ -154,9 +144,9 @@ diff -r ab66c8ca382a sql/handler.cc
  
  /****************************************************************************
  ** Some general functions that isn't in the handler class
-diff -r ab66c8ca382a sql/handler.h
---- a/sql/handler.h	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/handler.h	Thu Sep 04 12:12:44 2008 -0700
+diff -r 3ed7e96969f9 sql/handler.h
+--- a/sql/handler.h	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/handler.h	Thu Dec 04 08:54:27 2008 -0800
 @@ -29,6 +29,10 @@
  #endif
  
@@ -176,9 +166,9 @@ diff -r ab66c8ca382a sql/handler.h
     /*
       Iterators creator.
       Presence of the pointer should be checked before using
-@@ -1130,6 +1135,10 @@
+@@ -1137,6 +1142,10 @@
    */
-   Discrete_interval auto_inc_interval_for_cur_row;
+   uint auto_inc_intervals_count;
  
 +   ulonglong rows_read;
 +   ulonglong rows_changed;
@@ -187,7 +177,7 @@ diff -r ab66c8ca382a sql/handler.h
    handler(handlerton *ht_arg, TABLE_SHARE *share_arg)
      :table_share(share_arg), table(0),
      estimation_rows_to_insert(0), ht(ht_arg),
-@@ -1154,8 +1154,10 @@
+@@ -1145,8 +1154,10 @@
      ft_handler(0), inited(NONE),
      locked(FALSE), implicit_emptied(0),
      pushed_cond(0), next_insert_id(0), insert_id_for_cur_row(0),
@@ -195,12 +185,12 @@ diff -r ab66c8ca382a sql/handler.h
 -    {}
 +    auto_inc_intervals_count(0), rows_read(0), rows_changed(0)
 +    {
-+      memset(index_rows_read, 0, sizeof(index_rows_read));
++        memset(index_rows_read, 0, sizeof(index_rows_read));
 +    }
    virtual ~handler(void)
    {
      DBUG_ASSERT(locked == FALSE);
-@@ -1262,7 +1273,13 @@
+@@ -1267,7 +1278,13 @@
    {
      table= table_arg;
      table_share= share;
@@ -214,9 +204,9 @@ diff -r ab66c8ca382a sql/handler.h
    virtual double scan_time()
    { return ulonglong2double(stats.data_file_length) / IO_SIZE + 2; }
    virtual double read_time(uint index, uint ranges, ha_rows rows)
-diff -r ab66c8ca382a sql/lex.h
---- a/sql/lex.h	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/lex.h	Thu Sep 04 12:12:44 2008 -0700
+diff -r 3ed7e96969f9 sql/lex.h
+--- a/sql/lex.h	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/lex.h	Thu Dec 04 08:54:27 2008 -0800
 @@ -245,6 +245,7 @@
    { "IN",		SYM(IN_SYM)},
    { "INDEX",		SYM(INDEX_SYM)},
@@ -241,10 +231,10 @@ diff -r ab66c8ca382a sql/lex.h
    { "USE_FRM",		SYM(USE_FRM)},
    { "USING",		SYM(USING)},
    { "UTC_DATE",         SYM(UTC_DATE_SYM)},
-diff -r ab66c8ca382a sql/mysql_priv.h
---- a/sql/mysql_priv.h	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/mysql_priv.h	Thu Sep 04 12:12:44 2008 -0700
-@@ -1058,7 +1058,19 @@
+diff -r 3ed7e96969f9 sql/mysql_priv.h
+--- a/sql/mysql_priv.h	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/mysql_priv.h	Thu Dec 04 08:54:27 2008 -0800
+@@ -1060,7 +1060,19 @@
  bool multi_delete_set_locks_and_link_aux_tables(LEX *lex);
  void init_max_user_conn(void);
  void init_update_queries(void);
@@ -264,7 +254,7 @@ diff -r ab66c8ca382a sql/mysql_priv.h
  pthread_handler_t handle_bootstrap(void *arg);
  int mysql_execute_command(THD *thd);
  bool do_command(THD *thd);
-@@ -2009,6 +2021,12 @@
+@@ -2015,6 +2027,12 @@
  extern struct system_variables max_system_variables;
  extern struct system_status_var global_status_var;
  extern struct rand_struct sql_rand;
@@ -277,10 +267,10 @@ diff -r ab66c8ca382a sql/mysql_priv.h
  
  extern const char *opt_date_time_formats[];
  extern KNOWN_DATE_TIME_FORMAT known_date_time_formats[];
-diff -r ab66c8ca382a sql/mysqld.cc
---- a/sql/mysqld.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/mysqld.cc	Thu Sep 04 12:12:44 2008 -0700
-@@ -588,6 +588,11 @@
+diff -r 3ed7e96969f9 sql/mysqld.cc
+--- a/sql/mysqld.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/mysqld.cc	Thu Dec 04 08:54:27 2008 -0800
+@@ -589,6 +589,11 @@
  	        LOCK_global_system_variables,
  		LOCK_user_conn, LOCK_slave_list, LOCK_active_mi,
                  LOCK_connection_count;
@@ -292,7 +282,7 @@ diff -r ab66c8ca382a sql/mysqld.cc
  /**
    The below lock protects access to two global server variables:
    max_prepared_stmt_count and prepared_stmt_count. These variables
-@@ -1265,6 +1270,9 @@
+@@ -1266,6 +1271,9 @@
    x_free(opt_secure_file_priv);
    bitmap_free(&temp_pool);
    free_max_user_conn();
@@ -302,7 +292,7 @@ diff -r ab66c8ca382a sql/mysqld.cc
  #ifdef HAVE_REPLICATION
    end_slave_list();
  #endif
-@@ -1377,6 +1385,9 @@
+@@ -1378,6 +1386,9 @@
    (void) pthread_cond_destroy(&COND_thread_cache);
    (void) pthread_cond_destroy(&COND_flush_thread_cache);
    (void) pthread_cond_destroy(&COND_manager);
@@ -312,7 +302,7 @@ diff -r ab66c8ca382a sql/mysqld.cc
  }
  
  #endif /*EMBEDDED_LIBRARY*/
-@@ -3069,6 +3080,7 @@
+@@ -3072,6 +3083,7 @@
    {"show_function_status", (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_STATUS_FUNC]), SHOW_LONG_STATUS},
    {"show_grants",          (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_GRANTS]), SHOW_LONG_STATUS},
    {"show_keys",            (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_KEYS]), SHOW_LONG_STATUS},
@@ -320,7 +310,7 @@ diff -r ab66c8ca382a sql/mysqld.cc
    {"show_master_status",   (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_MASTER_STAT]), SHOW_LONG_STATUS},
    {"show_new_master",      (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_NEW_MASTER]), SHOW_LONG_STATUS},
    {"show_open_tables",     (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_OPEN_TABLES]), SHOW_LONG_STATUS},
-@@ -3085,9 +3097,11 @@
+@@ -3089,9 +3101,11 @@
    {"show_slave_status",    (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_SLAVE_STAT]), SHOW_LONG_STATUS},
    {"show_status",          (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_STATUS]), SHOW_LONG_STATUS},
    {"show_storage_engines", (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_STORAGE_ENGINES]), SHOW_LONG_STATUS},
@@ -332,7 +322,7 @@ diff -r ab66c8ca382a sql/mysqld.cc
    {"show_variables",       (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_VARIABLES]), SHOW_LONG_STATUS},
    {"show_warnings",        (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SHOW_WARNS]), SHOW_LONG_STATUS},
    {"slave_start",          (char*) offsetof(STATUS_VAR, com_stat[(uint) SQLCOM_SLAVE_START]), SHOW_LONG_STATUS},
-@@ -3503,6 +3517,9 @@
+@@ -3507,6 +3521,9 @@
  #endif
    (void) pthread_mutex_init(&LOCK_server_started, MY_MUTEX_INIT_FAST);
    (void) pthread_cond_init(&COND_server_started,NULL);
@@ -360,23 +350,23 @@ diff -r ab66c8ca382a sql/mysqld.cc
    DBUG_RETURN(0);
  }
  
-diff -r ab66c8ca382a sql/sql_base.cc
---- a/sql/sql_base.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_base.cc	Thu Sep 04 12:12:44 2008 -0700
-@@ -1342,6 +1342,12 @@
-   DBUG_ASSERT(!table->file || table->file->inited == handler::NONE);
+diff -r 3ed7e96969f9 sql/sql_base.cc
+--- a/sql/sql_base.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_base.cc	Thu Dec 04 08:54:27 2008 -0800
+@@ -1343,6 +1343,12 @@
    DBUG_PRINT("tcache", ("table: '%s'.'%s' 0x%lx", table->s->db.str,
                          table->s->table_name.str, (long) table));
-+
+ 
 +  if(table->file)
 +  {
 +    table->file->update_global_table_stats();
 +    table->file->update_global_index_stats();
 +  }
- 
++
    *table_ptr=table->next;
    /*
-@@ -1880,6 +1886,9 @@
+     When closing a MERGE parent or child table, detach the children first.
+@@ -1882,6 +1888,9 @@
    DBUG_ENTER("close_temporary");
    DBUG_PRINT("tmptable", ("closing table: '%s'.'%s'",
                            table->s->db.str, table->s->table_name.str));
@@ -386,10 +376,10 @@ diff -r ab66c8ca382a sql/sql_base.cc
  
    free_io_cache(table);
    closefrm(table, 0);
-diff -r ab66c8ca382a sql/sql_class.cc
---- a/sql/sql_class.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_class.cc	Thu Sep 04 12:12:44 2008 -0700
-@@ -577,6 +577,8 @@
+diff -r 3ed7e96969f9 sql/sql_class.cc
+--- a/sql/sql_class.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_class.cc	Thu Dec 04 08:54:27 2008 -0800
+@@ -578,6 +578,8 @@
    bzero(ha_data, sizeof(ha_data));
    mysys_var=0;
    binlog_evt_union.do_union= FALSE;
@@ -398,7 +388,7 @@ diff -r ab66c8ca382a sql/sql_class.cc
    enable_slow_log= 0;
  #ifndef DBUG_OFF
    dbug_sentry=THD_SENTRY_MAGIC;
-@@ -761,8 +763,55 @@
+@@ -762,8 +764,55 @@
    reset_current_stmt_binlog_row_based();
    bzero((char *) &status_var, sizeof(status_var));
    sql_log_bin_toplevel= options & OPTION_BIN_LOG;
@@ -454,10 +444,10 @@ diff -r ab66c8ca382a sql/sql_class.cc
  
  /*
    Init THD for query processing.
-diff -r ab66c8ca382a sql/sql_class.h
---- a/sql/sql_class.h	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_class.h	Thu Sep 04 12:12:44 2008 -0700
-@@ -1310,6 +1310,8 @@
+diff -r 3ed7e96969f9 sql/sql_class.h
+--- a/sql/sql_class.h	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_class.h	Thu Dec 04 08:54:27 2008 -0800
+@@ -1327,6 +1327,8 @@
      first byte of the packet in do_command()
    */
    enum enum_server_command command;
@@ -466,7 +456,7 @@ diff -r ab66c8ca382a sql/sql_class.h
    uint32     server_id;
    uint32     file_id;			// for LOAD DATA INFILE
    /* remote (peer) port */
-@@ -1584,6 +1586,7 @@
+@@ -1616,6 +1618,7 @@
    ulonglong  options;           /* Bitmap of states */
    longlong   row_count_func;    /* For the ROW_COUNT() function */
    ha_rows    cuted_fields;
@@ -474,7 +464,7 @@ diff -r ab66c8ca382a sql/sql_class.h
  
    /*
      number of rows we actually sent to the client, including "synthetic"
-@@ -1735,6 +1738,27 @@
+@@ -1767,6 +1770,27 @@
    */
    LOG_INFO*  current_linfo;
    NET*       slave_net;			// network connection from slave -> m.
@@ -502,7 +492,7 @@ diff -r ab66c8ca382a sql/sql_class.h
    /* Used by the sys_var class to store temporary values */
    union
    {
-@@ -1797,6 +1821,9 @@
+@@ -1827,6 +1851,9 @@
      alloc_root. 
    */
    void init_for_queries();
@@ -512,9 +502,9 @@ diff -r ab66c8ca382a sql/sql_class.h
    void change_user(void);
    void cleanup(void);
    void cleanup_after_query();
-diff -r ab66c8ca382a sql/sql_connect.cc
---- a/sql/sql_connect.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_connect.cc	Thu Sep 04 12:12:44 2008 -0700
+diff -r 3ed7e96969f9 sql/sql_connect.cc
+--- a/sql/sql_connect.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_connect.cc	Thu Dec 04 08:54:27 2008 -0800
 @@ -520,6 +520,14 @@
  		   0,0,
  		   (hash_get_key) get_key_conn, (hash_free_key) free_user,
@@ -553,9 +543,9 @@ diff -r ab66c8ca382a sql/sql_connect.cc
      if (thread_scheduler.end_thread(thd,1))
        return 0;                                 // Probably no-threads
  
-diff -r ab66c8ca382a sql/sql_delete.cc
---- a/sql/sql_delete.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_delete.cc	Thu Sep 04 12:12:44 2008 -0700
+diff -r 3ed7e96969f9 sql/sql_delete.cc
+--- a/sql/sql_delete.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_delete.cc	Thu Dec 04 08:54:27 2008 -0800
 @@ -402,6 +402,7 @@
      my_ok(thd, (ha_rows) thd->row_count_func);
      DBUG_PRINT("info",("%ld records deleted",(long) deleted));
@@ -572,9 +562,9 @@ diff -r ab66c8ca382a sql/sql_delete.cc
    return 0;
  }
  
-diff -r ab66c8ca382a sql/sql_insert.cc
---- a/sql/sql_insert.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_insert.cc	Thu Sep 04 12:12:44 2008 -0700
+diff -r 3ed7e96969f9 sql/sql_insert.cc
+--- a/sql/sql_insert.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_insert.cc	Thu Dec 04 08:54:27 2008 -0800
 @@ -969,6 +969,7 @@
      thd->row_count_func= info.copied + info.deleted + updated;
      ::my_ok(thd, (ulong) thd->row_count_func, id, buff);
@@ -583,9 +573,9 @@ diff -r ab66c8ca382a sql/sql_insert.cc
    thd->abort_on_warning= 0;
    DBUG_RETURN(FALSE);
  
-diff -r ab66c8ca382a sql/sql_lex.h
---- a/sql/sql_lex.h	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_lex.h	Thu Sep 04 12:12:44 2008 -0700
+diff -r 3ed7e96969f9 sql/sql_lex.h
+--- a/sql/sql_lex.h	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_lex.h	Thu Dec 04 08:54:27 2008 -0800
 @@ -118,7 +118,7 @@
    SQLCOM_SHOW_CREATE_TRIGGER,
    SQLCOM_ALTER_DB_UPGRADE,
@@ -595,9 +585,9 @@ diff -r ab66c8ca382a sql/sql_lex.h
    /*
      When a command is added here, be sure it's also added in mysqld.cc
      in "struct show_var_st status_vars[]= {" ...
-diff -r ab66c8ca382a sql/sql_parse.cc
---- a/sql/sql_parse.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_parse.cc	Thu Sep 04 12:12:44 2008 -0700
+diff -r 3ed7e96969f9 sql/sql_parse.cc
+--- a/sql/sql_parse.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_parse.cc	Thu Dec 04 08:54:27 2008 -0800
 @@ -45,6 +45,15 @@
  
  static bool execute_sqlcom_select(THD *thd, TABLE_LIST *all_tables);
@@ -614,7 +604,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
  
  const char *any_db="*any*";	// Special symbol for check_access
  
-@@ -278,7 +287,9 @@
+@@ -326,7 +335,9 @@
    sql_command_flags[SQLCOM_SHOW_FUNC_CODE]=  CF_STATUS_COMMAND;
    sql_command_flags[SQLCOM_SHOW_CREATE_EVENT]=  CF_STATUS_COMMAND;
    sql_command_flags[SQLCOM_SHOW_PROFILES]= CF_STATUS_COMMAND;
@@ -625,7 +615,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
  
     sql_command_flags[SQLCOM_SHOW_TABLES]=       (CF_STATUS_COMMAND |
                                                   CF_SHOW_TABLE_COMMAND |
-@@ -481,6 +492,86 @@
+@@ -544,6 +555,86 @@
    DBUG_RETURN(0);
  }
  
@@ -712,7 +702,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
  
  /**
    @brief Check access privs for a MERGE table and fix children lock types.
-@@ -899,6 +990,9 @@
+@@ -962,6 +1053,9 @@
    DBUG_PRINT("info",("packet: '%*.s'; command: %d", packet_length, packet, command));
  
    thd->command=command;
@@ -722,7 +712,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
    /*
      Commands which always take a long time are logged into
      the slow log only if opt_log_slow_admin_statements is set.
-@@ -1677,6 +1771,9 @@
+@@ -1740,6 +1834,9 @@
    case SCH_COLUMN_PRIVILEGES:
    case SCH_TABLE_CONSTRAINTS:
    case SCH_KEY_COLUMN_USAGE:
@@ -732,7 +722,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
    default:
      break;
    }
-@@ -2020,6 +2117,9 @@
+@@ -2129,6 +2226,9 @@
      my_error(ER_NOT_SUPPORTED_YET, MYF(0), "embedded server");
      break;
  #endif
@@ -741,8 +731,8 @@ diff -r ab66c8ca382a sql/sql_parse.cc
 +  case SQLCOM_SHOW_INDEX_STATS:
    case SQLCOM_SHOW_STATUS_PROC:
    case SQLCOM_SHOW_STATUS_FUNC:
-     res= execute_sqlcom_select(thd, all_tables);
-@@ -2195,6 +2295,7 @@
+     if (!(res= check_table_access(thd, SELECT_ACL, all_tables, UINT_MAX, FALSE)))
+@@ -2306,6 +2406,7 @@
    }
  #endif
  
@@ -750,7 +740,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
    case SQLCOM_BACKUP_TABLE:
    {
      DBUG_ASSERT(first_table == all_tables && first_table != 0);
-@@ -5245,6 +5346,130 @@
+@@ -5372,6 +5473,130 @@
  #endif /*NO_EMBEDDED_ACCESS_CHECKS*/
  
  
@@ -881,7 +871,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
  /**
    check for global access and give descriptive error message if it fails.
  
-@@ -5406,6 +5631,10 @@
+@@ -5539,6 +5764,10 @@
      reset_dynamic(&thd->user_var_events);
      thd->user_var_events_alloc= thd->mem_root;
    }
@@ -892,7 +882,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
    thd->clear_error();
    thd->main_da.reset_diagnostics_area();
    thd->total_warn_count=0;			// Warnings for this query
-@@ -5585,6 +5814,16 @@
+@@ -5722,6 +5951,16 @@
    DBUG_ENTER("mysql_parse");
  
    DBUG_EXECUTE_IF("parser_debug", turn_parser_debug_on(););
@@ -909,7 +899,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
  
    /*
      Warning.
-@@ -5674,6 +5913,27 @@
+@@ -5816,6 +6055,27 @@
      *found_semicolon= NULL;
    }
  
@@ -937,7 +927,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
    DBUG_VOID_RETURN;
  }
  
-@@ -6256,6 +6516,7 @@
+@@ -6398,6 +6658,7 @@
      tables->lock_type= lock_type;
      tables->updating=  for_update;
    }
@@ -945,7 +935,7 @@ diff -r ab66c8ca382a sql/sql_parse.cc
    DBUG_VOID_RETURN;
  }
  
-@@ -6623,6 +6884,21 @@
+@@ -6779,6 +7040,21 @@
  #endif
   if (options & REFRESH_USER_RESOURCES)
     reset_mqh((LEX_USER *) NULL, 0);             /* purecov: inspected */
@@ -967,10 +957,10 @@ diff -r ab66c8ca382a sql/sql_parse.cc
   *write_to_binlog= tmp_write_to_binlog;
   return result;
  }
-diff -r ab66c8ca382a sql/sql_show.cc
---- a/sql/sql_show.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_show.cc	Thu Sep 04 12:12:44 2008 -0700
-@@ -2239,6 +2239,90 @@
+diff -r 3ed7e96969f9 sql/sql_show.cc
+--- a/sql/sql_show.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_show.cc	Thu Dec 04 08:54:27 2008 -0800
+@@ -2260,6 +2260,90 @@
    DBUG_RETURN(FALSE);
  }
  
@@ -1061,7 +1051,7 @@ diff -r ab66c8ca382a sql/sql_show.cc
  
  /* collect status for all running threads */
  
-@@ -6565,6 +6649,38 @@
+@@ -6606,6 +6690,38 @@
    {0, 0, MYSQL_TYPE_STRING, 0, 0, 0, SKIP_OPEN_TABLE}
  };
  
@@ -1100,7 +1090,7 @@ diff -r ab66c8ca382a sql/sql_show.cc
  
  /*
    Description of ST_FIELD_INFO in table.h
-@@ -6798,6 +6798,8 @@
+@@ -6824,6 +6824,8 @@
     fill_status, make_old_format, 0, 0, -1, 0, 0},
    {"GLOBAL_VARIABLES", variables_fields_info, create_schema_table,
     fill_variables, make_old_format, 0, 0, -1, 0, 0},
@@ -1109,7 +1099,7 @@ diff -r ab66c8ca382a sql/sql_show.cc
    {"KEY_COLUMN_USAGE", key_column_usage_fields_info, create_schema_table,
     get_all_tables, 0, get_schema_key_column_usage_record, 4, 5, 0,
     OPEN_TABLE_ONLY},
-@@ -6642,11 +6760,15 @@
+@@ -6683,11 +6801,15 @@
     get_all_tables, make_table_names_old_format, 0, 1, 2, 1, 0},
    {"TABLE_PRIVILEGES", table_privileges_fields_info, create_schema_table,
     fill_schema_table_privileges, 0, 0, -1, -1, 0, 0},
@@ -1125,9 +1115,9 @@ diff -r ab66c8ca382a sql/sql_show.cc
    {"VARIABLES", variables_fields_info, create_schema_table, fill_variables,
     make_old_format, 0, -1, -1, 1, 0},
    {"VIEWS", view_fields_info, create_schema_table, 
-diff -r ab66c8ca382a sql/sql_update.cc
---- a/sql/sql_update.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_update.cc	Thu Sep 04 12:12:45 2008 -0700
+diff -r 3ed7e96969f9 sql/sql_update.cc
+--- a/sql/sql_update.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_update.cc	Thu Dec 04 08:54:27 2008 -0800
 @@ -816,6 +816,7 @@
      thd->row_count_func=
        (thd->client_capabilities & CLIENT_FOUND_ROWS) ? found : updated;
@@ -1136,17 +1126,17 @@ diff -r ab66c8ca382a sql/sql_update.cc
      DBUG_PRINT("info",("%ld records updated", (long) updated));
    }
    thd->count_cuted_fields= CHECK_FIELD_IGNORE;		/* calc cuted fields */
-@@ -2007,5 +2008,6 @@
+@@ -2038,5 +2039,6 @@
    thd->row_count_func=
      (thd->client_capabilities & CLIENT_FOUND_ROWS) ? found : updated;
    ::my_ok(thd, (ulong) thd->row_count_func, id, buff);
 +  thd->updated_row_count += thd->row_count_func;
    DBUG_RETURN(FALSE);
  }
-diff -r ab66c8ca382a sql/sql_yacc.yy
---- a/sql/sql_yacc.yy	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/sql_yacc.yy	Thu Sep 04 12:12:45 2008 -0700
-@@ -737,6 +737,7 @@
+diff -r 3ed7e96969f9 sql/sql_yacc.yy
+--- a/sql/sql_yacc.yy	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/sql_yacc.yy	Thu Dec 04 08:54:27 2008 -0800
+@@ -738,6 +738,7 @@
  %token  IMPORT
  %token  INDEXES
  %token  INDEX_SYM
@@ -1154,7 +1144,7 @@ diff -r ab66c8ca382a sql/sql_yacc.yy
  %token  INFILE
  %token  INITIAL_SIZE_SYM
  %token  INNER_SYM                     /* SQL-2003-R */
-@@ -1025,6 +1026,7 @@
+@@ -1026,6 +1027,7 @@
  %token  TABLE_REF_PRIORITY
  %token  TABLE_SYM                     /* SQL-2003-R */
  %token  TABLE_CHECKSUM_SYM
@@ -1162,7 +1152,7 @@ diff -r ab66c8ca382a sql/sql_yacc.yy
  %token  TEMPORARY                     /* SQL-2003-N */
  %token  TEMPTABLE_SYM
  %token  TERMINATED
-@@ -1070,6 +1072,7 @@
+@@ -1071,6 +1073,7 @@
  %token  UPGRADE_SYM
  %token  USAGE                         /* SQL-2003-N */
  %token  USER                          /* SQL-2003-R */
@@ -1170,7 +1160,7 @@ diff -r ab66c8ca382a sql/sql_yacc.yy
  %token  USE_FRM
  %token  USE_SYM
  %token  USING                         /* SQL-2003-R */
-@@ -9353,6 +9356,27 @@
+@@ -10090,6 +10093,27 @@
            {
              Lex->sql_command = SQLCOM_SHOW_SLAVE_STAT;
            }
@@ -1198,7 +1188,7 @@ diff -r ab66c8ca382a sql/sql_yacc.yy
          | CREATE PROCEDURE sp_name
            {
              LEX *lex= Lex;
-@@ -9567,6 +9591,10 @@
+@@ -10304,6 +10328,10 @@
            { Lex->type|= REFRESH_DES_KEY_FILE; }
          | RESOURCES
            { Lex->type|= REFRESH_USER_RESOURCES; }
@@ -1209,9 +1199,9 @@ diff -r ab66c8ca382a sql/sql_yacc.yy
          ;
  
  opt_table_list:
-diff -r ab66c8ca382a sql/structs.h
---- a/sql/structs.h	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/structs.h	Thu Sep 04 12:12:45 2008 -0700
+diff -r 3ed7e96969f9 sql/structs.h
+--- a/sql/structs.h	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/structs.h	Thu Dec 04 08:54:27 2008 -0800
 @@ -226,6 +226,28 @@
    /* Maximum amount of resources which account is allowed to consume. */
    USER_RESOURCES user_resources;
@@ -1241,10 +1231,10 @@ diff -r ab66c8ca382a sql/structs.h
  
  	/* Bits in form->update */
  #define REG_MAKE_DUPP		1	/* Make a copy of record when read */
-diff -r ab66c8ca382a sql/table.h
---- a/sql/table.h	Thu Sep 04 12:08:00 2008 -0700
-+++ b/sql/table.h	Thu Sep 04 12:12:45 2008 -0700
-@@ -824,6 +824,7 @@
+diff -r 3ed7e96969f9 sql/table.h
+--- a/sql/table.h	Thu Dec 04 08:54:17 2008 -0800
++++ b/sql/table.h	Thu Dec 04 08:54:27 2008 -0800
+@@ -879,6 +879,7 @@
    SCH_FILES,
    SCH_GLOBAL_STATUS,
    SCH_GLOBAL_VARIABLES,
@@ -1252,7 +1242,7 @@ diff -r ab66c8ca382a sql/table.h
    SCH_KEY_COLUMN_USAGE,
    SCH_OPEN_TABLES,
    SCH_PARTITIONS,
-@@ -842,8 +843,10 @@
+@@ -897,8 +898,10 @@
    SCH_TABLE_CONSTRAINTS,
    SCH_TABLE_NAMES,
    SCH_TABLE_PRIVILEGES,
@@ -1263,10 +1253,10 @@ diff -r ab66c8ca382a sql/table.h
    SCH_VARIABLES,
    SCH_VIEWS
  };
-diff -r ab66c8ca382a storage/innobase/handler/ha_innodb.cc
---- a/storage/innobase/handler/ha_innodb.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/storage/innobase/handler/ha_innodb.cc	Thu Sep 04 12:12:45 2008 -0700
-@@ -3925,6 +3925,8 @@
+diff -r 3ed7e96969f9 storage/innobase/handler/ha_innodb.cc
+--- a/storage/innobase/handler/ha_innodb.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/storage/innobase/handler/ha_innodb.cc	Thu Dec 04 08:54:27 2008 -0800
+@@ -3494,6 +3494,8 @@
  
  	error = row_insert_for_mysql((byte*) record, prebuilt);
  
@@ -1275,7 +1265,7 @@ diff -r ab66c8ca382a storage/innobase/handler/ha_innodb.cc
  	/* Handle duplicate key errors */
  	if (auto_inc_used) {
  		ulint		err;
-@@ -4001,6 +4003,8 @@
+@@ -3571,6 +3573,8 @@
  			break;
  		}
  	}
@@ -1284,7 +1274,7 @@ diff -r ab66c8ca382a storage/innobase/handler/ha_innodb.cc
  
  	innodb_srv_conc_exit_innodb(prebuilt->trx);
  
-@@ -4647,6 +4651,8 @@
+@@ -4178,6 +4182,8 @@
  		ret = row_search_for_mysql((byte*) buf, mode, prebuilt,
  					   match_mode, 0);
  
@@ -1293,7 +1283,7 @@ diff -r ab66c8ca382a storage/innobase/handler/ha_innodb.cc
  		innodb_srv_conc_exit_innodb(prebuilt->trx);
  	} else {
  
-@@ -4193,6 +4193,9 @@
+@@ -4187,6 +4193,9 @@
  	if (ret == DB_SUCCESS) {
  		error = 0;
  		table->status = 0;
@@ -1303,7 +1293,7 @@ diff -r ab66c8ca382a storage/innobase/handler/ha_innodb.cc
  
  	} else if (ret == DB_RECORD_NOT_FOUND) {
  		error = HA_ERR_KEY_NOT_FOUND;
-@@ -4366,6 +4369,9 @@
+@@ -4360,6 +4369,9 @@
  	if (ret == DB_SUCCESS) {
  		error = 0;
  		table->status = 0;
@@ -1313,9 +1303,9 @@ diff -r ab66c8ca382a storage/innobase/handler/ha_innodb.cc
  
  	} else if (ret == DB_RECORD_NOT_FOUND) {
  		error = HA_ERR_END_OF_FILE;
-diff -r ab66c8ca382a storage/myisam/ha_myisam.cc
---- a/storage/myisam/ha_myisam.cc	Thu Sep 04 12:08:00 2008 -0700
-+++ b/storage/myisam/ha_myisam.cc	Thu Sep 04 12:12:45 2008 -0700
+diff -r 3ed7e96969f9 storage/myisam/ha_myisam.cc
+--- a/storage/myisam/ha_myisam.cc	Thu Dec 04 08:54:17 2008 -0800
++++ b/storage/myisam/ha_myisam.cc	Thu Dec 04 08:54:27 2008 -0800
 @@ -738,7 +738,9 @@
      if ((error= update_auto_increment()))
        return error;

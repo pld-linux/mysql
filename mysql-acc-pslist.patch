@@ -1,6 +1,6 @@
-diff -r 174803e7e869 mysql-test/r/create.result
---- a/mysql-test/r/create.result	Thu Sep 04 12:17:56 2008 -0700
-+++ b/mysql-test/r/create.result	Thu Sep 04 12:20:19 2008 -0700
+diff -r 1a59073d658d mysql-test/r/create.result
+--- a/mysql-test/r/create.result	Sat Sep 13 17:31:30 2008 -0700
++++ b/mysql-test/r/create.result	Sat Sep 13 17:31:40 2008 -0700
 @@ -1720,7 +1720,8 @@
    `COMMAND` varchar(16) NOT NULL DEFAULT '',
    `TIME` bigint(7) NOT NULL DEFAULT '0',
@@ -21,19 +21,9 @@ diff -r 174803e7e869 mysql-test/r/create.result
  ) ENGINE=MyISAM DEFAULT CHARSET=utf8
  drop table t1;
  create table t1 like information_schema.character_sets;
-diff -r 174803e7e869 patch_info/acc-pslist.info
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/acc-pslist.info	Thu Sep 04 12:20:19 2008 -0700
-@@ -0,0 +1,6 @@
-+File=acc-pslist.patch
-+Name=Milliseconds in PROCESSLIST
-+Version=1.0
-+Author=Percona <info@percona.com>
-+License=GPL
-+Comment=
-diff -r 174803e7e869 sql/sql_show.cc
---- a/sql/sql_show.cc	Thu Sep 04 12:17:56 2008 -0700
-+++ b/sql/sql_show.cc	Thu Sep 04 12:20:19 2008 -0700
+diff -r 1a59073d658d sql/sql_show.cc
+--- a/sql/sql_show.cc	Sat Sep 13 17:31:30 2008 -0700
++++ b/sql/sql_show.cc	Sat Sep 13 17:31:40 2008 -0700
 @@ -1803,7 +1803,7 @@
    TABLE *table= tables->table;
    CHARSET_INFO *cs= system_charset_info;
@@ -43,7 +33,7 @@ diff -r 174803e7e869 sql/sql_show.cc
    DBUG_ENTER("fill_process_list");
  
    user= thd->security_ctx->master_access & PROCESS_ACL ?
-@@ -1861,8 +1861,8 @@
+@@ -1873,8 +1873,8 @@
          table->field[4]->store(command_name[tmp->command].str,
                                 command_name[tmp->command].length, cs);
        /* MYSQL_TIME */
@@ -70,7 +60,7 @@ diff -r 174803e7e869 sql/sql_show.cc
      }
    }
  
-@@ -5532,7 +5536,7 @@
+@@ -5531,7 +5535,7 @@
      into it two numbers, based on modulus of base-10 numbers.  In the ones
      position is the number of decimals.  Tens position is unused.  In the
      hundreds and thousands position is a two-digit decimal number representing
@@ -79,7 +69,7 @@ diff -r 174803e7e869 sql/sql_show.cc
      0<decimals<10 and 0<=length<100 .
  
    @param
-@@ -6540,6 +6544,8 @@
+@@ -6539,6 +6543,8 @@
    {"STATE", 64, MYSQL_TYPE_STRING, 0, 1, "State", SKIP_OPEN_TABLE},
    {"INFO", PROCESS_LIST_INFO_WIDTH, MYSQL_TYPE_STRING, 0, 1, "Info",
     SKIP_OPEN_TABLE},
