@@ -8,6 +8,7 @@
 # - !!! Makefiles for libmysqld.so !!!
 # - segfaults on select from non-mysql user (caused by builder environment):
 #     https://bugs.launchpad.net/pld-linux/+bug/381904
+#     (profiling disabled temporaily to workaround this)
 #
 # Conditional build:
 %bcond_without	innodb		# InnoDB storage engine support
@@ -32,7 +33,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.36
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -549,6 +550,7 @@ CFLAGS="%{rpmcflags} -fPIC %{!?debug:-fomit-frame-pointer}"
 	--with-vio \
 	--without-readline \
 	--without-libedit \
+	--disable-profiling \
 %if %{with ndb}
 	--with%{!?debug:out}-ndb-debug \
 	--with-ndbcluster \
