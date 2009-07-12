@@ -33,7 +33,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.36
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -512,8 +512,9 @@ mv sphinx-*/mysqlse storage/sphinx
 %{__autoconf}
 
 # The compiler flags are as per their "official" spec ;)
-CXXFLAGS="%{rpmcflags} -fPIC -felide-constructors -fno-rtti -fno-exceptions %{!?debug:-fomit-frame-pointer}"
-CFLAGS="%{rpmcflags} -fPIC %{!?debug:-fomit-frame-pointer}"
+CXXFLAGS="%{rpmcxxflags} -fPIC -fno-implicit-templates -fno-rtti -fno-exceptions"
+CFLAGS="%{rpmcflags} -fPIC"
+CPPFLAGS="%{rpmcppflags}"
 
 # NOTE: the PS, FIND_PROC, KILL, CHECK_PID are not used by PLD Linux
 # and therefore do not add BR on these. These are here just to satisfy
@@ -550,7 +551,6 @@ CFLAGS="%{rpmcflags} -fPIC %{!?debug:-fomit-frame-pointer}"
 	--with-vio \
 	--without-readline \
 	--without-libedit \
-	--disable-profiling \
 %if %{with ndb}
 	--with%{!?debug:out}-ndb-debug \
 	--with-ndbcluster \
