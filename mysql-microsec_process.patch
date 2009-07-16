@@ -1,6 +1,6 @@
-diff -r 327ce7a34c91 mysql-test/r/information_schema.result
---- a/mysql-test/r/information_schema.result	Fri Nov 07 15:44:23 2008 -0800
-+++ b/mysql-test/r/information_schema.result	Fri Nov 07 15:52:53 2008 -0800
+diff -r e3b747e556c8 mysql-test/r/information_schema.result
+--- a/mysql-test/r/information_schema.result	Mon May 18 18:44:04 2009 -0700
++++ b/mysql-test/r/information_schema.result	Mon May 18 18:48:11 2009 -0700
 @@ -44,6 +44,7 @@
  COLUMN_PRIVILEGES
  INDEX_STATISTICS
@@ -59,9 +59,9 @@ diff -r 327ce7a34c91 mysql-test/r/information_schema.result
  PROFILING	information_schema.PROFILING	1
  ROUTINES	information_schema.ROUTINES	1
  SCHEMATA	information_schema.SCHEMATA	1
-diff -r 327ce7a34c91 mysql-test/r/information_schema_db.result
---- a/mysql-test/r/information_schema_db.result	Fri Nov 07 15:44:23 2008 -0800
-+++ b/mysql-test/r/information_schema_db.result	Fri Nov 07 15:52:53 2008 -0800
+diff -r e3b747e556c8 mysql-test/r/information_schema_db.result
+--- a/mysql-test/r/information_schema_db.result	Mon May 18 18:44:04 2009 -0700
++++ b/mysql-test/r/information_schema_db.result	Mon May 18 18:48:11 2009 -0700
 @@ -13,6 +13,7 @@
  COLUMN_PRIVILEGES
  INDEX_STATISTICS
@@ -70,9 +70,9 @@ diff -r 327ce7a34c91 mysql-test/r/information_schema_db.result
  PROFILING
  ROUTINES
  SCHEMATA
-diff -r 327ce7a34c91 mysql-test/r/mysqlshow.result
---- a/mysql-test/r/mysqlshow.result	Fri Nov 07 15:44:23 2008 -0800
-+++ b/mysql-test/r/mysqlshow.result	Fri Nov 07 15:52:53 2008 -0800
+diff -r e3b747e556c8 mysql-test/r/mysqlshow.result
+--- a/mysql-test/r/mysqlshow.result	Mon May 18 18:44:04 2009 -0700
++++ b/mysql-test/r/mysqlshow.result	Mon May 18 18:48:11 2009 -0700
 @@ -87,6 +87,7 @@
  | COLUMN_PRIVILEGES                     |
  | INDEX_STATISTICS                      |
@@ -89,10 +89,20 @@ diff -r 327ce7a34c91 mysql-test/r/mysqlshow.result
  | PROFILING                             |
  | ROUTINES                              |
  | SCHEMATA                              |
-diff -r 327ce7a34c91 sql/mysql_priv.h
---- a/sql/mysql_priv.h	Fri Nov 07 15:44:23 2008 -0800
-+++ b/sql/mysql_priv.h	Fri Nov 07 15:52:53 2008 -0800
-@@ -244,6 +244,8 @@
+diff -r e3b747e556c8 patch_info/microsec_process.info
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/patch_info/microsec_process.info	Mon May 18 18:48:11 2009 -0700
+@@ -0,0 +1,6 @@
++File=microsec_process.patch
++Name=Adds INFOMATION_SCHEMA.PROCESSLIST with TIME_MS column
++Version=1.0
++Author=Percona <info@percona.com>
++License=GPL
++Comment=
+diff -r e3b747e556c8 sql/mysql_priv.h
+--- a/sql/mysql_priv.h	Mon May 18 18:44:04 2009 -0700
++++ b/sql/mysql_priv.h	Mon May 18 18:48:11 2009 -0700
+@@ -249,6 +249,8 @@
  
  /* Characters shown for the command in 'show processlist' */
  #define PROCESS_LIST_WIDTH 100
@@ -101,15 +111,13 @@ diff -r 327ce7a34c91 sql/mysql_priv.h
  
  #define PRECISION_FOR_DOUBLE 53
  #define PRECISION_FOR_FLOAT  24
-diff -r 327ce7a34c91 sql/sql_show.cc
---- a/sql/sql_show.cc	Fri Nov 07 15:44:23 2008 -0800
-+++ b/sql/sql_show.cc	Fri Nov 07 15:52:53 2008 -0800
-@@ -1466,6 +1466,120 @@
-   }
-   send_eof(thd);
+diff -r e3b747e556c8 sql/sql_show.cc
+--- a/sql/sql_show.cc	Mon May 18 18:44:04 2009 -0700
++++ b/sql/sql_show.cc	Mon May 18 18:48:11 2009 -0700
+@@ -1480,6 +1480,122 @@
    DBUG_VOID_RETURN;
-+}
-+
+ }
+ 
 +int fill_schema_processlist(THD* thd, TABLE_LIST* tables, COND* cond)
 +{
 +  TABLE *table= tables->table;
@@ -173,7 +181,9 @@ diff -r 327ce7a34c91 sql/sql_show.cc
 +        table->field[4]->store(command_name[tmp->command],
 +                               strlen(command_name[tmp->command]), cs);
 +      /* MYSQL_TIME */
-+      const ulonglong utime= (tmp->start_timer && current_timer) ? current_timer - tmp->start_timer : 0; 
++      ulonglong utime= (tmp->start_timer && current_timer) ? current_timer - tmp->start_timer : 0; 
++      /* correction for negative time */
++      if (utime > 2629743) utime= 0; 
 +      table->field[5]->store(utime / 1000000, TRUE);
 +      /* STATE */
 +#ifndef EMBEDDED_LIBRARY
@@ -222,10 +232,12 @@ diff -r 327ce7a34c91 sql/sql_show.cc
 +
 +  VOID(pthread_mutex_unlock(&LOCK_thread_count));
 +  DBUG_RETURN(0);
- }
- 
++}
++
  /*****************************************************************************
-@@ -4821,6 +4941,22 @@
+   Status functions
+ *****************************************************************************/
+@@ -4849,6 +4965,22 @@
    {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
  };
  
@@ -248,7 +260,7 @@ diff -r 327ce7a34c91 sql/sql_show.cc
  /*
    Description of ST_FIELD_INFO in table.h
  */
-@@ -4845,6 +4981,8 @@
+@@ -4873,6 +5005,8 @@
      get_all_tables, 0, get_schema_key_column_usage_record, 4, 5, 0},
    {"OPEN_TABLES", open_tables_fields_info, create_schema_table,
     fill_open_tables, make_old_format, 0, -1, -1, 1},
@@ -257,10 +269,10 @@ diff -r 327ce7a34c91 sql/sql_show.cc
    {"PROFILING", query_profile_statistics_info, create_schema_table,
     fill_query_profile_statistics_info, make_profile_table_for_show, 
     NULL, -1, -1, false},
-diff -r 327ce7a34c91 sql/table.h
---- a/sql/table.h	Fri Nov 07 15:44:23 2008 -0800
-+++ b/sql/table.h	Fri Nov 07 15:52:53 2008 -0800
-@@ -378,6 +378,7 @@
+diff -r e3b747e556c8 sql/table.h
+--- a/sql/table.h	Mon May 18 18:44:04 2009 -0700
++++ b/sql/table.h	Mon May 18 18:48:11 2009 -0700
+@@ -379,6 +379,7 @@
    SCH_INDEX_STATS,
    SCH_KEY_COLUMN_USAGE,
    SCH_OPEN_TABLES,
@@ -268,14 +280,3 @@ diff -r 327ce7a34c91 sql/table.h
    SCH_PROFILES,
    SCH_PROCEDURES,
    SCH_SCHEMATA,
-diff -ruN mysql-5.0.67_highperf/patch_info/microsec_process.info mysql-5.0.67_highperf_tmp/patch_info/microsec_process.info
---- /dev/null	1970-01-01 09:00:00.000000000 +0900
-+++ mysql-5.0.67_highperf_tmp/patch_info/microsec_process.info	2008-11-12 09:27:52.000000000 +0900
-@@ -0,0 +1,6 @@
-+File=microsec_process.patch
-+Name=Adds INFOMATION_SCHEMA.PROCESSLIST with TIME_MS column
-+Version=1.0
-+Author=Percona <info@percona.com>
-+License=GPL
-+Comment=
-+ChangeLog=

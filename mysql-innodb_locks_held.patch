@@ -1,6 +1,6 @@
-diff -r 7d3d7786b927 innobase/include/srv0srv.h
---- a/innobase/include/srv0srv.h	Tue Feb 17 22:33:33 2009 -0800
-+++ b/innobase/include/srv0srv.h	Tue Feb 17 22:33:47 2009 -0800
+diff -r e9fb5b8bcf78 innobase/include/srv0srv.h
+--- a/innobase/include/srv0srv.h	Mon Jun 01 00:36:33 2009 -0700
++++ b/innobase/include/srv0srv.h	Mon Jun 01 00:36:41 2009 -0700
 @@ -80,6 +80,8 @@
  extern ulint	srv_log_file_size;
  extern ulint	srv_log_buffer_size;
@@ -10,9 +10,9 @@ diff -r 7d3d7786b927 innobase/include/srv0srv.h
  
  extern byte	srv_latin1_ordering[256];/* The sort order table of the latin1
  					character set */
-diff -r 7d3d7786b927 innobase/lock/lock0lock.c
---- a/innobase/lock/lock0lock.c	Tue Feb 17 22:33:33 2009 -0800
-+++ b/innobase/lock/lock0lock.c	Tue Feb 17 22:33:47 2009 -0800
+diff -r e9fb5b8bcf78 innobase/lock/lock0lock.c
+--- a/innobase/lock/lock0lock.c	Mon Jun 01 00:36:33 2009 -0700
++++ b/innobase/lock/lock0lock.c	Mon Jun 01 00:36:41 2009 -0700
 @@ -4181,6 +4181,7 @@
  #endif /* UNIV_SYNC_DEBUG */
  	}
@@ -50,9 +50,9 @@ diff -r 7d3d7786b927 innobase/lock/lock0lock.c
  			file);
  	
  		nth_trx++;
-diff -r 7d3d7786b927 innobase/srv/srv0srv.c
---- a/innobase/srv/srv0srv.c	Tue Feb 17 22:33:33 2009 -0800
-+++ b/innobase/srv/srv0srv.c	Tue Feb 17 22:33:47 2009 -0800
+diff -r e9fb5b8bcf78 innobase/srv/srv0srv.c
+--- a/innobase/srv/srv0srv.c	Mon Jun 01 00:36:33 2009 -0700
++++ b/innobase/srv/srv0srv.c	Mon Jun 01 00:36:41 2009 -0700
 @@ -116,6 +116,8 @@
  ulint	srv_log_file_size	= ULINT_MAX;	/* size in database pages */ 
  ulint	srv_log_buffer_size	= ULINT_MAX;	/* size in database pages */ 
@@ -62,7 +62,7 @@ diff -r 7d3d7786b927 innobase/srv/srv0srv.c
  
  byte	srv_latin1_ordering[256]	/* The sort order table of the latin1
  					character set. The following table is
-@@ -1703,24 +1705,6 @@
+@@ -1711,24 +1713,6 @@
  
  	mutex_exit(&dict_foreign_err_mutex);
  
@@ -87,11 +87,10 @@ diff -r 7d3d7786b927 innobase/srv/srv0srv.c
  	fputs("--------\n"
  		"FILE I/O\n"
  		"--------\n", file);
-@@ -1813,6 +1797,25 @@
- 	srv_n_rows_updated_old = srv_n_rows_updated;
+@@ -1822,6 +1806,25 @@
  	srv_n_rows_deleted_old = srv_n_rows_deleted;
  	srv_n_rows_read_old = srv_n_rows_read;
-+
+ 
 +	lock_print_info_summary(file);
 +	if (trx_start) {
 +		long	t = ftell(file);
@@ -110,13 +109,14 @@ diff -r 7d3d7786b927 innobase/srv/srv0srv.c
 +			*trx_end = (ulint) t;
 +		}
 +	}
- 
++
    fputs("----------------------------\n"
  		       "END OF INNODB MONITOR OUTPUT\n"
-diff -r 7d3d7786b927 libmysqld/set_var.cc
---- a/libmysqld/set_var.cc	Tue Feb 17 22:33:33 2009 -0800
-+++ b/libmysqld/set_var.cc	Tue Feb 17 22:33:47 2009 -0800
-@@ -821,6 +821,8 @@
+ 		"============================\n", file);
+diff -r e9fb5b8bcf78 libmysqld/set_var.cc
+--- a/libmysqld/set_var.cc	Mon Jun 01 00:36:33 2009 -0700
++++ b/libmysqld/set_var.cc	Mon Jun 01 00:36:41 2009 -0700
+@@ -825,6 +825,8 @@
    &sys_innodb_thread_concurrency,
    &sys_innodb_commit_concurrency,
    &sys_innodb_flush_log_at_trx_commit,
@@ -125,7 +125,7 @@ diff -r 7d3d7786b927 libmysqld/set_var.cc
  #endif
    &sys_trust_routine_creators,
    &sys_trust_function_creators,
-@@ -936,6 +938,8 @@
+@@ -942,6 +944,8 @@
    {"innodb_file_io_threads", (char*) &innobase_file_io_threads, SHOW_LONG },
    {"innodb_file_per_table", (char*) &innobase_file_per_table, SHOW_MY_BOOL},
    {sys_innodb_flush_log_at_trx_commit.name, (char*) &sys_innodb_flush_log_at_trx_commit, SHOW_SYS},
@@ -134,9 +134,9 @@ diff -r 7d3d7786b927 libmysqld/set_var.cc
    {"innodb_flush_method",    (char*) &innobase_unix_file_flush_method, SHOW_CHAR_PTR},
    {"innodb_force_recovery", (char*) &innobase_force_recovery, SHOW_LONG },
    {"innodb_lock_wait_timeout", (char*) &innobase_lock_wait_timeout, SHOW_LONG },
-diff -r 7d3d7786b927 patch_info/innodb_locks_held.info
+diff -r e9fb5b8bcf78 patch_info/innodb_locks_held.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/innodb_locks_held.info	Tue Feb 17 22:33:47 2009 -0800
++++ b/patch_info/innodb_locks_held.info	Mon Jun 01 00:36:41 2009 -0700
 @@ -0,0 +1,6 @@
 +File=innodb_locks_held.patch
 +Name=Add locks held, remove locked records in SHOW INNODB STATUS
@@ -144,22 +144,22 @@ diff -r 7d3d7786b927 patch_info/innodb_locks_held.info
 +Author=Baron Schwartz <baron@xaprb.com>
 +License=GPL
 +Comment=Bug #29126 fix
-diff -r 7d3d7786b927 sql/ha_innodb.h
---- a/sql/ha_innodb.h	Tue Feb 17 22:33:33 2009 -0800
-+++ b/sql/ha_innodb.h	Tue Feb 17 22:33:47 2009 -0800
-@@ -242,6 +242,8 @@
- extern ulong srv_flush_neighbor_pages;
+diff -r e9fb5b8bcf78 sql/ha_innodb.h
+--- a/sql/ha_innodb.h	Mon Jun 01 00:36:33 2009 -0700
++++ b/sql/ha_innodb.h	Mon Jun 01 00:36:41 2009 -0700
+@@ -243,6 +243,8 @@
+ extern ulong srv_enable_unsafe_group_commit;
  extern uint srv_read_ahead;
  extern ulong srv_adaptive_checkpoint;
 +extern ulong srv_show_locks_held;
 +extern ulong srv_show_verbose_locks;
- }
  
- bool innobase_init(void);
-diff -r 7d3d7786b927 sql/mysqld.cc
---- a/sql/mysqld.cc	Tue Feb 17 22:33:33 2009 -0800
-+++ b/sql/mysqld.cc	Tue Feb 17 22:33:47 2009 -0800
-@@ -5012,6 +5012,8 @@
+ /* An option to enable the fix for "Bug#43660 SHOW INDEXES/ANALYZE does
+ NOT update cardinality for indexes of InnoDB table". By default we are
+diff -r e9fb5b8bcf78 sql/mysqld.cc
+--- a/sql/mysqld.cc	Mon Jun 01 00:36:33 2009 -0700
++++ b/sql/mysqld.cc	Mon Jun 01 00:36:41 2009 -0700
+@@ -5016,6 +5016,8 @@
    OPT_INNODB_MAX_PURGE_LAG,
    OPT_INNODB_FILE_IO_THREADS,
    OPT_INNODB_LOCK_WAIT_TIMEOUT,
@@ -168,7 +168,7 @@ diff -r 7d3d7786b927 sql/mysqld.cc
    OPT_INNODB_THREAD_CONCURRENCY,
    OPT_INNODB_COMMIT_CONCURRENCY,
    OPT_INNODB_FORCE_RECOVERY,
-@@ -5356,6 +5358,14 @@
+@@ -5364,6 +5366,14 @@
     (gptr*) &srv_flush_log_at_trx_commit,
     (gptr*) &srv_flush_log_at_trx_commit,
     0, GET_ULONG, OPT_ARG,  1, 0, 2, 0, 0, 0},
@@ -183,11 +183,11 @@ diff -r 7d3d7786b927 sql/mysqld.cc
    {"innodb_flush_method", OPT_INNODB_FLUSH_METHOD,
     "With which method to flush data.", (gptr*) &innobase_unix_file_flush_method,
     (gptr*) &innobase_unix_file_flush_method, 0, GET_STR, REQUIRED_ARG, 0, 0, 0,
-diff -r 7d3d7786b927 sql/set_var.cc
---- a/sql/set_var.cc	Tue Feb 17 22:33:33 2009 -0800
-+++ b/sql/set_var.cc	Tue Feb 17 22:33:47 2009 -0800
-@@ -522,6 +522,12 @@
-                                       &innodb_read_ahead_typelib, fix_innodb_read_ahead);
+diff -r e9fb5b8bcf78 sql/set_var.cc
+--- a/sql/set_var.cc	Mon Jun 01 00:36:33 2009 -0700
++++ b/sql/set_var.cc	Mon Jun 01 00:36:41 2009 -0700
+@@ -527,6 +527,12 @@
+                                                              &srv_enable_unsafe_group_commit);
  sys_var_long_ptr	sys_innodb_adaptive_checkpoint("innodb_adaptive_checkpoint",
                                                        &srv_adaptive_checkpoint);
 +sys_var_long_ptr  sys_innodb_show_locks_held(
@@ -199,16 +199,16 @@ diff -r 7d3d7786b927 sql/set_var.cc
  sys_var_const_os_str_ptr sys_innodb_data_file_path("innodb_data_file_path", 
                                                 &innobase_data_file_path);
  sys_var_const_os_str_ptr sys_innodb_data_home_dir("innodb_data_home_dir", 
-@@ -893,6 +899,8 @@
-   &sys_innodb_flush_neighbor_pages,
+@@ -906,6 +912,8 @@
    &sys_innodb_read_ahead,
+   &sys_innodb_enable_unsafe_group_commit,
    &sys_innodb_adaptive_checkpoint,
 +  &sys_innodb_show_locks_held,
 +  &sys_innodb_show_verbose_locks,
  #endif
    &sys_trust_routine_creators,
    &sys_trust_function_creators,
-@@ -1008,6 +1016,8 @@
+@@ -1023,6 +1031,8 @@
    {"innodb_file_io_threads", (char*) &innobase_file_io_threads, SHOW_LONG },
    {"innodb_file_per_table", (char*) &innobase_file_per_table, SHOW_MY_BOOL},
    {sys_innodb_flush_log_at_trx_commit.name, (char*) &sys_innodb_flush_log_at_trx_commit, SHOW_SYS},

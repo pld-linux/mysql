@@ -13,3 +13,26 @@
  #endif
  
  /* NOTE! The structure appears here only for the compiler to know its size.
+
+
+
+NOTE: this chunk is to fix buggy percona patch:
+--- mysql-5.0.83/innobase/sync/sync0rw.c~	2009-07-16 12:43:34.863559101 +0300
++++ mysql-5.0.83/innobase/sync/sync0rw.c	2009-07-16 13:01:55.553904932 +0300
+@@ -626,10 +626,14 @@
+ 	} else if (state == RW_LOCK_NOT_LOCKED) {
+ 
+  		/* Spin waiting for the writer field to become free */
+-
++#ifdef  HAVE_ATOMIC_BUILTINS
+         	while (i < SYNC_SPIN_ROUNDS
+ 			&& lock->lock_word != RW_LOCK_BIAS) {
+-        		if (srv_spin_wait_delay) {
++#else
++				while (rw_lock_get_writer(lock) != RW_LOCK_NOT_LOCKED
++						&& i < SYNC_SPIN_ROUNDS) {
++#endif
++				if (srv_spin_wait_delay) {
+ 				ut_delay(ut_rnd_interval(0,
+ 							srv_spin_wait_delay));
+         		}

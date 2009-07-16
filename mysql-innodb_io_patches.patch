@@ -1,6 +1,6 @@
-diff -ruN a/innobase/buf/buf0flu.c b/innobase/buf/buf0flu.c
---- a/innobase/buf/buf0flu.c	2008-12-19 02:19:35.000000000 +0900
-+++ b/innobase/buf/buf0flu.c	2009-01-09 15:51:10.000000000 +0900
+diff -r ed298a6e5e10 innobase/buf/buf0flu.c
+--- a/innobase/buf/buf0flu.c	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/buf/buf0flu.c	Mon Jun 01 00:36:16 2009 -0700
 @@ -898,10 +898,17 @@
  
  				old_page_count = page_count;
@@ -19,10 +19,18 @@ diff -ruN a/innobase/buf/buf0flu.c b/innobase/buf/buf0flu.c
  				/* fprintf(stderr,
  				"Flush type %lu, page no %lu, neighb %lu\n",
  				flush_type, offset,
-diff -ruN a/innobase/buf/buf0rea.c b/innobase/buf/buf0rea.c
---- a/innobase/buf/buf0rea.c	2009-01-09 15:40:22.000000000 +0900
-+++ b/innobase/buf/buf0rea.c	2009-01-09 15:40:46.000000000 +0900
-@@ -189,6 +189,10 @@
+diff -r ed298a6e5e10 innobase/buf/buf0rea.c
+--- a/innobase/buf/buf0rea.c	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/buf/buf0rea.c	Mon Jun 01 00:36:16 2009 -0700
+@@ -20,6 +20,7 @@
+ #include "os0file.h"
+ #include "srv0start.h"
+ 
++extern uint srv_read_ahead;
+ extern ulint srv_read_ahead_rnd;
+ extern ulint srv_read_ahead_seq;
+ extern ulint srv_buf_pool_reads;
+@@ -189,6 +190,10 @@
  	ulint		err;
  	ulint		i;
  
@@ -33,7 +41,7 @@ diff -ruN a/innobase/buf/buf0rea.c b/innobase/buf/buf0rea.c
  	if (srv_startup_is_before_trx_rollback_phase) {
  	        /* No read-ahead to avoid thread deadlocks */
  	        return(0);
-@@ -396,6 +400,10 @@
+@@ -396,6 +401,10 @@
  	ulint		err;
  	ulint		i;
  	
@@ -44,9 +52,9 @@ diff -ruN a/innobase/buf/buf0rea.c b/innobase/buf/buf0rea.c
  	if (srv_startup_is_before_trx_rollback_phase) {
  	        /* No read-ahead to avoid thread deadlocks */
  	        return(0);
-diff -ruN a/innobase/ibuf/ibuf0ibuf.c b/innobase/ibuf/ibuf0ibuf.c
---- a/innobase/ibuf/ibuf0ibuf.c	2008-12-19 02:19:35.000000000 +0900
-+++ b/innobase/ibuf/ibuf0ibuf.c	2009-01-09 15:53:18.000000000 +0900
+diff -r ed298a6e5e10 innobase/ibuf/ibuf0ibuf.c
+--- a/innobase/ibuf/ibuf0ibuf.c	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/ibuf/ibuf0ibuf.c	Mon Jun 01 00:36:16 2009 -0700
 @@ -370,8 +370,9 @@
  	grow in size, as the references on the upper levels of the tree can
  	change */
@@ -73,9 +81,9 @@ diff -ruN a/innobase/ibuf/ibuf0ibuf.c b/innobase/ibuf/ibuf0ibuf.c
  
  	sync = FALSE;
  	
-diff -ruN a/innobase/include/os0file.h b/innobase/include/os0file.h
---- a/innobase/include/os0file.h	2009-01-09 15:40:22.000000000 +0900
-+++ b/innobase/include/os0file.h	2009-01-09 15:40:46.000000000 +0900
+diff -r ed298a6e5e10 innobase/include/os0file.h
+--- a/innobase/include/os0file.h	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/include/os0file.h	Mon Jun 01 00:36:16 2009 -0700
 @@ -551,8 +551,10 @@
  /*========*/
  	ulint	n,		/* in: maximum number of pending aio operations
@@ -89,9 +97,9 @@ diff -ruN a/innobase/include/os0file.h b/innobase/include/os0file.h
  	ulint	n_slots_sync);	/* in: number of slots in the sync aio array */
  /***********************************************************************
  Requests an asynchronous i/o operation. */
-diff -ruN a/innobase/include/srv0srv.h b/innobase/include/srv0srv.h
---- a/innobase/include/srv0srv.h	2009-01-09 15:40:22.000000000 +0900
-+++ b/innobase/include/srv0srv.h	2009-01-09 15:54:33.000000000 +0900
+diff -r ed298a6e5e10 innobase/include/srv0srv.h
+--- a/innobase/include/srv0srv.h	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/include/srv0srv.h	Mon Jun 01 00:36:16 2009 -0700
 @@ -89,6 +89,8 @@
  extern ulint	srv_lock_table_size;
  
@@ -101,7 +109,7 @@ diff -ruN a/innobase/include/srv0srv.h b/innobase/include/srv0srv.h
  
  #ifdef UNIV_LOG_ARCHIVE
  extern ibool	srv_log_archive_on;
-@@ -133,6 +135,14 @@
+@@ -133,6 +135,15 @@
  extern ulong	srv_max_purge_lag;
  extern ibool	srv_use_awe;
  extern ibool	srv_use_adaptive_hash_indexes;
@@ -111,14 +119,15 @@ diff -ruN a/innobase/include/srv0srv.h b/innobase/include/srv0srv.h
 +extern ulint	srv_ibuf_active_contract;
 +extern ulint	srv_ibuf_accel_rate;
 +extern ulint	srv_flush_neighbor_pages;
++extern ulint	srv_enable_unsafe_group_commit;
 +extern uint	srv_read_ahead;
 +extern ulint	srv_adaptive_checkpoint;
  /*-------------------------------------------*/
  
  extern ulint	srv_n_rows_inserted;
-diff -ruN a/innobase/log/log0log.c b/innobase/log/log0log.c
---- a/innobase/log/log0log.c	2008-12-19 02:19:36.000000000 +0900
-+++ b/innobase/log/log0log.c	2009-01-09 15:40:46.000000000 +0900
+diff -r ed298a6e5e10 innobase/log/log0log.c
+--- a/innobase/log/log0log.c	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/log/log0log.c	Mon Jun 01 00:36:16 2009 -0700
 @@ -3326,6 +3326,15 @@
  			(ulong) ut_dulint_get_high(log_sys->last_checkpoint_lsn),
  			(ulong) ut_dulint_get_low(log_sys->last_checkpoint_lsn));
@@ -135,10 +144,10 @@ diff -ruN a/innobase/log/log0log.c b/innobase/log/log0log.c
  	current_time = time(NULL);
  			
  	time_elapsed = 0.001 + difftime(current_time,
-diff -ruN a/innobase/os/os0file.c b/innobase/os/os0file.c
---- a/innobase/os/os0file.c	2009-01-09 15:40:23.000000000 +0900
-+++ b/innobase/os/os0file.c	2009-01-09 15:40:46.000000000 +0900
-@@ -2877,8 +2877,10 @@
+diff -r ed298a6e5e10 innobase/os/os0file.c
+--- a/innobase/os/os0file.c	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/os/os0file.c	Mon Jun 01 00:36:16 2009 -0700
+@@ -2878,8 +2878,10 @@
  /*========*/
  	ulint	n,		/* in: maximum number of pending aio operations
  				allowed; n must be divisible by n_segments */
@@ -151,7 +160,7 @@ diff -ruN a/innobase/os/os0file.c b/innobase/os/os0file.c
  	ulint	n_slots_sync)	/* in: number of slots in the sync aio array */
  {
  	ulint	n_read_segs;
-@@ -2888,6 +2890,8 @@
+@@ -2889,6 +2891,8 @@
  #ifdef POSIX_ASYNC_IO
  	sigset_t   sigset;
  #endif
@@ -160,7 +169,7 @@ diff -ruN a/innobase/os/os0file.c b/innobase/os/os0file.c
  	ut_ad(n % n_segments == 0);
  	ut_ad(n_segments >= 4);
  
-@@ -2898,8 +2902,8 @@
+@@ -2899,8 +2903,8 @@
  	}
  
  	n_per_seg = n / n_segments;
@@ -171,7 +180,7 @@ diff -ruN a/innobase/os/os0file.c b/innobase/os/os0file.c
  	
  	/* fprintf(stderr, "Array n per seg %lu\n", n_per_seg); */
  
-@@ -3180,6 +3184,13 @@
+@@ -3181,6 +3185,13 @@
  	struct aiocb*	control;
  #endif
  	ulint		i;
@@ -185,7 +194,7 @@ diff -ruN a/innobase/os/os0file.c b/innobase/os/os0file.c
  loop:
  	os_mutex_enter(array->mutex);
  
-@@ -3198,6 +3209,16 @@
+@@ -3199,6 +3210,16 @@
  		goto loop;
  	}
  
@@ -202,7 +211,7 @@ diff -ruN a/innobase/os/os0file.c b/innobase/os/os0file.c
  	for (i = 0;; i++) {
  		slot = os_aio_array_get_nth_slot(array, i);
  
-@@ -3205,6 +3226,7 @@
+@@ -3206,6 +3227,7 @@
  			break;
  		}
  	}
@@ -210,9 +219,9 @@ diff -ruN a/innobase/os/os0file.c b/innobase/os/os0file.c
  
  	array->n_reserved++;
  
-diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
---- a/innobase/srv/srv0srv.c	2009-01-09 15:40:23.000000000 +0900
-+++ b/innobase/srv/srv0srv.c	2009-01-09 15:58:36.000000000 +0900
+diff -r ed298a6e5e10 innobase/srv/srv0srv.c
+--- a/innobase/srv/srv0srv.c	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/srv/srv0srv.c	Mon Jun 01 00:36:16 2009 -0700
 @@ -167,6 +167,8 @@
  ulint	srv_lock_table_size	= ULINT_MAX;
  
@@ -222,7 +231,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  
  #ifdef UNIV_LOG_ARCHIVE
  ibool	srv_log_archive_on	= FALSE;
-@@ -324,6 +326,22 @@
+@@ -330,6 +332,24 @@
  ibool	srv_use_awe			= FALSE;
  ibool	srv_use_adaptive_hash_indexes 	= TRUE;
  
@@ -240,12 +249,14 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
 +
 +ulint	srv_flush_neighbor_pages = 1; /* 0:disable 1:enable */
 +
++ulint	srv_enable_unsafe_group_commit = 0; /* 0:disable 1:enable */
++
 +uint	srv_read_ahead = 3; /* 1: random  2: linear  3: Both */
 +ulint	srv_adaptive_checkpoint = 0; /* 0:disable 1:enable */
  /*-------------------------------------------*/
  ulong	srv_n_spin_wait_rounds	= 20;
  ulong	srv_n_free_tickets_to_enter = 500;
-@@ -2214,6 +2232,8 @@
+@@ -2229,6 +2249,8 @@
  	ibool		skip_sleep	= FALSE;
  	ulint		i;
  	
@@ -254,7 +265,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  #ifdef UNIV_DEBUG_THREAD_CREATION
  	fprintf(stderr, "Master thread starts, id %lu\n",
  			      os_thread_pf(os_thread_get_curr_id()));
-@@ -2302,9 +2322,9 @@
+@@ -2317,9 +2339,9 @@
  						+ log_sys->n_pending_writes;
  		n_ios = log_sys->n_log_ios + buf_pool->n_pages_read
  						+ buf_pool->n_pages_written;
@@ -266,7 +277,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  
  			srv_main_thread_op_info = "flushing log";
  
-@@ -2317,7 +2337,7 @@
+@@ -2332,7 +2354,7 @@
  			/* Try to keep the number of modified pages in the
  			buffer pool under the limit wished by the user */
  			
@@ -275,7 +286,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  							  ut_dulint_max);
  
  		        /* If we had to do the flush, it may have taken
-@@ -2326,6 +2346,49 @@
+@@ -2341,6 +2363,49 @@
  			iteration of this loop. */
  			     
  			skip_sleep = TRUE;
@@ -325,7 +336,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  		}
  
  		if (srv_activity_count == old_activity_count) {
-@@ -2352,10 +2415,10 @@
+@@ -2367,10 +2432,10 @@
  	n_pend_ios = buf_get_n_pending_ios() + log_sys->n_pending_writes;
  	n_ios = log_sys->n_log_ios + buf_pool->n_pages_read
  						+ buf_pool->n_pages_written;
@@ -338,7 +349,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  
  		srv_main_thread_op_info = "flushing log";
  		log_buffer_flush_to_disk();
-@@ -2365,7 +2428,7 @@
+@@ -2380,7 +2445,7 @@
  	even if the server were active */
  
  	srv_main_thread_op_info = "doing insert buffer merge";
@@ -347,7 +358,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  
  	srv_main_thread_op_info = "flushing log";
  	log_buffer_flush_to_disk();
-@@ -2407,14 +2470,14 @@
+@@ -2422,14 +2487,14 @@
  		(> 70 %), we assume we can afford reserving the disk(s) for
  		the time it requires to flush 100 pages */
  
@@ -364,7 +375,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  							ut_dulint_max);
  	}
  
-@@ -2503,7 +2566,7 @@
+@@ -2518,7 +2583,7 @@
  	if (srv_fast_shutdown && srv_shutdown_state > 0) {
  	        n_bytes_merged = 0;
  	} else {
@@ -373,7 +384,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  	}
  
  	srv_main_thread_op_info = "reserving kernel mutex";
-@@ -2520,7 +2583,7 @@
+@@ -2535,7 +2600,7 @@
  
  	if (srv_fast_shutdown < 2) {
  		n_pages_flushed =
@@ -382,9 +393,9 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  	} else {
  		/* In the fastest shutdown we do not flush the buffer pool
  		to data files: we set n_pages_flushed to 0 artificially. */
-diff -ruN a/innobase/srv/srv0start.c b/innobase/srv/srv0start.c
---- a/innobase/srv/srv0start.c	2008-12-19 02:19:37.000000000 +0900
-+++ b/innobase/srv/srv0start.c	2009-01-09 15:40:46.000000000 +0900
+diff -r ed298a6e5e10 innobase/srv/srv0start.c
+--- a/innobase/srv/srv0start.c	Mon Jun 01 00:36:10 2009 -0700
++++ b/innobase/srv/srv0start.c	Mon Jun 01 00:36:16 2009 -0700
 @@ -1205,24 +1205,28 @@
  		return(DB_ERROR);
  	}
@@ -418,9 +429,9 @@ diff -ruN a/innobase/srv/srv0start.c b/innobase/srv/srv0start.c
  					SRV_MAX_N_PENDING_SYNC_IOS);
  	}
  	
-diff -ruN a/patch_info/innodb_io_patches.info b/patch_info/innodb_io_patches.info
---- /dev/null	1970-01-01 09:00:00.000000000 +0900
-+++ b/patch_info/innodb_io_patches.info	2009-01-09 15:59:05.000000000 +0900
+diff -r ed298a6e5e10 patch_info/innodb_io_patches.info
+--- /dev/null	Thu Jan 01 00:00:00 1970 +0000
++++ b/patch_info/innodb_io_patches.info	Mon Jun 01 00:36:16 2009 -0700
 @@ -0,0 +1,11 @@
 +File=innodb_io_patches.patch
 +Name=Cluster of past InnoDB IO patches
@@ -433,9 +444,9 @@ diff -ruN a/patch_info/innodb_io_patches.info b/patch_info/innodb_io_patches.inf
 +YK: Initial release
 +2009-01-09
 +YK: Some parameters are added
-diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
---- a/sql/ha_innodb.cc	2009-01-09 15:40:23.000000000 +0900
-+++ b/sql/ha_innodb.cc	2009-01-09 15:40:46.000000000 +0900
+diff -r ed298a6e5e10 sql/ha_innodb.cc
+--- a/sql/ha_innodb.cc	Mon Jun 01 00:36:10 2009 -0700
++++ b/sql/ha_innodb.cc	Mon Jun 01 00:36:16 2009 -0700
 @@ -149,6 +149,7 @@
       innobase_lock_wait_timeout, innobase_force_recovery,
       innobase_open_files;
@@ -444,7 +455,7 @@ diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
  longlong innobase_buffer_pool_size, innobase_log_file_size;
  
  /* The default values for the following char* start-up parameters
-@@ -1403,6 +1404,8 @@
+@@ -1417,6 +1418,8 @@
  	srv_mem_pool_size = (ulint) innobase_additional_mem_pool_size;
  
  	srv_n_file_io_threads = (ulint) innobase_file_io_threads;
@@ -453,9 +464,20 @@ diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
  
  	srv_lock_wait_timeout = (ulint) innobase_lock_wait_timeout;
  	srv_force_recovery = (ulint) innobase_force_recovery;
-diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
---- a/sql/ha_innodb.h	2009-01-09 15:40:23.000000000 +0900
-+++ b/sql/ha_innodb.h	2009-01-09 15:59:41.000000000 +0900
+@@ -7330,6 +7333,10 @@
+         trx_t* trx = check_trx_exists(thd);
+ 
+         if (thd->lex->sql_command != SQLCOM_XA_PREPARE) {
++		if (srv_enable_unsafe_group_commit && !thd->variables.innodb_support_xa) {
++			/* choose group commit rather than binlog order */
++			return(0);
++		}
+ 
+                 /* For ibbackup to work the order of transactions in binlog
+                 and InnoDB must be the same. Consider the situation
+diff -r ed298a6e5e10 sql/ha_innodb.h
+--- a/sql/ha_innodb.h	Mon Jun 01 00:36:10 2009 -0700
++++ b/sql/ha_innodb.h	Mon Jun 01 00:36:16 2009 -0700
 @@ -204,6 +204,7 @@
  extern long innobase_additional_mem_pool_size;
  extern long innobase_buffer_pool_awe_mem_mb;
@@ -464,24 +486,26 @@ diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
  extern long innobase_force_recovery;
  extern long innobase_open_files;
  extern char *innobase_data_home_dir, *innobase_data_file_path;
-@@ -234,6 +235,13 @@
- running with the fix disabled because MySQL 5.1 is frozen for such
- behavioral changes. */
- extern char srv_use_legacy_cardinality_algorithm;
+@@ -234,6 +235,15 @@
+ extern ulong srv_thread_concurrency;
+ extern ulong srv_commit_concurrency;
+ extern ulong srv_flush_log_at_trx_commit;
 +extern ulong srv_io_capacity;
 +extern long long srv_ibuf_max_size;
 +extern ulong srv_ibuf_active_contract;
 +extern ulong srv_ibuf_accel_rate;
 +extern ulong srv_flush_neighbor_pages;
++extern ulong srv_enable_unsafe_group_commit;
 +extern uint srv_read_ahead;
 +extern ulong srv_adaptive_checkpoint;
- }
- 
- bool innobase_init(void);
-diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
---- a/sql/mysqld.cc	2009-01-09 15:40:23.000000000 +0900
-+++ b/sql/mysqld.cc	2009-01-09 16:01:25.000000000 +0900
-@@ -5036,6 +5036,15 @@
++
+ /* An option to enable the fix for "Bug#43660 SHOW INDEXES/ANALYZE does
+ NOT update cardinality for indexes of InnoDB table". By default we are
+ running with the fix disabled because MySQL 5.1 is frozen for such
+diff -r ed298a6e5e10 sql/mysqld.cc
+--- a/sql/mysqld.cc	Mon Jun 01 00:36:10 2009 -0700
++++ b/sql/mysqld.cc	Mon Jun 01 00:36:16 2009 -0700
+@@ -5086,6 +5086,16 @@
    OPT_INNODB_ROLLBACK_ON_TIMEOUT,
    OPT_SECURE_FILE_PRIV,
    OPT_KEEP_FILES_ON_CREATE,
@@ -490,16 +514,17 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 +  OPT_INNODB_IBUF_ACTIVE_CONTRACT,
 +  OPT_INNODB_IBUF_ACCEL_RATE,
 +  OPT_INNODB_FLUSH_NEIGHBOR_PAGES,
++  OPT_INNODB_ENABLE_UNSAFE_GROUP_COMMIT,
 +  OPT_INNODB_READ_AHEAD,
 +  OPT_INNODB_ADAPTIVE_CHECKPOINT,
 +  OPT_INNODB_READ_IO_THREADS,
 +  OPT_INNODB_WRITE_IO_THREADS,
    OPT_INNODB_ADAPTIVE_HASH_INDEX,
-   OPT_FEDERATED
- };
-@@ -5344,6 +5353,41 @@
-    (gptr*) &global_system_variables.innodb_table_locks,
-    (gptr*) &global_system_variables.innodb_table_locks,
+   OPT_FEDERATED,
+   OPT_INNODB_USE_LEGACY_CARDINALITY_ALGORITHM
+@@ -5403,6 +5413,45 @@
+    (gptr*) &srv_use_legacy_cardinality_algorithm,
+    (gptr*) &srv_use_legacy_cardinality_algorithm,
     0, GET_BOOL, OPT_ARG, 1, 0, 0, 0, 0, 0},
 +  {"innodb_io_capacity", OPT_INNODB_IO_CAPACITY,
 +   "Number of IO operations per second the server can do. Tunes background IO rate.",
@@ -528,6 +553,10 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 +   "Enable/Diasable flushing along modified age. 0:disable 1:enable",
 +   (gptr*) &srv_adaptive_checkpoint, (gptr*) &srv_adaptive_checkpoint,
 +   0, GET_ULONG, REQUIRED_ARG, 0, 0, 1, 0, 0, 0},
++  {"innodb_enable_unsafe_group_commit", OPT_INNODB_ENABLE_UNSAFE_GROUP_COMMIT,
++   "Enable/Disable unsafe group commit when support_xa=OFF and use with binlog or other XA storage engine.",
++   (gptr*) &srv_enable_unsafe_group_commit, (gptr*) &srv_enable_unsafe_group_commit,
++   0, GET_ULONG, REQUIRED_ARG, 0, 0, 1, 0, 0, 0},
 +  {"innodb_read_io_threads", OPT_INNODB_READ_IO_THREADS,
 +   "Number of background read I/O threads in InnoDB.",
 +   (gptr*) &innobase_read_io_threads, (gptr*) &innobase_read_io_threads,
@@ -539,7 +568,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
  #endif /* End HAVE_INNOBASE_DB */
    {"isam", OPT_ISAM, "Obsolete. ISAM storage engine is no longer supported.",
     (gptr*) &opt_isam, (gptr*) &opt_isam, 0, GET_BOOL, NO_ARG, 0, 0, 0,
-@@ -7637,6 +7636,22 @@
+@@ -7644,6 +7693,22 @@
    case OPT_INNODB_LOG_ARCHIVE:
      innobase_log_archive= argument ? test(atoi(argument)) : 1;
      break;
@@ -562,10 +591,10 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
  #endif /* HAVE_INNOBASE_DB */
    case OPT_MYISAM_RECOVER:
    {
-diff -ruN a/sql/set_var.cc b/sql/set_var.cc
---- a/sql/set_var.cc	2009-01-09 15:40:23.000000000 +0900
-+++ b/sql/set_var.cc	2009-01-09 16:05:22.000000000 +0900
-@@ -484,6 +484,37 @@
+diff -r ed298a6e5e10 sql/set_var.cc
+--- a/sql/set_var.cc	Mon Jun 01 00:36:10 2009 -0700
++++ b/sql/set_var.cc	Mon Jun 01 00:36:16 2009 -0700
+@@ -489,6 +489,39 @@
  sys_var_long_ptr  sys_innodb_flush_log_at_trx_commit(
                                          "innodb_flush_log_at_trx_commit",
                                          &srv_flush_log_at_trx_commit);
@@ -598,12 +627,14 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
 +};
 +sys_var_enum	sys_innodb_read_ahead("innodb_read_ahead", &srv_read_ahead,
 +                                      &innodb_read_ahead_typelib, fix_innodb_read_ahead);
++sys_var_long_ptr	sys_innodb_enable_unsafe_group_commit("innodb_enable_unsafe_group_commit",
++                                                             &srv_enable_unsafe_group_commit);
 +sys_var_long_ptr	sys_innodb_adaptive_checkpoint("innodb_adaptive_checkpoint",
 +                                                      &srv_adaptive_checkpoint);
  sys_var_const_os_str_ptr sys_innodb_data_file_path("innodb_data_file_path", 
                                                 &innobase_data_file_path);
  sys_var_const_os_str_ptr sys_innodb_data_home_dir("innodb_data_home_dir", 
-@@ -847,6 +859,12 @@
+@@ -860,6 +893,13 @@
    &sys_innodb_thread_concurrency,
    &sys_innodb_commit_concurrency,
    &sys_innodb_flush_log_at_trx_commit,
@@ -612,30 +643,32 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
 +  &sys_innodb_ibuf_accel_rate,
 +  &sys_innodb_flush_neighbor_pages,
 +  &sys_innodb_read_ahead,
++  &sys_innodb_enable_unsafe_group_commit,
 +  &sys_innodb_adaptive_checkpoint,
  #endif
    &sys_trust_routine_creators,
    &sys_trust_function_creators,
-@@ -982,6 +1000,15 @@
+@@ -997,6 +1037,16 @@
+   {sys_innodb_table_locks.name, (char*) &sys_innodb_table_locks, SHOW_SYS},
+   {sys_innodb_thread_concurrency.name, (char*) &sys_innodb_thread_concurrency, SHOW_SYS},
    {sys_innodb_thread_sleep_delay.name, (char*) &sys_innodb_thread_sleep_delay, SHOW_SYS},
-   {sys_innodb_use_legacy_cardinality_algorithm.name,
-    (char*) &sys_innodb_use_legacy_cardinality_algorithm, SHOW_SYS},
 +  {sys_innodb_io_capacity.name, (char*) &sys_innodb_io_capacity, SHOW_SYS},
 +  {"innodb_ibuf_max_size", (char*) &srv_ibuf_max_size, SHOW_LONGLONG},
 +  {sys_innodb_ibuf_active_contract.name, (char*) &sys_innodb_ibuf_active_contract, SHOW_SYS},
 +  {sys_innodb_ibuf_accel_rate.name, (char*) &sys_innodb_ibuf_accel_rate, SHOW_SYS},
 +  {sys_innodb_flush_neighbor_pages.name, (char*) &sys_innodb_flush_neighbor_pages, SHOW_SYS},
 +  {sys_innodb_read_ahead.name, (char*) &sys_innodb_read_ahead, SHOW_SYS},
++  {sys_innodb_enable_unsafe_group_commit.name, (char*) &sys_innodb_enable_unsafe_group_commit, SHOW_SYS},
 +  {sys_innodb_adaptive_checkpoint.name, (char*) &sys_innodb_adaptive_checkpoint, SHOW_SYS},
 +  {"innodb_read_io_threads", (char*) &innobase_read_io_threads, SHOW_LONG},
 +  {"innodb_write_io_threads", (char*) &innobase_write_io_threads, SHOW_LONG},
+   {sys_innodb_use_legacy_cardinality_algorithm.name,
+    (char*) &sys_innodb_use_legacy_cardinality_algorithm, SHOW_SYS},
  #endif
-   {sys_interactive_timeout.name,(char*) &sys_interactive_timeout,   SHOW_SYS},
-   {sys_join_buffer_size.name,   (char*) &sys_join_buffer_size,	    SHOW_SYS},
-@@ -1482,6 +1501,13 @@
+@@ -1459,6 +1509,13 @@
    }
  }
-
+ 
 +#ifdef HAVE_INNOBASE_DB
 +extern void fix_innodb_read_ahead(THD *thd, enum_var_type type)
 +{
@@ -646,13 +679,13 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
  static void fix_max_binlog_size(THD *thd, enum_var_type type)
  {
    DBUG_ENTER("fix_max_binlog_size");
-diff -ruN a/sql/set_var.h b/sql/set_var.h
---- a/sql/set_var.h	2009-01-12 11:20:31.000000000 +0900
-+++ b/sql/set_var.h	2009-01-12 15:26:35.000000000 +0900
+diff -r ed298a6e5e10 sql/set_var.h
+--- a/sql/set_var.h	Mon Jun 01 00:36:10 2009 -0700
++++ b/sql/set_var.h	Mon Jun 01 00:36:16 2009 -0700
 @@ -31,6 +31,10 @@
-
+ 
  extern TYPELIB bool_typelib, delay_key_write_typelib, sql_mode_typelib;
-
+ 
 +#ifdef HAVE_INNOBASE_DB
 +extern TYPELIB innodb_read_ahead_typelib;
 +#endif /* HAVE_INNOBASE_DB */
@@ -660,7 +693,7 @@ diff -ruN a/sql/set_var.h b/sql/set_var.h
  typedef int (*sys_check_func)(THD *,  set_var *);
  typedef bool (*sys_update_func)(THD *, set_var *);
  typedef void (*sys_after_update_func)(THD *,enum_var_type);
-@@ -1114,6 +1118,9 @@
+@@ -1148,6 +1152,9 @@
  int sql_set_variables(THD *thd, List<set_var_base> *var_list);
  bool not_all_support_one_shot(List<set_var_base> *var_list);
  void fix_delay_key_write(THD *thd, enum_var_type type);

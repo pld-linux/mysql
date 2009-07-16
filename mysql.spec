@@ -26,7 +26,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.83
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -34,8 +34,8 @@ Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version
 # Source0-md5:	051392064a1e32cca5c23a593908b10e
 #Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
-Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9-rc1.tar.gz
-# Source100-md5:	d1506c8f85c045bb682393de0aed30e8
+Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9-rc2.tar.gz
+# Source100-md5:	1ca266613bfdb0e6952d9ca1af93f7cc
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -65,25 +65,30 @@ Patch13:	%{name}-bug-34192.patch
 Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
-Patch16:	%{name}-microslow_innodb.patch
-Patch17:	%{name}-userstatv2.patch
-Patch18:	%{name}-innodb_io_patches.patch
-Patch19:	%{name}-microsec_process.patch
-Patch20:	%{name}-innodb_show_bp.patch
-Patch21:	%{name}-innodb_locks_held.patch
-Patch22:	%{name}-innodb_io_pattern.patch
-Patch23:	%{name}-innodb_show_hashed_memory.patch
-Patch24:	%{name}-innodb_rw_lock.patch
-Patch25:	%{name}-innodb_fsync_source.patch
-Patch26:	%{name}-show_patches.patch
-Patch27:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
-Patch28:	%{name}-innodb_check_fragmentation.patch
+Patch16:	%{name}-show_patches.patch
+Patch17:	%{name}-microslow_innodb.patch
+Patch18:	%{name}-profiling_slow.patch
+Patch19:	%{name}-userstatv2.patch
+Patch20:	%{name}-microsec_process.patch
+Patch21:	%{name}-innodb_io_patches.patch
+Patch22:	%{name}-innodb_locks_held.patch
+Patch23:	%{name}-innodb_show_bp.patch
+Patch24:	%{name}-innodb_check_fragmentation.patch
+Patch25:	%{name}-innodb_io_pattern.patch
+Patch26:	%{name}-innodb_fsync_source.patch
+Patch27:	%{name}-innodb_show_hashed_memory.patch
+Patch28:    %{name}-innodb_dict_size_limit.patch
+Patch29:    %{name}-innodb_extra_rseg.patch
+Patch30:    %{name}-innodb_thread_concurrency_timer_based.patch
+Patch31:    %{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
+Patch32:    %{name}-innodb_rw_lock.patch
+Patch33:    %{name}-mysql-test.patch
 # </percona>
-Patch29:	%{name}-errorlog-no-rename.patch
-Patch30:	%{name}-alpha-stack.patch
-Patch31:	%{name}-xtrabackup.patch
-Patch32:	%{name}-fixes.patch
-Patch33:	%{name}-gcc3.patch
+Patch34:	%{name}-errorlog-no-rename.patch
+Patch35:	%{name}-alpha-stack.patch
+Patch36:	%{name}-xtrabackup.patch
+Patch37:	%{name}-fixes.patch
+Patch38:	%{name}-gcc3.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -524,13 +529,18 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch27 -p1
 %patch28 -p1
 %patch29 -p1
-%ifarch alpha
 %patch30 -p1
-%endif
-%{?with_xtrabackup:%patch31 -p1}
+%patch31 -p1
 %patch32 -p1
-%if "%{cxx_version}" < "4.1"
 %patch33 -p1
+%patch34 -p1
+%ifarch alpha
+%patch35 -p1
+%endif
+%{?with_xtrabackup:%patch36 -p1}
+%patch37 -p1
+%if "%{cxx_version}" < "4.1"
+%patch38 -p1
 %endif
 
 %build

@@ -382,16 +382,16 @@ diff -r 5060df9888d7 sql/ha_innodb.cc
 diff -r 5060df9888d7 sql/ha_innodb.h
 --- a/sql/ha_innodb.h	Tue Feb 17 22:33:54 2009 -0800
 +++ b/sql/ha_innodb.h	Tue Feb 17 22:33:58 2009 -0800
-@@ -244,6 +244,9 @@
+@@ -245,6 +245,9 @@
  extern ulong srv_adaptive_checkpoint;
  extern ulong srv_show_locks_held;
  extern ulong srv_show_verbose_locks;
 +extern ulong srv_io_pattern_trace;
 +extern ulong srv_io_pattern_trace_running;
 +extern ulong srv_io_pattern_size_limit;
- }
- 
- bool innobase_init(void);
+
+ /* An option to enable the fix for "Bug#43660 SHOW INDEXES/ANALYZE does
+ NOT update cardinality for indexes of InnoDB table". By default we are
 @@ -270,6 +273,9 @@
  bool innodb_I_S_buffer_pool_content(THD* thd, TABLE_LIST *tables);
  bool innodb_mutex_show_status(THD* thd);
@@ -471,16 +471,16 @@ diff -r 5060df9888d7 sql/set_var.cc
  #endif
    &sys_trust_routine_creators,
    &sys_trust_function_creators,
-@@ -1047,6 +1056,9 @@
+@@ -1072,6 +1072,9 @@
    {sys_innodb_adaptive_checkpoint.name, (char*) &sys_innodb_adaptive_checkpoint, SHOW_SYS},
    {"innodb_read_io_threads", (char*) &innobase_read_io_threads, SHOW_LONG},
    {"innodb_write_io_threads", (char*) &innobase_write_io_threads, SHOW_LONG},
 +  {sys_innodb_io_pattern_trace.name, (char*) &sys_innodb_io_pattern_trace, SHOW_SYS},
 +  {sys_innodb_io_pattern_trace_running.name, (char*) &sys_innodb_io_pattern_trace_running, SHOW_SYS},
 +  {sys_innodb_io_pattern_size_limit.name, (char*) &sys_innodb_io_pattern_size_limit, SHOW_SYS},
+   {sys_innodb_use_legacy_cardinality_algorithm.name,
+    (char*) &sys_innodb_use_legacy_cardinality_algorithm, SHOW_SYS},
  #endif
-   {sys_interactive_timeout.name,(char*) &sys_interactive_timeout,   SHOW_SYS},
-   {sys_join_buffer_size.name,   (char*) &sys_join_buffer_size,	    SHOW_SYS},
 @@ -3160,6 +3172,19 @@
      thd->variables.lc_time_names= global_system_variables.lc_time_names;
  }

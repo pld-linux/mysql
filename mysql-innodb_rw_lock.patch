@@ -1,159 +1,18 @@
-diff -r 962aec0d731c innobase/configure
---- a/innobase/configure	Thu Oct 09 08:28:53 2008 -0700
-+++ b/innobase/configure	Thu Oct 09 08:30:28 2008 -0700
-@@ -20519,6 +20519,88 @@
+diff -ruN a/innobase/btr/btr0sea.c b/innobase/btr/btr0sea.c
+--- a/innobase/btr/btr0sea.c	2009-05-20 14:21:44.000000000 +0900
++++ b/innobase/btr/btr0sea.c	2009-05-20 14:39:34.000000000 +0900
+@@ -773,7 +773,7 @@
+ 		rw_lock_s_lock(&btr_search_latch);
+ 	}
  
- fi
- done
-+
-+
-+# as http://lists.mysql.com/commits/40686 does
-+{ echo "$as_me:$LINENO: checking whether the compiler provides atomic builtins" >&5
-+echo $ECHO_N "checking whether the compiler provides atomic builtins... $ECHO_C" >&6; }
-+if test "${mysql_cv_atomic_builtins+set}" = set; then
-+  echo $ECHO_N "(cached) $ECHO_C" >&6
-+else
-+  if test "$cross_compiling" = yes; then
-+  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
-+See \`config.log' for more details." >&5
-+echo "$as_me: error: cannot run test program while cross compiling
-+See \`config.log' for more details." >&2;}
-+   { (exit 1); exit 1; }; }
-+else
-+  cat >conftest.$ac_ext <<_ACEOF
-+/* confdefs.h.  */
-+_ACEOF
-+cat confdefs.h >>conftest.$ac_ext
-+cat >>conftest.$ac_ext <<_ACEOF
-+/* end confdefs.h.  */
-+
-+  int main()
-+  {
-+    int foo= -10; int bar= 10;
-+    __sync_fetch_and_add(&foo, bar);
-+    if (foo)
-+      return -1;
-+    bar= __sync_lock_test_and_set(&foo, bar);
-+    if (bar || foo != 10)
-+      return -1;
-+    bar= __sync_val_compare_and_swap(&bar, foo, 15);
-+    if (bar)
-+      return -1;
-+    return 0;
-+  }
-+
-+_ACEOF
-+rm -f conftest$ac_exeext
-+if { (ac_try="$ac_link"
-+case "(($ac_try" in
-+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-+  *) ac_try_echo=$ac_try;;
-+esac
-+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-+  (eval "$ac_link") 2>&5
-+  ac_status=$?
-+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-+  { (case "(($ac_try" in
-+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-+  *) ac_try_echo=$ac_try;;
-+esac
-+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-+  (eval "$ac_try") 2>&5
-+  ac_status=$?
-+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-+  (exit $ac_status); }; }; then
-+  mysql_cv_atomic_builtins=yes
-+else
-+  echo "$as_me: program exited with status $ac_status" >&5
-+echo "$as_me: failed program was:" >&5
-+sed 's/^/| /' conftest.$ac_ext >&5
-+
-+( exit $ac_status )
-+mysql_cv_atomic_builtins=no
-+fi
-+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-+fi
-+
-+
-+fi
-+{ echo "$as_me:$LINENO: result: $mysql_cv_atomic_builtins" >&5
-+echo "${ECHO_T}$mysql_cv_atomic_builtins" >&6; }
-+
-+if test "x$mysql_cv_atomic_builtins" = xyes; then
-+
-+cat >>confdefs.h <<\_ACEOF
-+#define HAVE_ATOMIC_BUILTINS 1
-+_ACEOF
-+
-+fi
+-	ut_ad(btr_search_latch.writer != RW_LOCK_EX);
++	ut_ad(rw_lock_get_writer(&btr_search_latch) != RW_LOCK_EX);
+ 	ut_ad(btr_search_latch.reader_count > 0);
  
- #AC_CHECK_FUNCS(readdir_r) MySQL checks that it has also the right args.
- # Some versions of Unix only take 2 arguments.
-diff -r 962aec0d731c innobase/configure.in
---- a/innobase/configure.in	Thu Oct 09 08:28:53 2008 -0700
-+++ b/innobase/configure.in	Thu Oct 09 08:30:28 2008 -0700
-@@ -42,6 +42,31 @@
- AC_CHECK_FUNCS(sched_yield)
- AC_CHECK_FUNCS(fdatasync)
- AC_CHECK_FUNCS(localtime_r)
-+
-+# as http://lists.mysql.com/commits/40686 does
-+AC_CACHE_CHECK([whether the compiler provides atomic builtins],
-+               [mysql_cv_atomic_builtins], [AC_TRY_RUN([
-+  int main()
-+  {
-+    int foo= -10; int bar= 10;
-+    __sync_fetch_and_add(&foo, bar);
-+    if (foo)
-+      return -1;
-+    bar= __sync_lock_test_and_set(&foo, bar);
-+    if (bar || foo != 10)
-+      return -1;
-+    bar= __sync_val_compare_and_swap(&bar, foo, 15);
-+    if (bar)
-+      return -1;
-+    return 0;
-+  }
-+], [mysql_cv_atomic_builtins=yes], [mysql_cv_atomic_builtins=no])])
-+
-+if test "x$mysql_cv_atomic_builtins" = xyes; then
-+  AC_DEFINE(HAVE_ATOMIC_BUILTINS, 1,
-+            [Define to 1 if compiler provides atomic builtins.])
-+fi
-+
- #AC_CHECK_FUNCS(readdir_r) MySQL checks that it has also the right args.
- # Some versions of Unix only take 2 arguments.
- #AC_C_INLINE  Already checked in MySQL
-diff -r 962aec0d731c innobase/ib_config.h
---- a/innobase/ib_config.h	Thu Oct 09 08:28:53 2008 -0700
-+++ b/innobase/ib_config.h	Thu Oct 09 08:30:28 2008 -0700
-@@ -3,6 +3,9 @@
- 
- /* Define to 1 if you have the <aio.h> header file. */
- #define HAVE_AIO_H 1
-+
-+/* Define to 1 if compiler provides atomic builtins. */
-+#define HAVE_ATOMIC_BUILTINS 1
- 
- /* Define to 1 if you have the <dlfcn.h> header file. */
- #define HAVE_DLFCN_H 1
-diff -r 962aec0d731c innobase/ib_config.h.in
---- a/innobase/ib_config.h.in	Thu Oct 09 08:28:53 2008 -0700
-+++ b/innobase/ib_config.h.in	Thu Oct 09 08:30:28 2008 -0700
-@@ -2,6 +2,9 @@
- 
- /* Define to 1 if you have the <aio.h> header file. */
- #undef HAVE_AIO_H
-+
-+/* Define to 1 if compiler provides atomic builtins. */
-+#undef HAVE_ATOMIC_BUILTINS
- 
- /* Define to 1 if you have the <dlfcn.h> header file. */
- #undef HAVE_DLFCN_H
-diff -r 962aec0d731c innobase/include/sync0rw.h
---- a/innobase/include/sync0rw.h	Thu Oct 09 08:28:53 2008 -0700
-+++ b/innobase/include/sync0rw.h	Thu Oct 09 08:30:28 2008 -0700
+ 	rec = ha_search_and_get_data(btr_search_sys->hash_index, fold);
+diff -ruN a/innobase/include/sync0rw.h b/innobase/include/sync0rw.h
+--- a/innobase/include/sync0rw.h	2009-01-30 06:42:20.000000000 +0900
++++ b/innobase/include/sync0rw.h	2009-04-16 16:15:28.000000000 +0900
 @@ -325,7 +325,17 @@
  Accessor functions for rw lock. */
  UNIV_INLINE
@@ -191,7 +50,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.h
  /* NOTE! The structure appears here only for the compiler to know its size.
  Do not use its fields directly! The structure used in the spin lock
  implementation of a read-write lock. Several threads may have a shared lock
-@@ -417,9 +432,9 @@
+@@ -417,9 +438,9 @@
  field. Then no new readers are allowed in. */
  
  struct rw_lock_struct {
@@ -204,7 +63,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.h
  	os_event_t	wait_ex_event;	/* This windows specific event is
  				used by the thread which has set the
  				lock state to RW_LOCK_WAIT_EX. The
-@@ -427,31 +442,35 @@
+@@ -427,31 +448,35 @@
  				thread will be the next one to proceed
  				once the current the event gets
  				signalled. See LEMMA 2 in sync0sync.c */
@@ -249,10 +108,10 @@ diff -r 962aec0d731c innobase/include/sync0rw.h
  				/* This is TRUE if the writer field is
  				RW_LOCK_WAIT_EX; this field is located far
  				from the memory update hotspot fields which
-diff -r 962aec0d731c innobase/include/sync0rw.ic
---- a/innobase/include/sync0rw.ic	Thu Oct 09 08:28:53 2008 -0700
-+++ b/innobase/include/sync0rw.ic	Thu Oct 09 08:30:28 2008 -0700
-@@ -47,20 +47,52 @@
+diff -ruN a/innobase/include/sync0rw.ic b/innobase/include/sync0rw.ic
+--- a/innobase/include/sync0rw.ic	2009-01-30 06:42:20.000000000 +0900
++++ b/innobase/include/sync0rw.ic	2009-04-16 17:06:53.000000000 +0900
+@@ -47,20 +47,64 @@
  Accessor functions for rw lock. */
  UNIV_INLINE
  ulint
@@ -263,11 +122,13 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  {
 -	return(lock->waiters);
 +	return(lock->s_waiters);
-+}
-+UNIV_INLINE
+ }
+ UNIV_INLINE
+-void
+-rw_lock_set_waiters(
 +ulint
 +rw_lock_get_x_waiters(
-+/*================*/
+ /*================*/
 +	rw_lock_t*	lock)
 +{
 +	return(lock->x_waiters);
@@ -279,17 +140,19 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
 +	rw_lock_t*      lock)
 +{
 +	return(lock->wait_ex_waiters);
- }
- UNIV_INLINE
- void
--rw_lock_set_waiters(
--/*================*/
++}
++UNIV_INLINE
++void
 +rw_lock_set_s_waiters(
  	rw_lock_t*	lock,
  	ulint		flag)
  {
 -	lock->waiters = flag;
++#ifdef HAVE_ATOMIC_BUILTINS
++	__sync_lock_test_and_set(&lock->s_waiters, flag);
++#else
 +	lock->s_waiters = flag;
++#endif
 +}
 +UNIV_INLINE
 +void
@@ -297,7 +160,11 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
 +	rw_lock_t*	lock,
 +	ulint		flag)
 +{
++#ifdef HAVE_ATOMIC_BUILTINS
++	__sync_lock_test_and_set(&lock->x_waiters, flag);
++#else
 +	lock->x_waiters = flag;
++#endif
 +}
 +UNIV_INLINE
 +void
@@ -306,11 +173,15 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
 +	rw_lock_t*      lock,
 +	ulint           flag)
 +{
++#ifdef HAVE_ATOMIC_BUILTINS
++	__sync_lock_test_and_set(&lock->wait_ex_waiters, flag);
++#else
 +	lock->wait_ex_waiters = flag;
++#endif
  }
  UNIV_INLINE
  ulint
-@@ -68,7 +100,19 @@
+@@ -68,7 +112,19 @@
  /*===============*/
  	rw_lock_t*	lock)
  {
@@ -330,7 +201,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  }
  UNIV_INLINE
  void
-@@ -96,6 +140,7 @@
+@@ -96,6 +152,7 @@
  {
  	lock->reader_count = count;
  }
@@ -338,7 +209,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  UNIV_INLINE
  mutex_t*
  rw_lock_get_mutex(
-@@ -104,6 +149,7 @@
+@@ -104,6 +161,7 @@
  {
  	return(&(lock->mutex));
  }
@@ -346,7 +217,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  
  /**********************************************************************
  Returns the value of writer_count for the lock. Does not reserve the lock
-@@ -133,14 +179,26 @@
+@@ -133,14 +191,26 @@
  	const char*	file_name, /* in: file name where lock requested */
  	ulint		line)	/* in: line where requested */
  {
@@ -374,7 +245,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  
  #ifdef UNIV_SYNC_DEBUG
  		rw_lock_add_debug_info(lock, pass, RW_LOCK_SHARED, file_name,
-@@ -167,11 +225,15 @@
+@@ -167,11 +237,15 @@
  	const char*	file_name,	/* in: file name where requested */
  	ulint		line)		/* in: line where lock requested */
  {
@@ -391,7 +262,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  
  	lock->last_s_file_name = file_name;
  	lock->last_s_line = line;
-@@ -199,7 +261,11 @@
+@@ -199,7 +273,11 @@
  
  	rw_lock_set_writer(lock, RW_LOCK_EX);
  	lock->writer_thread = os_thread_get_curr_id();
@@ -403,7 +274,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  	lock->pass = 0;
  			
  	lock->last_x_file_name = file_name;
-@@ -241,15 +307,21 @@
+@@ -241,15 +319,21 @@
  	ut_ad(!rw_lock_own(lock, RW_LOCK_SHARED)); /* see NOTE above */
  #endif /* UNIV_SYNC_DEBUG */
  
@@ -425,7 +296,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  
  		rw_lock_s_lock_spin(lock, pass, file_name, line);
  
-@@ -272,11 +344,23 @@
+@@ -272,11 +356,23 @@
  {
  	ibool	success	= FALSE;
  
@@ -449,7 +320,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  
  #ifdef UNIV_SYNC_DEBUG
  		rw_lock_add_debug_info(lock, 0, RW_LOCK_SHARED, file_name,
-@@ -289,7 +373,9 @@
+@@ -289,7 +385,9 @@
  		success = TRUE;
  	}
  
@@ -459,20 +330,20 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  
  	return(success);
  }
-@@ -309,6 +395,55 @@
+@@ -309,6 +407,54 @@
  {
  	ibool		success		= FALSE;
  	os_thread_id_t	curr_thread	= os_thread_get_curr_id();
 +#ifdef HAVE_ATOMIC_BUILTINS
-+	if ((lock->lock_word == RW_LOCK_BIAS)
-+			&& rw_lock_get_writer(lock) == RW_LOCK_NOT_LOCKED) {
-+		/* try x-lock */
-+		if(__sync_sub_and_fetch(&(lock->lock_word),
-+				RW_LOCK_BIAS) == 0) {
++	if (lock->reader_count == 0) {
++		/* try to lock writer */
++		if(__sync_lock_test_and_set(&(lock->writer),RW_LOCK_EX)
++				== RW_LOCK_NOT_LOCKED) {
 +			/* success */
-+			/* try to lock writer */
-+			if(__sync_lock_test_and_set(&(lock->writer),RW_LOCK_EX)
-+					== RW_LOCK_NOT_LOCKED) {
++retry_x_lock:
++			/* try x-lock */
++			if(__sync_sub_and_fetch(&(lock->lock_word),
++					RW_LOCK_BIAS) == 0) {
 +				/* success */
 +				lock->writer_thread = curr_thread;
 +				lock->pass = 0;
@@ -492,30 +363,29 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
 +
 +				return(TRUE);
 +			} else {
-+				/* x-unlock */
-+				__sync_fetch_and_add(&(lock->lock_word),
-+					RW_LOCK_BIAS);
++				/* fail (x-lock) */
++				if (__sync_fetch_and_add(&(lock->lock_word),RW_LOCK_BIAS)
++						== 0)
++					goto retry_x_lock;
 +			}
-+		} else {
-+			/* fail (x-lock) */
-+			__sync_fetch_and_add(&(lock->lock_word),RW_LOCK_BIAS);
++
++			__sync_lock_test_and_set(&(lock->writer),RW_LOCK_NOT_LOCKED);
 +		}
 +	}
 +
 +	if (lock->pass == 0
-+			&& os_thread_eq(lock->writer_thread, curr_thread)
-+			&& rw_lock_get_writer(lock) == RW_LOCK_EX) {
++			&& os_thread_eq(lock->writer_thread, curr_thread)) {
 +		goto relock;
 +	}
 +
-+	ut_ad(rw_lock_validate(lock));
++	//ut_ad(rw_lock_validate(lock));
 +
 +	return(FALSE);
 +#else
  	mutex_enter(rw_lock_get_mutex(lock));
  
  	if (UNIV_UNLIKELY(rw_lock_get_reader_count(lock) != 0)) {
-@@ -339,6 +474,7 @@
+@@ -339,6 +485,7 @@
          ut_ad(rw_lock_validate(lock));
  
  	return(success);
@@ -523,7 +393,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  }
  
  /**********************************************************************
-@@ -354,16 +490,33 @@
+@@ -354,16 +501,33 @@
  #endif
  	)
  {
@@ -558,37 +428,37 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  
  #ifdef UNIV_SYNC_DEBUG
  	rw_lock_remove_debug_info(lock, pass, RW_LOCK_SHARED);
-@@ -372,20 +525,36 @@
+@@ -372,22 +536,39 @@
  	/* If there may be waiters and this was the last s-lock,
  	signal the object */
  
 -	if (UNIV_UNLIKELY(lock->waiters)
 +#ifdef HAVE_ATOMIC_BUILTINS
-+	if (UNIV_UNLIKELY(last && lock->wait_ex_waiters)) {
++	if (UNIV_UNLIKELY(last && __sync_lock_test_and_set(&lock->wait_ex_waiters, 0))) {
++		os_event_set(lock->wait_ex_event);
++		sync_array_object_signalled(sync_primary_wait_array);
++	}
++	else if (UNIV_UNLIKELY(last && __sync_lock_test_and_set(&lock->x_waiters, 0))) {
++		os_event_set(lock->x_event);
++		sync_array_object_signalled(sync_primary_wait_array);
++	}
 +#else
 +	if (UNIV_UNLIKELY(lock->wait_ex_waiters)
  			&& lock->reader_count == 0) {
 -	       	sg = TRUE;
-+#endif
 +	       	wx_sg = TRUE;
  
 -		rw_lock_set_waiters(lock, 0);
 +		rw_lock_set_wx_waiters(lock, 0);
 +	}
-+#ifdef HAVE_ATOMIC_BUILTINS
-+	else if (UNIV_UNLIKELY(last && lock->x_waiters)) {
-+#else
 +	else if (UNIV_UNLIKELY(lock->x_waiters)
 +			&& lock->reader_count == 0) {
-+#endif
 +		x_sg = TRUE;
 +
 +		rw_lock_set_x_waiters(lock, 0);
  	}
  	
-+#ifndef HAVE_ATOMIC_BUILTINS
  	mutex_exit(mutex);
-+#endif
  
 -	if (UNIV_UNLIKELY(sg)) {
 -#ifdef __WIN__
@@ -601,8 +471,11 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
 +		os_event_set(lock->x_event);
  		sync_array_object_signalled(sync_primary_wait_array);
  	}
++#endif
  
-@@ -409,13 +578,22 @@
+         ut_ad(rw_lock_validate(lock));
+ 
+@@ -409,13 +590,22 @@
  
  	ut_ad(lock->reader_count > 0);
  
@@ -625,7 +498,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
          ut_ad(rw_lock_validate(lock));
  #ifdef UNIV_SYNC_PERF_STAT
  	rw_s_exit_count++;
-@@ -435,41 +613,81 @@
+@@ -435,41 +625,83 @@
  #endif
  	)
  {
@@ -658,10 +531,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
 +		/* FIXME: It is a value of bad manners for pthread.
 +		          But we shouldn't keep an ID of not-owner. */
 +		lock->writer_thread = -1;
-+
-+		/* atomic operation may be safer about memory order. */
-+		rw_lock_set_writer(lock, RW_LOCK_NOT_LOCKED);
-+		__sync_synchronize();
++		__sync_lock_test_and_set(&(lock->writer),RW_LOCK_NOT_LOCKED);
 +	}
 +#else
  	lock->writer_count--;
@@ -683,9 +553,15 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
 -		rw_lock_set_waiters(lock, 0);
 +#ifdef HAVE_ATOMIC_BUILTINS
 +	if (last) {
++		if(__sync_lock_test_and_set(&lock->s_waiters, 0)){
++			s_sg = TRUE;
++		}
++		if(__sync_lock_test_and_set(&lock->x_waiters, 0)){
++			x_sg = TRUE;
++		}
++	}
 +#else
 +	if (lock->writer_count == 0) {
-+#endif
 +		if(lock->s_waiters){
 +			s_sg = TRUE;
 +			rw_lock_set_s_waiters(lock, 0);
@@ -696,7 +572,6 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
 +		}
  	}
  	
-+#ifndef HAVE_ATOMIC_BUILTINS
  	mutex_exit(&(lock->mutex));
 +#endif
  
@@ -715,7 +590,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  		sync_array_object_signalled(sync_primary_wait_array);
  	}
  
-@@ -494,9 +712,13 @@
+@@ -494,9 +726,13 @@
  
  	ut_ad(lock->writer_count > 0);
  
@@ -729,7 +604,7 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
  		rw_lock_set_writer(lock, RW_LOCK_NOT_LOCKED);
  	}
  
-@@ -504,7 +726,12 @@
+@@ -504,7 +740,12 @@
  	rw_lock_remove_debug_info(lock, 0, RW_LOCK_EX);
  #endif
  
@@ -742,9 +617,9 @@ diff -r 962aec0d731c innobase/include/sync0rw.ic
          ut_ad(rw_lock_validate(lock));
  
  #ifdef UNIV_SYNC_PERF_STAT
-diff -r 962aec0d731c innobase/sync/sync0arr.c
---- a/innobase/sync/sync0arr.c	Thu Oct 09 08:28:53 2008 -0700
-+++ b/innobase/sync/sync0arr.c	Thu Oct 09 08:30:28 2008 -0700
+diff -ruN a/innobase/sync/sync0arr.c b/innobase/sync/sync0arr.c
+--- a/innobase/sync/sync0arr.c	2009-01-30 06:42:24.000000000 +0900
++++ b/innobase/sync/sync0arr.c	2009-04-16 16:15:28.000000000 +0900
 @@ -309,13 +309,13 @@
  {
  	if (type == SYNC_MUTEX) {
@@ -877,9 +752,9 @@ diff -r 962aec0d731c innobase/sync/sync0arr.c
  				}
                          }
                  }
-diff -r 962aec0d731c innobase/sync/sync0rw.c
---- a/innobase/sync/sync0rw.c	Thu Oct 09 08:28:53 2008 -0700
-+++ b/innobase/sync/sync0rw.c	Thu Oct 09 08:30:28 2008 -0700
+diff -ruN a/innobase/sync/sync0rw.c b/innobase/sync/sync0rw.c
+--- a/innobase/sync/sync0rw.c	2009-01-30 06:42:24.000000000 +0900
++++ b/innobase/sync/sync0rw.c	2009-04-16 17:33:59.000000000 +0900
 @@ -99,6 +99,7 @@
  	object is created, then the following call initializes
  	the sync system. */
@@ -945,7 +820,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  
  	if (UT_LIST_GET_PREV(list, lock)) {
  		ut_a(UT_LIST_GET_PREV(list, lock)->magic_n == RW_LOCK_MAGIC_N);
-@@ -192,6 +199,8 @@
+@@ -192,26 +199,43 @@
  Checks that the rw-lock has been initialized and that there are no
  simultaneous shared and exclusive locks. */
  
@@ -954,8 +829,9 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  ibool
  rw_lock_validate(
  /*=============*/
-@@ -199,7 +208,9 @@
+ 	rw_lock_t*	lock)
  {
++	ulint	test;
  	ut_a(lock);
  
 +#ifndef HAVE_ATOMIC_BUILTINS
@@ -963,28 +839,37 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
 +#endif
  
  	ut_a(lock->magic_n == RW_LOCK_MAGIC_N);
++#ifndef HAVE_ATOMIC_BUILTINS
  	ut_a((rw_lock_get_reader_count(lock) == 0)
-@@ -207,11 +218,17 @@
- 	ut_a((rw_lock_get_writer(lock) == RW_LOCK_EX)
- 	     || (rw_lock_get_writer(lock) == RW_LOCK_WAIT_EX)
- 	     || (rw_lock_get_writer(lock) == RW_LOCK_NOT_LOCKED));
+ 	     || (rw_lock_get_writer(lock) != RW_LOCK_EX));
+-	ut_a((rw_lock_get_writer(lock) == RW_LOCK_EX)
+-	     || (rw_lock_get_writer(lock) == RW_LOCK_WAIT_EX)
+-	     || (rw_lock_get_writer(lock) == RW_LOCK_NOT_LOCKED));
 -	ut_a((rw_lock_get_waiters(lock) == 0)
 -	     || (rw_lock_get_waiters(lock) == 1));
-+	ut_a((rw_lock_get_s_waiters(lock) == 0)
-+	     || (rw_lock_get_s_waiters(lock) == 1));
-+	ut_a((rw_lock_get_x_waiters(lock) == 0)
-+	     || (rw_lock_get_x_waiters(lock) == 1));
-+	ut_a((rw_lock_get_wx_waiters(lock) == 0)
-+	     || (rw_lock_get_wx_waiters(lock) == 1));
++#endif
++	test = rw_lock_get_writer(lock);
++	ut_a((test == RW_LOCK_EX)
++	     || (test == RW_LOCK_WAIT_EX)
++	     || (test == RW_LOCK_NOT_LOCKED));
++	test = rw_lock_get_s_waiters(lock);
++	ut_a((test == 0)
++	     || (test == 1));
++	test = rw_lock_get_x_waiters(lock);
++	ut_a((test == 0)
++	     || (test == 1));
++	test = rw_lock_get_wx_waiters(lock);
++	ut_a((test == 0)
++	     || (test == 1));
++#ifndef HAVE_ATOMIC_BUILTINS
  	ut_a((lock->writer != RW_LOCK_EX) || (lock->writer_count > 0));
  	     
-+#ifndef HAVE_ATOMIC_BUILTINS
  	mutex_exit(rw_lock_get_mutex(lock));
 +#endif
  
  	return(TRUE);
  }
-@@ -237,13 +254,14 @@
+@@ -237,13 +261,14 @@
          ut_ad(rw_lock_validate(lock));
  
  lock_loop:
@@ -1002,7 +887,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
          	if (srv_spin_wait_delay) {
          		ut_delay(ut_rnd_interval(0, srv_spin_wait_delay));
          	}
-@@ -262,15 +280,27 @@
+@@ -262,15 +287,27 @@
  		lock->cfile_name, (ulong) lock->cline, (ulong) i);
  	}
  
@@ -1030,13 +915,13 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  		/* If we get here, locking did not succeed, we may
  		suspend the thread to wait in the wait array */
  
-@@ -281,9 +311,26 @@
+@@ -281,9 +318,26 @@
  				file_name, line,
  				&index);
  
 -		rw_lock_set_waiters(lock, 1);
 +		rw_lock_set_s_waiters(lock, 1);
- 
++
 +#ifdef HAVE_ATOMIC_BUILTINS
 +		/* like sync0sync.c doing */
 +		for (i = 0; i < 4; i++) {
@@ -1045,10 +930,10 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
 +				return; /* Success */
 +			}
 +		}
-+
+ 
 +		/* If wait_ex_waiter stalls, wakes it. */
-+		if (lock->wait_ex_waiters && lock->lock_word == RW_LOCK_BIAS) {
-+			rw_lock_set_wx_waiters(lock, 0);
++		if (lock->reader_count == 0
++		    && __sync_lock_test_and_set(&lock->wait_ex_waiters, 0)) {
 +			os_event_set(lock->wait_ex_event);
 +			sync_array_object_signalled(sync_primary_wait_array);
 +		}
@@ -1058,7 +943,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  
  		if (srv_print_latch_waits) {
  			fprintf(stderr,
-@@ -318,13 +358,19 @@
+@@ -318,13 +372,19 @@
  {
  	ut_ad(rw_lock_is_locked(lock, RW_LOCK_EX));
  
@@ -1078,13 +963,13 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  }
  
  /**********************************************************************
-@@ -342,6 +388,89 @@
+@@ -342,6 +402,89 @@
  	const char*	file_name,/* in: file name where lock requested */
  	ulint		line)	/* in: line where requested */
  {
 +#ifdef HAVE_ATOMIC_BUILTINS
 +	os_thread_id_t	curr_thread	= os_thread_get_curr_id();
-+
++retry_writer:
 +	/* try to lock writer */
 +	if(__sync_lock_test_and_set(&(lock->writer),RW_LOCK_EX)
 +			== RW_LOCK_NOT_LOCKED) {
@@ -1160,15 +1045,15 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
 +
 +		break;
 +
-+	    default: /* ??? */
-+		return(RW_LOCK_NOT_LOCKED);
++	    default: /* RW_LOCK_NOT_LOCKED? maybe impossible */
++		goto retry_writer;
 +	}
 +#else /* HAVE_ATOMIC_BUILTINS */
 +
  #ifdef UNIV_SYNC_DEBUG
  	ut_ad(mutex_own(rw_lock_get_mutex(lock)));
  #endif /* UNIV_SYNC_DEBUG */
-@@ -423,6 +552,7 @@
+@@ -423,6 +566,7 @@
  		/* Locking succeeded, we may return */
  		return(RW_LOCK_EX);
  	}
@@ -1176,7 +1061,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  
  	/* Locking did not succeed */
  	return(RW_LOCK_NOT_LOCKED);
-@@ -448,19 +578,33 @@
+@@ -448,19 +592,33 @@
  	ulint		line)	/* in: line where requested */
  {
          ulint	index;  /* index of the reserved wait cell */
@@ -1211,7 +1096,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  	if (state == RW_LOCK_EX) {
  
  		return;	/* Locking succeeded */
-@@ -468,10 +612,9 @@
+@@ -468,10 +626,9 @@
  	} else if (state == RW_LOCK_NOT_LOCKED) {
  
   		/* Spin waiting for the writer field to become free */
@@ -1220,11 +1105,11 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
 -        	while (rw_lock_get_writer(lock) != RW_LOCK_NOT_LOCKED 
 -               					&& i < SYNC_SPIN_ROUNDS) {
 +        	while (i < SYNC_SPIN_ROUNDS
-+			&& rw_lock_get_writer(lock) != RW_LOCK_NOT_LOCKED) {
++			&& lock->lock_word != RW_LOCK_BIAS) {
          		if (srv_spin_wait_delay) {
  				ut_delay(ut_rnd_interval(0,
  							srv_spin_wait_delay));
-@@ -485,9 +628,12 @@
+@@ -485,9 +642,12 @@
          } else if (state == RW_LOCK_WAIT_EX) {
  
   		/* Spin waiting for the reader count field to become zero */
@@ -1238,7 +1123,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
                 					&& i < SYNC_SPIN_ROUNDS) {
          		if (srv_spin_wait_delay) {
  				ut_delay(ut_rnd_interval(0,
-@@ -500,7 +646,6 @@
+@@ -500,7 +660,6 @@
  			os_thread_yield();
  		}
          } else {
@@ -1246,7 +1131,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  		ut_error;
  	}	
  
-@@ -516,34 +661,69 @@
+@@ -516,34 +675,69 @@
          /* We try once again to obtain the lock. Acquire the mutex protecting
  	the rw-lock fields */
  
@@ -1269,7 +1154,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  
  		return;	/* Locking succeeded */
  	}
-+
+ 
 +#ifdef HAVE_ATOMIC_BUILTINS
 +	/* like sync0sync.c doing */
 +	i++;
@@ -1278,7 +1163,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
 +		goto spin_loop;
 +	}
 +#endif
- 
++
  	rw_x_system_call_count++;
  
          sync_array_reserve_cell(sync_primary_wait_array,
@@ -1322,7 +1207,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  
  	if (srv_print_latch_waits) {
  		fprintf(stderr,
-@@ -718,7 +898,9 @@
+@@ -718,7 +912,9 @@
  	ut_ad(lock);
  	ut_ad(rw_lock_validate(lock));
  
@@ -1332,7 +1217,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  
  	info = UT_LIST_GET_FIRST(lock->debug_list);
  
-@@ -728,7 +910,9 @@
+@@ -728,7 +924,9 @@
  		    && (info->pass == 0)
  		    && (info->lock_type == lock_type)) {
  
@@ -1342,7 +1227,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  		    	/* Found! */
  
  		    	return(TRUE);
-@@ -736,7 +920,9 @@
+@@ -736,7 +934,9 @@
  
  		info = UT_LIST_GET_NEXT(list, info);
  	}
@@ -1352,7 +1237,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  
  	return(FALSE);
  }
-@@ -758,21 +944,25 @@
+@@ -758,21 +958,25 @@
  	ut_ad(lock);
  	ut_ad(rw_lock_validate(lock));
  	
@@ -1379,7 +1264,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  
  	return(ret);
  }
-@@ -801,16 +991,26 @@
+@@ -801,16 +1005,26 @@
  
  		count++;
  
@@ -1409,7 +1294,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  			} else {
  				putc('\n', stderr);
  			}
-@@ -822,7 +1022,9 @@
+@@ -822,7 +1036,9 @@
  			}
  		}
  
@@ -1419,7 +1304,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  		lock = UT_LIST_GET_NEXT(list, lock);
  	}
  
-@@ -847,10 +1049,18 @@
+@@ -847,10 +1063,18 @@
  
  	if ((rw_lock_get_writer(lock) != RW_LOCK_NOT_LOCKED)
  	    || (rw_lock_get_reader_count(lock) != 0)
@@ -1441,7 +1326,7 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  		} else {
  			putc('\n', stderr);
  		}
-@@ -909,14 +1119,18 @@
+@@ -909,14 +1133,18 @@
  	lock = UT_LIST_GET_FIRST(rw_lock_list);
  
  	while (lock != NULL) {
@@ -1460,9 +1345,9 @@ diff -r 962aec0d731c innobase/sync/sync0rw.c
  		lock = UT_LIST_GET_NEXT(list, lock);
  	}
  
-diff -r 962aec0d731c patch_info/innodb_rw_lock.info
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/innodb_rw_lock.info	Thu Oct 09 08:30:28 2008 -0700
+diff -ruN a/patch_info/innodb_rw_lock.info b/patch_info/innodb_rw_lock.info
+--- /dev/null	1970-01-01 09:00:00.000000000 +0900
++++ b/patch_info/innodb_rw_lock.info	2009-04-16 16:15:28.000000000 +0900
 @@ -0,0 +1,6 @@
 +File=innodb_rw_lock.patch
 +Name=Fix of InnoDB rw_locks
