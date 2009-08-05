@@ -26,7 +26,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.84
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -77,12 +77,12 @@ Patch24:	%{name}-innodb_check_fragmentation.patch
 Patch25:	%{name}-innodb_io_pattern.patch
 Patch26:	%{name}-innodb_fsync_source.patch
 Patch27:	%{name}-innodb_show_hashed_memory.patch
-Patch28:    %{name}-innodb_dict_size_limit.patch
-Patch29:    %{name}-innodb_extra_rseg.patch
-Patch30:    %{name}-innodb_thread_concurrency_timer_based.patch
-Patch31:    %{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
-Patch32:    %{name}-innodb_rw_lock.patch
-Patch33:    %{name}-mysql-test.patch
+Patch28:	%{name}-innodb_dict_size_limit.patch
+Patch29:	%{name}-innodb_extra_rseg.patch
+Patch30:	%{name}-innodb_thread_concurrency_timer_based.patch
+Patch31:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
+Patch32:	%{name}-innodb_rw_lock.patch
+Patch33:	%{name}-mysql-test.patch
 # </percona>
 Patch34:	%{name}-errorlog-no-rename.patch
 Patch35:	%{name}-alpha-stack.patch
@@ -119,7 +119,6 @@ Requires(triggerpostun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
-Requires:	logrotate >= 3.7-4
 Requires:	rc-scripts >= 0.2.0
 Suggests:	mysql-client
 %{?with_tcpd:Suggests:	tcp_wrappers}
@@ -129,6 +128,7 @@ Provides:	msqlormysql
 Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
+Conflicts:	logrotate < 3.7-4
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
