@@ -561,7 +561,7 @@ case "$action" in
 		fi
 	done
 
-	if [ $# -gt 1 -a "$running" ]; then
+	if [ $# = 1 -a "$running" ]; then
 		nls "Warning: MySQL Daemon processes not under clusters.conf control:"
 		# see if we can display their status
 		for pid in $running; do
