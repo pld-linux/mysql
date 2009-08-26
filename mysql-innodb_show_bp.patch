@@ -386,7 +386,7 @@ diff -r fe944d2c6e1f sql/sql_show.cc
  #endif
  
  #ifndef NO_EMBEDDED_ACCESS_CHECKS
-@@ -4042,6 +4046,13 @@
+@@ -4042,6 +4046,19 @@
    DBUG_RETURN(res);
  }
  
@@ -394,6 +394,12 @@ diff -r fe944d2c6e1f sql/sql_show.cc
 +{
 +  DBUG_ENTER("fill_innodb_bp_content");
 +  int res= 0;
++
++  /* deny access to non-superusers */
++  if (check_global_access(thd, PROCESS_ACL)) {
++    DBUG_RETURN(0);
++  }
++
 +  innodb_I_S_buffer_pool_content(thd, tables);
 +  DBUG_RETURN(res);
 +}

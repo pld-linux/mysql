@@ -6,7 +6,7 @@ diff -ruN a/innobase/btr/btr0sea.c b/innobase/btr/btr0sea.c
  	}
  
 -	ut_ad(btr_search_latch.writer != RW_LOCK_EX);
-+	ut_ad(rw_lock_get_writer(&btr_search_latch) != RW_LOCK_EX);
++	ut_ad(btr_search_latch.writer_count == 0);
  	ut_ad(btr_search_latch.reader_count > 0);
  
  	rec = ha_search_and_get_data(btr_search_sys->hash_index, fold);

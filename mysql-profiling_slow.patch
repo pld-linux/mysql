@@ -1,6 +1,6 @@
-diff -r 92e70e675363 patch_info/profiling_slow.info
+diff -r 4636d2e0b0d0 patch_info/profiling_slow.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/profiling_slow.info	Mon Jun 01 00:50:00 2009 -0700
++++ b/patch_info/profiling_slow.info	Fri Jul 03 15:40:29 2009 -0700
 @@ -0,0 +1,9 @@
 +File=profiling_slow.info
 +Name=profiling from SHOW PROFILE to slow.log
@@ -11,9 +11,9 @@ diff -r 92e70e675363 patch_info/profiling_slow.info
 +Changelog
 +2009-05-18
 +Initial implementation
-diff -r 92e70e675363 sql/log.cc
---- a/sql/log.cc	Mon Jun 01 00:48:56 2009 -0700
-+++ b/sql/log.cc	Mon Jun 01 00:50:00 2009 -0700
+diff -r 4636d2e0b0d0 sql/log.cc
+--- a/sql/log.cc	Fri Jul 03 15:40:20 2009 -0700
++++ b/sql/log.cc	Fri Jul 03 15:40:29 2009 -0700
 @@ -2402,6 +2402,11 @@
            tmp_errno=errno;
        }
@@ -26,9 +26,9 @@ diff -r 92e70e675363 sql/log.cc
      if (thd->db && strcmp(thd->db,db))
      {						// Database changed
        if (my_b_printf(&log_file,"use %s;\n",thd->db) == (uint) -1)
-diff -r 92e70e675363 sql/mysqld.cc
---- a/sql/mysqld.cc	Mon Jun 01 00:48:56 2009 -0700
-+++ b/sql/mysqld.cc	Mon Jun 01 00:50:00 2009 -0700
+diff -r 4636d2e0b0d0 sql/mysqld.cc
+--- a/sql/mysqld.cc	Fri Jul 03 15:40:20 2009 -0700
++++ b/sql/mysqld.cc	Fri Jul 03 15:40:29 2009 -0700
 @@ -5052,6 +5052,8 @@
    OPT_PORT_OPEN_TIMEOUT,
    OPT_MERGE,
@@ -55,9 +55,9 @@ diff -r 92e70e675363 sql/mysqld.cc
  #endif
    {"relay-log", OPT_RELAY_LOG,
     "The location and name to use for relay logs.",
-diff -r 92e70e675363 sql/set_var.cc
---- a/sql/set_var.cc	Mon Jun 01 00:48:56 2009 -0700
-+++ b/sql/set_var.cc	Mon Jun 01 00:50:00 2009 -0700
+diff -r 4636d2e0b0d0 sql/set_var.cc
+--- a/sql/set_var.cc	Fri Jul 03 15:40:20 2009 -0700
++++ b/sql/set_var.cc	Fri Jul 03 15:40:29 2009 -0700
 @@ -592,6 +592,10 @@
                                        ulonglong(OPTION_PROFILING));
  static sys_var_thd_ulong	sys_profiling_history_size("profiling_history_size",
@@ -70,7 +70,7 @@ diff -r 92e70e675363 sql/set_var.cc
  
  /* Local state variables */
 @@ -764,6 +768,8 @@
- #ifdef ENABLED_PROFILING
+ #if defined(ENABLED_PROFILING) && defined(COMMUNITY_SERVER)
    &sys_profiling,
    &sys_profiling_history_size,
 +  &sys_profiling_server,
@@ -79,7 +79,7 @@ diff -r 92e70e675363 sql/set_var.cc
    &sys_pseudo_thread_id,
    &sys_query_alloc_block_size,
 @@ -1094,6 +1100,8 @@
- #ifdef ENABLED_PROFILING
+ #if defined(ENABLED_PROFILING) && defined(COMMUNITY_SERVER)
    {sys_profiling.name,        (char*) &sys_profiling,               SHOW_SYS},
    {sys_profiling_history_size.name, (char*) &sys_profiling_history_size, SHOW_SYS},
 +  {sys_profiling_server.name, (char*) &sys_profiling_server, SHOW_SYS},
@@ -87,9 +87,9 @@ diff -r 92e70e675363 sql/set_var.cc
  #endif
    {"protocol_version",        (char*) &protocol_version,            SHOW_INT},
    {sys_query_alloc_block_size.name, (char*) &sys_query_alloc_block_size,
-diff -r 92e70e675363 sql/sql_class.h
---- a/sql/sql_class.h	Mon Jun 01 00:48:56 2009 -0700
-+++ b/sql/sql_class.h	Mon Jun 01 00:50:00 2009 -0700
+diff -r 4636d2e0b0d0 sql/sql_class.h
+--- a/sql/sql_class.h	Fri Jul 03 15:40:20 2009 -0700
++++ b/sql/sql_class.h	Fri Jul 03 15:40:29 2009 -0700
 @@ -550,6 +550,8 @@
    ulong optimizer_search_depth;
    ulong preload_buff_size;
@@ -99,9 +99,9 @@ diff -r 92e70e675363 sql/sql_class.h
    ulong query_cache_type;
    ulong log_slow_rate_limit;
    ulong read_buff_size;
-diff -r 92e70e675363 sql/sql_profile.cc
---- a/sql/sql_profile.cc	Mon Jun 01 00:48:56 2009 -0700
-+++ b/sql/sql_profile.cc	Mon Jun 01 00:50:00 2009 -0700
+diff -r 4636d2e0b0d0 sql/sql_profile.cc
+--- a/sql/sql_profile.cc	Fri Jul 03 15:40:20 2009 -0700
++++ b/sql/sql_profile.cc	Fri Jul 03 15:40:29 2009 -0700
 @@ -221,9 +221,22 @@
  */
  void PROF_MEASUREMENT::collect()
@@ -234,9 +234,9 @@ diff -r 92e70e675363 sql/sql_profile.cc
  /**
    Fill the information schema table, "query_profile", as defined in show.cc .
    There are two ways to get to this function:  Selecting from the information
-diff -r 92e70e675363 sql/sql_profile.h
---- a/sql/sql_profile.h	Mon Jun 01 00:48:56 2009 -0700
-+++ b/sql/sql_profile.h	Mon Jun 01 00:50:00 2009 -0700
+diff -r 4636d2e0b0d0 sql/sql_profile.h
+--- a/sql/sql_profile.h	Fri Jul 03 15:40:20 2009 -0700
++++ b/sql/sql_profile.h	Fri Jul 03 15:40:29 2009 -0700
 @@ -193,6 +193,7 @@
    unsigned int line;
  

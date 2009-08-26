@@ -150,7 +150,7 @@ diff -r e9fb5b8bcf78 sql/ha_innodb.h
 @@ -243,6 +243,8 @@
  extern ulong srv_enable_unsafe_group_commit;
  extern uint srv_read_ahead;
- extern ulong srv_adaptive_checkpoint;
+ extern uint srv_adaptive_checkpoint;
 +extern ulong srv_show_locks_held;
 +extern ulong srv_show_verbose_locks;
  
@@ -187,9 +187,9 @@ diff -r e9fb5b8bcf78 sql/set_var.cc
 --- a/sql/set_var.cc	Mon Jun 01 00:36:33 2009 -0700
 +++ b/sql/set_var.cc	Mon Jun 01 00:36:41 2009 -0700
 @@ -527,6 +527,12 @@
-                                                              &srv_enable_unsafe_group_commit);
- sys_var_long_ptr	sys_innodb_adaptive_checkpoint("innodb_adaptive_checkpoint",
-                                                       &srv_adaptive_checkpoint);
+ sys_var_enum	sys_innodb_adaptive_checkpoint("innodb_adaptive_checkpoint",
+                            &srv_adaptive_checkpoint,
+                            &innodb_adaptive_checkpoint_typelib, fix_innodb_adaptive_checkpoint);
 +sys_var_long_ptr  sys_innodb_show_locks_held(
 +                                        "innodb_show_locks_held",
 +                                        &srv_show_locks_held);

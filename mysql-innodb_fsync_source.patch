@@ -1,6 +1,6 @@
-diff -r 61031ebb48ce innobase/buf/buf0flu.c
---- a/innobase/buf/buf0flu.c	Mon Nov 03 05:07:46 2008 -0800
-+++ b/innobase/buf/buf0flu.c	Mon Nov 03 05:07:56 2008 -0800
+diff -r ef44d8017b6b innobase/buf/buf0flu.c
+--- a/innobase/buf/buf0flu.c	Fri Jul 03 15:41:25 2009 -0700
++++ b/innobase/buf/buf0flu.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -341,7 +341,7 @@
  
  	/* Now flush the doublewrite buffer data to disk */
@@ -29,9 +29,9 @@ diff -r 61031ebb48ce innobase/buf/buf0flu.c
  #endif	
  	buf_flush_init_for_writing(block->frame, block->newest_modification,
  						block->space, block->offset);
-diff -r 61031ebb48ce innobase/fil/fil0fil.c
---- a/innobase/fil/fil0fil.c	Mon Nov 03 05:07:46 2008 -0800
-+++ b/innobase/fil/fil0fil.c	Mon Nov 03 05:07:56 2008 -0800
+diff -r ef44d8017b6b innobase/fil/fil0fil.c
+--- a/innobase/fil/fil0fil.c	Fri Jul 03 15:41:25 2009 -0700
++++ b/innobase/fil/fil0fil.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -245,6 +245,7 @@
  					request */
  	UT_LIST_BASE_NODE_T(fil_space_t) space_list;
@@ -103,7 +103,7 @@ diff -r 61031ebb48ce innobase/fil/fil0fil.c
  
  	return(success);
  }
-@@ -4166,8 +4187,9 @@
+@@ -4167,8 +4188,9 @@
  void
  fil_flush(
  /*======*/
@@ -114,7 +114,7 @@ diff -r 61031ebb48ce innobase/fil/fil0fil.c
  {
  	fil_system_t*	system	= fil_system;
  	fil_space_t*	space;
-@@ -4176,7 +4198,7 @@
+@@ -4177,7 +4199,7 @@
  	ib_longlong	old_mod_counter;
  
  	mutex_enter(&(system->mutex));
@@ -123,7 +123,7 @@ diff -r 61031ebb48ce innobase/fil/fil0fil.c
  	HASH_SEARCH(hash, system->spaces, space_id, space,
  							space->id == space_id);
  	if (!space || space->is_being_deleted) {
-@@ -4281,7 +4303,8 @@
+@@ -4282,7 +4304,8 @@
  void
  fil_flush_file_spaces(
  /*==================*/
@@ -133,7 +133,7 @@ diff -r 61031ebb48ce innobase/fil/fil0fil.c
  {
  	fil_system_t*	system	= fil_system;
  	fil_space_t*	space;
-@@ -4322,7 +4345,7 @@
+@@ -4323,7 +4346,7 @@
  	a non-existing space id. */
  	for (i = 0; i < n_space_ids; i++) {
  
@@ -142,9 +142,9 @@ diff -r 61031ebb48ce innobase/fil/fil0fil.c
  	}
  
  	mem_free(space_ids);
-diff -r 61031ebb48ce innobase/include/fil0fil.h
---- a/innobase/include/fil0fil.h	Mon Nov 03 05:07:46 2008 -0800
-+++ b/innobase/include/fil0fil.h	Mon Nov 03 05:07:56 2008 -0800
+diff -r ef44d8017b6b innobase/include/fil0fil.h
+--- a/innobase/include/fil0fil.h	Fri Jul 03 15:41:25 2009 -0700
++++ b/innobase/include/fil0fil.h	Fri Jul 03 15:41:32 2009 -0700
 @@ -197,6 +197,13 @@
  fil_init(
  /*=====*/
@@ -159,7 +159,7 @@ diff -r 61031ebb48ce innobase/include/fil0fil.h
  /***********************************************************************
  Opens all log files and system tablespace data files. They stay open until the
  database server shutdown. This should be called at a server startup after the
-@@ -621,14 +628,26 @@
+@@ -625,14 +632,26 @@
  	ulint	segment);	/* in: the number of the segment in the aio
  				array to wait for */ 
  /**************************************************************************
@@ -187,7 +187,7 @@ diff -r 61031ebb48ce innobase/include/fil0fil.h
  /**************************************************************************
  Flushes to disk writes in file spaces of the given type possibly cached by
  the OS. */
-@@ -636,7 +655,8 @@
+@@ -640,7 +659,8 @@
  void
  fil_flush_file_spaces(
  /*==================*/
@@ -197,9 +197,9 @@ diff -r 61031ebb48ce innobase/include/fil0fil.h
  /**********************************************************************
  Checks the consistency of the tablespace cache. */
  
-diff -r 61031ebb48ce innobase/include/log0log.h
---- a/innobase/include/log0log.h	Mon Nov 03 05:07:46 2008 -0800
-+++ b/innobase/include/log0log.h	Mon Nov 03 05:07:56 2008 -0800
+diff -r ef44d8017b6b innobase/include/log0log.h
+--- a/innobase/include/log0log.h	Fri Jul 03 15:41:25 2009 -0700
++++ b/innobase/include/log0log.h	Fri Jul 03 15:41:32 2009 -0700
 @@ -146,6 +146,22 @@
  log_io_complete(
  /*============*/
@@ -247,8 +247,8 @@ diff -r 61031ebb48ce innobase/include/log0log.h
 +log_buffer_flush_maybe_sync(void);
  /*==========================*/
  /********************************************************************
- Advances the smallest lsn for which there are unflushed dirty blocks in the
-@@ -744,6 +767,12 @@
+ Flushes the log buffer. Forces it to disk depending on the value of
+@@ -751,6 +774,12 @@
  					AND flushed to disk */
  	ulint		n_pending_writes;/* number of currently pending flushes
  					or writes */
@@ -261,9 +261,9 @@ diff -r 61031ebb48ce innobase/include/log0log.h
  	/* NOTE on the 'flush' in names of the fields below: starting from
  	4.0.14, we separate the write of the log file and the actual fsync()
  	or other method to flush it to disk. The names below shhould really
-diff -r 61031ebb48ce innobase/log/log0log.c
---- a/innobase/log/log0log.c	Mon Nov 03 05:07:46 2008 -0800
-+++ b/innobase/log/log0log.c	Mon Nov 03 05:07:56 2008 -0800
+diff -r ef44d8017b6b innobase/log/log0log.c
+--- a/innobase/log/log0log.c	Fri Jul 03 15:41:25 2009 -0700
++++ b/innobase/log/log0log.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -782,6 +782,15 @@
  	log_sys->written_to_all_lsn = log_sys->lsn;
  	
@@ -347,7 +347,7 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  }
  
  /********************************************************************
-@@ -1551,7 +1567,7 @@
+@@ -1574,7 +1590,7 @@
  	mutex_exit(&(log->mutex));
  
  	if (do_flush) {
@@ -356,7 +356,7 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  	}
  }
  
-@@ -1921,11 +1937,11 @@
+@@ -1944,11 +1960,11 @@
  	}
  
  	if (srv_unix_file_flush_method != SRV_UNIX_NOSYNC) {
@@ -370,7 +370,7 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  	oldest_lsn = log_buf_pool_get_oldest_modification();
  
  	mutex_exit(&(log_sys->mutex));
-@@ -1938,7 +1954,8 @@
+@@ -1961,7 +1977,8 @@
  	write-ahead-logging algorithm ensures that the log has been flushed
  	up to oldest_lsn. */
  
@@ -380,7 +380,7 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  
  	mutex_enter(&(log_sys->mutex));
  
-@@ -2566,7 +2583,7 @@
+@@ -2589,7 +2606,7 @@
  
  	mutex_exit(&(log_sys->mutex));
  
@@ -389,7 +389,7 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  	
  	mutex_enter(&(log_sys->mutex));
  	
-@@ -2647,7 +2664,8 @@
+@@ -2670,7 +2687,8 @@
  
  		mutex_exit(&(log_sys->mutex));
  	
@@ -399,7 +399,7 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  
  		calc_new_limit = FALSE;
  
-@@ -3184,8 +3202,8 @@
+@@ -3207,8 +3225,8 @@
  	}
  	mutex_exit(&kernel_mutex);
  
@@ -410,7 +410,7 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  
  	/* The call fil_write_flushed_lsn_to_data_files() will pass the buffer
  	pool: therefore it is essential that the buffer pool has been
-@@ -3218,7 +3236,7 @@
+@@ -3241,7 +3259,7 @@
  
  		fil_write_flushed_lsn_to_data_files(lsn, arch_log_no);
  
@@ -419,7 +419,7 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  
  	fil_close_all_files();
  
-@@ -3331,15 +3349,45 @@
+@@ -3363,15 +3381,45 @@
  	time_elapsed = 0.001 + difftime(current_time,
  					log_sys->last_printout_time);
  	fprintf(file,
@@ -471,10 +471,10 @@ diff -r 61031ebb48ce innobase/log/log0log.c
  
  	mutex_exit(&(log_sys->mutex));
  }
-diff -r 61031ebb48ce innobase/srv/srv0srv.c
---- a/innobase/srv/srv0srv.c	Mon Nov 03 05:07:46 2008 -0800
-+++ b/innobase/srv/srv0srv.c	Mon Nov 03 05:07:56 2008 -0800
-@@ -1638,6 +1638,12 @@
+diff -r ef44d8017b6b innobase/srv/srv0srv.c
+--- a/innobase/srv/srv0srv.c	Fri Jul 03 15:41:25 2009 -0700
++++ b/innobase/srv/srv0srv.c	Fri Jul 03 15:41:32 2009 -0700
+@@ -1698,6 +1698,12 @@
  		(ulong)time_elapsed);
  
  	fputs("----------\n"
@@ -487,9 +487,9 @@ diff -r 61031ebb48ce innobase/srv/srv0srv.c
  		"SEMAPHORES\n"
  		"----------\n", file);
  	sync_print(file);
-diff -r 61031ebb48ce innobase/trx/trx0sys.c
---- a/innobase/trx/trx0sys.c	Mon Nov 03 05:07:46 2008 -0800
-+++ b/innobase/trx/trx0sys.c	Mon Nov 03 05:07:56 2008 -0800
+diff -r ef44d8017b6b innobase/trx/trx0sys.c
+--- a/innobase/trx/trx0sys.c	Fri Jul 03 15:41:25 2009 -0700
++++ b/innobase/trx/trx0sys.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -511,7 +511,7 @@
  		page += UNIV_PAGE_SIZE;
  	}
@@ -499,10 +499,10 @@ diff -r 61031ebb48ce innobase/trx/trx0sys.c
  	
  leave_func:
  	ut_free(unaligned_read_buf);
-diff -r 61031ebb48ce innobase/trx/trx0trx.c
---- a/innobase/trx/trx0trx.c	Mon Nov 03 05:07:46 2008 -0800
-+++ b/innobase/trx/trx0trx.c	Mon Nov 03 05:07:56 2008 -0800
-@@ -916,19 +916,21 @@
+diff -r ef44d8017b6b innobase/trx/trx0trx.c
+--- a/innobase/trx/trx0trx.c	Fri Jul 03 15:41:25 2009 -0700
++++ b/innobase/trx/trx0trx.c	Fri Jul 03 15:41:32 2009 -0700
+@@ -942,19 +942,21 @@
                          if (srv_unix_file_flush_method == SRV_UNIX_NOSYNC) {
                               	/* Write the log but do not flush it to disk */
  
@@ -528,7 +528,7 @@ diff -r 61031ebb48ce innobase/trx/trx0trx.c
                  } else {
                          ut_error;
                  }
-@@ -1659,18 +1661,21 @@
+@@ -1701,18 +1703,21 @@
                  if (srv_unix_file_flush_method == SRV_UNIX_NOSYNC) {
                          /* Write the log but do not flush it to disk */
  
@@ -553,7 +553,7 @@ diff -r 61031ebb48ce innobase/trx/trx0trx.c
          } else {
                  ut_error;
          }
-@@ -1906,19 +1911,21 @@
+@@ -1948,19 +1953,21 @@
                     	if (srv_unix_file_flush_method == SRV_UNIX_NOSYNC) {
                          	/* Write the log but do not flush it to disk */
  
@@ -579,9 +579,9 @@ diff -r 61031ebb48ce innobase/trx/trx0trx.c
                  } else {
                          ut_error;
                  }
-diff -r 61031ebb48ce patch_info/innodb_fsync_source.info
+diff -r ef44d8017b6b patch_info/innodb_fsync_source.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/innodb_fsync_source.info	Mon Nov 03 05:07:56 2008 -0800
++++ b/patch_info/innodb_fsync_source.info	Fri Jul 03 15:41:32 2009 -0700
 @@ -0,0 +1,9 @@
 +File=innodb_fsync_source.patch
 +Name=Information of fsync callers in InnoDB
