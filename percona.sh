@@ -15,8 +15,8 @@ filter_files() {
 	filterdiff -x '*/configure'
 }
 
-> percona.spec
-> patch.spec
+> .percona.spec
+> .patch.spec
 i=100
 for patch in $(wget -q -O - $series | filter_names); do
 	file=mysql-$patch
@@ -27,8 +27,8 @@ for patch in $(wget -q -O - $series | filter_names); do
 		${branch:+cvs up -r $branch $file}
 	fi
 
-	printf "Patch%d:\t%s\n" $i %{name}-$patch >> percona.spec
-	printf "%%patch%d -p1\n" $i >> patch.spec
+	printf "Patch%d:\t%s\n" $i %{name}-$patch >> .percona.spec
+	printf "%%patch%d -p1\n" $i >> .patch.spec
 	i=$((i+1))
 done
 
@@ -38,7 +38,7 @@ sed -i -e '
 	/^ <\/percona>/b
 	/^# <percona patches/ {
 		p # print header
-		r percona.spec
+		r .percona.spec
 		a# </percona>
 	}
 	d
@@ -51,7 +51,7 @@ sed -i -e '
 	/^ <\/percona>/b
 	/^# <percona %patches/ {
 		p # print header
-		r patch.spec
+		r .patch.spec
 		a# </percona>
 	}
 	d
