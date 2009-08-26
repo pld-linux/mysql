@@ -48,6 +48,7 @@ Source10:	%{name}-ndb-mgm.sysconfig
 Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
+Source14:	percona.sh
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-sphinx.patch
 Patch2:		%{name}-c++.patch
@@ -64,6 +65,11 @@ Patch12:	%{name}-bug-20153.patch
 Patch13:	%{name}-bug-34192.patch
 Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
+Patch16:	%{name}-errorlog-no-rename.patch
+Patch17:	%{name}-alpha-stack.patch
+Patch18:	%{name}-xtrabackup.patch
+Patch19:	%{name}-fixes.patch
+Patch20:	%{name}-gcc3.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-show_patches.patch
 Patch101:	%{name}-microslow_innodb.patch
@@ -86,11 +92,6 @@ Patch117:	%{name}-innodb_split_buf_pool_mutex.patch
 Patch118:	%{name}-innodb_rw_lock.patch
 Patch119:	%{name}-mysql-test.patch
 # </percona>
-Patch34:	%{name}-errorlog-no-rename.patch
-Patch35:	%{name}-alpha-stack.patch
-Patch36:	%{name}-xtrabackup.patch
-Patch37:	%{name}-fixes.patch
-Patch38:	%{name}-gcc3.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -517,6 +518,11 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch13 -p1
 %patch14 -p1
 %patch15 -p1
+%patch16 -p1
+%ifarch alpha
+%patch17 -p1
+%endif
+%{?with_xtrabackup:%patch18 -p1}
 
 # <percona %patches
 %patch100 -p1
@@ -541,14 +547,9 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch119 -p1
 # </percona>
 
-%patch34 -p1
-%ifarch alpha
-%patch35 -p1
-%endif
-%{?with_xtrabackup:%patch36 -p1}
-%patch37 -p1
+%patch19 -p1
 %if "%{cxx_version}" < "4.1"
-%patch38 -p1
+%patch20 -p1
 %endif
 
 %build
