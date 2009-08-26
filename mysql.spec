@@ -524,7 +524,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %endif
 %{?with_xtrabackup:%patch18 -p1}
 
-# <percona %patches
+# <percona %patches>
 %patch100 -p1
 %patch101 -p1
 %patch102 -p1
