@@ -851,7 +851,12 @@ EOF
 %files libs
 %defattr(644,root,root,755)
 %doc EXCEPTIONS-CLIENT
-%attr(755,root,root) %{_libdir}/lib*.so.*.*
+%attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.14
+%attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*.*
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.14
+%attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
+%attr(755,root,root) %ghost %{_libdir}/libndbclient.so.1
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 
