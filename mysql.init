@@ -468,7 +468,7 @@ shell> mysql -u mysql mysql
 mysql> show tables
 
 Try 'mysqld --help' if you have problems with paths. Setting on
-logging in /etc/mysqld.conf gives you a log in /var/log/mysql/log that
+logging in $MYSQL_DATA_DIR/mysqld.conf gives you a log in /var/log/mysql/query.log that
 may be helpful. The latest information about MySQL is available on the
 web at http://www.mysql.com/.
 
@@ -477,8 +477,6 @@ Please check PLD Linux ftp site for newer versions of this package.
 Please consult the MySQL manual section: 'Problems running
 mysql_install_db', and the manual section that describes problems on
 your OS.  Another information source is the MySQL email archive.
-Please check all of the above before mailing us!  And if you do mail
-us, you MUST use the mysqlbug script!
 
 END_OF_MSG
 		exit 1
