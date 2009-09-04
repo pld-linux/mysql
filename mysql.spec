@@ -33,7 +33,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.38
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -68,12 +68,13 @@ Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
 Patch13:	%{name}-errorlog-no-rename.patch
 Patch14:	%{name}-bug-43594.patch
+Patch15:	plugin-avoid-version.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
-Patch15:	%{name}-userstats.patch
-Patch16:	%{name}-microslow.patch
-Patch17:	%{name}-acc-pslist.patch
-Patch18:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
-Patch19:	%{name}-innodb_rw_lock.patch
+Patch100:	%{name}-userstats.patch
+Patch101:	%{name}-microslow.patch
+Patch102:	%{name}-acc-pslist.patch
+Patch103:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
+Patch104:	%{name}-innodb_rw_lock.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -500,10 +501,13 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch13 -p1
 %patch14 -p0
 %patch15 -p1
-%patch16 -p1
-%patch17 -p1
-%patch18 -p1
-%patch19 -p1
+# <percona %patches>
+%patch100 -p1
+%patch101 -p1
+%patch102 -p1
+%patch103 -p1
+%patch104 -p1
+# </percona>
 
 %build
 %{__libtoolize}
@@ -688,6 +692,7 @@ rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 
 # not needed
 rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_*.{a,la}
+rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_example.*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -853,11 +858,6 @@ done
 %attr(755,root,root) %{_sbindir}/mysqld
 %dir %{_libdir}/mysql
 %dir %{_libdir}/mysql/plugin
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so.*.*.*
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so.0
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_example.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb_plugin.so.*.*.*
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb_plugin.so.0
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb_plugin.so
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*

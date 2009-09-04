@@ -1,0 +1,88 @@
+--- mysql-5.1.38/plugin/daemon_example/Makefile.am~	2009-08-21 15:11:25.000000000 +0300
++++ mysql-5.1.38/plugin/daemon_example/Makefile.am	2009-09-04 14:01:26.664529401 +0300
+@@ -26,7 +26,7 @@
+ 
+ EXTRA_LTLIBRARIES =	libdaemon_example.la
+ pkgplugin_LTLIBRARIES =	@plugin_daemon_example_shared_target@
+-libdaemon_example_la_LDFLAGS =	-module -rpath $(pkgplugindir)
++libdaemon_example_la_LDFLAGS =	-module -avoid-version -rpath $(pkgplugindir)
+ libdaemon_example_la_CXXFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ libdaemon_example_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ libdaemon_example_la_SOURCES =	daemon_example.cc
+--- mysql-5.1.38/plugin/fulltext/Makefile.am~	2009-08-21 15:11:25.000000000 +0300
++++ mysql-5.1.38/plugin/fulltext/Makefile.am	2009-09-04 14:01:51.531167265 +0300
+@@ -20,7 +20,7 @@
+ #noinst_LTLIBRARIES= mypluglib.la
+ pkgplugin_LTLIBRARIES= mypluglib.la
+ mypluglib_la_SOURCES= plugin_example.c
+-mypluglib_la_LDFLAGS= -module -rpath $(pkgplugindir)
++mypluglib_la_LDFLAGS= -module -avoid-version -rpath $(pkgplugindir)
+ mypluglib_la_CFLAGS= -DMYSQL_DYNAMIC_PLUGIN
+ 
+ # Don't update the files from bitkeeper
+--- mysql-5.1.38/storage/innodb_plugin/Makefile.am~	2009-08-21 15:12:38.000000000 +0300
++++ mysql-5.1.38/storage/innodb_plugin/Makefile.am	2009-09-04 14:02:57.621203151 +0300
+@@ -330,7 +330,7 @@
+ EXTRA_LTLIBRARIES=	ha_innodb_plugin.la
+ pkgplugin_LTLIBRARIES=	@plugin_innodb_plugin_shared_target@
+ 
+-ha_innodb_plugin_la_LDFLAGS=	-module -rpath $(pkgplugindir)
++ha_innodb_plugin_la_LDFLAGS=	-module -avoid-version -rpath $(pkgplugindir)
+ ha_innodb_plugin_la_CXXFLAGS=	$(AM_CFLAGS) $(INNODB_DYNAMIC_CFLAGS)
+ ha_innodb_plugin_la_CFLAGS=	$(AM_CFLAGS) $(INNODB_DYNAMIC_CFLAGS)
+ ha_innodb_plugin_la_SOURCES=	$(libinnobase_a_SOURCES)
+--- mysql-5.1.38/storage/example/Makefile.am~	2009-08-21 15:12:32.000000000 +0300
++++ mysql-5.1.38/storage/example/Makefile.am	2009-09-04 14:04:54.641149541 +0300
+@@ -34,7 +34,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_example.la
+ pkgplugin_LTLIBRARIES =	@plugin_example_shared_target@
+-ha_example_la_LDFLAGS =	-module -rpath $(pkgplugindir)
++ha_example_la_LDFLAGS =	-module -avoid-version -rpath $(pkgplugindir)
+ ha_example_la_CXXFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_example_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_example_la_SOURCES =	ha_example.cc
+--- mysql-5.1.38/storage/archive/Makefile.am~	2009-08-21 15:12:32.000000000 +0300
++++ mysql-5.1.38/storage/archive/Makefile.am	2009-09-04 14:05:53.391143885 +0300
+@@ -35,7 +35,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_archive.la
+ pkgplugin_LTLIBRARIES =	@plugin_archive_shared_target@
+-ha_archive_la_LDFLAGS =	-module -rpath $(pkgplugindir)
++ha_archive_la_LDFLAGS =	-module -avoid-version -rpath $(pkgplugindir)
+ ha_archive_la_CXXFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_archive_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_archive_la_SOURCES =	ha_archive.cc azio.c
+--- mysql-5.1.38/storage/blackhole/Makefile.am~	2009-08-21 15:12:32.000000000 +0300
++++ mysql-5.1.38/storage/blackhole/Makefile.am	2009-09-04 14:06:08.374683695 +0300
+@@ -34,7 +34,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_blackhole.la
+ pkgplugin_LTLIBRARIES =	@plugin_blackhole_shared_target@
+-ha_blackhole_la_LDFLAGS=-module -rpath $(pkgplugindir)
++ha_blackhole_la_LDFLAGS=-module -avoid-version -rpath $(pkgplugindir)
+ ha_blackhole_la_CXXFLAGS=$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_blackhole_la_CFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_blackhole_la_SOURCES=ha_blackhole.cc
+--- mysql-5.1.38/storage/federated/Makefile.am~	2009-08-21 15:12:33.000000000 +0300
++++ mysql-5.1.38/storage/federated/Makefile.am	2009-09-04 14:06:24.741287557 +0300
+@@ -34,7 +34,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_federated.la
+ pkgplugin_LTLIBRARIES =	@plugin_federated_shared_target@
+-ha_federated_la_LDFLAGS =	-module -rpath $(pkgplugindir)
++ha_federated_la_LDFLAGS =	-module -avoid-version -rpath $(pkgplugindir)
+ ha_federated_la_CXXFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_federated_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_federated_la_SOURCES =	ha_federated.cc
+--- mysql-5.1.38/storage/ibmdb2i/Makefile.am~	2009-08-21 15:12:33.000000000 +0300
++++ mysql-5.1.38/storage/ibmdb2i/Makefile.am	2009-09-04 14:07:07.067803277 +0300
+@@ -33,7 +33,7 @@
+ EXTRA_LTLIBRARIES =	ha_ibmdb2i.la
+ pkgplugin_LTLIBRARIES =	@plugin_ibmdb2i_shared_target@
+ ha_ibmdb2i_la_LIBADD =  -liconv
+-ha_ibmdb2i_la_LDFLAGS =	-module -rpath $(MYSQLLIBdir)
++ha_ibmdb2i_la_LDFLAGS =	-module -avoid-version -rpath $(MYSQLLIBdir)
+ ha_ibmdb2i_la_CXXFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_ibmdb2i_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_ibmdb2i_la_SOURCES =	ha_ibmdb2i.cc db2i_ileBridge.cc db2i_conversion.cc \
