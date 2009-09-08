@@ -186,24 +186,41 @@ mysqlgetconfig() {
 		exit 6
 	fi
 
-	eval `awk '
-/^[ \t]*\[.*\][ \t]*$/ {
-	match($0,/\[.*\]/)
-	section=substr($0, RSTART + 1, RSTART + RLENGTH - 3)
-}
-section == "mysqld" && $2 ~ "=" {
-	if ($1 == "datadir") {
-		printf("MYSQL_DATA_DIR=%s;", $3)
-	} else if ($1 == "user") {
-		printf("MYSQL_USER=%s;", $3)
-	} else if ($1 == "pid-file") {
-		printf("MYSQL_PIDFILE=%s;", $3)
-	} else if ($1 == "socket") {
-		printf("MYSQL_SOCKET=%s;", $3)
-	}
-}
-' $config_file`
+	# reset to initial state
+	MYSQL_DATA_DIR= MYSQL_USER= MYSQL_PIDFILE= MYSQL_SOCKET= MYSQL_PORT= MYSQL_BIND_ADDRESS=
 
+	eval `awk -F= '
+	# skip comments and empty lines
+	/^[;#]|^ *$/ { next }
+
+	/^[ \t]*\[.*\][ \t]*$/ {
+		match($0, /\[.*\]/);
+		section = substr($0, RSTART + 1, RSTART + RLENGTH - 3);
+		next;
+	}
+
+	# trim spaces
+	{
+		gsub(/^[\t ]*|[\t ]*$/, "", $1);
+		gsub(/^[\t ]*|[\t ]*$/, "", $2);
+	}
+
+	section == "mysqld" {
+		if ($1 == "datadir") {
+			printf("MYSQL_DATA_DIR=%s;", $2);
+		} else if ($1 == "user") {
+			printf("MYSQL_USER=%s;", $2);
+		} else if ($1 == "pid-file") {
+			printf("MYSQL_PIDFILE=%s;", $2);
+		} else if ($1 == "socket") {
+			printf("MYSQL_SOCKET=%s;", $2);
+		} else if ($1 == "port") {
+			printf("MYSQL_PORT=%s;", $2);
+		} else if ($1 == "bind-address") {
+			printf("MYSQL_BIND_ADDRESS=%s;", $2);
+		}
+	}
+	' $config_file`
 
 	if is_yes "$MYSQL_RA_COMPAT"; then
 		MYSQL_DATA_DIR_SUB=""
@@ -543,7 +560,11 @@ case "$action" in
 	for mysqldir in $DB_CLUSTERS; do
 		mysqlstatus "$mysqldir"
 		if [ "$MYSQL_STATUS" = "running" ]; then
-			show "MySQL cluster %s, PID %s" "$mysqldir" "$MYSQL_PID"
+			addr=${MYSQL_BIND_ADDRESS:-0.0.0.0}
+			port=${MYSQL_PORT:-3306}
+			socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
+			pid=$MYSQL_PID
+			show "MySQL cluster %s, pid %s\n\ttcp:%s:%s\n\tunix:%s" "$mysqldir" "$pid" "$addr" "$port" "$socket"
 			pids="$pids/$MYSQL_PID/"
 			progress "$MYSQL_STATUS"
 		else
@@ -568,7 +589,10 @@ case "$action" in
 			mysqldir=${datadir%/mysqldb/db} # strip /mysqldb/db
 			mysqlstatus "$mysqldir"
 			if [ "$MYSQL_STATUS" = "running" ]; then
-				show "MySQL cluster %s, PID %s" "$mysqldir" "$pid"
+				addr=${MYSQL_BIND_ADDRESS:-0.0.0.0}
+				port=${MYSQL_PORT:-3306}
+				socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
+				show "MySQL cluster %s, pid %s\n\ttcp:%s:%s\n\tunix:%s" "$mysqldir" "$pid" "$addr" "$port" "$socket"
 				progress "$MYSQL_STATUS"
 			else
 				show "MySQL cluster %s" "$mysqldir"
