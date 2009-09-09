@@ -1,0 +1,1023 @@
+------------------------------------------------------------
+revno: 2169.5.4
+committer: serg@serg.mylan
+timestamp: Wed 2006-05-31 18:44:09 +0200
+message:
+  WL#2595 - atomic operations
+=== modified file 'configure.in'
+--- configure.in	2006-05-26 11:17:09 +0000
++++ configure.in	2006-05-31 16:44:09 +0000
+@@ -778,48 +778,6 @@
+ AC_SUBST(WRAPLIBS)
+ 
+ if test "$TARGET_LINUX" = "true"; then
+-  AC_MSG_CHECKING([for atomic operations])
+-
+-  AC_LANG_SAVE
+-  AC_LANG_CPLUSPLUS
+-
+-  atom_ops=
+-  AC_TRY_RUN([
+-#include <asm/atomic.h>
+-int main()
+-{
+-  atomic_t v;
+-
+-  atomic_set(&v, 23);
+-  atomic_add(5, &v);
+-  return atomic_read(&v) == 28 ? 0 : -1;
+-}
+-  ],
+-  [AC_DEFINE([HAVE_ATOMIC_ADD], [1],
+-             [atomic_add() from <asm/atomic.h> (Linux only)])
+-   atom_ops="${atom_ops}atomic_add "],
+-  )
+-  AC_TRY_RUN([
+-#include <asm/atomic.h>
+-int main()
+-{
+-  atomic_t v;
+-
+-  atomic_set(&v, 23);
+-  atomic_sub(5, &v);
+-  return atomic_read(&v) == 18 ? 0 : -1;
+-}
+-  ],
+-  [AC_DEFINE([HAVE_ATOMIC_SUB], [1],
+-             [atomic_sub() from <asm/atomic.h> (Linux only)])
+-   atom_ops="${atom_ops}atomic_sub "],
+-  )
+-
+-  if test -z "$atom_ops"; then atom_ops="no"; fi
+-  AC_MSG_RESULT($atom_ops)
+-
+-  AC_LANG_RESTORE
+-
+   AC_ARG_WITH(pstack,
+     [  --with-pstack           Use the pstack backtrace library],
+     [ USE_PSTACK=$withval ],
+@@ -1631,6 +1589,20 @@
+   fi
+ fi
+ 
++AC_ARG_WITH([atomic-ops],
++	    AC_HELP_STRING([--with-atomic-ops=rwlocks|smp|up],
++	    [Implement atomic operations using pthread rwlocks or atomic CPU
++             instructions for multi-processor (default) or uniprocessor
++             configuration]), , [with_atomic_ops=smp])
++case "$with_atomic_ops" in
++  "up") AC_DEFINE([MY_ATOMIC_MODE_DUMMY], [1],
++                  [Assume single-CPU mode, no concurrency]) ;;
++  "rwlocks") AC_DEFINE([MY_ATOMIC_MODE_RWLOCKS], [1],
++                  [Use pthread rwlocks for atomic ops]) ;;
++  "smp") ;;
++   *) AC_MSG_ERROR(["$with_atomic_ops" is not a valid value for --with-atomic-ops]) ;;
++esac
++
+ # Force static compilation to avoid linking problems/get more speed
+ AC_ARG_WITH(mysqld-ldflags,
+     [  --with-mysqld-ldflags   Extra linking arguments for mysqld],
+
+=== added directory 'include/atomic'
+=== added file 'include/atomic/nolock.h'
+--- include/atomic/nolock.h	1970-01-01 00:00:00 +0000
++++ include/atomic/nolock.h	2006-05-31 16:44:09 +0000
+@@ -0,0 +1,169 @@
++/* Copyright (C) 2006 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++#if defined(__i386__) || defined(_M_IX86)
++#ifdef MY_ATOMIC_MODE_DUMMY
++#  define LOCK ""
++#else
++#  define LOCK "lock "
++#endif
++#ifdef __GNUC__
++#include "x86-gcc.h"
++#elif defined(_MSC_VER)
++#include "x86-msvc.h"
++#endif
++#endif
++
++#ifdef make_atomic_add_body8
++
++#ifdef HAVE_INLINE
++
++#define make_atomic_add(S)					\
++static inline uint ## S _my_atomic_add ## S(			\
++        my_atomic_ ## S ## _t *a, uint ## S v)			\
++{								\
++  make_atomic_add_body ## S;					\
++  return v;							\
++}
++
++#define make_atomic_swap(S)					\
++static inline uint ## S _my_atomic_swap ## S(			\
++        my_atomic_ ## S ## _t *a, uint ## S v)			\
++{								\
++  make_atomic_swap_body ## S;					\
++  return v;							\
++}
++
++#define make_atomic_cas(S)					\
++static inline uint _my_atomic_cas ## S(my_atomic_ ## S ## _t *a,\
++        uint ## S *cmp, uint ## S set)				\
++{								\
++  uint8 ret;							\
++  make_atomic_cas_body ## S;					\
++  return ret;							\
++}
++
++#define make_atomic_load(S)					\
++static inline uint ## S _my_atomic_load ## S(			\
++        my_atomic_ ## S ## _t *a)				\
++{								\
++  uint ## S ret;						\
++  make_atomic_load_body ## S;					\
++  return ret;							\
++}
++
++#define make_atomic_store(S)					\
++static inline void _my_atomic_store ## S(			\
++        my_atomic_ ## S ## _t *a, uint ## S v)			\
++{								\
++  make_atomic_store_body ## S;					\
++}
++
++#else /* no inline functions */
++
++#define make_atomic_add(S)					\
++extern uint ## S _my_atomic_add ## S(				\
++        my_atomic_ ## S ## _t *a, uint ## S v);
++
++#define make_atomic_swap(S)					\
++extern uint ## S _my_atomic_swap ## S(				\
++        my_atomic_ ## S ## _t *a, uint ## S v);
++
++#define make_atomic_cas(S)					\
++extern uint _my_atomic_cas ## S(my_atomic_ ## S ## _t *a,	\
++        uint ## S *cmp, uint ## S set);
++
++#define make_atomic_load(S)					\
++extern uint ## S _my_atomic_load ## S(				\
++        my_atomic_ ## S ## _t *a);
++
++#define make_atomic_store(S)					\
++extern void _my_atomic_store ## S(				\
++        my_atomic_ ## S ## _t *a, uint ## S v);
++
++#endif
++
++make_atomic_add( 8)
++make_atomic_add(16)
++make_atomic_add(32)
++
++make_atomic_cas( 8)
++make_atomic_cas(16)
++make_atomic_cas(32)
++
++make_atomic_load( 8)
++make_atomic_load(16)
++make_atomic_load(32)
++
++make_atomic_store( 8)
++make_atomic_store(16)
++make_atomic_store(32)
++
++make_atomic_swap( 8)
++make_atomic_swap(16)
++make_atomic_swap(32)
++
++#undef make_atomic_add_body8
++#undef make_atomic_cas_body8
++#undef make_atomic_load_body8
++#undef make_atomic_store_body8
++#undef make_atomic_swap_body8
++#undef make_atomic_add_body16
++#undef make_atomic_cas_body16
++#undef make_atomic_load_body16
++#undef make_atomic_store_body16
++#undef make_atomic_swap_body16
++#undef make_atomic_add_body32
++#undef make_atomic_cas_body32
++#undef make_atomic_load_body32
++#undef make_atomic_store_body32
++#undef make_atomic_swap_body32
++#undef make_atomic_add
++#undef make_atomic_cas
++#undef make_atomic_load
++#undef make_atomic_store
++#undef make_atomic_swap
++
++#define my_atomic_add8(a,v,L)  _my_atomic_add8(a,v)
++#define my_atomic_add16(a,v,L) _my_atomic_add16(a,v)
++#define my_atomic_add32(a,v,L) _my_atomic_add32(a,v)
++
++#define my_atomic_cas8(a,c,v,L)  _my_atomic_cas8(a,c,v)
++#define my_atomic_cas16(a,c,v,L) _my_atomic_cas16(a,c,v)
++#define my_atomic_cas32(a,c,v,L) _my_atomic_cas32(a,c,v)
++
++#define my_atomic_load8(a,L)  _my_atomic_load8(a)
++#define my_atomic_load16(a,L) _my_atomic_load16(a)
++#define my_atomic_load32(a,L) _my_atomic_load32(a)
++
++#define my_atomic_store8(a,v,L)  _my_atomic_store8(a,v)
++#define my_atomic_store16(a,v,L) _my_atomic_store16(a,v)
++#define my_atomic_store32(a,v,L) _my_atomic_store32(a,v)
++
++#define my_atomic_swap8(a,v,L)  _my_atomic_swap8(a,v)
++#define my_atomic_swap16(a,v,L) _my_atomic_swap16(a,v)
++#define my_atomic_swap32(a,v,L) _my_atomic_swap32(a,v)
++
++#define my_atomic_rwlock_t typedef int
++#define my_atomic_rwlock_destroy(name)
++#define my_atomic_rwlock_init(name)
++#define my_atomic_rwlock_rdlock(name)
++#define my_atomic_rwlock_wrlock(name)
++#define my_atomic_rwlock_rdunlock(name)
++#define my_atomic_rwlock_wrunlock(name)
++
++#endif
++
+
+=== added file 'include/atomic/rwlock.h'
+--- include/atomic/rwlock.h	1970-01-01 00:00:00 +0000
++++ include/atomic/rwlock.h	2006-05-31 16:44:09 +0000
+@@ -0,0 +1,161 @@
++/* Copyright (C) 2006 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++typedef struct {pthread_rwlock_t rw;} my_atomic_rwlock_t;
++
++#ifdef MY_ATOMIC_EXTRA_DEBUG
++#define CHECK_RW if (rw) if (a->rw) assert(rw == a->rw); else a->rw=rw;
++#else
++#define CHECK_RW
++#endif
++
++#ifdef MY_ATOMIC_MODE_DUMMY
++/*
++  the following can never be enabled by ./configure, one need to put #define in
++  a source to trigger the following warning. The resulting code will be broken,
++  it only makes sense to do it to see now test_atomic detects broken
++  implementations (another way is to run a UP build on an SMP box).
++*/
++#warning MY_ATOMIC_MODE_DUMMY and MY_ATOMIC_MODE_RWLOCKS are incompatible
++#define my_atomic_rwlock_destroy(name)
++#define my_atomic_rwlock_init(name)
++#define my_atomic_rwlock_rdlock(name)
++#define my_atomic_rwlock_wrlock(name)
++#define my_atomic_rwlock_rdunlock(name)
++#define my_atomic_rwlock_wrunlock(name)
++#else
++#define my_atomic_rwlock_destroy(name)     pthread_rwlock_destroy(& (name)->rw)
++#define my_atomic_rwlock_init(name)        pthread_rwlock_init(& (name)->rw, 0)
++#define my_atomic_rwlock_rdlock(name)      pthread_rwlock_rdlock(& (name)->rw)
++#define my_atomic_rwlock_wrlock(name)      pthread_rwlock_wrlock(& (name)->rw)
++#define my_atomic_rwlock_rdunlock(name)    pthread_rwlock_unlock(& (name)->rw)
++#define my_atomic_rwlock_wrunlock(name)    pthread_rwlock_unlock(& (name)->rw)
++#endif
++
++#ifdef HAVE_INLINE
++
++#define make_atomic_add(S)						\
++static inline uint ## S my_atomic_add ## S(				\
++        my_atomic_ ## S ## _t *a, uint ## S v, my_atomic_rwlock_t *rw)	\
++{									\
++  uint ## S ret;							\
++  CHECK_RW;								\
++  if (rw) my_atomic_rwlock_wrlock(rw);					\
++  ret= a->val;								\
++  a->val+= v;								\
++  if (rw) my_atomic_rwlock_wrunlock(rw);				\
++  return ret;								\
++}
++
++#define make_atomic_swap(S)						\
++static inline uint ## S my_atomic_swap ## S(				\
++        my_atomic_ ## S ## _t *a, uint ## S v, my_atomic_rwlock_t *rw)	\
++{									\
++  uint ## S ret;							\
++  CHECK_RW;								\
++  if (rw) my_atomic_rwlock_wrlock(rw);					\
++  ret= a->val;								\
++  a->val= v;								\
++  if (rw) my_atomic_rwlock_wrunlock(rw);				\
++  return ret;								\
++}
++
++#define make_atomic_cas(S)						\
++static inline uint my_atomic_cas ## S(my_atomic_ ## S ## _t *a,		\
++        uint ## S *cmp, uint ## S set, my_atomic_rwlock_t *rw)		\
++{									\
++  uint ret;								\
++  CHECK_RW;								\
++  if (rw) my_atomic_rwlock_wrlock(rw);					\
++  if (ret= (a->val == *cmp)) a->val= set; else *cmp=a->val;		\
++  if (rw) my_atomic_rwlock_wrunlock(rw);				\
++  return ret;								\
++}
++
++#define make_atomic_load(S)						\
++static inline uint ## S my_atomic_load ## S(				\
++        my_atomic_ ## S ## _t *a, my_atomic_rwlock_t *rw)		\
++{									\
++  uint ## S ret;							\
++  CHECK_RW;								\
++  if (rw) my_atomic_rwlock_wrlock(rw);					\
++  ret= a->val;								\
++  if (rw) my_atomic_rwlock_wrunlock(rw);				\
++  return ret;								\
++}
++
++#define make_atomic_store(S)						\
++static inline void my_atomic_store ## S(				\
++        my_atomic_ ## S ## _t *a, uint ## S v, my_atomic_rwlock_t *rw)	\
++{									\
++  CHECK_RW;								\
++  if (rw) my_atomic_rwlock_rdlock(rw);					\
++  (a)->val= (v);							\
++  if (rw) my_atomic_rwlock_rdunlock(rw);				\
++}
++
++#else /* no inline functions */
++
++#define make_atomic_add(S)						\
++extern uint ## S my_atomic_add ## S(					\
++        my_atomic_ ## S ## _t *a, uint ## S v, my_atomic_rwlock_t *rw);
++
++#define make_atomic_swap(S)						\
++extern uint ## S my_atomic_swap ## S(					\
++        my_atomic_ ## S ## _t *a, uint ## S v, my_atomic_rwlock_t *rw);
++
++#define make_atomic_cas(S)						\
++extern uint my_atomic_cas ## S(my_atomic_ ## S ## _t *a,		\
++        uint ## S *cmp, uint ## S set, my_atomic_rwlock_t *rw);
++
++#define make_atomic_load(S)						\
++extern uint ## S my_atomic_load ## S(					\
++        my_atomic_ ## S ## _t *a, my_atomic_rwlock_t *rw);
++
++#define make_atomic_store(S)						\
++extern void my_atomic_store ## S(					\
++        my_atomic_ ## S ## _t *a, uint ## S v, my_atomic_rwlock_t *rw);
++
++#endif
++
++make_atomic_add( 8)
++make_atomic_add(16)
++make_atomic_add(32)
++make_atomic_add(64)
++make_atomic_cas( 8)
++make_atomic_cas(16)
++make_atomic_cas(32)
++make_atomic_cas(64)
++make_atomic_load( 8)
++make_atomic_load(16)
++make_atomic_load(32)
++make_atomic_load(64)
++make_atomic_store( 8)
++make_atomic_store(16)
++make_atomic_store(32)
++make_atomic_store(64)
++make_atomic_swap( 8)
++make_atomic_swap(16)
++make_atomic_swap(32)
++make_atomic_swap(64)
++#undef make_atomic_add
++#undef make_atomic_cas
++#undef make_atomic_load
++#undef make_atomic_store
++#undef make_atomic_swap
++#undef CHECK_RW
++
++
+
+=== added file 'include/atomic/x86-gcc.h'
+--- include/atomic/x86-gcc.h	1970-01-01 00:00:00 +0000
++++ include/atomic/x86-gcc.h	2006-05-31 16:44:09 +0000
+@@ -0,0 +1,56 @@
++/* Copyright (C) 2006 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++/*
++  XXX 64-bit atomic operations can be implemented using
++  cmpxchg8b, if necessary
++*/
++
++#define make_atomic_add_body8					\
++  asm volatile (LOCK "xadd %0, %1;" : "+r" (v) , "+m" (a->val))
++#define make_atomic_swap_body8					\
++  asm volatile ("xchg %0, %1;" : "+r" (v) , "+m" (a->val))
++#define make_atomic_cas_body8					\
++  asm volatile (LOCK "cmpxchg %3, %0; setz %2;"			\
++               : "+m" (a->val), "+a" (*cmp), "=q" (ret): "r" (set))
++
++#ifdef MY_ATOMIC_MODE_DUMMY
++#define make_atomic_load_body8   ret=a->val
++#define make_atomic_store_body8	 a->val=v
++#else
++/*
++  Actually 32-bit reads/writes are always atomic on x86
++  But we add LOCK here anyway to force memory barriers
++*/
++#define make_atomic_load_body8					\
++  ret=0;							\
++  asm volatile (LOCK "cmpxchg %2, %0"				\
++               : "+m" (a->val), "+a" (ret): "r" (ret))
++#define make_atomic_store_body8					\
++  asm volatile ("xchg %0, %1;" : "+m" (a->val) : "r" (v))
++#endif
++
++#define make_atomic_add_body16   make_atomic_add_body8
++#define make_atomic_add_body32   make_atomic_add_body8
++#define make_atomic_cas_body16   make_atomic_cas_body8
++#define make_atomic_cas_body32   make_atomic_cas_body8
++#define make_atomic_load_body16  make_atomic_load_body8
++#define make_atomic_load_body32  make_atomic_load_body8
++#define make_atomic_store_body16 make_atomic_store_body8
++#define make_atomic_store_body32 make_atomic_store_body8
++#define make_atomic_swap_body16  make_atomic_swap_body8
++#define make_atomic_swap_body32  make_atomic_swap_body8
++
+
+=== added file 'include/atomic/x86-msvc.h'
+--- include/atomic/x86-msvc.h	1970-01-01 00:00:00 +0000
++++ include/atomic/x86-msvc.h	2006-05-31 16:44:09 +0000
+@@ -0,0 +1,85 @@
++/* Copyright (C) 2006 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++/*
++  XXX 64-bit atomic operations can be implemented using
++  cmpxchg8b, if necessary
++*/
++
++// Would it be better to use intrinsics ?
++// (InterlockedCompareExchange, InterlockedCompareExchange16
++// InterlockedExchangeAdd, InterlockedExchange)
++
++#define make_atomic_add_body(REG)				\
++  _asm {							\
++    _asm mov   REG, v						\
++    _asm LOCK  xadd a->val, REG					\
++    _asm movzx v, REG						\
++  }
++#define make_atomic_cas_body(AREG,REG2)				\
++  _asm {							\
++    _asm mov    AREG, *cmp					\
++    _asm mov    REG2, set					\
++    _asm LOCK cmpxchg a->val, REG2				\
++    _asm mov    *cmp, AREG					\
++    _asm setz   al						\
++    _asm movzx  ret, al						\
++  }
++#define make_atomic_swap_body(REG)				\
++  _asm {							\
++    _asm mov    REG, v						\
++    _asm xchg   a->val, REG					\
++    _asm mov    v, REG						\
++  }
++
++#ifdef MY_ATOMIC_MODE_DUMMY
++#define make_atomic_load_body(AREG,REG)   ret=a->val
++#define make_atomic_store_body(REG)	  a->val=v
++#else
++/*
++  Actually 32-bit reads/writes are always atomic on x86
++  But we add LOCK here anyway to force memory barriers
++*/
++#define make_atomic_load_body(AREG,REG2)			\
++  _asm {							\
++    _asm mov    AREG, 0						\
++    _asm mov    REG2, AREG					\
++    _asm LOCK cmpxchg a->val, REG2				\
++    _asm mov    ret, AREG					\
++  }
++#define make_atomic_store_body(REG)				\
++  _asm {							\
++    _asm mov    REG, v						\
++    _asm xchg   a->val, REG					\
++  }
++#endif
++
++#define make_atomic_add_body8	 make_atomic_add_body(al)
++#define make_atomic_add_body16   make_atomic_add_body(ax)
++#define make_atomic_add_body32   make_atomic_add_body(eax)
++#define make_atomic_cas_body8    make_atomic_cas_body(al, bl)
++#define make_atomic_cas_body16   make_atomic_cas_body(ax, bx)
++#define make_atomic_cas_body32   make_atomic_cas_body(eax, ebx)
++#define make_atomic_load_body8    make_atomic_load_body(al, bl)
++#define make_atomic_load_body16   make_atomic_load_body(ax, bx)
++#define make_atomic_load_body32   make_atomic_load_body(eax, ebx)
++#define make_atomic_store_body8  make_atomic_store_body(al)
++#define make_atomic_store_body16 make_atomic_store_body(ax)
++#define make_atomic_store_body32 make_atomic_store_body(eax)
++#define make_atomic_swap_body8   make_atomic_swap_body(al)
++#define make_atomic_swap_body16  make_atomic_swap_body(ax)
++#define make_atomic_swap_body32  make_atomic_swap_body(eax)
++
+
+=== added file 'include/my_atomic.h'
+--- include/my_atomic.h	1970-01-01 00:00:00 +0000
++++ include/my_atomic.h	2006-05-31 16:44:09 +0000
+@@ -0,0 +1,46 @@
++/* Copyright (C) 2006 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++#ifndef atomic_rwlock_init
++
++#ifdef MY_ATOMIC_EXTRA_DEBUG
++#ifndef MY_ATOMIC_MODE_RWLOCKS
++#error MY_ATOMIC_EXTRA_DEBUG can be only used with MY_ATOMIC_MODE_RWLOCKS
++#endif
++#define LOCK_PTR void *rw;
++#else
++#define LOCK_PTR
++#endif
++
++typedef volatile struct {uint8   val; LOCK_PTR} my_atomic_8_t;
++typedef volatile struct {uint16  val; LOCK_PTR} my_atomic_16_t;
++typedef volatile struct {uint32  val; LOCK_PTR} my_atomic_32_t;
++typedef volatile struct {uint64  val; LOCK_PTR} my_atomic_64_t;
++
++#ifndef MY_ATOMIC_MODE_RWLOCKS
++#include "atomic/nolock.h"
++#endif
++
++#ifndef my_atomic_rwlock_init
++#include "atomic/rwlock.h"
++#endif
++
++#define MY_ATOMIC_OK       0
++#define MY_ATOMIC_NOT_1CPU 1
++extern int my_atomic_initialize();
++
++#endif
++
+
+=== modified file 'include/my_global.h'
+--- include/my_global.h	2006-05-02 09:36:05 +0000
++++ include/my_global.h	2006-05-31 16:44:09 +0000
+@@ -181,6 +181,17 @@
+ #define HOT_DATA
+ #endif
+ 
++/*
++  now let's figure out if inline functions are supported
++  autoconf defines 'inline' to be empty, if not
++*/
++#define inline_test_1(X)        X ## 1
++#define inline_test_2(X)        inline_test_1(X)
++#if inline_test_2(inline) != 1
++#define HAVE_INLINE
++#endif
++#undef inline_test_2
++#undef inline_test_1
+ 
+ /*
+   The following macros are used to control inlining a bit more than
+@@ -889,6 +900,8 @@
+ typedef long		longlong;
+ #endif
+ #endif
++typedef longlong int64;
++typedef ulonglong uint64;
+ 
+ #if defined(NO_CLIENT_LONG_LONG)
+ typedef unsigned long my_ulonglong;
+
+=== modified file 'mysys/Makefile.am'
+--- mysys/Makefile.am	2006-05-12 08:51:07 +0000
++++ mysys/Makefile.am	2006-05-31 16:44:09 +0000
+@@ -19,7 +19,7 @@
+ INCLUDES =		@ZLIB_INCLUDES@ -I$(top_builddir)/include \
+ 			-I$(top_srcdir)/include -I$(srcdir)
+ pkglib_LIBRARIES =	libmysys.a
+-LDADD =			libmysys.a ../dbug/libdbug.a \
++LDADD =			libmysys.a \
+ 			../strings/libmystrings.a
+ noinst_HEADERS =	mysys_priv.h my_static.h \
+ 			my_os2cond.c my_os2dirsrch.c my_os2dirsrch.h \
+@@ -33,7 +33,7 @@
+ 			mf_iocache.c mf_iocache2.c mf_cache.c mf_tempfile.c \
+ 			mf_tempdir.c my_lock.c mf_brkhant.c my_alarm.c \
+ 			my_malloc.c my_realloc.c my_once.c mulalloc.c \
+-			my_alloc.c safemalloc.c my_new.cc \
++			my_alloc.c safemalloc.c my_new.cc my_atomic.c my_getncpus.c \
+ 			my_fopen.c my_fstream.c my_getsystime.c \
+ 			my_error.c errors.c my_div.c my_messnc.c \
+ 			mf_format.c mf_same.c mf_dirname.c mf_fn_ext.c \
+@@ -64,7 +63,7 @@
+ # testhash_DEPENDENCIES=	$(LIBRARIES)
+ # test_charset_DEPENDENCIES=	$(LIBRARIES)
+ # charset2html_DEPENDENCIES=	$(LIBRARIES)
+-EXTRA_PROGRAMS =	
++noinst_PROGRAMS=	test_atomic$(EXEEXT)
+ DEFS =			-DDEFAULT_BASEDIR=\"$(prefix)\" \
+ 			-DDATADIR="\"$(MYSQLDATAdir)\"" \
+ 			-DDEFAULT_CHARSET_HOME="\"$(MYSQLBASEdir)\"" \
+
+=== added file 'mysys/my_atomic.c'
+--- mysys/my_atomic.c	1970-01-01 00:00:00 +0000
++++ mysys/my_atomic.c	2006-05-31 16:44:09 +0000
+@@ -0,0 +1,46 @@
++/* Copyright (C) 2006 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++#include <my_global.h>
++#include <my_pthread.h>
++
++#ifndef HAVE_INLINE
++/*
++  the following will cause all inline functions to be instantiated
++*/
++#define HAVE_INLINE
++#define static extern
++#endif
++
++#include <my_atomic.h>
++
++/*
++  checks that the current build of atomic ops
++  can run on this machine
++
++  RETURN
++    ATOMIC_xxx values, see my_atomic.h
++*/
++int my_atomic_initialize()
++{
++  /* currently the only thing worth checking is SMP/UP issue */
++#ifdef MY_ATOMIC_MODE_DUMMY
++  return my_getncpus() == 1 ? MY_ATOMIC_OK : MY_ATOMIC_NOT_1CPU;
++#else
++  return MY_ATOMIC_OK;
++#endif
++}
++
+
+=== added file 'mysys/my_getncpus.c'
+--- mysys/my_getncpus.c	1970-01-01 00:00:00 +0000
++++ mysys/my_getncpus.c	2006-05-31 16:44:09 +0000
+@@ -0,0 +1,40 @@
++/* Copyright (C) 2006 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++/* get the number of (online) CPUs */
++
++#include "mysys_priv.h"
++#include <unistd.h>
++
++static int ncpus=0;
++
++#ifdef _SC_NPROCESSORS_ONLN
++int my_getncpus()
++{
++  if (!ncpus)
++    ncpus= sysconf(_SC_NPROCESSORS_ONLN);
++  return ncpus;
++}
++
++#else
++/* unknown */
++int my_getncpus()
++{
++  return 2;
++}
++
++#endif
++
+
+=== added file 'mysys/test_atomic.c'
+--- mysys/test_atomic.c	1970-01-01 00:00:00 +0000
++++ mysys/test_atomic.c	2006-05-31 16:44:09 +0000
+@@ -0,0 +1,133 @@
++#include <my_global.h>
++#include <my_sys.h>
++#include <my_atomic.h>
++
++my_atomic_32_t a32,b32,c32;
++my_atomic_rwlock_t rwl;
++
++pthread_attr_t thr_attr;
++pthread_mutex_t mutex;
++pthread_cond_t cond;
++int N;
++
++/* add and sub a random number in a loop. Must get 0 at the end */
++pthread_handler_t test_atomic_add_handler(void *arg)
++{
++  int    m=*(int *)arg;
++  int32 x;
++  for (x=((int)(&m)); m ; m--)
++  {
++    x=x*m+0x87654321;
++    my_atomic_add32(&a32, x,  &rwl);
++    my_atomic_add32(&a32, -x, &rwl);
++  }
++  pthread_mutex_lock(&mutex);
++  N--;
++  if (!N) pthread_cond_signal(&cond);
++  pthread_mutex_unlock(&mutex);
++}
++
++/*
++  1. generate thread number 0..N-1 from b32
++  2. add it to a32
++  3. swap thread numbers in c32
++  4. (optionally) one more swap to avoid 0 as a result
++  5. subtract result from a32
++  must get 0 in a32 at the end
++*/
++pthread_handler_t test_atomic_swap_handler(void *arg)
++{
++  int    m=*(int *)arg;
++  uint32  x=my_atomic_add32(&b32, 1, &rwl);
++
++  my_atomic_add32(&a32, x, &rwl);
++
++  for (; m ; m--)
++    x=my_atomic_swap32(&c32, x,&rwl);
++
++  if (!x)
++    x=my_atomic_swap32(&c32, x,&rwl);
++
++  my_atomic_add32(&a32, -x, &rwl);
++
++  pthread_mutex_lock(&mutex);
++  N--;
++  if (!N) pthread_cond_signal(&cond);
++  pthread_mutex_unlock(&mutex);
++}
++
++/*
++  same as test_atomic_add_handler, but my_atomic_add32 is emulated with
++  (slower) my_atomic_cas32
++*/
++pthread_handler_t test_atomic_cas_handler(void *arg)
++{
++  int    m=*(int *)arg;
++  int32 x;
++  for (x=((int)(&m)); m ; m--)
++  {
++    uint32 y=my_atomic_load32(&a32, &rwl);
++    x=x*m+0x87654321;
++    while (!my_atomic_cas32(&a32, &y, y+x, &rwl)) ;
++    while (!my_atomic_cas32(&a32, &y, y-x, &rwl)) ;
++  }
++  pthread_mutex_lock(&mutex);
++  N--;
++  if (!N) pthread_cond_signal(&cond);
++  pthread_mutex_unlock(&mutex);
++}
++
++void test_atomic(const char *test, pthread_handler handler, int n, int m)
++{
++  pthread_t t;
++  ulonglong now=my_getsystime();
++
++  my_atomic_store32(&a32, 0, &rwl);
++  my_atomic_store32(&b32, 0, &rwl);
++  my_atomic_store32(&c32, 0, &rwl);
++
++  printf("Testing %s with %d threads, %d iterations... ", test, n, m);
++  for (N=n ; n ; n--)
++    pthread_create(&t, &thr_attr, handler, &m);
++
++  pthread_mutex_lock(&mutex);
++  while (N)
++    pthread_cond_wait(&cond, &mutex);
++  pthread_mutex_unlock(&mutex);
++  now=my_getsystime()-now;
++  printf("got %lu in %g secs\n", my_atomic_load32(&a32, &rwl),
++         ((double)now)/1e7);
++}
++
++int main()
++{
++  int err;
++
++#ifdef _IONBF
++  setvbuf(stdout, 0, _IONBF, 0);
++#endif
++  printf("N CPUs: %d\n", my_getncpus());
++
++  if ((err= my_atomic_initialize()))
++  {
++    printf("my_atomic_initialize() failed. Error=%d\n", err);
++    return 1;
++  }
++
++  pthread_attr_init(&thr_attr);
++  pthread_attr_setdetachstate(&thr_attr,PTHREAD_CREATE_DETACHED);
++  pthread_mutex_init(&mutex, 0);
++  pthread_cond_init(&cond, 0);
++  my_atomic_rwlock_init(&rwl);
++
++  test_atomic("my_atomic_add32", test_atomic_add_handler, 100,1000000);
++  test_atomic("my_atomic_swap32", test_atomic_swap_handler, 100,1000000);
++  test_atomic("my_atomic_cas32", test_atomic_cas_handler, 100,1000000);
++
++  pthread_mutex_destroy(&mutex);
++  pthread_cond_destroy(&cond);
++  pthread_attr_destroy(&thr_attr);
++  my_atomic_rwlock_destroy(&rwl);
++  return 0;
++}
++
+------------------------------------------------------------
+revno: 2476.749.1
+committer: davi@mysql.com/endora.local
+timestamp: Fri 2008-01-11 20:34:36 -0200
+message:
+  Bug#33728 Atomic builtins
+  
+  Use compiler provided atomic builtins as a 'backend' for
+  MySQL's atomic primitives. The builtins are available on
+  a handful of platforms and compilers.
+diff:
+=== modified file 'configure.in'
+--- configure.in	2007-12-14 17:03:44 +0000
++++ configure.in	2008-01-11 22:34:36 +0000
+@@ -1688,6 +1688,30 @@
+    *) AC_MSG_ERROR(["$with_atomic_ops" is not a valid value for --with-atomic-ops]) ;;
+ esac
+ 
++AC_CACHE_CHECK([whether the compiler provides atomic builtins],
++               [mysql_cv_gcc_atomic_builtins], [AC_TRY_RUN([
++  int main()
++  {
++    int foo= -10; int bar= 10;
++    if (!__sync_fetch_and_add(&foo, bar) || foo)
++      return -1;
++    bar= __sync_lock_test_and_set(&foo, bar);
++    if (bar || foo != 10)
++      return -1;
++    bar= __sync_val_compare_and_swap(&bar, foo, 15);
++    if (bar)
++      return -1;
++    return 0;
++  }
++], [mysql_cv_gcc_atomic_builtins=yes],
++   [mysql_cv_gcc_atomic_builtins=no],
++   [mysql_cv_gcc_atomic_builtins=no])])
++
++if test "x$mysql_cv_gcc_atomic_builtins" = xyes; then
++  AC_DEFINE(HAVE_ATOMIC_BUILTINS, 1,
++            [Define to 1 if compiler provides atomic builtins.])
++fi
++
+ # Force static compilation to avoid linking problems/get more speed
+ AC_ARG_WITH(mysqld-ldflags,
+     [  --with-mysqld-ldflags   Extra linking arguments for mysqld],
+
+=== added file 'include/atomic/gcc_builtins.h'
+--- include/atomic/gcc_builtins.h	1970-01-01 00:00:00 +0000
++++ include/atomic/gcc_builtins.h	2008-01-11 22:34:36 +0000
+@@ -0,0 +1,33 @@
++/* Copyright (C) 2008 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; version 2 of the License.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++#define make_atomic_add_body(S)                     \
++  v= __sync_fetch_and_add(a, v);
++#define make_atomic_swap_body(S)                    \
++  v= __sync_lock_test_and_set(a, v);
++#define make_atomic_cas_body(S)                     \
++  int ## S sav;                                     \
++  sav= __sync_val_compare_and_swap(a, *cmp, set);   \
++  if (!(ret= (sav == *cmp))) *cmp= sav;
++
++#ifdef MY_ATOMIC_MODE_DUMMY
++#define make_atomic_load_body(S)   ret= *a
++#define make_atomic_store_body(S)  *a= v
++#else
++#define make_atomic_load_body(S)                    \
++  ret= __sync_fetch_and_or(a, 0);
++#define make_atomic_store_body(S)                   \
++  (void) __sync_lock_test_and_set(a, v);
++#endif
+
+=== modified file 'include/atomic/nolock.h'
+--- include/atomic/nolock.h	2006-12-27 01:23:51 +0000
++++ include/atomic/nolock.h	2008-01-11 22:34:36 +0000
+@@ -14,13 +14,15 @@
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+ 
+-#if defined(__i386__) || defined(_M_IX86)
++#if defined(__i386__) || defined(_M_IX86) || defined(HAVE_ATOMIC_BUILTINS)
+ #ifdef MY_ATOMIC_MODE_DUMMY
+ #  define LOCK ""
+ #else
+ #  define LOCK "lock "
+ #endif
+-#ifdef __GNUC__
++#ifdef HAVE_ATOMIC_BUILTINS
++#include "gcc_builtins.h"
++#elif __GNUC__
+ #include "x86-gcc.h"
+ #elif defined(_MSC_VER)
+ #include "x86-msvc.h"

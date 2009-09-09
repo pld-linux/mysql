@@ -70,6 +70,7 @@ Patch17:	%{name}-alpha-stack.patch
 Patch18:	%{name}-xtrabackup.patch
 Patch19:	%{name}-fixes.patch
 Patch20:	%{name}-gcc3.patch
+Patch21:	%{name}-atomic.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-show_patches.patch
 Patch101:	%{name}-microslow_innodb.patch
@@ -551,11 +552,13 @@ mv sphinx-*/mysqlse sql/sphinx
 %if "%{cxx_version}" < "4.1"
 %patch20 -p1
 %endif
+%patch21 -p0
 
 %build
 %{__libtoolize}
 %{__aclocal}
 %{__automake}
+%{__autoheader}
 %{__autoconf}
 
 # The compiler flags are as per their "official" spec ;)
