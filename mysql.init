@@ -187,7 +187,7 @@ mysqlgetconfig() {
 	fi
 
 	# reset to initial state
-	MYSQL_DATA_DIR= MYSQL_USER= MYSQL_PIDFILE= MYSQL_SOCKET= MYSQL_PORT= MYSQL_BIND_ADDRESS=
+	MYSQL_DATA_DIR= MYSQL_USER= MYSQL_PIDFILE= MYSQL_SOCKET= MYSQL_PORT= MYSQL_BIND_ADDRESS= MYSQL_SKIP_NETWORKING=
 
 	eval `awk -F= '
 	# skip comments and empty lines
@@ -218,6 +218,8 @@ mysqlgetconfig() {
 			printf("MYSQL_PORT=%s;", $2);
 		} else if ($1 == "bind-address") {
 			printf("MYSQL_BIND_ADDRESS=%s;", $2);
+		} else if ($1 == "skip-networking") {
+			printf("MYSQL_SKIP_NETWORKING=1;");
 		}
 	}
 	' $config_file`
@@ -564,7 +566,9 @@ case "$action" in
 			port=${MYSQL_PORT:-3306}
 			socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
 			pid=$MYSQL_PID
-			show "MySQL cluster %s, pid %s\n\ttcp:%s:%s\n\tunix:%s" "$mysqldir" "$pid" "$addr" "$port" "$socket"
+			nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
+			[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
+			nls "\tunix:%s\n" "$socket"
 			pids="$pids/$MYSQL_PID/"
 			progress "$MYSQL_STATUS"
 		else
@@ -592,7 +596,9 @@ case "$action" in
 				addr=${MYSQL_BIND_ADDRESS:-0.0.0.0}
 				port=${MYSQL_PORT:-3306}
 				socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
-				show "MySQL cluster %s, pid %s\n\ttcp:%s:%s\n\tunix:%s" "$mysqldir" "$pid" "$addr" "$port" "$socket"
+				nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
+				[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
+				nls "\tunix:%s\n" "$socket"
 				progress "$MYSQL_STATUS"
 			else
 				show "MySQL cluster %s" "$mysqldir"
