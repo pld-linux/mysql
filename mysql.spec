@@ -32,13 +32,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.38
-Release:	2
+Version:	5.1.39
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://mysql.easynet.be/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	8ee9bb80079bbd09499a28bc57d902e7
+# Source0-md5:	55a398daeb69a778fc46573623143268
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.7.tar.gz
 # Source100-md5:	32f2b7e98d8485c86108851d52c5cef4
 Source1:	%{name}.init
@@ -673,7 +673,6 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 rm $RPM_BUILD_ROOT%{_bindir}/resolveip
 rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_bin_dist.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
 rm $RPM_BUILD_ROOT%{_datadir}/mysql/ChangeLog
 
