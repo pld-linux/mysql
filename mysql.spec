@@ -25,13 +25,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.85
+Version:	5.0.86
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	f672ec5154f8ea3db87fec5e0b227f4c
+# Source0-md5:	c1f746bfbc8c2cb3ec1e0427a8a88c55
 #Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9-rc2.tar.gz
@@ -721,12 +721,10 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/safe_mysqld*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 rm $RPM_BUILD_ROOT%{_bindir}/resolveip
 rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_bin_dist.1
 rm $RPM_BUILD_ROOT%{_bindir}/comp_err
 rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1
-rm $RPM_BUILD_ROOT%{_mandir}/man1/make_win_src_distribution.1
 rm $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld_multi.server
 
 # no package for tests
@@ -734,9 +732,6 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1
 # orphaned manuals
-rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_backup_file.1
-rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_schema_file.1
-rm $RPM_BUILD_ROOT%{_mandir}/man1/ndb_print_sys_file.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqltest_embedded.1
 
 # in %doc
