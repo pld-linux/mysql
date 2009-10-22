@@ -388,11 +388,16 @@ diff -r 3ed7e96969f9 sql/sql_class.cc
    enable_slow_log= 0;
  #ifndef DBUG_OFF
    dbug_sentry=THD_SENTRY_MAGIC;
-@@ -762,8 +764,55 @@
+@@ -838,6 +838,7 @@
    reset_current_stmt_binlog_row_based();
    bzero((char *) &status_var, sizeof(status_var));
    sql_log_bin_toplevel= options & OPTION_BIN_LOG;
 +  reset_stats();
+ 
+ #if defined(ENABLED_DEBUG_SYNC)
+   /* Initialize the Debug Sync Facility. See debug_sync.cc. */
+@@ -845,6 +846,52 @@
+ #endif /* defined(ENABLED_DEBUG_SYNC) */
  }
  
 +// Resets stats in a THD.
