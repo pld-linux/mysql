@@ -25,7 +25,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.87
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
@@ -70,6 +70,7 @@ Patch18:	%{name}-xtrabackup.patch
 Patch19:	%{name}-fixes.patch
 Patch20:	%{name}-gcc3.patch
 Patch21:	%{name}-atomic.patch
+Patch22:	%{name}-fix-dummy-thread-race-condition.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-show_patches.patch
 Patch101:	%{name}-microslow_innodb.patch
@@ -334,6 +335,7 @@ Este pacote contém os clientes padrão para o MySQL.
 Summary:	Shared libraries for MySQL
 Summary(pl.UTF-8):	Biblioteki dzielone MySQL
 Group:		Libraries
+Requires:	glibc >= 6:2.3.6-15
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
 
@@ -554,6 +556,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch20 -p1
 %endif
 %patch21 -p0
+%patch22 -p1
 
 %build
 %{__libtoolize}
