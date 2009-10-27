@@ -2,7 +2,7 @@
 # updates percona patches
 # http://www.percona.com/docs/wiki/release:start
 
-ver=5.0.84-b18
+ver=5.0.86-b19
 patches=http://www.percona.com/mysql/$ver/patches
 series=$patches/series
 branch=MYSQL_5_0
