@@ -2,21 +2,21 @@
 ##
 ## Avoid dummy thread for pthread_exit workaround
 
---- mysql-5.0.87/mysys/my_thr_init.c~	2009-10-27 13:28:45.000000000 +0200
-+++ mysql-5.0.87/mysys/my_thr_init.c	2009-10-27 13:29:49.502552171 +0200
-@@ -47,23 +47,6 @@
+--- mysql-5.1.40/mysys/my_thr_init.c~	2009-10-06 20:49:02.000000000 +0300
++++ mysql-5.1.40/mysys/my_thr_init.c	2009-10-27 15:01:59.807275693 +0200
+@@ -47,24 +47,6 @@
  pthread_mutexattr_t my_errorcheck_mutexattr;
  #endif
  
 -#ifdef TARGET_OS_LINUX
 -
 -/*
-- Dummy thread spawned in my_thread_global_init() below to avoid
-- race conditions in NPTL pthread_exit code.
+-  Dummy thread spawned in my_thread_global_init() below to avoid
+-  race conditions in NPTL pthread_exit code.
 -*/
 -
 -static pthread_handler_t
--nptl_pthread_exit_hack_handler(void *arg __attribute__((unused)))
+-nptl_pthread_exit_hack_handler(void *arg __attribute((unused)))
 -{
 -  /* Do nothing! */
 -  pthread_exit(0);
@@ -25,10 +25,11 @@
 -
 -#endif /* TARGET_OS_LINUX */
 -
+-
  static uint get_thread_lib(void);
  
  /*
-@@ -71,33 +71,6 @@
+@@ -89,33 +71,6 @@
      return 1;
    }
  
