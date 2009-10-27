@@ -29,7 +29,7 @@ Version:	4.1.25
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-# Newer releases from bk only, see how to fetch mysql from bk repo tag:
+# Newer releases from Bazaar only, see how to fetch mysql from Bazaar branch:
 # http://dev.mysql.com/doc/refman/4.1/en/installing-source-tree.html .
 # Manual pages are at http://svn.mysql.com/svnpublic/mysqldoc/refman-4.1/ .
 Source0:	http://download.snake.de/dist/%{name}-%{version}.tar.gz
