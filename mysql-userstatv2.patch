@@ -3797,7 +3797,7 @@ diff -r 592f6c3641ba sql/sql_show.cc
  
 +ST_FIELD_INFO user_stats_fields_info[]=
 +{
-+  {"USER", 16, MYSQL_TYPE_STRING, 0, 0, "User"},
++  {"USER", USERNAME_LENGTH, MYSQL_TYPE_STRING, 0, 0, "User"},
 +  {"TOTAL_CONNECTIONS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Total_connections"},
 +  {"CONCURRENT_CONNECTIONS", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Concurrent_connections"},
 +  {"CONNECTED_TIME", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, "Connected_time"},

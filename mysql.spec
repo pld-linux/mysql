@@ -15,7 +15,6 @@
 %bcond_with	xtrabackup		# XtraBackup
 
 %include	/usr/lib/rpm/macros.perl
-#define	_snap	20060111
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
 Summary(fr.UTF-8):	MySQL: un serveur SQL rapide et fiable
@@ -25,13 +24,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.86
+Version:	5.0.87
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
 Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	c1f746bfbc8c2cb3ec1e0427a8a88c55
+# Source0-md5:	65e6229cc98b6a8d4c5206d7fe16c7be
 #Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9-rc2.tar.gz
@@ -89,9 +88,10 @@ Patch113:	%{name}-innodb_extra_rseg.patch
 Patch114:	%{name}-innodb_thread_concurrency_timer_based.patch
 Patch115:	%{name}-innodb_use_sys_malloc.patch
 Patch116:	%{name}-innodb_recovery_patches.patch
-Patch117:	%{name}-innodb_split_buf_pool_mutex.patch
-Patch118:	%{name}-innodb_rw_lock.patch
-Patch119:	%{name}-mysql-test.patch
+Patch117:	%{name}-innodb_misc_patch.patch
+Patch118:	%{name}-innodb_split_buf_pool_mutex.patch
+Patch119:	%{name}-innodb_rw_lock.patch
+Patch120:	%{name}-mysql-test.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -493,7 +493,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q %{?_snap:-n %{name}-%{version}-nightly-%{_snap}} %{?with_sphinx:-a100}
+%setup -q %{?with_sphinx:-a100}
 %patch0 -p1
 %if %{with sphinx}
 mv sphinx-*/mysqlse sql/sphinx
@@ -546,6 +546,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch117 -p1
 %patch118 -p1
 %patch119 -p1
+%patch120 -p1
 # </percona>
 
 %patch19 -p1

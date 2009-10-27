@@ -1,6 +1,27 @@
-diff -r 7ac364cc9b41 innobase/buf/buf0buf.c
---- a/innobase/buf/buf0buf.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/buf/buf0buf.c	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/btr/btr0sea.c b/innobase/btr/btr0sea.c
+--- a/innobase/btr/btr0sea.c	2009-08-28 11:08:16.000000000 +0900
++++ b/innobase/btr/btr0sea.c	2009-08-28 11:06:20.000000000 +0900
+@@ -1101,7 +1101,7 @@
+ 	ulint*		offsets;
+ 
+ 	rw_lock_x_lock(&btr_search_latch);
+-	mutex_enter(&buf_pool->mutex);
++	mutex_enter(&buf_pool->LRU_mutex);
+ 
+ 	table = btr_search_sys->hash_index;
+ 
+@@ -1186,7 +1186,7 @@
+ 		block = UT_LIST_GET_PREV(LRU, block);
+ 	}
+ 
+-	mutex_exit(&buf_pool->mutex);
++	mutex_exit(&buf_pool->LRU_mutex);
+ 	rw_lock_x_unlock(&btr_search_latch);
+ 
+ 	if (UNIV_LIKELY_NULL(heap)) {
+diff -ruN a/innobase/buf/buf0buf.c b/innobase/buf/buf0buf.c
+--- a/innobase/buf/buf0buf.c	2009-08-28 11:08:16.000000000 +0900
++++ b/innobase/buf/buf0buf.c	2009-08-28 11:06:30.000000000 +0900
 @@ -549,6 +549,17 @@
  	mutex_create(&(buf_pool->mutex));
  	mutex_set_level(&(buf_pool->mutex), SYNC_BUF_POOL);
@@ -377,7 +398,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0buf.c
  #ifdef UNIV_DEBUG
  		if (buf_debug_prints) {
  			fputs("Has read ", stderr);
-@@ -2103,10 +2136,23 @@
+@@ -2103,11 +2136,24 @@
  	} else {
  		ut_ad(io_type == BUF_IO_WRITE);
  
@@ -394,13 +415,14 @@ diff -r 7ac364cc9b41 innobase/buf/buf0buf.c
  		routine in the flush system */
  
  		buf_flush_write_complete(block);
-+
+ 
 +		if (flush_type == BUF_FLUSH_LRU) {
 +			mutex_exit(&(buf_pool->LRU_mutex));
 +		}
- 
++
  		rw_lock_s_unlock_gen(&(block->lock), BUF_IO_WRITE);
  		/* io_counter here */
+ 		if (srv_io_pattern && srv_io_pattern_trace_running) {
 @@ -2132,6 +2178,9 @@
  
  		buf_pool->n_pages_written++;
@@ -587,9 +609,9 @@ diff -r 7ac364cc9b41 innobase/buf/buf0buf.c
  
  	return(len);
  }
-diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
---- a/innobase/buf/buf0flu.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/buf/buf0flu.c	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/buf/buf0flu.c b/innobase/buf/buf0flu.c
+--- a/innobase/buf/buf0flu.c	2009-08-28 11:08:17.000000000 +0900
++++ b/innobase/buf/buf0flu.c	2009-08-28 11:06:30.000000000 +0900
 @@ -49,7 +49,9 @@
  	buf_block_t*	block)	/* in: block which is modified */
  {
@@ -612,7 +634,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  #endif /* UNIV_SYNC_DEBUG */
  
  	prev_b = NULL;
-@@ -113,16 +117,18 @@
+@@ -130,16 +134,18 @@
  				BUF_BLOCK_FILE_PAGE and in the LRU list */
  {
  #ifdef UNIV_SYNC_DEBUG
@@ -634,7 +656,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  		return(FALSE);
  	}
  
-@@ -148,12 +154,13 @@
+@@ -165,12 +171,13 @@
  	ulint		flush_type)/* in: BUF_FLUSH_LRU or BUF_FLUSH_LIST */
  {
  #ifdef UNIV_SYNC_DEBUG
@@ -651,7 +673,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  	    					&& (block->io_fix == 0)) {
  	    	if (flush_type != BUF_FLUSH_LRU) {
  
-@@ -182,15 +189,17 @@
+@@ -199,15 +206,17 @@
  {
  	ut_ad(block);
  #ifdef UNIV_SYNC_DEBUG
@@ -670,7 +692,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  	(buf_pool->n_flush[block->flush_type])--;
  
-@@ -536,18 +545,20 @@
+@@ -553,18 +562,20 @@
  	ut_ad(flush_type == BUF_FLUSH_LRU || flush_type == BUF_FLUSH_LIST
  				|| flush_type == BUF_FLUSH_SINGLE_PAGE);
  
@@ -693,7 +715,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  	if (flush_type == BUF_FLUSH_LIST
  	    && buf_flush_ready_for_flush(block, flush_type)) {
-@@ -744,7 +755,7 @@
+@@ -761,7 +772,7 @@
  		high = fil_space_get_size(space);
  	}
  
@@ -702,7 +724,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  	for (i = low; i < high; i++) {
  
-@@ -778,7 +789,7 @@
+@@ -795,7 +806,7 @@
  
  				mutex_exit(&block->mutex);
  
@@ -711,7 +733,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  				/* Note: as we release the buf_pool mutex
  				above, in buf_flush_try_page we cannot be sure
-@@ -789,14 +800,14 @@
+@@ -806,14 +817,14 @@
  				count += buf_flush_try_page(space, i,
  							    flush_type);
  
@@ -728,7 +750,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  	return(count);
  }
-@@ -831,6 +842,7 @@
+@@ -848,6 +859,7 @@
  	ulint		space;
  	ulint		offset;
  	ibool		found;
@@ -736,7 +758,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  	
  	ut_ad((flush_type == BUF_FLUSH_LRU)
  					|| (flush_type == BUF_FLUSH_LIST)); 
-@@ -849,6 +861,12 @@
+@@ -866,6 +878,12 @@
  	}
  
  	(buf_pool->init_flush)[flush_type] = TRUE;
@@ -749,7 +771,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  	
  	for (;;) {
  		/* If we have flushed enough, leave the loop */
-@@ -865,7 +883,10 @@
+@@ -882,7 +900,10 @@
  	    	} else {
  			ut_ad(flush_type == BUF_FLUSH_LIST);
  
@@ -760,7 +782,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  			if (!block
  			    || (ut_dulint_cmp(block->oldest_modification,
  			    				lsn_limit) >= 0)) {
-@@ -895,7 +916,9 @@
+@@ -912,7 +933,9 @@
  				offset = block->offset;
  	    
  				mutex_exit(&block->mutex);
@@ -771,7 +793,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  				old_page_count = page_count;
  				
-@@ -915,7 +938,9 @@
+@@ -932,7 +955,9 @@
  				flush_type, offset,
  				page_count - old_page_count); */
  
@@ -782,7 +804,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  			} else if (flush_type == BUF_FLUSH_LRU) {
  
-@@ -927,16 +952,25 @@
+@@ -944,17 +969,26 @@
  
  				mutex_exit(&block->mutex);
  
@@ -800,16 +822,17 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  	    		break;
  	    	}
  	}
-+
+ 
 +	if (flush_type == BUF_FLUSH_LRU) {
 +		mutex_exit(&(buf_pool->LRU_mutex));
 +	}
 +
 +	mutex_enter(&(buf_pool->mutex));
- 
++
  	(buf_pool->init_flush)[flush_type] = FALSE;
  
-@@ -997,7 +1031,7 @@
+ 	if ((buf_pool->n_flush[flush_type] == 0)
+@@ -1014,7 +1048,7 @@
  	ulint		n_replaceable;
  	ulint		distance	= 0;
  	
@@ -818,20 +841,20 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  	n_replaceable = UT_LIST_GET_LEN(buf_pool->free);
  
-@@ -1007,6 +1041,12 @@
- 	       && (n_replaceable < BUF_FLUSH_FREE_BLOCK_MARGIN
+@@ -1025,6 +1059,12 @@
  	       				+ BUF_FLUSH_EXTRA_MARGIN)
  	       && (distance < BUF_LRU_FREE_SEARCH_LEN)) {
-+
+ 
 +		if (!block->in_LRU_list) {
 +			/* reatart. but it is very optimistic */
 +			block = UT_LIST_GET_LAST(buf_pool->LRU);
 +			continue;
 +		}
- 
++
  		mutex_enter(&block->mutex);
  
-@@ -1021,7 +1061,7 @@
+ 		if (buf_flush_ready_for_replace(block)) {
+@@ -1038,7 +1078,7 @@
  		block = UT_LIST_GET_PREV(LRU, block);
  	}
  	
@@ -840,7 +863,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  	if (n_replaceable >= BUF_FLUSH_FREE_BLOCK_MARGIN) {
  
-@@ -1040,8 +1080,9 @@
+@@ -1057,8 +1097,9 @@
  immediately, without waiting. */ 
  
  void
@@ -851,7 +874,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  {
  	ulint	n_to_flush;
  	ulint	n_flushed;
-@@ -1051,7 +1092,7 @@
+@@ -1068,7 +1109,7 @@
  	if (n_to_flush > 0) {
  		n_flushed = buf_flush_batch(BUF_FLUSH_LRU, n_to_flush,
  							ut_dulint_zero);
@@ -860,7 +883,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  			/* There was an LRU type flush batch already running;
  			let us wait for it to end */
  		   
-@@ -1101,11 +1142,11 @@
+@@ -1118,11 +1159,11 @@
  {
  	ibool	ret;
  	
@@ -874,9 +897,9 @@ diff -r 7ac364cc9b41 innobase/buf/buf0flu.c
  
  	return(ret);
  }
-diff -r 7ac364cc9b41 innobase/buf/buf0lru.c
---- a/innobase/buf/buf0lru.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/buf/buf0lru.c	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/buf/buf0lru.c b/innobase/buf/buf0lru.c
+--- a/innobase/buf/buf0lru.c	2009-07-07 21:53:57.000000000 +0900
++++ b/innobase/buf/buf0lru.c	2009-08-28 11:06:30.000000000 +0900
 @@ -108,7 +108,7 @@
  
  	page_arr = ut_malloc(sizeof(ulint)
@@ -1242,10 +1265,10 @@ diff -r 7ac364cc9b41 innobase/buf/buf0lru.c
 -	mutex_exit(&(buf_pool->mutex));
 +	mutex_exit(&(buf_pool->LRU_mutex));
  }
-diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
---- a/innobase/buf/buf0rea.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/buf/buf0rea.c	Fri Jul 03 15:41:57 2009 -0700
-@@ -237,10 +237,12 @@
+diff -ruN a/innobase/buf/buf0rea.c b/innobase/buf/buf0rea.c
+--- a/innobase/buf/buf0rea.c	2009-08-28 11:08:17.000000000 +0900
++++ b/innobase/buf/buf0rea.c	2009-08-28 11:06:30.000000000 +0900
+@@ -277,10 +277,12 @@
  
  		return(0);
  	}	
@@ -1258,7 +1281,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  	for (i = low; i < high; i++) {
  		block = buf_page_hash_get(space, i);
  
-@@ -252,7 +254,7 @@
+@@ -292,7 +294,7 @@
  		}
  	}
  
@@ -1267,7 +1290,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  	
  	if (recent_blocks < BUF_READ_AHEAD_RANDOM_THRESHOLD) {
  		/* Do nothing */
-@@ -348,7 +350,7 @@
+@@ -388,7 +390,7 @@
  	}
  
  	/* Flush pages from the end of the LRU list if necessary */
@@ -1276,7 +1299,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  
  	return(count + count2);
  }
-@@ -451,6 +453,7 @@
+@@ -491,6 +493,7 @@
  
  		return(0);
  	}	
@@ -1284,7 +1307,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  
  	/* Check that almost all pages in the area have been accessed; if
  	offset == low, the accesses must be in a descending order, otherwise,
-@@ -464,6 +467,7 @@
+@@ -504,6 +507,7 @@
  
  	fail_count = 0;
  
@@ -1292,7 +1315,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  	for (i = low; i < high; i++) {
  		block = buf_page_hash_get(space, i);
  		
-@@ -480,12 +484,11 @@
+@@ -520,23 +524,23 @@
  			pred_block = block;
  		}
  	}
@@ -1301,12 +1324,12 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  	if (fail_count > BUF_READ_AHEAD_LINEAR_AREA -
  			 BUF_READ_AHEAD_LINEAR_THRESHOLD) {
  		/* Too many failures: return */
--
--		mutex_exit(&(buf_pool->mutex));
  
+-		mutex_exit(&(buf_pool->mutex));
+-
  		return(0);
  	}
-@@ -493,10 +496,11 @@
+ 
  	/* If we got this far, we know that enough pages in the area have
  	been accessed in the right order: linear read-ahead can be sensible */
  
@@ -1319,7 +1342,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  
  		return(0);
  	}
-@@ -512,7 +516,7 @@
+@@ -552,7 +556,7 @@
  	pred_offset = fil_page_get_prev(frame);
  	succ_offset = fil_page_get_next(frame);
  
@@ -1328,7 +1351,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  	
  	if ((offset == low) && (succ_offset == offset + 1)) {
  
-@@ -588,7 +592,7 @@
+@@ -628,7 +632,7 @@
  	os_aio_simulated_wake_handler_threads();
  
  	/* Flush pages from the end of the LRU list if necessary */
@@ -1337,7 +1360,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  
  #ifdef UNIV_DEBUG
  	if (buf_debug_prints && (count > 0)) {
-@@ -656,7 +660,7 @@
+@@ -696,7 +700,7 @@
  	os_aio_simulated_wake_handler_threads();
  
  	/* Flush pages from the end of the LRU list if necessary */
@@ -1346,7 +1369,7 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  
  #ifdef UNIV_DEBUG
  	if (buf_debug_prints) {
-@@ -728,7 +732,7 @@
+@@ -768,7 +772,7 @@
  	os_aio_simulated_wake_handler_threads();
  
  	/* Flush pages from the end of the LRU list if necessary */
@@ -1355,9 +1378,9 @@ diff -r 7ac364cc9b41 innobase/buf/buf0rea.c
  
  #ifdef UNIV_DEBUG
  	if (buf_debug_prints) {
-diff -r 7ac364cc9b41 innobase/include/buf0buf.h
---- a/innobase/include/buf0buf.h	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/include/buf0buf.h	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/include/buf0buf.h b/innobase/include/buf0buf.h
+--- a/innobase/include/buf0buf.h	2009-08-28 11:08:16.000000000 +0900
++++ b/innobase/include/buf0buf.h	2009-08-28 11:06:30.000000000 +0900
 @@ -946,6 +946,7 @@
  	mem_heap_t*	io_counter_heap;
  	ulint		io_counters;
@@ -1385,9 +1408,9 @@ diff -r 7ac364cc9b41 innobase/include/buf0buf.h
  	buf_block_t*	LRU_old; 	/* pointer to the about 3/8 oldest
  					blocks in the LRU list; NULL if LRU
  					length less than BUF_LRU_OLD_MIN_LEN */
-diff -r 7ac364cc9b41 innobase/include/buf0buf.ic
---- a/innobase/include/buf0buf.ic	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/include/buf0buf.ic	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/include/buf0buf.ic b/innobase/include/buf0buf.ic
+--- a/innobase/include/buf0buf.ic	2009-07-07 21:54:00.000000000 +0900
++++ b/innobase/include/buf0buf.ic	2009-08-28 11:06:30.000000000 +0900
 @@ -112,7 +112,8 @@
  	buf_block_t*	block;
  	dulint		lsn;
@@ -1505,9 +1528,9 @@ diff -r 7ac364cc9b41 innobase/include/buf0buf.ic
  
  	mutex_enter(&block->mutex);
  
-diff -r 7ac364cc9b41 innobase/include/buf0flu.h
---- a/innobase/include/buf0flu.h	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/include/buf0flu.h	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/include/buf0flu.h b/innobase/include/buf0flu.h
+--- a/innobase/include/buf0flu.h	2009-07-07 21:54:00.000000000 +0900
++++ b/innobase/include/buf0flu.h	2009-08-28 11:06:30.000000000 +0900
 @@ -26,8 +26,9 @@
  a margin of replaceable pages there. */
  
@@ -1519,9 +1542,9 @@ diff -r 7ac364cc9b41 innobase/include/buf0flu.h
  /************************************************************************
  Initializes a page for writing to the tablespace. */
  
-diff -r 7ac364cc9b41 innobase/include/buf0flu.ic
---- a/innobase/include/buf0flu.ic	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/include/buf0flu.ic	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/include/buf0flu.ic b/innobase/include/buf0flu.ic
+--- a/innobase/include/buf0flu.ic	2009-07-07 21:54:00.000000000 +0900
++++ b/innobase/include/buf0flu.ic	2009-08-28 11:06:30.000000000 +0900
 @@ -38,11 +38,14 @@
  	mtr_t*		mtr)	/* in: mtr */
  {
@@ -1538,7 +1561,7 @@ diff -r 7ac364cc9b41 innobase/include/buf0flu.ic
  #endif /* UNIV_SYNC_DEBUG */
  
  	ut_ad(ut_dulint_cmp(mtr->start_lsn, ut_dulint_zero) != 0);
-@@ -52,15 +55,19 @@
+@@ -52,16 +55,20 @@
  	block->newest_modification = mtr->end_lsn;
  
  	if (ut_dulint_is_zero(block->oldest_modification)) {
@@ -1553,11 +1576,12 @@ diff -r 7ac364cc9b41 innobase/include/buf0flu.ic
  		ut_ad(ut_dulint_cmp(block->oldest_modification,
  							mtr->start_lsn) <= 0);
  	}
-+
-+	mutex_exit(&block->mutex);
  
++	mutex_exit(&block->mutex);
++
          ++srv_buf_pool_write_requests;
  }
+ 
 @@ -78,29 +85,32 @@
  					set of mtr's */
  {
@@ -1594,9 +1618,9 @@ diff -r 7ac364cc9b41 innobase/include/buf0flu.ic
 -	mutex_exit(&(buf_pool->mutex));
 +	mutex_exit(&(block->mutex));
  }
-diff -r 7ac364cc9b41 innobase/include/sync0sync.h
---- a/innobase/include/sync0sync.h	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/include/sync0sync.h	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/include/sync0sync.h b/innobase/include/sync0sync.h
+--- a/innobase/include/sync0sync.h	2009-07-07 21:54:06.000000000 +0900
++++ b/innobase/include/sync0sync.h	2009-08-28 11:06:30.000000000 +0900
 @@ -438,8 +438,12 @@
  					SYNC_SEARCH_SYS, as memory allocation
  					can call routines there! Otherwise
@@ -1611,10 +1635,10 @@ diff -r 7ac364cc9b41 innobase/include/sync0sync.h
  #define SYNC_DOUBLEWRITE	140
  #define	SYNC_ANY_LATCH		135
  #define SYNC_THR_LOCAL		133
-diff -r 7ac364cc9b41 innobase/log/log0recv.c
---- a/innobase/log/log0recv.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/log/log0recv.c	Fri Jul 03 15:41:57 2009 -0700
-@@ -1693,11 +1693,11 @@
+diff -ruN a/innobase/log/log0recv.c b/innobase/log/log0recv.c
+--- a/innobase/log/log0recv.c	2009-08-28 11:08:17.000000000 +0900
++++ b/innobase/log/log0recv.c	2009-08-28 11:06:30.000000000 +0900
+@@ -1695,11 +1695,11 @@
  
  	mtr_start(&mtr);
  
@@ -1628,9 +1652,9 @@ diff -r 7ac364cc9b41 innobase/log/log0recv.c
  
  	replica = buf_page_get(space + RECV_REPLICA_SPACE_ADD, page_no,
  							RW_X_LATCH, &mtr);
-diff -r 7ac364cc9b41 innobase/mtr/mtr0mtr.c
---- a/innobase/mtr/mtr0mtr.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/mtr/mtr0mtr.c	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/mtr/mtr0mtr.c b/innobase/mtr/mtr0mtr.c
+--- a/innobase/mtr/mtr0mtr.c	2009-07-07 21:54:08.000000000 +0900
++++ b/innobase/mtr/mtr0mtr.c	2009-08-28 11:06:30.000000000 +0900
 @@ -103,6 +103,38 @@
  	}
  }
@@ -1679,7 +1703,7 @@ diff -r 7ac364cc9b41 innobase/mtr/mtr0mtr.c
  	}
  
  	/* We first update the modification info to buffer pages, and only
-@@ -187,11 +221,12 @@
+@@ -187,12 +221,13 @@
  	required when we insert modified buffer pages in to the flush list
  	which must be sorted on oldest_modification. */
  	
@@ -1688,12 +1712,13 @@ diff -r 7ac364cc9b41 innobase/mtr/mtr0mtr.c
  	if (mtr->modifications) {
  		log_release();
  	}
-+
+ 
 +	/* All unlocking has been moved here, after log_sys mutex release. */
 +	mtr_memo_pop_all(mtr);
- 
++
  #ifdef UNIV_DEBUG
  	mtr->state = MTR_COMMITTED;
+ #endif
 @@ -262,6 +297,12 @@
  		slot = dyn_array_get_element(memo, offset);
  
@@ -1707,10 +1732,10 @@ diff -r 7ac364cc9b41 innobase/mtr/mtr0mtr.c
  
  			mtr_memo_slot_release(mtr, slot);
  
-diff -r 7ac364cc9b41 innobase/srv/srv0srv.c
---- a/innobase/srv/srv0srv.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/srv/srv0srv.c	Fri Jul 03 15:41:57 2009 -0700
-@@ -367,6 +367,7 @@
+diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
+--- a/innobase/srv/srv0srv.c	2009-08-28 11:08:17.000000000 +0900
++++ b/innobase/srv/srv0srv.c	2009-08-28 11:06:30.000000000 +0900
+@@ -370,6 +370,7 @@
  ulong	srv_n_free_tickets_to_enter = 500;
  ulong	srv_thread_sleep_delay = 10000;
  ulint	srv_spin_wait_delay	= 5;
@@ -1718,7 +1743,7 @@ diff -r 7ac364cc9b41 innobase/srv/srv0srv.c
  ibool	srv_priority_boost	= TRUE;
  
  ibool	srv_print_thread_releases	= FALSE;
-@@ -673,6 +674,47 @@
+@@ -676,6 +677,47 @@
  ulint	srv_n_threads_active[SRV_MASTER + 1];
  ulint	srv_n_threads[SRV_MASTER + 1];
  
@@ -1766,16 +1791,16 @@ diff -r 7ac364cc9b41 innobase/srv/srv0srv.c
  /*************************************************************************
  Sets the info describing an i/o thread current state. */
  
-@@ -905,6 +947,8 @@
- 	srv_slot_t*		slot;
+@@ -909,6 +951,8 @@
  	dict_table_t*		table;
  	ulint			i;
-+
-+	srv_align_spins_microsec();
  
++	srv_align_spins_microsec();
++
  	srv_sys = mem_alloc(sizeof(srv_sys_t));
  
-@@ -2661,7 +2705,7 @@
+ 	kernel_mutex_temp = mem_alloc(sizeof(mutex_t));
+@@ -2665,7 +2709,7 @@
  					ib_longlong level, bpl;
  					buf_block_t* bpage;
  
@@ -1784,7 +1809,7 @@ diff -r 7ac364cc9b41 innobase/srv/srv0srv.c
  
  					level = 0;
  					bpage = UT_LIST_GET_FIRST(buf_pool->flush_list);
-@@ -2683,7 +2727,7 @@
+@@ -2687,7 +2731,7 @@
  						bpl = 0;
  					}
  
@@ -1793,9 +1818,9 @@ diff -r 7ac364cc9b41 innobase/srv/srv0srv.c
  
  					if (!srv_use_doublewrite_buf) {
  						/* flush is faster than when doublewrite */
-diff -r 7ac364cc9b41 innobase/sync/sync0sync.c
---- a/innobase/sync/sync0sync.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/sync/sync0sync.c	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/sync/sync0sync.c b/innobase/sync/sync0sync.c
+--- a/innobase/sync/sync0sync.c	2009-07-07 21:54:10.000000000 +0900
++++ b/innobase/sync/sync0sync.c	2009-08-28 11:06:30.000000000 +0900
 @@ -1105,11 +1105,19 @@
  	} else if (level == SYNC_DOUBLEWRITE) {
  		ut_a(sync_thread_levels_g(array, SYNC_DOUBLEWRITE));
@@ -1817,9 +1842,9 @@ diff -r 7ac364cc9b41 innobase/sync/sync0sync.c
  	} else if (level == SYNC_SEARCH_SYS) {
  		ut_a(sync_thread_levels_g(array, SYNC_SEARCH_SYS));
  	} else if (level == SYNC_TRX_LOCK_HEAP) {
-diff -r 7ac364cc9b41 innobase/ut/ut0ut.c
---- a/innobase/ut/ut0ut.c	Fri Jul 03 15:41:50 2009 -0700
-+++ b/innobase/ut/ut0ut.c	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/innobase/ut/ut0ut.c b/innobase/ut/ut0ut.c
+--- a/innobase/ut/ut0ut.c	2009-07-07 21:54:12.000000000 +0900
++++ b/innobase/ut/ut0ut.c	2009-08-28 11:06:30.000000000 +0900
 @@ -347,6 +347,7 @@
  /*****************************************************************
  Runs an idle loop on CPU. The argument gives the desired delay
@@ -1841,9 +1866,9 @@ diff -r 7ac364cc9b41 innobase/ut/ut0ut.c
  		j += i;
  	}
  
-diff -r 7ac364cc9b41 patch_info/innodb_split_buf_pool_mutex.info
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/innodb_split_buf_pool_mutex.info	Fri Jul 03 15:41:57 2009 -0700
+diff -ruN a/patch_info/innodb_split_buf_pool_mutex.info b/patch_info/innodb_split_buf_pool_mutex.info
+--- /dev/null	1970-01-01 09:00:00.000000000 +0900
++++ b/patch_info/innodb_split_buf_pool_mutex.info	2009-08-28 11:06:30.000000000 +0900
 @@ -0,0 +1,6 @@
 +File=innodb_split_buf_pool_mutex.patch
 +Name=InnoDB patch to fix buffer pool scalability
@@ -1851,10 +1876,10 @@ diff -r 7ac364cc9b41 patch_info/innodb_split_buf_pool_mutex.info
 +Author=Yasufumi Kinoshita
 +License=BSD
 +Comment=Backport from XtraDB
-diff -r 7ac364cc9b41 sql/ha_innodb.cc
---- a/sql/ha_innodb.cc	Fri Jul 03 15:41:50 2009 -0700
-+++ b/sql/ha_innodb.cc	Fri Jul 03 15:41:57 2009 -0700
-@@ -1503,6 +1503,13 @@
+diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
+--- a/sql/ha_innodb.cc	2009-08-28 11:08:17.000000000 +0900
++++ b/sql/ha_innodb.cc	2009-08-28 11:06:30.000000000 +0900
+@@ -1507,6 +1507,13 @@
          /* We set srv_pool_size here in units of 1 kB. InnoDB internally
          changes the value so that it becomes the number of database pages. */
  

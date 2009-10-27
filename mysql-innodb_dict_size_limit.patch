@@ -1,6 +1,134 @@
-diff -r 6eeee157fd40 innobase/dict/dict0boot.c
---- a/innobase/dict/dict0boot.c	Fri Jul 03 15:41:34 2009 -0700
-+++ b/innobase/dict/dict0boot.c	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/innobase/btr/btr0sea.c b/innobase/btr/btr0sea.c
+--- a/innobase/btr/btr0sea.c	2009-08-27 18:42:17.000000000 +0900
++++ b/innobase/btr/btr0sea.c	2009-08-27 18:43:11.000000000 +0900
+@@ -1077,6 +1077,124 @@
+ }
+ 
+ /************************************************************************
++Drops a page hash index based on index */
++
++void
++btr_search_drop_page_hash_index_on_index(
++/*=====================================*/
++	dict_index_t*	index)		/* in: record descriptor */
++{
++	page_t*		page;
++	hash_table_t*	table;
++	buf_block_t*	block;
++	ulint		n_fields;
++	ulint		n_bytes;
++	rec_t*		rec;
++	ulint		fold;
++	ulint		prev_fold;
++	dulint		tree_id;
++	ulint		n_cached;
++	ulint		n_recs;
++	ulint*		folds;
++	ulint		i;
++	mem_heap_t*	heap	= NULL;
++	ulint*		offsets;
++
++	rw_lock_x_lock(&btr_search_latch);
++	mutex_enter(&buf_pool->mutex);
++
++	table = btr_search_sys->hash_index;
++
++	block = UT_LIST_GET_LAST(buf_pool->LRU);
++
++	while (block != NULL) {
++		if (block->index == index && block->is_hashed) {
++			page = block->frame;
++
++			/* from btr_search_drop_page_hash_index() */
++			n_fields = block->curr_n_fields;
++			n_bytes = block->curr_n_bytes;
++
++			ut_a(n_fields + n_bytes > 0);
++
++			n_recs = page_get_n_recs(page);
++
++			/* Calculate and cache fold values into an array for fast deletion
++			from the hash index */
++
++			folds = mem_alloc(n_recs * sizeof(ulint));
++
++			n_cached = 0;
++
++			rec = page_get_infimum_rec(page);
++			rec = page_rec_get_next(rec);
++
++			tree_id = btr_page_get_index_id(page);
++	
++			ut_a(0 == ut_dulint_cmp(tree_id, index->id));
++
++			prev_fold = 0;
++
++			offsets = NULL;
++
++			while (!page_rec_is_supremum(rec)) {
++				/* FIXME: in a mixed tree, not all records may have enough
++				ordering fields: */
++				offsets = rec_get_offsets(rec, index, offsets,
++							n_fields + (n_bytes > 0), &heap);
++				ut_a(rec_offs_n_fields(offsets) == n_fields + (n_bytes > 0));
++				fold = rec_fold(rec, offsets, n_fields, n_bytes, tree_id);
++
++				if (fold == prev_fold && prev_fold != 0) {
++
++					goto next_rec;
++				}
++
++				/* Remove all hash nodes pointing to this page from the
++				hash chain */
++
++				folds[n_cached] = fold;
++				n_cached++;
++next_rec:
++				rec = page_rec_get_next(rec);
++				prev_fold = fold;
++			}
++
++			for (i = 0; i < n_cached; i++) {
++
++				ha_remove_all_nodes_to_page(table, folds[i], page);
++			}
++
++			ut_a(index->search_info->ref_count > 0);
++			index->search_info->ref_count--;
++
++			block->is_hashed = FALSE;
++			block->index = NULL;
++	
++			if (UNIV_UNLIKELY(block->n_pointers)) {
++				/* Corruption */
++				ut_print_timestamp(stderr);
++				fprintf(stderr,
++"  InnoDB: Corruption of adaptive hash index. After dropping\n"
++"InnoDB: the hash index to a page of %s, still %lu hash nodes remain.\n",
++					index->name, (ulong) block->n_pointers);
++			}
++
++			mem_free(folds);
++		}
++
++		block = UT_LIST_GET_PREV(LRU, block);
++	}
++
++	mutex_exit(&buf_pool->mutex);
++	rw_lock_x_unlock(&btr_search_latch);
++
++	if (UNIV_LIKELY_NULL(heap)) {
++		mem_heap_free(heap);
++	}
++}
++
++/************************************************************************
+ Drops a page hash index when a page is freed from a fseg to the file system.
+ Drops possible hash index if the page happens to be in the buffer pool. */
+ 
+diff -ruN a/innobase/dict/dict0boot.c b/innobase/dict/dict0boot.c
+--- a/innobase/dict/dict0boot.c	2009-07-07 21:53:58.000000000 +0900
++++ b/innobase/dict/dict0boot.c	2009-08-27 18:42:59.000000000 +0900
 @@ -247,6 +247,7 @@
  	system tables */
  	/*-------------------------*/
@@ -33,9 +161,9 @@ diff -r 6eeee157fd40 innobase/dict/dict0boot.c
  
  	dict_mem_table_add_col(table, "INDEX_ID", DATA_BINARY, 0,0,0);
  	dict_mem_table_add_col(table, "POS", DATA_INT, 0, 4, 0);
-diff -r 6eeee157fd40 innobase/dict/dict0crea.c
---- a/innobase/dict/dict0crea.c	Fri Jul 03 15:41:34 2009 -0700
-+++ b/innobase/dict/dict0crea.c	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/innobase/dict/dict0crea.c b/innobase/dict/dict0crea.c
+--- a/innobase/dict/dict0crea.c	2009-07-07 21:53:58.000000000 +0900
++++ b/innobase/dict/dict0crea.c	2009-08-27 18:42:59.000000000 +0900
 @@ -1178,6 +1178,9 @@
              	/* Foreign constraint system tables have already been
              	created, and they are ok */
@@ -46,21 +174,21 @@ diff -r 6eeee157fd40 innobase/dict/dict0crea.c
  		mutex_exit(&(dict_sys->mutex));
  
              	return(DB_SUCCESS);
-@@ -1266,6 +1269,11 @@
- 	que_graph_free(graph);
+@@ -1267,6 +1270,11 @@
  	
  	trx->op_info = "";
-+
+ 
 +	table1 = dict_table_get_low("SYS_FOREIGN");
 +	table2 = dict_table_get_low("SYS_FOREIGN_COLS");
 +	table1->n_mysql_handles_opened = 1; /* for pin */
 +	table2->n_mysql_handles_opened = 1; /* for pin */
- 
++
  	row_mysql_unlock_data_dictionary(trx);
  
-diff -r 6eeee157fd40 innobase/dict/dict0dict.c
---- a/innobase/dict/dict0dict.c	Fri Jul 03 15:41:34 2009 -0700
-+++ b/innobase/dict/dict0dict.c	Fri Jul 03 15:41:41 2009 -0700
+   	trx_free_for_mysql(trx);
+diff -ruN a/innobase/dict/dict0dict.c b/innobase/dict/dict0dict.c
+--- a/innobase/dict/dict0dict.c	2009-07-07 21:53:58.000000000 +0900
++++ b/innobase/dict/dict0dict.c	2009-08-27 18:43:11.000000000 +0900
 @@ -638,6 +638,8 @@
  	mutex_enter(&(dict_sys->mutex));
  
@@ -79,15 +207,15 @@ diff -r 6eeee157fd40 innobase/dict/dict0dict.c
  	mutex_exit(&(dict_sys->mutex));
  
  	if (table != NULL) {
-@@ -786,6 +790,8 @@
- 
+@@ -787,6 +791,8 @@
  	        table->n_mysql_handles_opened++;
  	}
-+
-+	dict_table_LRU_trim(table);
  
++	dict_table_LRU_trim(table);
++
  	mutex_exit(&(dict_sys->mutex));
  
+ 	if (table != NULL) {
 @@ -1267,20 +1273,64 @@
  too much space. Currently not used! */
  
@@ -100,24 +228,18 @@ diff -r 6eeee157fd40 innobase/dict/dict0dict.c
  {
  	dict_table_t*	table;
  	dict_table_t*	prev_table;
--
--	ut_error;
--
--#ifdef UNIV_SYNC_DEBUG
--	ut_ad(mutex_own(&(dict_sys->mutex)));
--#endif /* UNIV_SYNC_DEBUG */
--
 +	dict_foreign_t*	foreign;
 +	ulint		n_removed;
 +	ulint		n_have_parent;
 +	ulint		cached_foreign_tables;
-+
+ 
+-	ut_error;
 +	//ut_error;
-+
-+#ifdef UNIV_SYNC_DEBUG
-+	ut_ad(mutex_own(&(dict_sys->mutex)));
-+#endif /* UNIV_SYNC_DEBUG */
-+
+ 
+ #ifdef UNIV_SYNC_DEBUG
+ 	ut_ad(mutex_own(&(dict_sys->mutex)));
+ #endif /* UNIV_SYNC_DEBUG */
+ 
 +retry:
 +	n_removed = n_have_parent = 0;
  	table = UT_LIST_GET_LAST(dict_sys->table_LRU);
@@ -170,9 +292,20 @@ diff -r 6eeee157fd40 innobase/dict/dict0dict.c
  }
  
  /**************************************************************************
-diff -r 6eeee157fd40 innobase/ibuf/ibuf0ibuf.c
---- a/innobase/ibuf/ibuf0ibuf.c	Fri Jul 03 15:41:34 2009 -0700
-+++ b/innobase/ibuf/ibuf0ibuf.c	Fri Jul 03 15:41:41 2009 -0700
+@@ -1565,6 +1616,10 @@
+ #ifdef UNIV_SYNC_DEBUG
+ 	ut_ad(mutex_own(&(dict_sys->mutex)));
+ #endif /* UNIV_SYNC_DEBUG */
++	/* remove all entry of the index from adaptive hash index,
++	because removing from adaptive hash index needs dict_index */
++	if (srv_use_adaptive_hash_indexes && srv_dict_size_limit)
++		btr_search_drop_page_hash_index_on_index(index);
+ 
+ 	/* We always create search info whether or not adaptive
+ 	hash index is enabled or not. */
+diff -ruN a/innobase/ibuf/ibuf0ibuf.c b/innobase/ibuf/ibuf0ibuf.c
+--- a/innobase/ibuf/ibuf0ibuf.c	2009-08-27 18:42:17.000000000 +0900
++++ b/innobase/ibuf/ibuf0ibuf.c	2009-08-27 18:42:59.000000000 +0900
 @@ -535,6 +535,7 @@
  	sprintf(buf, "SYS_IBUF_TABLE_%lu", (ulong) space);
  	/* use old-style record format for the insert buffer */
@@ -181,9 +314,26 @@ diff -r 6eeee157fd40 innobase/ibuf/ibuf0ibuf.c
  
  	dict_mem_table_add_col(table, "PAGE_NO", DATA_BINARY, 0, 0, 0);
  	dict_mem_table_add_col(table, "TYPES", DATA_BINARY, 0, 0, 0);
-diff -r 6eeee157fd40 innobase/include/dict0dict.h
---- a/innobase/include/dict0dict.h	Fri Jul 03 15:41:34 2009 -0700
-+++ b/innobase/include/dict0dict.h	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/innobase/include/btr0sea.h b/innobase/include/btr0sea.h
+--- a/innobase/include/btr0sea.h	2009-07-07 21:54:00.000000000 +0900
++++ b/innobase/include/btr0sea.h	2009-08-27 18:43:11.000000000 +0900
+@@ -97,6 +97,13 @@
+ /*============================*/
+ 	page_t*	page);	/* in: index page, s- or x-latched */
+ /************************************************************************
++Drops a page hash index based on index */
++
++void
++btr_search_drop_page_hash_index_on_index(
++/*=====================================*/
++	dict_index_t*	index);		/* in: record descriptor */
++/************************************************************************
+ Drops a page hash index when a page is freed from a fseg to the file system.
+ Drops possible hash index if the page happens to be in the buffer pool. */
+ 
+diff -ruN a/innobase/include/dict0dict.h b/innobase/include/dict0dict.h
+--- a/innobase/include/dict0dict.h	2009-07-07 21:54:01.000000000 +0900
++++ b/innobase/include/dict0dict.h	2009-08-27 18:42:59.000000000 +0900
 @@ -938,6 +938,11 @@
  	const char*	ptr,	/* in: scan from */
  	const char*	string);/* in: look for this */
@@ -196,9 +346,9 @@ diff -r 6eeee157fd40 innobase/include/dict0dict.h
  /* Buffers for storing detailed information about the latest foreign key
  and unique key errors */
  extern FILE*	dict_foreign_err_file;
-diff -r 6eeee157fd40 innobase/include/dict0dict.ic
---- a/innobase/include/dict0dict.ic	Fri Jul 03 15:41:34 2009 -0700
-+++ b/innobase/include/dict0dict.ic	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/innobase/include/dict0dict.ic b/innobase/include/dict0dict.ic
+--- a/innobase/include/dict0dict.ic	2009-07-07 21:54:01.000000000 +0900
++++ b/innobase/include/dict0dict.ic	2009-08-27 18:42:59.000000000 +0900
 @@ -533,6 +533,13 @@
  
  	HASH_SEARCH(name_hash, dict_sys->table_hash, table_fold, table,
@@ -224,18 +374,18 @@ diff -r 6eeee157fd40 innobase/include/dict0dict.ic
  		/* lock_push(trx, table, LOCK_DICT_MEM_FIX) */
  	}
  	
-diff -r 6eeee157fd40 innobase/include/srv0srv.h
---- a/innobase/include/srv0srv.h	Fri Jul 03 15:41:34 2009 -0700
-+++ b/innobase/include/srv0srv.h	Fri Jul 03 15:41:41 2009 -0700
-@@ -146,6 +146,8 @@
- extern ulint	srv_enable_unsafe_group_commit;
+diff -ruN a/innobase/include/srv0srv.h b/innobase/include/srv0srv.h
+--- a/innobase/include/srv0srv.h	2009-08-27 18:42:17.000000000 +0900
++++ b/innobase/include/srv0srv.h	2009-08-27 18:42:59.000000000 +0900
+@@ -147,6 +147,8 @@
  extern uint	srv_read_ahead;
  extern uint	srv_adaptive_checkpoint;
-+
-+extern ulint	srv_dict_size_limit;
  
++extern ulint	srv_dict_size_limit;
++
  extern volatile ibool srv_io_pattern;
  extern ulong	srv_io_pattern_trace;
+ extern ulong	srv_io_pattern_trace_running;
 @@ -552,6 +554,7 @@
          ulint innodb_data_writes;
          ulint innodb_data_written;
@@ -244,18 +394,18 @@ diff -r 6eeee157fd40 innobase/include/srv0srv.h
          ulint innodb_buffer_pool_pages_total;
          ulint innodb_buffer_pool_pages_data;
          ulint innodb_buffer_pool_pages_dirty;
-diff -r 6eeee157fd40 innobase/srv/srv0srv.c
---- a/innobase/srv/srv0srv.c	Fri Jul 03 15:41:34 2009 -0700
-+++ b/innobase/srv/srv0srv.c	Fri Jul 03 15:41:41 2009 -0700
-@@ -352,6 +352,8 @@
- 
+diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
+--- a/innobase/srv/srv0srv.c	2009-08-27 18:42:17.000000000 +0900
++++ b/innobase/srv/srv0srv.c	2009-08-27 18:42:59.000000000 +0900
+@@ -353,6 +353,8 @@
  uint	srv_read_ahead = 3; /* 1: random  2: linear  3: Both */
  uint	srv_adaptive_checkpoint = 0; /* 0: none  1: reflex  2: estimate */
-+
-+ulint	srv_dict_size_limit = 0;
  
++ulint	srv_dict_size_limit = 0;
++
  volatile ibool srv_io_pattern = FALSE;
  ulint   srv_io_pattern_trace = 0;
+ ulint   srv_io_pattern_trace_running = 0;
 @@ -1953,6 +1955,7 @@
          export_vars.innodb_data_reads= os_n_file_reads;
          export_vars.innodb_data_writes= os_n_file_writes;
@@ -264,9 +414,9 @@ diff -r 6eeee157fd40 innobase/srv/srv0srv.c
          export_vars.innodb_buffer_pool_read_requests= buf_pool->n_page_gets;
          export_vars.innodb_buffer_pool_write_requests= srv_buf_pool_write_requests;
          export_vars.innodb_buffer_pool_wait_free= srv_buf_pool_wait_free;
-diff -r 6eeee157fd40 mysql-test/r/innodb_dict_size_limit.result
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/mysql-test/r/innodb_dict_size_limit.result	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/mysql-test/r/innodb_dict_size_limit.result b/mysql-test/r/innodb_dict_size_limit.result
+--- /dev/null	1970-01-01 09:00:00.000000000 +0900
++++ b/mysql-test/r/innodb_dict_size_limit.result	2009-08-27 18:42:59.000000000 +0900
 @@ -0,0 +1,60 @@
 +DROP TABLE IF EXISTS `test_5`;
 +DROP TABLE IF EXISTS `test_4`;
@@ -328,9 +478,9 @@ diff -r 6eeee157fd40 mysql-test/r/innodb_dict_size_limit.result
 +DROP TABLE `test_3`;
 +DROP TABLE `test_2`;
 +DROP TABLE `test_1`;
-diff -r 6eeee157fd40 mysql-test/t/innodb_dict_size_limit.test
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/mysql-test/t/innodb_dict_size_limit.test	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/mysql-test/t/innodb_dict_size_limit.test b/mysql-test/t/innodb_dict_size_limit.test
+--- /dev/null	1970-01-01 09:00:00.000000000 +0900
++++ b/mysql-test/t/innodb_dict_size_limit.test	2009-08-27 18:42:59.000000000 +0900
 @@ -0,0 +1,63 @@
 +#
 +# Test for new variable innodb_dict_size_limit;
@@ -395,9 +545,9 @@ diff -r 6eeee157fd40 mysql-test/t/innodb_dict_size_limit.test
 +DROP TABLE `test_2`;
 +DROP TABLE `test_1`;
 +
-diff -r 6eeee157fd40 patch_info/innodb_dict_size_limit.info
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/innodb_dict_size_limit.info	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/patch_info/innodb_dict_size_limit.info b/patch_info/innodb_dict_size_limit.info
+--- /dev/null	1970-01-01 09:00:00.000000000 +0900
++++ b/patch_info/innodb_dict_size_limit.info	2009-08-27 18:42:59.000000000 +0900
 @@ -0,0 +1,9 @@
 +File=innodb_dict_size_limit.patch
 +Name=Limit dictionary cache size
@@ -408,9 +558,9 @@ diff -r 6eeee157fd40 patch_info/innodb_dict_size_limit.info
 +ChangeLog=
 +2009-01-26
 +YK: Initial release
-diff -r 6eeee157fd40 sql/ha_innodb.cc
---- a/sql/ha_innodb.cc	Fri Jul 03 15:41:34 2009 -0700
-+++ b/sql/ha_innodb.cc	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
+--- a/sql/ha_innodb.cc	2009-08-27 18:42:17.000000000 +0900
++++ b/sql/ha_innodb.cc	2009-08-27 18:42:59.000000000 +0900
 @@ -288,6 +288,8 @@
    (char*) &export_vars.innodb_dblwr_pages_written,        SHOW_LONG},
    {"dblwr_writes",
@@ -420,9 +570,9 @@ diff -r 6eeee157fd40 sql/ha_innodb.cc
    {"log_waits",
    (char*) &export_vars.innodb_log_waits,                  SHOW_LONG},
    {"log_write_requests",
-diff -r 6eeee157fd40 sql/ha_innodb.h
---- a/sql/ha_innodb.h	Fri Jul 03 15:41:34 2009 -0700
-+++ b/sql/ha_innodb.h	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
+--- a/sql/ha_innodb.h	2009-08-27 18:42:17.000000000 +0900
++++ b/sql/ha_innodb.h	2009-08-27 18:42:59.000000000 +0900
 @@ -243,6 +243,7 @@
  extern ulong srv_enable_unsafe_group_commit;
  extern uint srv_read_ahead;
@@ -431,9 +581,9 @@ diff -r 6eeee157fd40 sql/ha_innodb.h
  extern ulong srv_show_locks_held;
  extern ulong srv_show_verbose_locks;
  extern ulong srv_io_pattern_trace;
-diff -r 6eeee157fd40 sql/mysqld.cc
---- a/sql/mysqld.cc	Fri Jul 03 15:41:34 2009 -0700
-+++ b/sql/mysqld.cc	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
+--- a/sql/mysqld.cc	2009-08-27 18:42:17.000000000 +0900
++++ b/sql/mysqld.cc	2009-08-27 18:42:59.000000000 +0900
 @@ -5101,6 +5101,7 @@
    OPT_INNODB_ADAPTIVE_CHECKPOINT,
    OPT_INNODB_READ_IO_THREADS,
@@ -453,9 +603,9 @@ diff -r 6eeee157fd40 sql/mysqld.cc
    {"innodb_io_pattern_trace", OPT_INNODB_IO_PATTERN_TRACE,
     "Create/Drop the internal hash table for IO pattern tracing.",
     (gptr*) &srv_io_pattern_trace, (gptr*) &srv_io_pattern_trace,
-diff -r 6eeee157fd40 sql/set_var.cc
---- a/sql/set_var.cc	Fri Jul 03 15:41:34 2009 -0700
-+++ b/sql/set_var.cc	Fri Jul 03 15:41:41 2009 -0700
+diff -ruN a/sql/set_var.cc b/sql/set_var.cc
+--- a/sql/set_var.cc	2009-08-27 18:42:17.000000000 +0900
++++ b/sql/set_var.cc	2009-08-27 18:42:59.000000000 +0900
 @@ -540,6 +540,8 @@
  sys_var_enum	sys_innodb_adaptive_checkpoint("innodb_adaptive_checkpoint",
                             &srv_adaptive_checkpoint,
