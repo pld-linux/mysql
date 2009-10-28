@@ -260,6 +260,7 @@ klienta.
 
 %package -n mysqlhotcopy
 Summary:	mysqlhotcopy - A MySQL database backup program
+Summary(pl.UTF-8):	mysqlhotcopy - program do tworzenia kopii zapasowych baz MySQL
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	perl-DBD-mysql
@@ -272,6 +273,17 @@ where the database directories are located. mysqlhotcopy works only
 for backing up MyISAM and ARCHIVE tables.
 
 See innobackup package to backup InnoDB tables.
+
+%description -n mysqlhotcopy -l pl.UTF-8
+mysqlhotcopy wykorzystuje LOCK TABLES, FLUSH TABLES oraz cp i scp do
+szybkiego tworzenia kopii zapasowych baz danych. Jest to najszybszy
+sposób wykonania kopii zapasowej bazy danych lub pojedynczych tabel,
+ale może działać tylko na maszynie, na której znajdują się katalogi z
+bazą danych. mysqlhotcopy działa tylko dla tabel typu MyISAM i
+ARCHIVE.
+
+Narzędzie do tworzenia kopii tabel InnoDB znajduje się w pakiecie
+innobackup.
 
 %package extras
 Summary:	MySQL additional utilities
