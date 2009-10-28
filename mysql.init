@@ -423,6 +423,9 @@ EOF
 		--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
 		--bootstrap \
 		--skip-grant-tables \
+		--skip-bdb \
+		--skip-innodb \
+		--skip-ndbcluster \
 		--datadir=$MYSQL_DATA_DIR \
 		--user=$MYSQL_USER \
 		--slave-load-tmpdir=$MYSQL_DATA_DIR \
@@ -454,9 +457,18 @@ END_OF_MSG
 		show "Filling help tables..."
 		ok=0
 		( echo "use mysql;"; cat /usr/share/mysql/fill_help_tables.sql ) | \
-			/usr/sbin/mysqld --bootstrap --skip-grant-tables \
-			--datadir=$MYSQL_DATA_DIR --user=$MYSQL_USER \
-			--slave-load-tmpdir=$MYSQL_DATA_DIR --tmpdir=$MYSQL_DATA_DIR --log-error=$MYSQL_ERRLOG \
+			/usr/sbin/mysqld \
+			--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
+			--bootstrap \
+			--skip-grant-tables \
+			--skip-bdb \
+			--skip-innodb \
+			--skip-ndbcluster \
+			--datadir=$MYSQL_DATA_DIR \
+			--user=$MYSQL_USER \
+			--slave-load-tmpdir=$MYSQL_DATA_DIR \
+			--tmpdir=$MYSQL_DATA_DIR \
+			--log-error=$MYSQL_ERRLOG \
 			&& ok=1
 		if [ "$ok" = 1 ]; then
 			ok
