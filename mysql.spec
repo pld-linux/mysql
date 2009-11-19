@@ -80,6 +80,7 @@ Patch104:	%{name}-innodb_rw_lock.patch
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
+BuildRequires:	bison
 BuildRequires:	doxygen
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
