@@ -423,9 +423,7 @@ EOF
 		--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
 		--bootstrap \
 		--skip-grant-tables \
-		--skip-bdb \
 		--skip-innodb \
-		--skip-ndbcluster \
 		--datadir=$MYSQL_DATA_DIR \
 		--user=$MYSQL_USER \
 		--slave-load-tmpdir=$MYSQL_DATA_DIR \
