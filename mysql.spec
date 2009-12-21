@@ -53,6 +53,7 @@ Source10:	%{name}-ndb-mgm.sysconfig
 Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
+Source14:	my.cnf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
@@ -596,7 +597,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
 	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
@@ -629,6 +630,7 @@ awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.
 
 install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
+cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf
 
 # NDB
 %if %{with ndb}
@@ -973,6 +975,7 @@ done
 
 %files client
 %defattr(644,root,root,755)
+%attr(600,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/skel/.my.cnf
 %attr(755,root,root) %{_bindir}/mysql
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbinlog
