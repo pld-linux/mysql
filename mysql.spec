@@ -68,7 +68,6 @@ Patch16:	%{name}-errorlog-no-rename.patch
 Patch17:	%{name}-alpha-stack.patch
 Patch18:	%{name}-xtrabackup.patch
 Patch19:	%{name}-fixes.patch
-Patch20:	%{name}-gcc3.patch
 Patch21:	%{name}-atomic.patch
 Patch22:	%{name}-fix-dummy-thread-race-condition.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
@@ -564,9 +563,6 @@ mv sphinx-*/mysqlse sql/sphinx
 # </percona>
 
 %patch19 -p1
-%if "%{cxx_version}" < "4.1"
-%patch20 -p1
-%endif
 %patch21 -p0
 %patch22 -p1
 
