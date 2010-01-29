@@ -1,6 +1,6 @@
---- mysql-5.0.68/libmysqld/log.cc~	2008-08-13 12:14:31.000000000 +0300
-+++ mysql-5.0.68/libmysqld/log.cc	2008-10-27 15:02:24.136737667 +0200
-@@ -2543,11 +2543,11 @@
+--- mysql-5.0.90/libmysqld/log.cc~	2010-01-29 14:35:22.000000000 +0200
++++ mysql-5.0.90/libmysqld/log.cc	2010-01-29 14:39:10.268964291 +0200
+@@ -2605,11 +2605,11 @@
    bool result=0;
    if (opt_error_log)
    {
@@ -14,17 +14,17 @@
      char err_temp[FN_REFLEN+5];
      /*
       On Windows is necessary a temporary file for to rename
-@@ -2619,7 +2619,6 @@
-     {
-       freopen(err_temp,"a+",stderr);
-       (void) my_delete(err_renamed, MYF(0));
--      my_rename(log_error_file,err_renamed,MYF(0));
-       if (freopen(log_error_file,"a+",stdout))
-         freopen(log_error_file,"a+",stderr);
-       int fd, bytes;
---- mysql-5.0.68/sql/log.cc~	2008-10-27 13:41:07.000000000 +0200
-+++ mysql-5.0.68/sql/log.cc	2008-10-27 15:07:07.918167174 +0200
-@@ -2592,11 +2592,11 @@
+@@ -2637,7 +2637,6 @@
+      result= 1;
+ #else
+    FILE *reopen;
+-   my_rename(log_error_file,err_renamed,MYF(0));
+    if (freopen(log_error_file,"a+",stdout))
+        reopen= freopen(log_error_file,"a+",stderr);
+    else
+--- mysql-5.0.90/sql/log.cc~	2010-01-29 14:41:08.000000000 +0200
++++ mysql-5.0.90/sql/log.cc	2010-01-29 14:42:26.542261420 +0200
+@@ -2605,11 +2605,11 @@
    bool result=0;
    if (opt_error_log)
    {
