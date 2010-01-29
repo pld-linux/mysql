@@ -7,11 +7,11 @@
 +    VOID(pthread_mutex_lock(&LOCK_error_log));
 +#ifdef __WIN__
      char err_renamed[FN_REFLEN], *end;
-     end= strmake(err_renamed,log_error_file,FN_REFLEN-4);
+     end= strmake(err_renamed,log_error_file,FN_REFLEN-5);
      strmov(end, "-old");
 -    VOID(pthread_mutex_lock(&LOCK_error_log));
 -#ifdef __WIN__
-     char err_temp[FN_REFLEN+4];
+     char err_temp[FN_REFLEN+5];
      /*
       On Windows is necessary a temporary file for to rename
 @@ -2619,7 +2619,6 @@
@@ -31,11 +31,11 @@
 +    VOID(pthread_mutex_lock(&LOCK_error_log));
 +#ifdef __WIN__
      char err_renamed[FN_REFLEN], *end;
-     end= strmake(err_renamed,log_error_file,FN_REFLEN-4);
+     end= strmake(err_renamed,log_error_file,FN_REFLEN-5);
      strmov(end, "-old");
 -    VOID(pthread_mutex_lock(&LOCK_error_log));
 -#ifdef __WIN__
-     char err_temp[FN_REFLEN+4];
+     char err_temp[FN_REFLEN+5];
      /*
       On Windows is necessary a temporary file for to rename
 @@ -2635,7 +2635,6 @@
