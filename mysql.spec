@@ -65,7 +65,6 @@ Patch13:	%{name}-bug-34192.patch
 Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
 Patch16:	%{name}-errorlog-no-rename.patch
-Patch17:	%{name}-alpha-stack.patch
 Patch18:	%{name}-xtrabackup.patch
 Patch19:	%{name}-fixes.patch
 Patch21:	%{name}-atomic.patch
@@ -533,9 +532,6 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
-%ifarch alpha
-%patch17 -p1
-%endif
 %{?with_xtrabackup:%patch18 -p1}
 
 # <percona %patches>
