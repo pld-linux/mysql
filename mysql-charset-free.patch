@@ -1,0 +1,152 @@
+From: Date: February 26 2010 2:37pm
+Subject: bzr commit into mysql-5.1-bugteam branch (staale.smedseng:3358) Bug#45058
+List-Archive: http://lists.mysql.com/commits/101654
+X-Bug: 45058
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============2894997089832222545=="
+
+--===============2894997089832222545==
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+#At file:///export/home/tmp/ss156133/z/45058-akonadi-51/ based on revid:gshchepa@stripped
+
+ 3358 Staale Smedseng	2010-02-26
+      Bug #45058 init_available_charsets uses double checked locking
+      
+      A client doing multiple mysql_library_init() and
+      mysql_library_end() calls over the lifetime of the process may
+      experience lost character set data, potentially even a
+      SIGSEGV.
+      
+      This patch reinstates the reloading of character set data when
+      a mysql_library_init() is done after a mysql_library_end().
+
+    modified:
+      include/my_sys.h
+      libmysql/libmysql.c
+      mysys/charset.c
+      mysys/my_init.c
+      sql/mysqld.cc
+=== modified file 'include/my_sys.h'
+--- a/include/my_sys.h	2009-12-12 18:11:25 +0000
++++ b/include/my_sys.h	2010-02-26 13:37:03 +0000
+@@ -950,7 +950,7 @@ extern my_bool resolve_charset(const cha
+ extern my_bool resolve_collation(const char *cl_name,
+                                  CHARSET_INFO *default_cl,
+                                  CHARSET_INFO **cl);
+-
++extern void free_charsets(void);
+ extern char *get_charsets_dir(char *buf);
+ extern my_bool my_charset_same(CHARSET_INFO *cs1, CHARSET_INFO *cs2);
+ extern my_bool init_compiled_charsets(myf flags);
+
+=== modified file 'libmysql/libmysql.c'
+--- a/libmysql/libmysql.c	2009-12-18 18:44:24 +0000
++++ b/libmysql/libmysql.c	2010-02-26 13:37:03 +0000
+@@ -211,6 +211,7 @@ void STDCALL mysql_server_end()
+   }
+   else
+   {
++    free_charsets();
+     mysql_thread_end();
+   }
+ 
+
+=== modified file 'mysys/charset.c'
+--- a/mysys/charset.c	2009-12-15 09:48:29 +0000
++++ b/mysys/charset.c	2010-02-26 13:37:03 +0000
+@@ -427,6 +427,11 @@ static void init_available_charsets(void
+ }
+ 
+ 
++void free_charsets(void)
++{
++  charsets_initialized= MY_PTHREAD_ONCE_INIT;
++}
++
+ uint get_collation_number(const char *name)
+ {
+   my_pthread_once(&charsets_initialized, init_available_charsets);
+
+=== modified file 'mysys/my_init.c'
+--- a/mysys/my_init.c	2009-12-12 18:11:25 +0000
++++ b/mysys/my_init.c	2010-02-26 13:37:03 +0000
+@@ -165,6 +165,7 @@ void my_end(int infoflag)
+       my_print_open_files();
+     }
+   }
++  free_charsets();
+   my_error_unregister_all();
+   my_once_free();
+ 
+
+=== modified file 'sql/mysqld.cc'
+--- a/sql/mysqld.cc	2010-02-05 12:55:20 +0000
++++ b/sql/mysqld.cc	2010-02-26 13:37:03 +0000
+@@ -1287,6 +1287,7 @@ void clean_up(bool print_message)
+   lex_free();				/* Free some memory */
+   item_create_cleanup();
+   set_var_free();
++  free_charsets();
+   if (!opt_noacl)
+   {
+ #ifdef HAVE_DLOPEN
+
+
+--===============2894997089832222545==
+MIME-Version: 1.0
+Content-Type: text/bzr-bundle; charset="us-ascii";
+	name="bzr/staale.smedseng@stripped"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+# Bazaar merge directive format 2 (Bazaar 0.90)
+# revision_id: staale.smedseng@stripped
+# target_branch: file:///export/home/tmp/ss156133/z/45058-akonadi-51/
+# testament_sha1: fd2350d19bfb4ab3e3d43c1aba8e9f82cea0e7be
+# timestamp: 2010-02-26 14:37:07 +0100
+# base_revision_id: gshchepa@stripped
+# 
+# Begin bundle
+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
+lftMi6bIyMTsP/i7kinChIVvzcFw
+
+
+--===============2894997089832222545==--
