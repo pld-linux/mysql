@@ -83,7 +83,6 @@ URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	bison
-BuildRequires:	doxygen
 BuildRequires:	groff
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
@@ -96,7 +95,6 @@ BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.414
 BuildRequires:	sed >= 4.0
-BuildRequires:	texinfo
 BuildRequires:	zlib-devel
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/groupdel
