@@ -132,6 +132,7 @@ Provides:	user(mysql)
 Obsoletes:	MySQL
 Obsoletes:	mysql-server
 Conflicts:	logrotate < 3.7-4
+ExcludeArch:	alpha
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
