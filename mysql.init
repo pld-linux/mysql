@@ -149,7 +149,7 @@ mysqlstatus() {
 
 # get mysql configuration in variables
 # MYSQL_CONFIG MYSQL_CLUSTER_DIR
-# MYSQL_DATA_DIR MYSQL_USER MYSQL_PIDFILE MYSQL_SOCKET MYSQL_PORT MYSQL_BIND_ADDRESS MYSQL_SKIP_NETWORKING
+# MYSQL_DATA_DIR MYSQL_USER MYSQL_PIDFILE MYSQL_SOCKET MYSQL_PORT MYSQL_BIND_ADDRESS MYSQL_SKIP_NETWORKING MYSQL_LOG_ERROR
 #
 # arguments
 # $1 - db cluster
@@ -188,7 +188,7 @@ mysqlgetconfig() {
 	fi
 
 	# reset to initial state
-	MYSQL_DATA_DIR= MYSQL_USER= MYSQL_PIDFILE= MYSQL_SOCKET= MYSQL_PORT= MYSQL_BIND_ADDRESS= MYSQL_SKIP_NETWORKING=
+	MYSQL_DATA_DIR= MYSQL_USER= MYSQL_PIDFILE= MYSQL_SOCKET= MYSQL_PORT= MYSQL_BIND_ADDRESS= MYSQL_SKIP_NETWORKING= MYSQL_LOG_ERROR=
 
 	eval `awk -F= '
 	# skip comments and empty lines
@@ -221,9 +221,19 @@ mysqlgetconfig() {
 			printf("MYSQL_BIND_ADDRESS=%s;", $2);
 		} else if ($1 == "skip-networking") {
 			printf("MYSQL_SKIP_NETWORKING=1;");
+		} else if ($1 == "log-error") {
+			printf("MYSQL_LOG_ERROR=%s;", $2);
 		}
 	}
 	' $config_file`
+
+	# error log not defined in config file. add one
+	if [ -z "$MYSQL_LOG_ERROR" ]; then
+		MYSQL_LOG_ERROR=$MYSQL_ERRLOG
+	else
+		# unset, so mysqld would use value from config itself
+		unset MYSQL_LOG_ERROR
+	fi
 
 	if is_yes "$MYSQL_RA_COMPAT"; then
 		MYSQL_DATA_DIR_SUB=""
@@ -243,7 +253,7 @@ mysqlgetconfig() {
 		exit 6
 	fi
 
-	if [ -z $MYSQL_USER ]; then
+	if [ -z "$MYSQL_USER" ]; then
 		echo "$(nls 'MySQL user not configured properly')"'!' >&2
 		nls "Edit %s and configure it." "$config_file" >&2
 		exit 6
@@ -264,16 +274,13 @@ mysqlstart() {
 	[ -z "$DEFAULT_SERVICE_RUN_NICE_LEVEL" ] && DEFAULT_SERVICE_RUN_NICE_LEVEL=0
 	rm -f "$MYSQL_PIDFILE"
 
-	if [ "$(grep -c ^log-error $MYSQL_CONFIG)" -lt 1 ]; then
-		# error log not defined in config file. add one
-		MYSQL_OPTIONS="$MYSQL_OPTIONS --log-error=$MYSQL_ERRLOG"
-	fi
 
 	TMPDIR=/tmp nice -n ${SERVICE_RUN_NICE_LEVEL:-$DEFAULT_SERVICE_RUN_NICE_LEVEL} \
 		/usr/bin/setsid /usr/sbin/mysqld \
 			--defaults-file=$MYSQL_CONFIG \
 			--datadir=$MYSQL_DATA_DIR \
 			--pid-file=$MYSQL_PIDFILE \
+			${MYSQL_LOG_ERROR:+--log-error="$MYSQL_LOG_ERROR"} \
 			$MYSQL_OPTIONS &
 	pid=$!
 
