@@ -148,20 +148,21 @@ mysqlstatus() {
 }
 
 # get mysql configuration in variables
-# MYSQL_CONFIG MYSQL_DATA_DIR MYSQL_USER MYSQL_PIDFILE
+# MYSQL_CONFIG MYSQL_CLUSTER_DIR
+# MYSQL_DATA_DIR MYSQL_USER MYSQL_PIDFILE MYSQL_SOCKET MYSQL_PORT MYSQL_BIND_ADDRESS MYSQL_SKIP_NETWORKING
 #
 # arguments
 # $1 - db cluster
 
 mysqlgetconfig() {
-	clusterdir="$1"
+	local clusterdir="$1" config_file
 
 	# emulate old behaviour if only one cluster specified
 	if [ "$clusterdir" = "$MYSQL_DB_CLUSTERS" -a "$clusterdir" = "/var/lib/mysql" -a -f /etc/mysqld.conf ]; then
 		MYSQL_RA_COMPAT=yes
 		config_file=/etc/mysqld.conf
 	else
-		config=$(awk -F= -vclusterdir="$clusterdir" '!/^#/{ if (clusterdir == $2) print $1}' /etc/mysql/clusters.conf)
+		local config=$(awk -F= -vclusterdir="$clusterdir" '!/^#/{ if (clusterdir == $2) print $1}' /etc/mysql/clusters.conf)
 		if [[ $config = /* ]]; then
 			config_file="$config"
 		elif [ -f "/etc/mysql/$config" ]; then
@@ -251,7 +252,7 @@ mysqlgetconfig() {
 
 # start mysql
 mysqlstart() {
-	clusterdir="$1"
+	local clusterdir="$1"
 	mysqlgetconfig "$clusterdir"
 	if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
 		nls "MySQL cluster %s not initialized." "$clusterdir"
@@ -259,8 +260,7 @@ mysqlstart() {
 		exit 6
 	fi
 
-	msg_starting "MySQL $clusterdir"
-	busy
+	msg_starting "MySQL $clusterdir"; busy
 	[ -z "$DEFAULT_SERVICE_RUN_NICE_LEVEL" ] && DEFAULT_SERVICE_RUN_NICE_LEVEL=0
 	rm -f "$MYSQL_PIDFILE"
 
@@ -309,7 +309,7 @@ mysqlstart() {
 
 # stop mysql
 mysqlstop() {
-	clusterdir="$1"
+	local clusterdir="$1"
 	mysqlstatus "$clusterdir" stop
 	msg_stopping "MySQL $clusterdir"
 	busy
@@ -354,7 +354,7 @@ mysqlsubsys() {
 }
 
 mysqlinit() {
-	clusterdir="$1"
+	local clusterdir="$1"
 
 	if [ -f /etc/mysqld.conf ]; then
 		nls "Running in \`no cluster compat' mode: can't initialize database."
@@ -515,6 +515,7 @@ END_OF_MSG
 #
 
 start() {
+	local mysqldir
 	for mysqldir in $DB_CLUSTERS; do
 		mysqlstatus "$mysqldir" start
 		if [ "$MYSQL_STATUS" = "running" ]; then
@@ -527,6 +528,7 @@ start() {
 }
 
 stop() {
+	local mysqldir
 	for mysqldir in $DB_CLUSTERS; do
 		mysqlstatus "$mysqldir" stop
 		if [ "$MYSQL_STATUS" = "not running" ]; then
@@ -539,13 +541,14 @@ stop() {
 }
 
 condrestart() {
-	if [ -f /var/lock/subsys/mysql ]; then
-		stop
-		start
-	else
+	if [ ! -f /var/lock/subsys/mysql ]; then
 		msg_not_running "MySQL"
 		RETVAL=$1
+		return
 	fi
+
+	stop
+	start
 }
 
 RETVAL=0
