@@ -551,10 +551,10 @@ condrestart() {
 RETVAL=0
 case "$action" in
   start)
-  	start
+	start
 	;;
   stop)
-  	stop
+	stop
 	;;
   restart)
 	stop
@@ -565,6 +565,21 @@ case "$action" in
 	;;
   force-reload)
 	condrestart 7
+	;;
+  init)
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlinit "$mysqldir"
+	done
+	exit $?
+	;;
+  flush-logs)
+	for mysqldir in $DB_CLUSTERS; do
+	    mysqlgetconfig "$mysqldir"
+		# just if mysqld is really running
+		if /usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" ping >/dev/null 2>&1; then
+			/usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" flush-logs
+		fi
+	done
 	;;
   status)
 	for mysqldir in $DB_CLUSTERS; do
@@ -616,23 +631,8 @@ case "$action" in
 		done
 	fi
 	;;
-  init)
-	for mysqldir in $DB_CLUSTERS; do
-		mysqlinit "$mysqldir"
-	done
-	exit $?
-	;;
-  flush-logs)
-  	for mysqldir in $DB_CLUSTERS; do
-	    mysqlgetconfig "$mysqldir"
-		# just if mysqld is really running
-		if /usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" ping >/dev/null 2>&1; then
-			/usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" flush-logs
-		fi
-	done
-	;;
   *)
-	msg_usage "$0 {start|stop|init|restart|try-restart|force-reload|status}"
+	msg_usage "$0 {start|stop|restart|try-restart|force-reload|init|flush-logs|status}"
 	exit 3
 esac
 
