@@ -71,6 +71,7 @@ Patch21:	%{name}-atomic.patch
 Patch22:	%{name}-fix-dummy-thread-race-condition.patch
 # ourdelta
 Patch23:	big_tables_fixlp284123_fixmysql35346.patch
+Patch24:	mysql.init.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-show_patches.patch
 Patch101:	%{name}-microslow_innodb.patch
@@ -509,6 +510,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
 %setup -q %{?with_sphinx:-a100}
+cp -p %{SOURCE1} .
 %patch0 -p1
 %if %{with sphinx}
 mv sphinx-*/mysqlse sql/sphinx
@@ -565,6 +567,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch21 -p0
 %patch22 -p1
 %patch23 -p1
+%patch24 -p1
 
 %build
 %{__libtoolize}
@@ -654,7 +657,7 @@ install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 
 install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
-install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
+install -p mysql.init $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
 install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'

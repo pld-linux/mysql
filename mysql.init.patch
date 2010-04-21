@@ -1,0 +1,22 @@
+--- ./mysql.init	2010-04-21 11:21:43.395337233 +0300
++++ ./mysql.init	2009-10-28 15:30:33.502152334 +0200
+@@ -430,7 +423,9 @@
+ 		--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
+ 		--bootstrap \
+ 		--skip-grant-tables \
++		--skip-bdb \
+ 		--skip-innodb \
++		--skip-ndbcluster \
+ 		--datadir=$MYSQL_DATA_DIR \
+ 		--user=$MYSQL_USER \
+ 		--slave-load-tmpdir=$MYSQL_DATA_DIR \
+@@ -466,7 +461,9 @@
+ 			--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
+ 			--bootstrap \
+ 			--skip-grant-tables \
++			--skip-bdb \
+ 			--skip-innodb \
++			--skip-ndbcluster \
+ 			--datadir=$MYSQL_DATA_DIR \
+ 			--user=$MYSQL_USER \
+ 			--slave-load-tmpdir=$MYSQL_DATA_DIR \
