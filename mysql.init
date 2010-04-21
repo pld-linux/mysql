@@ -28,7 +28,7 @@ if [ -n "$MYSQL_DB_CLUSTERS" ]; then
 fi
 
 if [ -f /etc/mysql/clusters.conf ]; then
-	MYSQL_DB_CLUSTERS=$(awk -F= '!/^#/{print $2}' /etc/mysql/clusters.conf)
+	MYSQL_DB_CLUSTERS=$(awk -F= '!/^#/ && /=/{print $2}' /etc/mysql/clusters.conf)
 	if [ -z "$MYSQL_DB_CLUSTERS"  ]; then
 		nls "Warning: there are no configured clusters."
 	fi
@@ -191,6 +191,15 @@ mysqlgetconfig() {
 	MYSQL_DATA_DIR= MYSQL_USER= MYSQL_PIDFILE= MYSQL_SOCKET= MYSQL_PORT= MYSQL_BIND_ADDRESS= MYSQL_SKIP_NETWORKING= MYSQL_LOG_ERROR=
 
 	eval `awk -F= '
+	{
+		# undos
+		gsub(/\r$/, "");
+
+		# trim spaces
+		gsub(/^[\t ]*|[\t ]*$/, "", $1);
+		gsub(/^[\t ]*|[\t ]*$/, "", $2);
+	}
+
 	# skip comments and empty lines
 	/^[;#]|^ *$/ { next }
 
@@ -198,12 +207,6 @@ mysqlgetconfig() {
 		match($0, /\[.*\]/);
 		section = substr($0, RSTART + 1, RSTART + RLENGTH - 3);
 		next;
-	}
-
-	# trim spaces
-	{
-		gsub(/^[\t ]*|[\t ]*$/, "", $1);
-		gsub(/^[\t ]*|[\t ]*$/, "", $2);
 	}
 
 	section == "mysqld" {
