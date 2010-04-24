@@ -71,6 +71,7 @@ Patch13:	%{name}-errorlog-no-rename.patch
 Patch14:	%{name}-bug-43594.patch
 Patch15:	plugin-avoid-version.patch
 Patch16:	%{name}-fix-dummy-thread-race-condition.patch
+Patch17:	%{name}-abi_check.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-userstats.patch
 Patch101:	%{name}-microslow.patch
@@ -516,6 +517,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch15 -p1
 %patch16 -p1
+%patch17 -p1
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
