@@ -24,13 +24,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.90
-Release:	3
+Version:	5.0.91
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-#Source0:	ftp://ftp.mysql.com/pub/mysql/src/%{name}-%{version}.tar.gz
-Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	6d325f2b4a60539699558bc5e4452388
+#Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+Source0:	http://downloads.mysql.com/archives/mysql-5.0/%{name}-%{version}.tar.gz
+# Source0-md5:	e28f93b1a1b10b028135c1d51bbd4c46
 #Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9-rc2.tar.gz
