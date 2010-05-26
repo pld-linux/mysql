@@ -33,7 +33,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.47
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -246,7 +246,6 @@ klienta.
 Summary:	mysqlhotcopy - A MySQL database backup program
 Summary(pl.UTF-8):	mysqlhotcopy - program do tworzenia kopii zapasowych baz MySQL
 Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}-%{release}
 Requires:	perl-DBD-mysql
 
 %description -n mysqlhotcopy
