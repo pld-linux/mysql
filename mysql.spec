@@ -110,6 +110,7 @@ Requires:	/usr/bin/setsid
 Requires:	rc-scripts >= 0.2.0
 Suggests:	mysql-client
 %{?with_tcpd:Suggests:	tcp_wrappers}
+Suggests:	vim-syntax-mycnf
 Provides:	MySQL-server
 Provides:	group(mysql)
 Provides:	msqlormysql
