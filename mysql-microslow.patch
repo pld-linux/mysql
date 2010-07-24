@@ -173,9 +173,8 @@ diff -r 0b1f42e1aacf sql/mysql_priv.h
  
  /*
    Some defines for exit codes for ::is_equal class functions.
-diff -r 0b1f42e1aacf sql/mysqld.cc
---- a/sql/mysqld.cc	Thu Dec 04 08:55:22 2008 -0800
-+++ b/sql/mysqld.cc	Thu Dec 04 08:55:29 2008 -0800
+--- mysql-5.1.49/sql/mysqld.cc~	2010-07-24 15:19:16.000000000 +0300
++++ mysql-5.1.49/sql/mysqld.cc	2010-07-24 15:22:23.181784212 +0300
 @@ -5553,6 +5553,9 @@
    OPT_SECURE_FILE_PRIV,
    OPT_MIN_EXAMINED_ROW_LIMIT,
@@ -186,10 +185,10 @@ diff -r 0b1f42e1aacf sql/mysqld.cc
  #if defined(ENABLED_DEBUG_SYNC)
    OPT_DEBUG_SYNC_TIMEOUT,
  #endif /* defined(ENABLED_DEBUG_SYNC) */
-@@ -6480,6 +6483,17 @@
-    (uchar**) 0,
-    0, (GET_ULONG | GET_ASK_ADDR) , REQUIRED_ARG, 100,
-    1, 100, 0, 1, 0},
+@@ -6819,6 +6819,17 @@
+    "The minimum percentage of warm blocks in key cache.",
+    &dflt_key_cache_var.param_division_limit, NULL, NULL,
+    (GET_ULONG | GET_ASK_ADDR) , REQUIRED_ARG, 100, 1, 100, 0, 1, 0},
 +  {"log_slow_filter", OPT_LOG_SLOW_FILTER,
 +   "Log only the queries that followed certain execution plan. Multiple flags allowed in a comma-separated string. [qc_miss, full_scan, full_join, tmp_table, tmp_table_on_disk, filesort, filesort_on_disk]",
 +   0, 0, 0, GET_STR, REQUIRED_ARG, 0, 0, 0, SLOG_F_NONE, 0, 0},
@@ -202,8 +201,8 @@ diff -r 0b1f42e1aacf sql/mysqld.cc
 +   "Choose how verbose the messages to your slow log will be. Multiple flags allowed in a comma-separated string. [microtime, query_plan, innodb]",
 +   0, 0, 0, GET_STR, REQUIRED_ARG, 0, 0, 0, SLOG_V_NONE, 0, 0},
    {"long_query_time", OPT_LONG_QUERY_TIME,
-    "Log all queries that have taken more than long_query_time seconds to execute to file. "
-    "The argument will be treated as a decimal value with microsecond precission.",
+    "Log all queries that have taken more than long_query_time seconds to "
+    "execute. The argument will be treated as a decimal value with "
 @@ -7556,6 +7570,10 @@
    global_system_variables.old_passwords= 0;
    global_system_variables.old_alter_table= 0;
