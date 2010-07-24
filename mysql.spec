@@ -4,7 +4,6 @@
 # - missing have_archive, have_merge
 # - is plugin_dir lib64 safe?
 # - Using NDB Cluster... could not find sci transporter in /{include, lib}
-# - configure: WARNING: unrecognized options: --with-innodb, --with-raid, --with-archive-storage-engine, --with-federated-storage-engine, --with-vio, --without-ndbcluster
 # - !!! Makefiles for libmysqld.so !!!
 # - segfaults on select from non-mysql user (caused by builder environment):
 #     https://bugs.launchpad.net/pld-linux/+bug/381904
@@ -551,8 +550,6 @@ CPPFLAGS="%{rpmcppflags}"
 	--enable-shared \
 	--enable-static \
 	--enable-thread-safe-client \
-	--with%{!?with_innodb:out}-innodb \
-	--with%{!?with_raid:out}-raid \
 	--with%{!?with_ssl:out}-ssl=/usr \
 	--with%{!?with_tcpd:out}-libwrap \
 	%{?with_big_tables:--with-big-tables} \
@@ -565,19 +562,14 @@ CPPFLAGS="%{rpmcppflags}"
 	--with-named-curses-libs="-lncurses" \
 	--with-named-thread-libs="-lpthread" \
 	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
-	--with-archive-storage-engine \
 	--with-plugins=max \
-	%{?with_federated:--with-federated-storage-engine} \
 	--with-fast-mutexes \
-	--with-vio \
 	--without-readline \
 	--without-libedit \
 %if %{with ndb}
 	--with%{!?debug:out}-ndb-debug \
 	--with-ndbcluster \
 	--with-ndb-docs \
-%else
-	--without-ndbcluster \
 %endif
 	--with-docs
 
