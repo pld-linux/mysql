@@ -9,3 +9,14 @@
  
  noinst_HEADERS =	ha_sphinx.h
  
+--- mysql-5.1.49/storage/sphinx/Makefile.am~	2010-07-24 16:37:48.000000000 +0300
++++ mysql-5.1.49/storage/sphinx/Makefile.am	2010-07-24 17:00:56.161565823 +0300
+@@ -38,7 +38,7 @@
+ EXTRA_LTLIBRARIES =	ha_sphinx.la
+ pkgplugin_LTLIBRARIES = @plugin_sphinx_shared_target@ sphinx.la
+ 
+-ha_sphinx_la_LDFLAGS =	-module -rpath $(MYSQLLIBdir)
++ha_sphinx_la_LDFLAGS =	-module -avoid-version -rpath $(MYSQLLIBdir)
+ ha_sphinx_la_CXXFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_sphinx_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_sphinx_la_SOURCES =	ha_sphinx.cc
