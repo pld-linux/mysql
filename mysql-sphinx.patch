@@ -1,0 +1,11 @@
+--- mysql-5.1.49/storage/sphinx/Makefile.am~	2009-02-13 23:26:46.000000000 +0200
++++ mysql-5.1.49/storage/sphinx/Makefile.am	2010-07-24 16:35:57.568716704 +0300
+@@ -31,7 +31,7 @@
+ LDADD =
+ 
+ DEFS= @DEFS@ \
+-      -D_REENTRANT -D_PTHREADS -DENGINE -DSTORAGE_ENGINE -DMYSQL_SERVER
++      -D_REENTRANT -D_PTHREADS -DSTORAGE_ENGINE -DMYSQL_SERVER
+ 
+ noinst_HEADERS =	ha_sphinx.h
+ 
