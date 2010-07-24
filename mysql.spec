@@ -71,6 +71,7 @@ Patch14:	%{name}-bug-43594.patch
 Patch15:	plugin-avoid-version.patch
 Patch16:	%{name}-fix-dummy-thread-race-condition.patch
 Patch17:	%{name}-abi_check.patch
+Patch18:	%{name}-sphinx.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-userstats.patch
 Patch101:	%{name}-microslow.patch
@@ -491,7 +492,9 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %prep
 %setup -q %{?with_sphinx:-a100}
 %if %{with sphinx}
+# http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
+%patch18 -p1
 %endif
 %patch0 -p1
 #%{?with_tcpd:%patch1 -p1}  # WHATS PURPOSE OF THIS PATCH?
@@ -702,6 +705,7 @@ rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 # not needed
 rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_*.{a,la}
 rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_example.*
+rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/sphinx.{a,la}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -868,6 +872,9 @@ done
 %dir %{_libdir}/mysql
 %dir %{_libdir}/mysql/plugin
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb_plugin.so
+%if %{with sphinx}
+#%attr(755,root,root) %{_libdir}/mysql/plugin/sphinx.so
+%endif
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
