@@ -48,6 +48,7 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	percona.sh
+Source15:	my.cnf
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-sphinx.patch
 Patch2:		%{name}-c++.patch
@@ -639,7 +640,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,ssl/certs/mysql} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,ssl/certs/mysql,skel} \
 	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
@@ -654,14 +655,14 @@ install -d $RPM_BUILD_ROOT/var/lib/mysql/bdb/{log,tmp}
 	libsdir=/tmp
 # libsdir is to avoid installing innodb static libs in $RPM_BUILD_ROOT../libs
 
-install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
+cp -a Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
 install -p mysql.init $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
-install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
-install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
+cp -a %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
+cp -a %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'
-install %{SOURCE4} mysqld.conf
-install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
+cp -a %{SOURCE4} mysqld.conf
+cp -a %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
@@ -678,14 +679,15 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 
 install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
+cp -a %{SOURCE15} $RPM_BUILD_ROOT/etc/skel/.my.cnf
 
 # NDB
-install %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
-install %{SOURCE8} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb
-install %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
-install %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
-install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
-install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
+install -p %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
+cp -a %{SOURCE8} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb
+install -p %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
+cp -a %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
+install -p %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
+cp -a %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 
 mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
 sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT{%{_libdir}/libmysqlclient{,_r}.la,%{_bindir}/mysql_config}
@@ -984,6 +986,7 @@ EOF
 
 %files client
 %defattr(644,root,root,755)
+%attr(600,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/skel/.my.cnf
 %attr(755,root,root) %{_bindir}/mysql
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbinlog
