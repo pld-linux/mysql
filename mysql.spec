@@ -33,8 +33,8 @@ Source0:	http://downloads.mysql.com/archives/mysql-5.0/%{name}-%{version}.tar.gz
 # Source0-md5:	e28f93b1a1b10b028135c1d51bbd4c46
 #Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
-Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9-rc2.tar.gz
-# Source100-md5:	1ca266613bfdb0e6952d9ca1af93f7cc
+Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
+# Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
