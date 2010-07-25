@@ -10,14 +10,14 @@
 #     (profiling disabled temporaily to workaround this)
 #
 # Conditional build:
+%bcond_with	autodeps	# BR packages needed only for resolving deps
 %bcond_without	innodb		# InnoDB storage engine support
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
 %bcond_without	federated	# Federated storage engine support
 %bcond_without	raid		# RAID support
 %bcond_without	ssl		# OpenSSL support
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
-%bcond_with	autodeps	# BR packages needed only for resolving deps
-%bcond_with		sphinx		# Sphinx storage engine support
+%bcond_without	sphinx		# Sphinx storage engine support
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 #
@@ -875,7 +875,7 @@ done
 %dir %{_libdir}/mysql/plugin
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb_plugin.so
 %if %{with sphinx}
-#%attr(755,root,root) %{_libdir}/mysql/plugin/sphinx.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/sphinx.so
 %endif
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*
