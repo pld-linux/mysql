@@ -31,6 +31,17 @@
  ha_innodb_plugin_la_CXXFLAGS=	$(AM_CFLAGS) $(INNODB_DYNAMIC_CFLAGS)
  ha_innodb_plugin_la_CFLAGS=	$(AM_CFLAGS) $(INNODB_DYNAMIC_CFLAGS)
  ha_innodb_plugin_la_SOURCES=	$(libinnobase_a_SOURCES)
+--- mysql-5.1.45/storage/innobase/Makefile.am~	2010-03-01 21:33:44.000000000 +0200
++++ mysql-5.1.45/storage/innobase/Makefile.am	2010-07-25 21:30:59.790929362 +0300
+@@ -162,7 +162,7 @@
+ EXTRA_LTLIBRARIES=	ha_innodb.la
+ pkgplugin_LTLIBRARIES=	@plugin_innobase_shared_target@
+ 
+-ha_innodb_la_LDFLAGS=	-module -rpath $(pkgplugindir)
++ha_innodb_la_LDFLAGS=	-module -avoid-version -rpath $(pkgplugindir)
+ ha_innodb_la_CXXFLAGS=	$(AM_CFLAGS) $(INNODB_DYNAMIC_CFLAGS)
+ ha_innodb_la_CFLAGS=	$(AM_CFLAGS) $(INNODB_DYNAMIC_CFLAGS)
+ ha_innodb_la_SOURCES=	$(libinnobase_a_SOURCES)
 --- mysql-5.1.38/storage/example/Makefile.am~	2009-08-21 15:12:32.000000000 +0300
 +++ mysql-5.1.38/storage/example/Makefile.am	2009-09-04 14:04:54.641149541 +0300
 @@ -34,7 +34,7 @@
