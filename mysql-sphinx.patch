@@ -20,3 +20,14 @@
  ha_sphinx_la_CXXFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
  ha_sphinx_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
  ha_sphinx_la_SOURCES =	ha_sphinx.cc
+--- mysql-5.1.49/storage/sphinx/Makefile.am~	2010-07-24 19:14:55.000000000 +0300
++++ mysql-5.1.49/storage/sphinx/Makefile.am	2010-07-25 03:47:56.660771099 +0300
+@@ -43,7 +43,7 @@
+ ha_sphinx_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_sphinx_la_SOURCES =	ha_sphinx.cc
+ 
+-sphinx_la_LDFLAGS = -module
++sphinx_la_LDFLAGS = -module -avoid-version -rpath $(MYSQLLIBdir)
+ sphinx_la_CXXFLAGS = $(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ sphinx_la_CFLAGS = $(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ sphinx_la_SOURCES = snippets_udf.cc
