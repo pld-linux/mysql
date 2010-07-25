@@ -573,6 +573,8 @@ CPPFLAGS="%{rpmcppflags}"
 	--with%{!?debug:out}-ndb-debug \
 	--with-ndbcluster \
 	--with-ndb-docs \
+%else
+	--without-plugin-ndbcluster \
 %endif
 	--with-docs
 
