@@ -32,7 +32,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.49
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -670,11 +670,13 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
+sed -i -e 's#/usr/bin/my_print_defaults#%{_sbindir}/my_print_defaults#g' $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 
-# functionality in initscript / rpm
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1*
+# delete - functionality in initscript / rpm
+# mysql_install_db is needed by digikam
+#rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
+#rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1*
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
@@ -871,6 +873,7 @@ done
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
+%attr(755,root,root) %{_bindir}/mysql_install_db
 %dir %{_libdir}/mysql
 %dir %{_libdir}/mysql/plugin
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb_plugin.so
@@ -883,6 +886,7 @@ done
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
 %{_mandir}/man1/mysql_fix_privilege_tables.1*
+%{_mandir}/man1/mysql_install_db.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man8/mysqld.8*
