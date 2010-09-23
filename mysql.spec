@@ -31,13 +31,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.49
-Release:	2
+Version:	5.1.50
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://mysql.easynet.be/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	a90d87a71fa3c23dff6d78afc8e3184c
+# Source0-md5:	23bac4a0aafd683b077dac146ce2701f
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -70,7 +70,6 @@ Patch13:	%{name}-errorlog-no-rename.patch
 Patch14:	%{name}-bug-43594.patch
 Patch15:	plugin-avoid-version.patch
 Patch16:	%{name}-fix-dummy-thread-race-condition.patch
-Patch17:	%{name}-abi_check.patch
 Patch18:	%{name}-sphinx.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-userstats.patch
@@ -519,7 +518,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch15 -p1
 %patch16 -p1
-%patch17 -p1
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
