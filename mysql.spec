@@ -105,6 +105,7 @@ Requires(triggerpostun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
+Requires:	mawk <= 1.3.3
 Requires:	rc-scripts >= 0.2.0
 Suggests:	mysql-client
 %{?with_tcpd:Suggests:	tcp_wrappers}
