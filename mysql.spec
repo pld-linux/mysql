@@ -32,7 +32,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.52
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -105,7 +105,6 @@ Requires(triggerpostun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
-Requires:	mawk <= 1.3.3
 Requires:	rc-scripts >= 0.2.0
 Suggests:	mysql-client
 %{?with_tcpd:Suggests:	tcp_wrappers}

@@ -210,21 +210,21 @@ mysqlgetconfig() {
 	}
 
 	section == "mysqld" {
-		if ($1 == "datadir") {
+		if ($1 ~ /^datadir[ \t]*$/) {
 			printf("MYSQL_DATA_DIR=%s;", $2);
-		} else if ($1 == "user") {
+		} else if ($1 ~ /^user[ \t]*$/) {
 			printf("MYSQL_USER=%s;", $2);
-		} else if ($1 == "pid-file") {
+		} else if ($1 ~ /^pid-file[ \t]*$/) {
 			printf("MYSQL_PIDFILE=%s;", $2);
-		} else if ($1 == "socket") {
+		} else if ($1 ~ /^socket[ \t]*$/) {
 			printf("MYSQL_SOCKET=%s;", $2);
-		} else if ($1 == "port") {
+		} else if ($1 ~ /^port[ \t]*$/) {
 			printf("MYSQL_PORT=%s;", $2);
-		} else if ($1 == "bind-address") {
+		} else if ($1 ~ /^bind-address[ \t]*$/) {
 			printf("MYSQL_BIND_ADDRESS=%s;", $2);
-		} else if ($1 == "skip-networking") {
+		} else if ($1 ~ /^skip-networking[ \t]*$/) {
 			printf("MYSQL_SKIP_NETWORKING=1;");
-		} else if ($1 == "log-error") {
+		} else if ($1 ~ /^log-error[ \t]*$/) {
 			printf("MYSQL_LOG_ERROR=%s;", $2);
 		}
 	}
