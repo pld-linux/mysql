@@ -17,7 +17,7 @@
 %bcond_without	raid		# RAID support
 %bcond_without	ssl		# OpenSSL support
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
-%bcond_without	sphinx		# Sphinx storage engine support
+%bcond_with	sphinx		# Sphinx storage engine support
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 #
@@ -505,8 +505,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %endif
 # CHECK ME, obsolete
 #%patch5 -p1
-# CHECK ME, NEEDS FIX!
-#%patch6 -p1
+%patch6 -p1
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
@@ -613,7 +612,11 @@ install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 %endif
 
-sed -i -e 's,/usr//usr,%{_prefix,g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
+# symlinks point to the .so file, fix it
+ln -sf libmysqlclient.so.16 $RPM_BUILD_ROOT%{_libdir}/libmysqlclient_r.so.16
+ln -sf libmysqlclient.so.16.0.0 $RPM_BUILD_ROOT%{_libdir}/libmysqlclient_r.so.16.0.0
+
+sed -i -e 's,/usr//usr,%{_prefix},g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # remove known unpackaged files
