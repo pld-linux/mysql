@@ -1,6 +1,6 @@
---- mysql-5.1.28-rc/client/mysql_upgrade.c~	2008-09-14 23:53:11.000000000 +0300
-+++ mysql-5.1.28-rc/client/mysql_upgrade.c	2008-09-15 00:02:34.047520349 +0300
-@@ -31,12 +31,12 @@
+--- mysql-5.5.8/client/mysql_upgrade.c~	2010-12-03 18:58:26.000000000 +0100
++++ mysql-5.5.8/client/mysql_upgrade.c	2010-12-15 23:06:17.178431694 +0100
+@@ -33,13 +33,13 @@
  # endif
  #endif
  
@@ -9,23 +9,28 @@
 +static char *mysql_path = "/usr/bin/mysql";
 +static char *mysqlcheck_path = "/usr/sbin/mysqlcheck";
  
- static my_bool opt_force, opt_verbose, debug_info_flag, debug_check_flag;
+ static my_bool opt_force, opt_verbose, debug_info_flag, debug_check_flag,
+                opt_systables_only;
  static uint my_end_arg= 0;
 -static char *opt_user= (char*)"root";
 +static char *opt_user= (char*)"mysql";
  
  static DYNAMIC_STRING ds_args;
- 
-@@ -761,12 +761,6 @@
+ static DYNAMIC_STRING conn_args;
+@@ -848,15 +848,7 @@
    dynstr_append_os_quoted(&ds_args, "--user=", opt_user, NullS);
    dynstr_append(&ds_args, " ");
  
 -  /* Find mysql */
 -  find_tool(mysql_path, IF_WIN("mysql.exe", "mysql"), self_name);
 -
--  /* Find mysqlcheck */
--  find_tool(mysqlcheck_path, IF_WIN("mysqlcheck.exe", "mysqlcheck"), self_name);
--
-   /*
-     Read the mysql_upgrade_info file to check if mysql_upgrade
-     already has been run for this installation of MySQL
+-  if (!opt_systables_only)
+-  {
+-    /* Find mysqlcheck */
+-    find_tool(mysqlcheck_path, IF_WIN("mysqlcheck.exe", "mysqlcheck"), self_name);
+-  }
+-  else
++  if (opt_systables_only)
+   {
+     printf("The --upgrade-system-tables option was used, databases won't be touched.\n");
+   }

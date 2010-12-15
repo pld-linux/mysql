@@ -490,7 +490,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
-# CHECK ME
+# CHECK ME, seems obsolete
 #%patch0 -p1
 #%{?with_tcpd:%patch1 -p1}  # WHATS PURPOSE OF THIS PATCH?
 #%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
@@ -503,20 +503,19 @@ mv sphinx-*/mysqlse storage/sphinx
 # gcc 3.3.x ICE
 %patch10 -p1
 %endif
-# CHECK ME
+# CHECK ME, obsolete
 #%patch5 -p1
-# CHECK ME
+# CHECK ME, NEEDS FIX!
 #%patch6 -p1
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
-# CHECK ME
-#%patch11 -p1
+%patch11 -p1
 %patch12 -p1
 %patch14 -p0
-# CHECK ME
+# CHECK ME, obsolete
 #%patch15 -p1
-# OBSOLETE?
+# OBSOLETE, YES
 #%patch16 -p1
 # <percona %patches>
 # CHECK ME
