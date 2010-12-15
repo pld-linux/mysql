@@ -78,9 +78,8 @@ Patch103:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
 Patch104:	%{name}-innodb_rw_lock.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
-BuildRequires:	autoconf
-BuildRequires:	automake
 BuildRequires:	bison
+BuildRequires:	cmake
 BuildRequires:	groff
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
@@ -123,9 +122,6 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_mysqlhome	/home/services/mysql
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
-
-# readline/libedit detection goes wrong
-%undefine	configure_cache
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -494,7 +490,8 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
-%patch0 -p1
+# CHECK ME
+#%patch0 -p1
 #%{?with_tcpd:%patch1 -p1}  # WHATS PURPOSE OF THIS PATCH?
 #%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
 %patch3 -p1
@@ -506,86 +503,48 @@ mv sphinx-*/mysqlse storage/sphinx
 # gcc 3.3.x ICE
 %patch10 -p1
 %endif
-%patch5 -p1
-%patch6 -p1
+# CHECK ME
+#%patch5 -p1
+# CHECK ME
+#%patch6 -p1
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
-%patch11 -p1
+# CHECK ME
+#%patch11 -p1
 %patch12 -p1
 %patch14 -p0
-%patch15 -p1
-%patch16 -p1
+# CHECK ME
+#%patch15 -p1
+# OBSOLETE?
+#%patch16 -p1
 # <percona %patches>
-%patch100 -p1
-%patch101 -p1
-%patch102 -p1
-%patch103 -p1
-%patch104 -p1
+# CHECK ME
+#%patch100 -p1
+# CHECK ME
+#%patch101 -p1
+# CHECK ME
+#%patch102 -p1
+# CHECK ME
+#%patch103 -p1
+# CHECK ME
+#%patch104 -p1
 # </percona>
 
 %build
-%{__libtoolize}
-%{__aclocal} -I config/ac-macros
-%{__automake}
-%{__autoconf}
+install -d build
+cd build
+%{cmake} \
+	%{?debug:-DWITH_DEBUG=ON} \
+	-DWITH_FAST_MUTEXES=ON \
+	-DWITH_LIBEDIT=OFF \
+	-DWITH_READLINE=ON \
+	-DWITH_SSL=yes \
+	-DWITH_ZLIB=system \
+	-DCURSES_INCLUDE_PATH=%{_includedir}/ncurses \
+	..
 
-# The compiler flags are as per their "official" spec ;)
-CXXFLAGS="%{rpmcxxflags} -fPIC -fno-implicit-templates -fno-rtti -fno-exceptions"
-CFLAGS="%{rpmcflags} -fPIC"
-CPPFLAGS="%{rpmcppflags}"
-
-# NOTE: the PS, FIND_PROC, KILL, CHECK_PID are not used by PLD Linux
-# and therefore do not add BR on these. These are here just to satisfy
-# configure.
-
-%configure \
-	PS='/bin/ps' \
-	FIND_PROC='/bin/ps p $$PID' \
-	KILL='/bin/kill' \
-	CHECK_PID='/bin/kill -0 $$PID' \
-	--enable-assembler \
-	--enable-largefile=yes \
-	--enable-shared \
-	--enable-static \
-	--enable-thread-safe-client \
-	--with%{!?with_ssl:out}-ssl=/usr \
-	--with%{!?with_tcpd:out}-libwrap \
-	%{?with_big_tables:--with-big-tables} \
-	--with-comment="PLD Linux Distribution MySQL RPM" \
-	--with%{!?debug:out}-debug%{?debug:=full} \
-	--with-embedded-server \
-	--with-extra-charsets=all \
-	--with-low-memory \
-	--with-mysqld-user=mysql \
-	--with-named-curses-libs="-lncurses" \
-	--with-named-thread-libs="-lpthread" \
-	--with-unix-socket-path=/var/lib/mysql/mysql.sock \
-	--with-plugins=max \
-	--with-fast-mutexes \
-	--without-readline \
-	--without-libedit \
-%if %{with ndb}
-	--with%{!?debug:out}-ndb-debug \
-	--with-ndbcluster \
-	--with-ndb-docs \
-%else
-	--without-plugin-ndbcluster \
-%endif
-	--with-docs
-
-#--with-error-inject
-
-# NOTE that /var/lib/mysql/mysql.sock is symlink to real sock file
-# (it defaults to first cluster but user may change it to whatever
-# cluster it wants)
-
-echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
-
-%{__make} \
-	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
-
-%{__make} -C Docs mysql.info
+%{__make}
 
 %{?with_tests:%{__make} test}
 
@@ -595,12 +554,8 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
 	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
 	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
 
-# Make install
-%{__make} install \
-	DESTDIR=$RPM_BUILD_ROOT \
-	benchdir=%{_datadir}/sql-bench \
-	libsdir=/tmp
-# libsdir is to avoid installing innodb static libs in $RPM_BUILD_ROOT../libs
+%{__make} -C build install \
+	DESTDIR=$RPM_BUILD_ROOT
 
 install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
