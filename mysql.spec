@@ -534,14 +534,20 @@ mv sphinx-*/mysqlse storage/sphinx
 install -d build
 cd build
 %{cmake} \
+	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG" \
+	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG" \
+	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITH_FAST_MUTEXES=ON \
 	-DWITH_LIBEDIT=OFF \
 	-DWITH_READLINE=ON \
-	-DWITH_SSL=yes \
+	-DWITH_SSL=%{?with_ssl:yes}%{?!with_ssl:no} \
 	-DWITH_ZLIB=system \
+	-DWITH_COMMENT="PLD Linux Distribution MySQL RPM" \
+	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{?!with_tcpd:OFF} \
 	-DCURSES_INCLUDE_PATH=%{_includedir}/ncurses \
 	-DCMAKE_INSTALl_PREFIX="" \
+	-DMYSQL_UNIX_ADDR=/var/lib/mysql/mysql.sock \
 	-DINSTALL_INCLUDEDIR=%{_includedir}/mysql \
 	-DINSTALL_BINDIR=%{_bindir} \
 	-DINSTALL_DOCDIR=%{_docdir}/%{name}-%{version} \
@@ -607,8 +613,7 @@ install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 %endif
 
-#mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-#sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT{%{_libdir}/libmysqlclient{,_r}.la,%{_bindir}/mysql_config}
+sed -i -e 's,/usr//usr,%{_prefix,g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # remove known unpackaged files
