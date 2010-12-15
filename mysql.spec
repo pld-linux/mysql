@@ -542,6 +542,23 @@ cd build
 	-DWITH_SSL=yes \
 	-DWITH_ZLIB=system \
 	-DCURSES_INCLUDE_PATH=%{_includedir}/ncurses \
+	-DCMAKE_INSTALl_PREFIX="" \
+	-DINSTALL_INCLUDEDIR=%{_includedir}/mysql \
+	-DINSTALL_BINDIR=%{_bindir} \
+	-DINSTALL_DOCDIR=%{_docdir}/%{name}-%{version} \
+	-DINSTALL_DOCREADMEDIR=%{_docdir}/%{name}-%{version} \
+	-DINSTALL_INFODIR=%{_infodir} \
+	-DINSTALL_LIBDIR=%{_libdir} \
+	-DINSTALL_MANDIR=%{_mandir} \
+	-DINSTALL_MYSQLDATADIR=/var/lib/mysql \
+	-DINSTALL_MYSQLSHAREDIR=%{_datadir}/mysql \
+	-DINSTALL_MYSQLTESTDIR=%{_datadir}/mysql-test \
+	-DINSTALL_PLUGINDIR=%{_libdir}/mysql/plugin \
+	-DINSTALL_SBINDIR=%{_sbindir} \
+	-DINSTALL_SCRIPTDIR=%{_bindir} \
+	-DINSTALL_SHAREDIR=%{_datadir} \
+	-DINSTALL_SQLBENCHDIR=%{_datadir} \
+	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/mysql-support \
 	..
 
 %{__make}
@@ -591,12 +608,13 @@ install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 %endif
 
-mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
-sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT{%{_libdir}/libmysqlclient{,_r}.la,%{_bindir}/mysql_config}
+#mv -f $RPM_BUILD_ROOT%{_libdir}/mysql/lib* $RPM_BUILD_ROOT%{_libdir}
+#sed -i -e 's,%{_libdir}/mysql,%{_libdir},' $RPM_BUILD_ROOT{%{_libdir}/libmysqlclient{,_r}.la,%{_bindir}/mysql_config}
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # remove known unpackaged files
-rm -rf $RPM_BUILD_ROOT%{_prefix}/mysql-test
+rm -rf $RPM_BUILD_ROOT%{_datadir}/mysql-test
+rm -rf $RPM_BUILD_ROOT%{_datadir}/mysql-support
 
 # remove .txt variants for .sys messages
 rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
@@ -619,7 +637,7 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/innochecksum
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
+#mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
 sed -i -e 's#/usr/bin/my_print_defaults#%{_sbindir}/my_print_defaults#g' $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
@@ -631,10 +649,10 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg.txt
+#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
+#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
+#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
+rm $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg-utf8.txt
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
@@ -642,23 +660,16 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 rm $RPM_BUILD_ROOT%{_bindir}/resolveip
 rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
-rm $RPM_BUILD_ROOT%{_datadir}/mysql/ChangeLog
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
-rm $RPM_BUILD_ROOT%{_datadir}/mysql/mi_test_all
-rm $RPM_BUILD_ROOT%{_datadir}/mysql/mi_test_all.res
-rm $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld_multi.server
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
 
-# in %doc
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
-
 # not needed
-rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_*.{a,la}
+rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/libdaemon_example.*
 rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_example.*
 rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/sphinx.{a,la}
 
@@ -810,7 +821,7 @@ done
 
 %files
 %defattr(644,root,root,755)
-%doc support-files/*.cnf support-files/*.ini ChangeLog
+%doc build/support-files/*.cnf build/support-files/*.ini
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
@@ -820,14 +831,26 @@ done
 %attr(755,root,root) %{_sbindir}/myisamchk
 %attr(755,root,root) %{_sbindir}/myisamlog
 %attr(755,root,root) %{_sbindir}/myisampack
-%attr(755,root,root) %{_sbindir}/mysql_fix_privilege_tables
+#%attr(755,root,root) %{_sbindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
 %attr(755,root,root) %{_bindir}/mysql_install_db
 %dir %{_libdir}/mysql
 %dir %{_libdir}/mysql/plugin
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb_plugin.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/adt_null.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/auth.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/auth_socket.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/auth_test_plugin.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/ha_archive.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/ha_blackhole.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/ha_federated.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/mypluglib.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/qa_auth_client.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/qa_auth_interface.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/qa_auth_server.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/semisync_master.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/semisync_slave.so
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/mysql/plugin/sphinx.so
 %endif
@@ -836,7 +859,7 @@ done
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
-%{_mandir}/man1/mysql_fix_privilege_tables.1*
+#%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysql_install_db.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
@@ -864,7 +887,7 @@ done
 
 %{_datadir}/mysql/english
 %{_datadir}/mysql/fill_help_tables.sql
-%{_datadir}/mysql/mysql_fix_privilege_tables.sql
+#%{_datadir}/mysql/mysql_fix_privilege_tables.sql
 %lang(cs) %{_datadir}/mysql/czech
 %lang(da) %{_datadir}/mysql/danish
 %lang(de) %{_datadir}/mysql/german
@@ -940,7 +963,7 @@ done
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
 %attr(755,root,root) %{_bindir}/mysqlshow
-%attr(755,root,root) %{_sbindir}/mysqlmanager
+#%attr(755,root,root) %{_sbindir}/mysqlmanager
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqlbinlog.1*
@@ -948,11 +971,10 @@ done
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
 %{_mandir}/man1/mysqlshow.1*
-%{_mandir}/man8/mysqlmanager.8*
+#%{_mandir}/man8/mysqlmanager.8*
 
 %files libs
 %defattr(644,root,root,755)
-%doc EXCEPTIONS-CLIENT
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
@@ -969,21 +991,11 @@ done
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/libmysqlclient.so
 %attr(755,root,root) %{_libdir}/libmysqlclient_r.so
+# what's this?
+%attr(755,root,root) %{_libdir}/libmysqlservices.so
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so
-%{_libdir}/libndbclient.la
 %endif
-%{_libdir}/libmysqlclient.la
-%{_libdir}/libmysqlclient_r.la
-# static-only
-%{_libdir}/libdbug.a
-%{_libdir}/libheap.a
-%{_libdir}/libmyisam.a
-%{_libdir}/libmyisammrg.a
-%{_libdir}/libmysqld.a
-%{_libdir}/libmystrings.a
-%{_libdir}/libmysys.a
-%{_libdir}/libvio.a
 %{_includedir}/mysql
 %{_aclocaldir}/mysql.m4
 %{_mandir}/man1/mysql_config.1*
