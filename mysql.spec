@@ -70,12 +70,11 @@ Patch14:	%{name}-bug-43594.patch
 Patch15:	plugin-avoid-version.patch
 Patch16:	%{name}-fix-dummy-thread-race-condition.patch
 Patch18:	%{name}-sphinx.patch
-# <percona patches, http://www.percona.com/percona-lab.html>
-Patch100:	%{name}-userstats.patch
-Patch101:	%{name}-microslow.patch
-Patch102:	%{name}-acc-pslist.patch
-Patch103:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
-Patch104:	%{name}-innodb_rw_lock.patch
+# <percona patches, http://bazaar.launchpad.net/~percona-dev/percona-server/5.5.7/files>
+Patch100:	%{name}-userstat.patch
+Patch101:	%{name}-innodb_extend_slow.patch
+Patch102:	%{name}-microsec_process.patch
+Patch103:	%{name}-innodb_split_buf_pool_mutex.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	bison
@@ -525,8 +524,6 @@ mv sphinx-*/mysqlse storage/sphinx
 #%patch102 -p1
 # CHECK ME
 #%patch103 -p1
-# CHECK ME
-#%patch104 -p1
 # </percona>
 
 %build
