@@ -2,25 +2,33 @@
 # updates percona patches
 # http://www.percona.com/docs/wiki/release:start
 
-ver=5.0.87-b20
-patches=http://www.percona.com/mysql/$ver/patches
-series=$patches/series
-branch=MYSQL_5_0
+version=release-5.1.53-11
+bzr_branch=lp:percona-server/$version
+branch=MYSQL_5_1
 
 filter_names() {
-	grep -v 'mysqld_safe_syslog.patch'
+	grep -v 'mysqld_safe_syslog.patch' | \
+	grep -v 'mysql-test.diff'
 }
 
 filter_files() {
 	filterdiff -x '*/configure'
 }
 
+if [ -d $version ]; then
+	cd $version
+	bzr up
+	cd ..
+else
+	bzr branch $bzr_branch $version
+fi
+
 > .percona.spec
 > .patch.spec
 i=100
-for patch in $(wget -q -O - $series | filter_names); do
+for patch in $(cat $version/series | filter_names); do
 	file=mysql-$patch
-	wget -nv $patches/$patch -O - | filter_files > $file
+	cat $version/$patch | filter_files > $file
 
 	if [ -z "$(awk -vfile=$file -F/ '$2 == file{print}' CVS/Entries)" ]; then
 		cvs add $file
