@@ -82,7 +82,7 @@ Patch103:	%{name}-innodb_split_buf_pool_mutex.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
-BuildRequires:	cmake
+BuildRequires:	cmake >= 2.6
 BuildRequires:	groff
 BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
