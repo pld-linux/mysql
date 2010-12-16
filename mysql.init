@@ -1,0 +1,643 @@
+#!/bin/sh
+#
+# mysql		A very fast and reliable SQL database engine
+#
+# chkconfig:	2345 84 25
+#
+# description:  A very fast and reliable SQL database engine.
+#
+# $Id$
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+# Get network config
+. /etc/sysconfig/network
+
+# Get service config
+if [ -f /etc/sysconfig/mysql ]; then
+	. /etc/sysconfig/mysql
+else
+	nls "Error: %s not found" /etc/sysconfig/mysql
+	nls "%s can't be run." MySQL
+	exit 1
+fi
+
+if [ -n "$MYSQL_DB_CLUSTERS" ]; then
+	nls "Warning: MYSQL_DB_CLUSTERS is set. It's obsolete. Use %s instead." /etc/mysql/clusters.conf
+fi
+
+if [ -f /etc/mysql/clusters.conf ]; then
+	MYSQL_DB_CLUSTERS=$(awk -F= '!/^#/{print $2}' /etc/mysql/clusters.conf)
+	if [ -z "$MYSQL_DB_CLUSTERS"  ]; then
+		nls "Warning: there are no configured clusters."
+	fi
+
+else
+	nls "Warning: Missing clusters config file %s" /etc/mysql/clusters.conf
+	if [ -z "$MYSQL_DB_CLUSTERS"  ]; then
+		nls "Warning: there are no configured clusters."
+		nls "Using default cluster /var/lib/mysql (compatibility mode)"
+		MYSQL_DB_CLUSTERS=/var/lib/mysql
+	fi
+fi
+
+
+# Check that networking is up
+if is_yes "${NETWORKING}"; then
+	if [ ! -f /var/lock/subsys/network -a "$1" != stop -a "$1" != status -a "$1" != init ]; then
+		msg_network_down MySQL
+		exit 1
+	fi
+else
+	exit 0
+fi
+
+action="$1"
+
+# any db cluster as command line argument?
+if [ $# -gt 1 ]; then
+	shift
+	# perform action for specified clusters only
+	for a in "$@"; do
+		# try auto resolving from /etc/mysql/clusters.conf
+		if [[ "$a" != /* ]]; then
+			m=$(awk -va="$a" -F= 'substr($0, 1, length(a)) == a {print $1}' /etc/mysql/clusters.conf)
+			if [ -z "$m" ]; then
+				echo >&2 "Cluster name '$a' did not match anything!"
+				exit 1
+			fi
+			if [ $(echo "$m" | wc -l) -gt 1 ]; then
+				echo >&2 "Cluster name '$a' ambiguous:" $m
+				exit 1
+			fi
+			a=$(awk -va="$a" -F= 'substr($0, 1, length(a)) == a {print $2}' /etc/mysql/clusters.conf)
+		fi
+		DB_CLUSTERS="$DB_CLUSTERS $a"
+	done
+else
+	DB_CLUSTERS="$MYSQL_DB_CLUSTERS"
+fi
+
+# global error log, if mysqld.conf hasn't migrated to log-error style
+MYSQL_ERRLOG=/var/log/mysql/mysqld.log
+MYSQL_STOP_WAIT_TIME=${MYSQL_STOP_WAIT_TIME:-900}
+
+#
+# Useful functions.
+#
+
+#
+# check for mysql status
+#
+# arguments:
+# $1 - db cluster
+# $2 - start|stop
+#
+# sets variables:
+# MYSQL_STATUS = starting | running | not running | died
+# MYSQL_PID    = pid of mysqld process
+#
+mysqlstatus() {
+	clusterdir="$1"
+	mode="$2"
+	
+	mysqlgetconfig "$clusterdir"
+
+	MYSQL_STATUS="not running"
+	MYSQL_PID="unknown"
+	MYSQL_PIDFILE_PID=""
+	MYSQL_GREP_PID=""
+
+	if [ -f "$MYSQL_PIDFILE" ]; then
+		MYSQL_PIDFILE_PID=$(cat "$MYSQL_PIDFILE")
+	fi
+	
+	if [ -n "$MYSQL_PIDFILE_PID" ]; then
+		MYSQL_PID=$MYSQL_PIDFILE_PID
+		if [ ! -d "/proc/$MYSQL_PID" ]; then
+			MYSQL_STATUS="died"
+			return
+		elif (grep -qa "$MYSQL_PIDFILE" /proc/$MYSQL_PID/cmdline 2> /dev/null); then
+			MYSQL_STATUS="running"
+			return
+		fi
+	fi
+
+	if [ "$mode" = "start" ]; then
+		MYSQL_GREP_PID=$(grep -lE "^/usr/sbin/mysqld.*${MYSQL_PIDFILE}" /proc/[0-9]*/cmdline 2> /dev/null | awk -F "/" '{ print $3; exit; }')
+		if [ -n "$MYSQL_GREP_PID" ]; then
+			MYSQL_PID=$MYSQL_GREP_PID
+			if grep -qa "$MYSQL_PIDFILE" /proc/$MYSQL_PID/cmdline 2> /dev/null; then
+				if [ -f "$MYSQL_PIDFILE" ]; then
+					MYSQL_PIDFILE_PID=$(cat "$MYSQL_PIDFILE")
+				fi
+				if [ -n "$MYSQL_PIDFILE_PID" ]; then
+					MYSQL_PID=$MYSQL_PIDFILE_PID
+					MYSQL_STATUS="running"
+					return
+				else
+					MYSQL_STATUS="starting"
+					return
+				fi
+			fi
+		fi
+	fi
+
+	# else default, "not running"
+}
+
+# get mysql configuration in variables
+# MYSQL_CONFIG MYSQL_DATA_DIR MYSQL_USER MYSQL_PIDFILE
+#
+# arguments
+# $1 - db cluster
+
+mysqlgetconfig() {
+	clusterdir="$1"
+
+	# emulate old behaviour if only one cluster specified
+	if [ "$clusterdir" = "$MYSQL_DB_CLUSTERS" -a "$clusterdir" = "/var/lib/mysql" -a -f /etc/mysqld.conf ]; then
+		MYSQL_RA_COMPAT=yes
+		config_file=/etc/mysqld.conf
+	else
+		config=$(awk -F= -vclusterdir="$clusterdir" '!/^#/{ if (clusterdir == $2) print $1}' /etc/mysql/clusters.conf)
+		if [[ $config = /* ]]; then
+			config_file="$config"
+		elif [ -f "/etc/mysql/$config" ]; then
+			config_file="/etc/mysql/$config"
+		else
+			config_file="$clusterdir/mysqld.conf"
+		fi
+	fi
+
+	MYSQL_CLUSTER_DIR="$clusterdir"
+
+	if [ -z "$config_file" ]; then
+		nls "Error: Can't find config file for %s cluster" "$clusterdir"
+		exit 6
+	else
+		MYSQL_CONFIG="$config_file"
+	fi
+
+	if [ ! -f "$config_file" ]; then
+		nls "Error: config file %s not found" "$config_file"
+		nls "MySQL can't be run. Did you initialize DB by doing \`$0 init'?"
+		exit 6
+	fi
+
+	# reset to initial state
+	MYSQL_DATA_DIR= MYSQL_USER= MYSQL_PIDFILE= MYSQL_SOCKET= MYSQL_PORT= MYSQL_BIND_ADDRESS= MYSQL_SKIP_NETWORKING=
+
+	eval `awk -F= '
+	# skip comments and empty lines
+	/^[;#]|^ *$/ { next }
+
+	/^[ \t]*\[.*\][ \t]*$/ {
+		match($0, /\[.*\]/);
+		section = substr($0, RSTART + 1, RSTART + RLENGTH - 3);
+		next;
+	}
+
+	# trim spaces
+	{
+		gsub(/^[\t ]*|[\t ]*$/, "", $1);
+		gsub(/^[\t ]*|[\t ]*$/, "", $2);
+	}
+
+	section == "mysqld" {
+		if ($1 == "datadir") {
+			printf("MYSQL_DATA_DIR=%s;", $2);
+		} else if ($1 == "user") {
+			printf("MYSQL_USER=%s;", $2);
+		} else if ($1 == "pid-file") {
+			printf("MYSQL_PIDFILE=%s;", $2);
+		} else if ($1 == "socket") {
+			printf("MYSQL_SOCKET=%s;", $2);
+		} else if ($1 == "port") {
+			printf("MYSQL_PORT=%s;", $2);
+		} else if ($1 == "bind-address") {
+			printf("MYSQL_BIND_ADDRESS=%s;", $2);
+		} else if ($1 == "skip-networking") {
+			printf("MYSQL_SKIP_NETWORKING=1;");
+		}
+	}
+	' $config_file`
+
+	if is_yes "$MYSQL_RA_COMPAT"; then
+		MYSQL_DATA_DIR_SUB=""
+	else
+		MYSQL_DATA_DIR_SUB="/mysqldb"
+	fi
+
+	if [ -z "$MYSQL_DATA_DIR" -o "$MYSQL_DATA_DIR" != "${clusterdir}${MYSQL_DATA_DIR_SUB}/db" ]; then
+		nls "Error: datadir specified in %s should be %s" "$config_file" "$clusterdir${MYSQL_DATA_DIR_SUB}/db"
+		nls " MySQL can't be run."
+		exit 6
+	fi
+
+	if [ -z "$MYSQL_PIDFILE" -o "$MYSQL_PIDFILE" != "$clusterdir${MYSQL_DATA_DIR_SUB}/mysql.pid" ]; then
+		nls "Error: pid-file specified in %s should be %s" "$config_file" "$clusterdir${MYSQL_DATA_DIR_SUB}/mysql.pid"
+		nls " MySQL can't be run."
+		exit 6
+	fi
+
+	if [ -z $MYSQL_USER ]; then
+		echo "$(nls 'MySQL user not configured properly')"'!' >&2
+		nls "Edit %s and configure it." "$config_file" >&2
+		exit 6
+	fi
+}
+
+# start mysql
+mysqlstart() {
+	clusterdir="$1"
+	mysqlgetconfig "$clusterdir"
+	if [ ! -d "$MYSQL_DATA_DIR/mysql" ]; then
+		nls "MySQL cluster %s not initialized." "$clusterdir"
+		nls "Try \`%s init %s' before start." "$0" "$clusterdir"
+		exit 6
+	fi
+
+	msg_starting "MySQL $clusterdir"
+	busy
+	[ -z "$DEFAULT_SERVICE_RUN_NICE_LEVEL" ] && DEFAULT_SERVICE_RUN_NICE_LEVEL=0
+	rm -f "$MYSQL_PIDFILE"
+
+	if [ "$(grep -c ^log-error $MYSQL_CONFIG)" -lt 1 ]; then
+		# error log not defined in config file. add one
+		MYSQL_OPTIONS="$MYSQL_OPTIONS --log-error=$MYSQL_ERRLOG"
+	fi
+
+	TMPDIR=/tmp nice -n ${SERVICE_RUN_NICE_LEVEL:-$DEFAULT_SERVICE_RUN_NICE_LEVEL} \
+		/usr/bin/setsid /usr/sbin/mysqld \
+			--defaults-file=$MYSQL_CONFIG \
+			--datadir=$MYSQL_DATA_DIR \
+			--pid-file=$MYSQL_PIDFILE \
+			$MYSQL_OPTIONS &
+	pid=$!
+
+	sleep 0.1
+	mysqlstatus "$clusterdir" start
+	# it takes longer for mysqld to start and create pidfile if it has to recover innodb transactions
+	if [ "$MYSQL_STATUS" = "starting" ]; then
+		echo ""
+		show "Waiting for MySQL to start"
+		busy
+
+		# while the pid is running, mysql is starting up
+		# if the pidfile was created, it started up successfully
+		# if either case fails we break and report status
+		while true; do
+			[ -d /proc/$pid ] || break
+			[ -f "$MYSQL_PIDFILE" ] && break
+			sleep 0.2
+		done
+	fi
+
+	mysqlstatus "$clusterdir" start
+	if [ "$MYSQL_STATUS" = "running" -a "$MYSQL_PID" != "unknown" ]; then
+		ok
+	elif [ "$MYSQL_STATUS" = "died" ]; then
+		RETVAL=1
+		died
+	else
+		RETVAL=1
+		fail
+	fi
+}
+
+# stop mysql
+mysqlstop() {
+	clusterdir="$1"
+	mysqlstatus "$clusterdir" stop
+	msg_stopping "MySQL $clusterdir"
+	busy
+
+	# try graceful shutdown -- send shutdown command
+	# requires mysql_sysadmin user proper privs
+	/usr/bin/mysqladmin --defaults-file=$MYSQL_CONFIG ${MYSQL_SOCKET:+--socket=$MYSQL_SOCKET} shutdown >/dev/null 2>&1
+	mysqlstatus "$clusterdir" stop
+
+	if [ "$MYSQL_PID" != "unknown" ]; then
+		kill -TERM "$MYSQL_PID" 2> /dev/null
+		for nr in $(seq 1 $(($MYSQL_STOP_WAIT_TIME*10))); do
+			[ -d "/proc/$MYSQL_PID" ] || break
+			sleep 0.1
+		done
+	fi
+	
+	mysqlstatus "$clusterdir" stop
+	if [ "$MYSQL_STATUS" = "died" ]; then
+		died
+	elif [ "$MYSQL_STATUS" = "running" -o "$MYSQL_STATUS" = "starting" ]; then
+		fail
+	else
+		ok
+	fi
+}
+
+#
+# check for running mysql instances; if any instance is running then
+# create subsys lock file
+#
+mysqlsubsys() {
+	# check for every defined db cluster in sysconfig file
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlstatus "$mysqldir"
+		if [ "$MYSQL_STATUS" = "running" ]; then
+			touch /var/lock/subsys/mysql
+			return
+		fi
+	done
+	rm -f /var/lock/subsys/mysql
+}
+
+mysqlinit() {
+	clusterdir="$1"
+
+	if [ -f /etc/mysqld.conf ]; then
+		nls "Running in \`no cluster compat' mode: can't initialize database."
+		nls "Move /etc/mysqld.conf away and rerun \`$0 init' (new config will be in $clusterdir)."
+		exit 1
+	fi
+
+	if [ -f "$clusterdir/mysqld.conf" ]; then
+		mysqlgetconfig "$clusterdir"
+	else
+		MYSQL_USER="mysql"
+		MYSQL_CLUSTER_DIR="$clusterdir"
+		MYSQL_DATA_DIR="$clusterdir/mysqldb/db"
+		MYSQL_PIDFILE="$clusterdir/mysqldb/mysql.pid"
+		MYSQL_SOCKET="$clusterdir/mysqldb/mysql.sock"
+
+		# this $MYSQL_CONFIG will be created later
+		MYSQL_CONFIG="$MYSQL_CLUSTER_DIR/mysqld.conf"
+	fi
+
+	show "Initializing cluster %s" "$clusterdir"; echo
+
+	# Check if not exist init database
+	if [ -d "$MYSQL_DATA_DIR/mysql" ]; then
+		nls "Seems that database is initialized now. Remove by hand %s" "$MYSQL_DATA_DIR/mysql"
+		nls "before initializing database."
+		nls "For now skipping cluster %s." "$clusterdir"
+		return
+	fi
+
+	show "Installing MySQL system tables for $MYSQL_DATA_DIR"
+	busy
+	TMP=/tmp TMPDIR=/tmp
+
+	mkdir -p "$MYSQL_DATA_DIR" > /dev/null 2>&1
+	# Using mysql:mysql for MYSQL_CLUSTER_DIR is creating SECURITY hole, root:root is proper
+	chown root:root "$MYSQL_CLUSTER_DIR"
+	chown mysql:mysql "$MYSQL_CLUSTER_DIR/mysqldb" "$MYSQL_DATA_DIR" > /dev/null 2>&1
+	chmod 751 "$MYSQL_CLUSTER_DIR" "$MYSQL_CLUSTER_DIR/mysqldb"
+
+	if [ -f /usr/share/mysql/mysqld.conf -a ! -f "$MYSQL_CLUSTER_DIR/mysqld.conf" ]; then
+	    sed -e "
+		s#\(datadir.*\)=.*#\1= $MYSQL_DATA_DIR#g;
+		s#\(pid-file.*\)=.*#\1= $MYSQL_PIDFILE#g;
+		s#\(socket.*\)=.*#\1= $MYSQL_SOCKET#g;
+		s#@clusterdir@#$MYSQL_CLUSTER_DIR#g;
+		" /usr/share/mysql/mysqld.conf > "$MYSQL_CLUSTER_DIR/mysqld.conf"
+	    chown root:root "$MYSQL_CLUSTER_DIR/mysqld.conf"
+	    chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
+	fi
+
+	if [ ! -e /var/lib/mysql/mysql.sock ] || [ -L /var/lib/mysql/mysql.sock ] && [ -z "$(readlink /var/lib/mysql/mysql.sock)" ]; then
+		sock=${MYSQL_SOCKET#/var/lib/mysql/} # make it relative if possible
+	    ln -s "$sock" /var/lib/mysql/mysql.sock
+	fi
+
+	cat > $MYSQL_DATA_DIR/mysql-init.sql <<-EOF
+		CREATE DATABASE mysql;
+		use mysql;
+		$(cat /usr/share/mysql/mysql_system_tables.sql)
+		$(sed -e "/@current_hostname/d" /usr/share/mysql/mysql_system_tables_data.sql)
+EOF
+
+	ok=0
+	/usr/sbin/mysqld \
+		--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
+		--bootstrap \
+		--skip-grant-tables \
+		--skip-bdb \
+		--skip-innodb \
+		--skip-ndbcluster \
+		--datadir=$MYSQL_DATA_DIR \
+		--user=$MYSQL_USER \
+		--slave-load-tmpdir=$MYSQL_DATA_DIR \
+		--tmpdir=$MYSQL_DATA_DIR \
+		--log-error=$MYSQL_ERRLOG \
+		< $MYSQL_DATA_DIR/mysql-init.sql && ok=1
+	[ -f $MYSQL_DATA_DIR/mysql/host.frm ] || ok=0
+
+	if [ "$ok" = 1 ]; then
+		rm -f $MYSQL_DATA_DIR/mysql-init.sql
+		ok
+		cat << END_OF_MSG
+
+PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL USERS!
+This is done, after starting database, in the order shown,
+with:
+
+For 'mysql_sysadmin' (RELOAD and SHUTDOWN privileges):
+echo "update mysql.user set password=password('newpassword') where user='mysql_sysadmin'; FLUSH PRIVILEGES;" | mysql -u mysql -S $MYSQL_SOCKET
+
+For 'mysql' user (ALL privileges, DB admin):
+echo "update mysql.user set password=password('newpassword') where user='mysql'; FLUSH PRIVILEGES;" | mysql -u mysql -S $MYSQL_SOCKET
+
+NOTE: mysql_sysadmin password should be placed to $MYSQL_CONFIG in
+mysqladmin section. See the manual for more instructions.
+(This user is used at logs rotation and server shutdown)
+
+END_OF_MSG
+		show "Filling help tables..."
+		ok=0
+		( echo "use mysql;"; cat /usr/share/mysql/fill_help_tables.sql ) | \
+			/usr/sbin/mysqld \
+			--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
+			--bootstrap \
+			--skip-grant-tables \
+			--skip-bdb \
+			--skip-innodb \
+			--skip-ndbcluster \
+			--datadir=$MYSQL_DATA_DIR \
+			--user=$MYSQL_USER \
+			--slave-load-tmpdir=$MYSQL_DATA_DIR \
+			--tmpdir=$MYSQL_DATA_DIR \
+			--log-error=$MYSQL_ERRLOG \
+			&& ok=1
+		if [ "$ok" = 1 ]; then
+			ok
+		else
+			cat << END_OF_MSG
+
+WARNING: HELP FILES ARE NOT COMPLETELY INSTALLED!
+The "HELP" command might not work properly.
+
+END_OF_MSG
+		fi
+	else
+		fail
+		cat << END_OF_MSG
+Installation of grant tables FAILED!
+
+The initialization SQL script was preserved at $MYSQL_DATA_DIR/mysql-init.sql
+
+Examine the logs in /var/log/mysql for more information.  You can
+also try to start the mysqld daemon with:
+
+/usr/sbin/mysqld --skip-grant &
+
+You can use the command line tool mysql to connect to the mysql
+database and look at the grant tables:
+
+shell> mysql -u mysql mysql
+mysql> show tables
+
+Try 'mysqld --help' if you have problems with paths. Setting on
+logging in $MYSQL_DATA_DIR/mysqld.conf gives you a log in /var/log/mysql/query.log that
+may be helpful. The latest information about MySQL is available on the
+web at http://www.mysql.com/.
+
+Please check PLD Linux ftp site for newer versions of this package.
+
+Please consult the MySQL manual section: 'Problems running
+mysql_install_db', and the manual section that describes problems on
+your OS.  Another information source is the MySQL email archive.
+
+END_OF_MSG
+		exit 1
+	fi
+}
+
+#
+# End of useful functions.
+#
+
+start() {
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlstatus "$mysqldir" start
+		if [ "$MYSQL_STATUS" = "running" ]; then
+			msg_already_running "MySQL $mysqldir"
+		else
+			mysqlstart "$mysqldir"
+		fi
+	done
+	mysqlsubsys
+}
+
+stop() {
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlstatus "$mysqldir" stop
+		if [ "$MYSQL_STATUS" = "not running" ]; then
+			msg_not_running "MySQL $mysqldir"
+		else
+			mysqlstop "$mysqldir"
+		fi
+	done
+	mysqlsubsys
+}
+
+condrestart() {
+	if [ -f /var/lock/subsys/mysql ]; then
+		stop
+		start
+	else
+		msg_not_running "MySQL"
+		RETVAL=$1
+	fi
+}
+
+RETVAL=0
+case "$action" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+  try-restart)
+	condrestart 0
+	;;
+  force-reload)
+	condrestart 7
+	;;
+  status)
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlstatus "$mysqldir"
+		if [ "$MYSQL_STATUS" = "running" ]; then
+			addr=${MYSQL_BIND_ADDRESS:-0.0.0.0}
+			port=${MYSQL_PORT:-3306}
+			socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
+			pid=$MYSQL_PID
+			nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
+			[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
+			nls "\tunix:%s\n" "$socket"
+			pids="$pids/$MYSQL_PID/"
+			progress "$MYSQL_STATUS"
+		else
+			show "MySQL cluster %s" "$mysqldir"
+			progress "$MYSQL_STATUS" "$CFAIL"
+		fi
+		echo
+	done
+
+	for pid in $(/sbin/pidof mysqld); do
+		if [[ $pids != */$pid/* ]]; then
+			running="$running $pid"
+		fi
+	done
+
+	if [ $# = 1 -a "$running" ]; then
+		nls "Warning: MySQL Daemon processes not under clusters.conf control:"
+		# see if we can display their status
+		for pid in $running; do
+			datadir=$(cat /proc/$pid/cmdline | tr '\0' '\n' | fgrep -- --datadir=)
+			datadir=${datadir#--datadir=} # strip --datadir
+			mysqldir=${datadir%/mysqldb/db} # strip /mysqldb/db
+			mysqlstatus "$mysqldir"
+			if [ "$MYSQL_STATUS" = "running" ]; then
+				addr=${MYSQL_BIND_ADDRESS:-0.0.0.0}
+				port=${MYSQL_PORT:-3306}
+				socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
+				nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
+				[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
+				nls "\tunix:%s\n" "$socket"
+				progress "$MYSQL_STATUS"
+			else
+				show "MySQL cluster %s" "$mysqldir"
+				progress "$MYSQL_STATUS" "$CFAIL"
+			fi
+			echo
+		done
+	fi
+	;;
+  init)
+	for mysqldir in $DB_CLUSTERS; do
+		mysqlinit "$mysqldir"
+	done
+	exit $?
+	;;
+  flush-logs)
+  	for mysqldir in $DB_CLUSTERS; do
+	    mysqlgetconfig "$mysqldir"
+		# just if mysqld is really running
+		if /usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" ping >/dev/null 2>&1; then
+			/usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" flush-logs
+		fi
+	done
+	;;
+  *)
+	msg_usage "$0 {start|stop|init|restart|try-restart|force-reload|status}"
+	exit 3
+esac
+
+exit $RETVAL
