@@ -1,4 +1,8 @@
 # TODO:
+# - unpackaged:
+#   /usr/bin/mysqlaccess.conf
+#   /usr/data/mysql/.empty
+#   /usr/data/test/.empty
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
 # - missing have_archive, have_merge
@@ -20,7 +24,7 @@
 %bcond_with	sphinx		# Sphinx storage engine support
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
-#
+
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -35,7 +39,7 @@ Version:	5.5.8
 Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-#Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#source
+# Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 # Source0-md5:	42e866302b61f5e213afd33e04677017
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
@@ -76,7 +80,7 @@ Patch101:	%{name}-innodb_extend_slow.patch
 Patch102:	%{name}-microsec_process.patch
 Patch103:	%{name}-innodb_split_buf_pool_mutex.patch
 # </percona>
-URL:		http://www.mysql.com/products/database/mysql/community_edition.html
+URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
 BuildRequires:	cmake
 BuildRequires:	groff
@@ -89,7 +93,7 @@ BuildRequires:	ncurses-devel >= 4.2
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.414
+BuildRequires:	rpmbuild(macros) >= 1.577
 BuildRequires:	sed >= 4.0
 BuildRequires:	zlib-devel
 Requires(post,preun):	/sbin/chkconfig
@@ -529,7 +533,10 @@ mv sphinx-*/mysqlse storage/sphinx
 %build
 install -d build
 cd build
-%{cmake} \
+# NOTE that /var/lib/mysql/mysql.sock is symlink to real sock file
+# (it defaults to first cluster but user may change it to whatever
+# cluster it wants)
+%cmake \
 	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG" \
 	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG" \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
@@ -543,23 +550,23 @@ cd build
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{?!with_tcpd:OFF} \
 	-DCURSES_INCLUDE_PATH=%{_includedir}/ncurses \
 	-DCMAKE_INSTALl_PREFIX="" \
-	-DMYSQL_UNIX_ADDR=/var/lib/mysql/mysql.sock \
-	-DINSTALL_INCLUDEDIR=%{_includedir}/mysql \
+	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
+	-DINSTALL_INCLUDEDIR=%{_includedir}/%{name} \
 	-DINSTALL_BINDIR=%{_bindir} \
 	-DINSTALL_DOCDIR=%{_docdir}/%{name}-%{version} \
 	-DINSTALL_DOCREADMEDIR=%{_docdir}/%{name}-%{version} \
 	-DINSTALL_INFODIR=%{_infodir} \
 	-DINSTALL_LIBDIR=%{_libdir} \
 	-DINSTALL_MANDIR=%{_mandir} \
-	-DINSTALL_MYSQLDATADIR=/var/lib/mysql \
-	-DINSTALL_MYSQLSHAREDIR=%{_datadir}/mysql \
-	-DINSTALL_MYSQLTESTDIR=%{_datadir}/mysql-test \
-	-DINSTALL_PLUGINDIR=%{_libdir}/mysql/plugin \
+	-DINSTALL_MYSQLDATADIR=/var/lib/%{name} \
+	-DINSTALL_MYSQLSHAREDIR=%{_datadir}/%{name} \
+	-DINSTALL_MYSQLTESTDIR=%{_datadir}/%{name}-test \
+	-DINSTALL_PLUGINDIR=%{_libdir}/%{name}/plugin \
 	-DINSTALL_SBINDIR=%{_sbindir} \
 	-DINSTALL_SCRIPTDIR=%{_bindir} \
 	-DINSTALL_SHAREDIR=%{_datadir} \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
-	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/mysql-support \
+	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/%{name}-support \
 	..
 
 %{__make}
@@ -575,15 +582,15 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
 %{__make} -C build install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
+cp -a Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
-install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
-install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
-install %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
+install -p %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
+cp -a %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
+cp -a %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 # This is template for configuration file which is created after 'service mysql init'
-install %{SOURCE4} mysqld.conf
-install %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/clusters.conf
-touch $RPM_BUILD_ROOT/var/log/mysql/{mysqld,query,slow}.log
+cp -a %{SOURCE4} mysqld.conf
+cp -a %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
+touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
@@ -595,18 +602,18 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{mysqld,query,slow}.log
 cp mysqld.conf mysqld.tmp
 awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 
-install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
-cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
+cp -a mysqld.conf $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.conf
+cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/mysql-client.conf
 cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf
 
 # NDB
 %if %{with ndb}
-install %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
-install %{SOURCE8} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb
-install %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
-install %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
-install %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
-install %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
+install -p %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
+cp -a %{SOURCE8} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb
+install -p %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
+cp -a %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
+install -p %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
+cp -a %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 %endif
 
 # symlinks point to the .so file, fix it
@@ -631,9 +638,9 @@ mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
 %{!?debug:rm -f $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
 %{!?debug:rm -f $RPM_BUILD_ROOT%{_mandir}/man1/mysql_resolve_stack_dump.1}
 # generate symbols file, so one can generate backtrace using it
-# mysql_resolve_stack_dump -s %{_datadir}/mysql/mysqld.sym -n mysqld.stack.
+# mysql_resolve_stack_dump -s %{_datadir}/%{name}/mysqld.sym -n mysqld.stack.
 # http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
-%{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.sym}
+%{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.sym}
 
 # do not clobber users $PATH
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_upgrade
@@ -673,9 +680,9 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
 
 # not needed
-rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/libdaemon_example.*
-rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_example.*
-rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/sphinx.{a,la}
+rm -f $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
+rm -f $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/ha_example.*
+rm -f $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/sphinx.{a,la}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -695,8 +702,8 @@ if [ "$1" = "0" ]; then
 	/sbin/chkconfig --del mysql
 fi
 
-%postun
-[ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+%postun -p /sbin/postshell
+-/usr/sbin/fix-info-dir -c %{_infodir}
 
 if [ "$1" = "0" ]; then
 	%userremove mysql
@@ -737,32 +744,32 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %triggerpostun -- mysql < 4.0.20-2.4
-# For clusters in /etc/mysql/clusters.conf
+# For clusters in /etc/%{name}/clusters.conf
 if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
 	if [ -n "$MYSQL_DB_CLUSTERS" ]; then
 		for i in "$MYSQL_DB_CLUSTERS"; do
-			echo "$i/mysqld.conf=$i" >> /etc/mysql/clusters.conf
+			echo "$i/mysqld.conf=$i" >> /etc/%{name}/clusters.conf
 		done
 		echo "# Do not use **obsolete** option MYSQL_DB_CLUSTERS" >> /etc/sysconfig/mysql
-		echo "# USE /etc/mysql/clusters.conf instead" >> /etc/sysconfig/mysql
-		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/mysql/clusters.conf."
-		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/mysql/clusters.conf."
+		echo "# USE /etc/%{name}/clusters.conf instead" >> /etc/sysconfig/mysql
+		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/%{name}/clusters.conf."
+		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/%{name}/clusters.conf."
 	fi
 fi
 
 %triggerpostun -- mysql < 4.1.1
 # For better compatibility with prevoius versions:
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
-	elif [ -f "/etc/mysql/$config" ]; then
-		config_file=/etc/mysql/$config
+	elif [ -f "/etc/%{name}/$config" ]; then
+		config_file=/etc/%{name}/$config
 	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
 		if [ -z "$clusterdir" ]; then
 			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/mysql/clusters.conf"
+			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
 			exit 1
 		fi
 		config_file="$clusterdir/mysqld.conf"
@@ -792,16 +799,16 @@ EOF
 
 %triggerpostun -- mysql < 5.1.0
 configs=""
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
-	elif [ -f "/etc/mysql/$config" ]; then
-		config_file=/etc/mysql/$config
+	elif [ -f "/etc/%{name}/$config" ]; then
+		config_file=/etc/%{name}/$config
 	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
 		if [ -z "$clusterdir" ]; then
 			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/mysql/clusters.conf"
+			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
 			exit 1
 		fi
 		config_file="$clusterdir/mysqld.conf"
@@ -826,10 +833,10 @@ done
 %files
 %defattr(644,root,root,755)
 %doc build/support-files/*.cnf build/support-files/*.ini
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
-%attr(754,root,root) /etc/rc.d/init.d/mysql
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
-%attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/clusters.conf
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}
+%attr(754,root,root) /etc/rc.d/init.d/%{name}
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
+%attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
 %attr(755,root,root) %{_sbindir}/innochecksum
 %attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
@@ -840,23 +847,23 @@ done
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
 %attr(755,root,root) %{_bindir}/mysql_install_db
-%dir %{_libdir}/mysql
-%dir %{_libdir}/mysql/plugin
-%attr(755,root,root) %{_libdir}/mysql/plugin/adt_null.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/auth.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/auth_socket.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/auth_test_plugin.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_archive.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_blackhole.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_federated.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/mypluglib.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/qa_auth_client.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/qa_auth_interface.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/qa_auth_server.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/semisync_master.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/semisync_slave.so
+%dir %{_libdir}/%{name}
+%dir %{_libdir}/%{name}/plugin
+%attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
 %if %{with sphinx}
-%attr(755,root,root) %{_libdir}/mysql/plugin/sphinx.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/sphinx.so
 %endif
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*
@@ -871,7 +878,7 @@ done
 
 %if %{?debug:1}0
 %attr(755,root,root) %{_bindir}/*resolve_stack_dump
-%{_datadir}/mysql/mysqld.sym
+%{_datadir}/%{name}/mysqld.sym
 %{_mandir}/man1/*resolve_stack_dump.1*
 %endif
 
@@ -884,41 +891,41 @@ done
 
 %{_infodir}/mysql.info*
 # This is template for configuration file which is created after 'service mysql init'
-%{_datadir}/mysql/mysqld.conf
-%{_datadir}/mysql/mysql_system_tables.sql
-%{_datadir}/mysql/mysql_system_tables_data.sql
-%{_datadir}/mysql/mysql_test_data_timezone.sql
+%{_datadir}/%{name}/mysqld.conf
+%{_datadir}/%{name}/mysql_system_tables.sql
+%{_datadir}/%{name}/mysql_system_tables_data.sql
+%{_datadir}/%{name}/mysql_test_data_timezone.sql
 
-%{_datadir}/mysql/english
-%{_datadir}/mysql/fill_help_tables.sql
-#%{_datadir}/mysql/mysql_fix_privilege_tables.sql
-%lang(cs) %{_datadir}/mysql/czech
-%lang(da) %{_datadir}/mysql/danish
-%lang(de) %{_datadir}/mysql/german
-%lang(el) %{_datadir}/mysql/greek
-%lang(es) %{_datadir}/mysql/spanish
-%lang(et) %{_datadir}/mysql/estonian
-%lang(fr) %{_datadir}/mysql/french
-%lang(hu) %{_datadir}/mysql/hungarian
-%lang(it) %{_datadir}/mysql/italian
-%lang(ja) %{_datadir}/mysql/japanese
-%lang(ko) %{_datadir}/mysql/korean
-%lang(nl) %{_datadir}/mysql/dutch
-%lang(nb) %{_datadir}/mysql/norwegian
-%lang(nn) %{_datadir}/mysql/norwegian-ny
-%lang(pl) %{_datadir}/mysql/polish
-%lang(pt) %{_datadir}/mysql/portuguese
-%lang(ro) %{_datadir}/mysql/romanian
-%lang(ru) %{_datadir}/mysql/russian
-%lang(sr) %{_datadir}/mysql/serbian
-%lang(sk) %{_datadir}/mysql/slovak
-%lang(sv) %{_datadir}/mysql/swedish
-%lang(uk) %{_datadir}/mysql/ukrainian
+%{_datadir}/%{name}/english
+%{_datadir}/%{name}/fill_help_tables.sql
+#%{_datadir}/%{name}/mysql_fix_privilege_tables.sql
+%lang(cs) %{_datadir}/%{name}/czech
+%lang(da) %{_datadir}/%{name}/danish
+%lang(de) %{_datadir}/%{name}/german
+%lang(el) %{_datadir}/%{name}/greek
+%lang(es) %{_datadir}/%{name}/spanish
+%lang(et) %{_datadir}/%{name}/estonian
+%lang(fr) %{_datadir}/%{name}/french
+%lang(hu) %{_datadir}/%{name}/hungarian
+%lang(it) %{_datadir}/%{name}/italian
+%lang(ja) %{_datadir}/%{name}/japanese
+%lang(ko) %{_datadir}/%{name}/korean
+%lang(nl) %{_datadir}/%{name}/dutch
+%lang(nb) %{_datadir}/%{name}/norwegian
+%lang(nn) %{_datadir}/%{name}/norwegian-ny
+%lang(pl) %{_datadir}/%{name}/polish
+%lang(pt) %{_datadir}/%{name}/portuguese
+%lang(ro) %{_datadir}/%{name}/romanian
+%lang(ru) %{_datadir}/%{name}/russian
+%lang(sr) %{_datadir}/%{name}/serbian
+%lang(sk) %{_datadir}/%{name}/slovak
+%lang(sv) %{_datadir}/%{name}/swedish
+%lang(uk) %{_datadir}/%{name}/ukrainian
 
 %files charsets
 %defattr(644,root,root,755)
 %dir %{_datadir}/mysql
-%{_datadir}/mysql/charsets
+%{_datadir}/%{name}/charsets
 
 %files extras
 %defattr(644,root,root,755)
@@ -980,7 +987,7 @@ done
 %files libs
 %defattr(644,root,root,755)
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
-%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.16
 %attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*.*
