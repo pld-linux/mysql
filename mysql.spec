@@ -53,6 +53,7 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
+Source15:	percona.sh
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
