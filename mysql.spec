@@ -31,13 +31,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.52
-Release:	4
+Version:	5.1.53
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	43c11ad3dded693393c4815d24e2b0a5
+# Source0-md5:	e5e7c5b0b5c382489e6a66778703bc46
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -71,11 +71,46 @@ Patch15:	plugin-avoid-version.patch
 Patch16:	%{name}-fix-dummy-thread-race-condition.patch
 Patch18:	%{name}-sphinx.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
-Patch100:	%{name}-userstats.patch
-Patch101:	%{name}-microslow.patch
-Patch102:	%{name}-acc-pslist.patch
-Patch103:	%{name}-split_buf_pool_mutex_fixed_optimistic_safe.patch
-Patch104:	%{name}-innodb_rw_lock.patch
+Patch100:	%{name}-innodb_swap_builtin_plugin.patch
+Patch101:	%{name}-show_patches.patch
+Patch102:	%{name}-slow_extended.patch
+Patch103:	%{name}-profiling_slow.patch
+Patch104:	%{name}-microsec_process.patch
+Patch105:	%{name}-userstat.patch
+Patch106:	%{name}-optimizer_fix.patch
+Patch107:	%{name}-show_temp_51.patch
+Patch108:	%{name}-suppress_log_warning_1592.patch
+Patch109:	%{name}-innodb_show_enhancements.patch
+Patch110:	%{name}-innodb_show_status.patch
+Patch111:	%{name}-innodb_io_patches.patch
+Patch112:	%{name}-innodb_opt_lru_count.patch
+Patch113:	%{name}-i_s_innodb_buffer_pool_pages.patch
+Patch114:	%{name}-innodb_expand_undo_slots.patch
+Patch115:	%{name}-innodb_extra_rseg.patch
+Patch116:	%{name}-innodb_overwrite_relay_log_info.patch
+Patch117:	%{name}-innodb_thread_concurrency_timer_based.patch
+Patch118:	%{name}-innodb_dict_size_limit.patch
+Patch119:	%{name}-innodb_split_buf_pool_mutex.patch
+Patch120:	%{name}-innodb_expand_import.patch
+Patch121:	%{name}-innodb_stats.patch
+Patch122:	%{name}-innodb_recovery_patches.patch
+Patch123:	%{name}-innodb_purge_thread.patch
+Patch124:	%{name}-innodb_admin_command_base.patch
+Patch125:	%{name}-innodb_show_lock_name.patch
+Patch126:	%{name}-innodb_extend_slow.patch
+Patch127:	%{name}-innodb_lru_dump_restore.patch
+Patch128:	%{name}-innodb_separate_doublewrite.patch
+Patch129:	%{name}-innodb_pass_corrupt_table.patch
+Patch130:	%{name}-innodb_fast_checksum.patch
+Patch131:	%{name}-innodb_files_extend.patch
+Patch132:	%{name}-innodb_show_sys_tables.patch
+Patch133:	%{name}-innodb_fix_misc.patch
+Patch134:	%{name}-innodb_adjust_defaults.patch
+Patch135:	%{name}-innodb_deadlock_count.patch
+Patch136:	%{name}-bug580324.patch
+Patch137:	%{name}-error_pad.patch
+Patch138:	%{name}-query_cache_enhance.patch
+Patch139:	%{name}-bug677407.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -122,7 +157,7 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_localstatedir	/var/lib/mysql
 %define		_mysqlhome	/home/services/mysql
 
-%define		_noautoreqdep	'perl(DBD::mysql)'
+%define		_noautoreqdep	perl(DBD::mysql)
 
 # readline/libedit detection goes wrong
 %undefine	configure_cache
@@ -522,6 +557,41 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch102 -p1
 %patch103 -p1
 %patch104 -p1
+%patch105 -p1
+%patch106 -p1
+%patch107 -p1
+%patch108 -p1
+%patch109 -p1
+%patch110 -p1
+%patch111 -p1
+%patch112 -p1
+%patch113 -p1
+%patch114 -p1
+%patch115 -p1
+%patch116 -p1
+%patch117 -p1
+%patch118 -p1
+%patch119 -p1
+%patch120 -p1
+%patch121 -p1
+%patch122 -p1
+%patch123 -p1
+%patch124 -p1
+%patch125 -p1
+%patch126 -p1
+%patch127 -p1
+%patch128 -p1
+%patch129 -p1
+%patch130 -p1
+%patch131 -p1
+%patch132 -p1
+%patch133 -p1
+%patch134 -p1
+%patch135 -p1
+%patch136 -p1
+%patch137 -p1
+%patch138 -p1
+%patch139 -p1
 # </percona>
 
 %build
