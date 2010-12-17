@@ -1,0 +1,892 @@
+# name       : query_cache_with_comments.patch
+# introduced : 11 or before
+# maintainer : Oleg
+#
+#!!! notice !!!
+# Any small change to this file in the main branch
+# should be done or reviewed by the maintainer!
+diff -ruN a/patch_info/query_cache_enhance.patch b/patch_info/query_cache_enhance.patch
+--- a/patch_info/query_cache_enhance.patch	1970-01-01 03:00:00.000000000 +0300
++++ b/patch_info/query_cache_enhance.patch	2010-07-21 01:42:09.650424002 +0400
+@@ -0,0 +1,14 @@
++File=query_cache_enhance.patch
++Name= query cache Percona's cumulative patch
++Version=1.0
++Author=Percona <info@percona.com>
++License=GPL
++Comment= 1) Add new status - Waiting on query cache mutex (status_wait_query_cache_mutex.patch)
++         2) Remove comments from query (need for cache hit) (query_cache_with_comments.patch)
++         3) Totally disable query cache (query_cache_totally_disable.info)
++2010-05 - First version avaliable (query_cache_with_comments.patch)
++2010-07 - First version avaliable (status_wait_query_cache_mutex.patch
++2010-07 - First version avaliable (query_cache_totally_disable.info)
++2010-07 - Fix crash (query_cache_with_comments.patch)
++2010-07 - Fix incorrect behavior diff (query_cache_with_comments.patch)
++2010-09 - Merge patches to one
+diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
+--- a/sql/mysqld.cc	2010-07-28 16:47:41.134069529 +0400
++++ b/sql/mysqld.cc	2010-07-28 16:47:41.704071184 +0400
+@@ -527,6 +527,7 @@
+ my_bool opt_log_slow_slave_statements= 0;
+ my_bool opt_log_slow_sp_statements= 0;
+ my_bool opt_log_slow_timestamp_every= 0;
++my_bool opt_query_cache_strip_comments = 0;
+ my_bool opt_use_global_long_query_time= 0;
+ my_bool opt_slow_query_log_microseconds_timestamp= 0;
+ my_bool lower_case_file_system= 0;
+@@ -5882,6 +5883,7 @@
+   OPT_THREAD_STATISTICS,
+   OPT_OPTIMIZER_FIX,
+   OPT_SUPPRESS_LOG_WARNING_1592,
++  OPT_QUERY_CACHE_STRIP_COMMENTS,
+   OPT_USE_GLOBAL_LONG_QUERY_TIME,
+   OPT_USE_GLOBAL_LOG_SLOW_CONTROL,
+   OPT_SLOW_QUERY_LOG_MICROSECONDS_TIMESTAMP,
+@@ -6935,6 +6937,10 @@
+   {"use_global_log_slow_control", OPT_USE_GLOBAL_LOG_SLOW_CONTROL,
+     "Choose flags, wich always use the global variables. Multiple flags allowed in a comma-separated string. [none, log_slow_filter, log_slow_rate_limit, log_slow_verbosity, long_query_time, min_examined_row_limit, all]",
+    0, 0, 0, GET_STR, REQUIRED_ARG, 0, 0, 0, SLOG_UG_NONE, 0, 0},
++  {"query_cache_strip_comments", OPT_QUERY_CACHE_STRIP_COMMENTS,
++   "Enable and disable optimisation \"strip comment for query cache\" - optimisation strip all comments from query while search query result in query cache",
++   (uchar**) &opt_query_cache_strip_comments, (uchar**) &opt_query_cache_strip_comments,
++   0, GET_BOOL, REQUIRED_ARG, 0, 0, 1, 0, 1, 0},
+   {"use_global_long_query_time", OPT_USE_GLOBAL_LONG_QUERY_TIME,
+    "Control always use global long_query_time or local long_query_time.",
+    (uchar**) &opt_use_global_long_query_time, (uchar**) &opt_use_global_long_query_time,
+diff -ruN a/sql/mysql_priv.h b/sql/mysql_priv.h
+--- a/sql/mysql_priv.h	2010-07-28 16:47:41.144071083 +0400
++++ b/sql/mysql_priv.h	2010-07-28 16:47:41.714068826 +0400
+@@ -2088,6 +2088,7 @@
+ extern my_bool opt_log_slow_admin_statements, opt_log_slow_slave_statements;
+ extern my_bool opt_log_slow_sp_statements;
+ extern my_bool opt_log_slow_timestamp_every;
++extern my_bool opt_query_cache_strip_comments;
+ extern my_bool opt_use_global_long_query_time;
+ extern my_bool opt_slow_query_log_microseconds_timestamp;
+ extern my_bool sp_automatic_privileges, opt_noacl;
+diff -ruN a/sql/query_strip_comments.h b/sql/query_strip_comments.h
+--- a/sql/query_strip_comments.h	1970-01-01 03:00:00.000000000 +0300
++++ b/sql/query_strip_comments.h	2010-07-28 16:47:41.724072335 +0400
+@@ -0,0 +1,37 @@
++#ifndef _SQL_QUERY_STRIPC_COMMENTS_H_
++#define _SQL_QUERY_STRIPC_COMMENTS_H_
++#ifdef HAVE_QUERY_CACHE
++
++// implemented in sql_cache.cc
++class QueryStripComments
++{
++private:
++  QueryStripComments(const QueryStripComments&);
++  QueryStripComments& operator=(const QueryStripComments&);
++public:
++  QueryStripComments();
++  ~QueryStripComments();
++  void set(const char* a_query, uint a_query_length, uint a_additional_length);
++  
++  char* query()        { return buffer; }
++  uint  query_length() { return length; }
++private:
++  void cleanup();
++private:
++  char* buffer;
++  uint  length /*query length, not buffer length*/;
++  uint  buffer_length;
++};
++class QueryStripComments_Backup
++{
++public:
++  QueryStripComments_Backup(THD* a_thd,QueryStripComments* qsc);
++  ~QueryStripComments_Backup();
++private:
++  THD*  thd;
++  char* query;
++  uint  length;
++};
++
++#endif // HAVE_QUERY_CACHE
++#endif // _SQL_QUERY_STRIPC_COMMENTS_H_
+diff -ruN a/sql/set_var.cc b/sql/set_var.cc
+--- a/sql/set_var.cc	2010-07-28 16:47:41.124069093 +0400
++++ b/sql/set_var.cc	2010-07-28 16:47:41.734068580 +0400
+@@ -124,8 +124,10 @@
+ static void fix_net_write_timeout(THD *thd, enum_var_type type);
+ static void fix_net_retry_count(THD *thd, enum_var_type type);
+ static void fix_max_join_size(THD *thd, enum_var_type type);
++#ifdef HAVE_QUERY_CACHE
+ static void fix_query_cache_size(THD *thd, enum_var_type type);
+ static void fix_query_cache_min_res_unit(THD *thd, enum_var_type type);
++#endif
+ static void fix_myisam_max_sort_file_size(THD *thd, enum_var_type type);
+ static void fix_max_binlog_size(THD *thd, enum_var_type type);
+ static void fix_max_relay_log_size(THD *thd, enum_var_type type);
+@@ -570,9 +572,6 @@
+                                               &SV::div_precincrement);
+ static sys_var_long_ptr	sys_rpl_recovery_rank(&vars, "rpl_recovery_rank",
+ 					      &rpl_recovery_rank);
+-static sys_var_long_ptr	sys_query_cache_size(&vars, "query_cache_size",
+-					     &query_cache_size,
+-					     fix_query_cache_size);
+ 
+ static sys_var_thd_ulong	sys_range_alloc_block_size(&vars, "range_alloc_block_size",
+ 						   &SV::range_alloc_block_size);
+@@ -638,14 +637,20 @@
+                                             NULL);
+ 
+ #ifdef HAVE_QUERY_CACHE
++static sys_var_long_ptr	sys_query_cache_size(&vars, "query_cache_size",
++                                             &query_cache_size,
++                                             fix_query_cache_size);
+ static sys_var_long_ptr	sys_query_cache_limit(&vars, "query_cache_limit",
+-					      &query_cache.query_cache_limit);
+-static sys_var_long_ptr        sys_query_cache_min_res_unit(&vars, "query_cache_min_res_unit",
+-						     &query_cache_min_res_unit,
+-						     fix_query_cache_min_res_unit);
++                                              &query_cache.query_cache_limit);
++static sys_var_long_ptr
++  sys_query_cache_min_res_unit(&vars, "query_cache_min_res_unit",
++                               &query_cache_min_res_unit,
++                               fix_query_cache_min_res_unit);
++static int check_query_cache_type(THD *thd, set_var *var);
+ static sys_var_thd_enum	sys_query_cache_type(&vars, "query_cache_type",
+ 					     &SV::query_cache_type,
+-					     &query_cache_type_typelib);
++					     &query_cache_type_typelib, NULL,
++                                             check_query_cache_type);
+ static sys_var_thd_bool
+ sys_query_cache_wlock_invalidate(&vars, "query_cache_wlock_invalidate",
+ 				 &SV::query_cache_wlock_invalidate);
+@@ -929,6 +934,8 @@
+ #ifndef EMBEDDED_LIBRARY
+ static sys_var_const_str_ptr    sys_repl_report_host(&vars, "report_host", &report_host);
+ static sys_var_const_str_ptr    sys_repl_report_user(&vars, "report_user", &report_user);
++static sys_var_bool_ptr       sys_query_cache_strip_comments(&vars, "query_cache_strip_comments",
++                                                       &opt_query_cache_strip_comments);
+ static sys_var_const_str_ptr    sys_repl_report_password(&vars, "report_password", &report_password);
+ 
+ static uchar *slave_get_report_port(THD *thd)
+@@ -1239,10 +1246,9 @@
+ {}
+ #endif /* HAVE_REPLICATION */
+ 
+-
++#ifdef HAVE_QUERY_CACHE
+ static void fix_query_cache_size(THD *thd, enum_var_type type)
+ {
+-#ifdef HAVE_QUERY_CACHE
+   ulong new_cache_size= query_cache.resize(query_cache_size);
+ 
+   /*
+@@ -1256,11 +1262,35 @@
+ 			query_cache_size, new_cache_size);
+   
+   query_cache_size= new_cache_size;
+-#endif
+ }
+ 
+ 
+-#ifdef HAVE_QUERY_CACHE
++/**
++  Trigger before query_cache_type variable is updated.
++  @param thd Thread handler
++  @param var Pointer to the new variable status
++
++  @return Status code
++   @retval 1 Failure
++   @retval 0 Success
++*/
++
++static int check_query_cache_type(THD *thd, set_var *var)
++{
++  /*
++    Don't allow changes of the query_cache_type if the query cache
++    is disabled.
++  */
++  if (query_cache.is_disabled())
++  {
++    my_error(ER_QUERY_CACHE_DISABLED,MYF(0));
++    return 1;
++  }
++
++  return 0;
++}
++
++
+ static void fix_query_cache_min_res_unit(THD *thd, enum_var_type type)
+ {
+   query_cache_min_res_unit= 
+@@ -3634,6 +3664,16 @@
+   Functions to handle SET mysql_internal_variable=const_expr
+ *****************************************************************************/
+ 
++/**
++  Verify that the supplied value is correct.
++
++  @param thd Thread handler
++
++  @return status code
++    @retval -1 Failure
++    @retval 0 Success
++*/
++
+ int set_var::check(THD *thd)
+ {
+   if (var->is_readonly())
+diff -ruN a/sql/sql_cache.cc b/sql/sql_cache.cc
+--- a/sql/sql_cache.cc	2010-07-28 16:47:41.134069529 +0400
++++ b/sql/sql_cache.cc	2010-07-28 16:47:41.754069731 +0400
+@@ -286,6 +286,7 @@
+          if (and only if) this query has a registered result set writer
+          (thd->net.query_cache_query).
+  4. Query_cache::invalidate
++    Query_cache::invalidate_locked_for_write
+        - Called from various places to invalidate query cache based on data-
+          base, table and myisam file name. During an on going invalidation
+          the query cache is temporarily disabled.
+@@ -333,6 +334,181 @@
+ #include <hash.h>
+ #include "../storage/myisammrg/ha_myisammrg.h"
+ #include "../storage/myisammrg/myrg_def.h"
++#include "query_strip_comments.h"
++
++QueryStripComments::QueryStripComments()
++{
++  buffer = 0;
++  length = 0;
++  buffer_length = 0;
++}
++QueryStripComments::~QueryStripComments()
++{
++  cleanup();
++}
++
++inline bool query_strip_comments_is_white_space(char c)
++{
++  return ((' ' == c) || ('\t' == c) || ('\r' == c) || ('\n' ==c ));
++}
++void QueryStripComments::set(const char* query, uint query_length, uint additional_length)
++{
++  uint new_buffer_length = query_length + additional_length;
++  if(new_buffer_length > buffer_length)
++  {
++    cleanup();
++    buffer = (char*)my_malloc(new_buffer_length,MYF(0));
++    memset(buffer,0,new_buffer_length);
++  }
++  uint query_position = 0;
++  uint position = 0;
++  // Skip whitespaces from begin
++  while((query_position < query_length) && query_strip_comments_is_white_space(query[query_position]))
++  {
++    ++query_position;
++  }
++  long int last_space = -1;
++  while(query_position < query_length)
++  {
++    char current = query[query_position];
++    bool insert_space = false; // insert space to buffer, (IMPORTANT) don't update query_position
++    switch(current)
++    {
++    case '\'':
++    case '"':
++      {
++        buffer[position++] = query[query_position++]; // copy current symbol
++        while(query_position < query_length)
++        {
++          if(current == query[query_position]) // found pair quote
++          {
++            break;
++          }
++          buffer[position++] = query[query_position++]; // copy current symbol
++        }
++        break;
++      }
++    case '/':
++      {
++        if(((query_position + 2) < query_length) && ('*' == query[query_position+1]) && ('!' != query[query_position+2]))
++        {
++          query_position += 2; // skip "/*"
++          do
++          {
++            if('*' == query[query_position] && '/' == query[query_position+1]) // check for "*/"
++            {
++              query_position += 2; // skip "*/"
++              insert_space = true;
++              break;
++            }
++            else
++            {
++              ++query_position;
++            }
++          }
++          while(query_position < query_length);
++          if(!insert_space)
++          {
++            continue;
++          }
++        }
++        break;
++      }
++    case '-':
++      {
++        if(query[query_position+1] == '-')
++        {
++          ++query_position; // skip "-", and go to search of "\n"
++        }
++        else
++        {
++          break;
++        }
++      }
++    case '#':
++      {
++        do
++        {
++          ++query_position; // skip current symbol (# or -)
++          if('\n' == query[query_position])  // check for '\n'
++          {
++            ++query_position; // skip '\n'
++            insert_space = true;
++            break;
++          }
++        }
++        while(query_position < query_length);
++        if(insert_space)
++        {
++          break;
++        }
++        else
++        {
++          continue;
++        }
++      }
++    default:
++      if(query_strip_comments_is_white_space(current))
++      {
++        insert_space = true;
++        ++query_position;
++      }
++      break; // make gcc happy
++    }
++    if(insert_space)
++    {
++      if((last_space + 1) != position)
++      {
++        last_space = position;
++        buffer[position++] = ' ';
++      }
++    }
++    else
++    {
++      buffer[position++] = query[query_position++];
++    }
++  }
++  while((0 < position) && query_strip_comments_is_white_space(buffer[position - 1]))
++  {
++    --position;
++  }
++  buffer[position] = 0;
++  length = position;
++}
++void QueryStripComments::cleanup()
++{
++  if(buffer)
++  {
++    my_free(buffer,MYF(0));
++  }
++  buffer        = 0;
++  length        = 0;
++  buffer_length = 0;
++}
++QueryStripComments_Backup::QueryStripComments_Backup(THD* a_thd,QueryStripComments* qsc)
++{
++  if(opt_query_cache_strip_comments)
++  {
++    thd = a_thd;
++    query = thd->query();
++    length = thd->query_length();
++    qsc->set(query,length,thd->db_length + 1 + QUERY_CACHE_FLAGS_SIZE);
++    thd->set_query(qsc->query(),qsc->query_length());
++  }
++  else
++  {
++    thd = 0;
++    query = 0;
++    length = 0;
++  }
++}
++QueryStripComments_Backup::~QueryStripComments_Backup()
++{
++  if(thd)
++  {
++    thd->set_query(query,length);
++  }
++}
+ 
+ #ifdef EMBEDDED_LIBRARY
+ #include "emb_qcache.h"
+@@ -435,7 +611,13 @@
+   bool interrupt= FALSE;
+   DBUG_ENTER("Query_cache::try_lock");
+ 
++  THD *thd = current_thd;
++  const char* old_proc_info= thd->proc_info;
++  thd_proc_info(thd,"Waiting on query cache mutex");
+   pthread_mutex_lock(&structure_guard_mutex);
++  DBUG_EXECUTE_IF("status_wait_query_cache_mutex_sleep", {
++      sleep(5);
++    });
+   while (1)
+   {
+     if (m_cache_lock_status == Query_cache::UNLOCKED)
+@@ -483,6 +665,7 @@
+     }
+   }
+   pthread_mutex_unlock(&structure_guard_mutex);
++  thd->proc_info = old_proc_info;
+ 
+   DBUG_RETURN(interrupt);
+ }
+@@ -863,11 +1046,14 @@
+   DBUG_EXECUTE_IF("wait_in_query_cache_insert",
+                   debug_wait_for_kill("wait_in_query_cache_insert"); );
+ 
++  if(query_cache.is_disabled())
++    DBUG_VOID_RETURN;
++
+   if (query_cache.try_lock())
+     DBUG_VOID_RETURN;
+ 
+   Query_cache_block *query_block= (Query_cache_block*)net->query_cache_query;
+-  if (!query_block)
++  if (NULL == query_block)
+   {
+     /*
+       We lost the writer and the currently processed query has been
+@@ -921,6 +1107,9 @@
+   if (net->query_cache_query == 0)
+     DBUG_VOID_RETURN;
+ 
++  if(query_cache.is_disabled())
++    DBUG_VOID_RETURN;
++
+   if (query_cache.try_lock())
+     DBUG_VOID_RETURN;
+ 
+@@ -1054,6 +1243,7 @@
+    query_cache_limit(query_cache_limit_arg),
+    queries_in_cache(0), hits(0), inserts(0), refused(0),
+    total_blocks(0), lowmem_prunes(0),
++   m_query_cache_is_disabled(FALSE),
+    min_allocation_unit(ALIGN_SIZE(min_allocation_unit_arg)),
+    min_result_data_size(ALIGN_SIZE(min_result_data_size_arg)),
+    def_query_hash_size(ALIGN_SIZE(def_query_hash_size_arg)),
+@@ -1235,6 +1425,8 @@
+       unlock();
+       DBUG_VOID_RETURN;
+     }
++    QueryStripComments *query_strip_comments = &(thd->query_strip_comments);
++    QueryStripComments_Backup backup(thd,query_strip_comments);
+ 
+     /* Key is query + database + flag */
+     if (thd->db_length)
+@@ -1405,6 +1597,9 @@
+   Query_cache_block_table *block_table, *block_table_end;
+   ulong tot_length;
+   Query_cache_query_flags flags;
++  QueryStripComments *query_strip_comments = &(thd->query_strip_comments);
++  char *sql_backup          = sql;
++  uint  query_length_backup = query_length;
+   DBUG_ENTER("Query_cache::send_result_to_client");
+ 
+   /*
+@@ -1414,8 +1609,8 @@
+ 
+     See also a note on double-check locking usage above.
+   */
+-  if (thd->locked_tables || thd->variables.query_cache_type == 0 ||
+-      query_cache_size == 0)
++  if (is_disabled() || thd->locked_tables ||
++      thd->variables.query_cache_type == 0 || query_cache_size == 0)
+     goto err;
+ 
+   if (!thd->lex->safe_to_cache_query)
+@@ -1426,21 +1621,103 @@
+ 
+   {
+     uint i= 0;
+-    /*
+-      Skip '(' characters in queries like following:
+-      (select a from t1) union (select a from t1);
+-    */
+-    while (sql[i]=='(')
+-      i++;
++    if(opt_query_cache_strip_comments)
++    {
++      /* Skip all comments and non-letter symbols */
++      uint& query_position = i;
++      char* query = sql;
++      while(query_position < query_length)
++      {
++        bool check = false;
++        char current = query[query_position];
++        switch(current)
++        {
++        case '/':
++          if(((query_position + 2) < query_length) && ('*' == query[query_position+1]) && ('!' != query[query_position+2]))
++          {
++            query_position += 2; // skip "/*"
++            do
++            {
++              if('*' == query[query_position] && '/' == query[query_position+1]) // check for "*/" (without space)
++              {
++                query_position += 2; // skip "*/" (without space)
++                break;
++              }
++              else
++              {
++                ++query_position;
++              }
++            }
++            while(query_position < query_length);
++            continue; // analyze current symbol
++          }
++          break;
++        case '-':
++          if(query[query_position+1] == '-')
++          {
++            ++query_position; // skip "-"
++          }
++          else
++          {
++            break;
++          }
++        case '#':
++          do
++          {
++            ++query_position; // skip current symbol
++            if('\n' == query[query_position])  // check for '\n'
++            {
++              ++query_position; // skip '\n'
++              break;
++            }
++          }
++          while(query_position < query_length);
++          continue; // analyze current symbol
++        case '\r':
++        case '\n':
++        case '\t':
++        case ' ':
++        case '(':
++        case ')':
++          break;
++        default:
++          check = true;
++          break; // make gcc happy
++        } // switch(current)
++        if(check)
++        {
++          if(query_position + 2 < query_length)
++          {
++            // cacheable
++            break;
++          }
++          else
++          {
++            DBUG_PRINT("qcache", ("The statement is not a SELECT; Not cached"));
++            goto err;
++          }
++        } // if(check)
++        ++query_position;
++      } // while(query_position < query_length)
++    }
++    else // if(opt_query_cache_strip_comments)
++    {
++      /*
++        Skip '(' characters in queries like following:
++        (select a from t1) union (select a from t1);
++      */
++      while (sql[i]=='(')
++        i++;
+ 
+-    /*
+-      Test if the query is a SELECT
+-      (pre-space is removed in dispatch_command).
++    } // if(opt_query_cache_strip_comments)    
++      /*
++        Test if the query is a SELECT
++        (pre-space is removed in dispatch_command).
+ 
+-      First '/' looks like comment before command it is not
+-      frequently appeared in real life, consequently we can
+-      check all such queries, too.
+-    */
++        First '/' looks like comment before command it is not
++        frequently appeared in real life, consequently we can
++        check all such queries, too.
++      */
+     if ((my_toupper(system_charset_info, sql[i])     != 'S' ||
+          my_toupper(system_charset_info, sql[i + 1]) != 'E' ||
+          my_toupper(system_charset_info, sql[i + 2]) != 'L') &&
+@@ -1449,7 +1726,6 @@
+       DBUG_PRINT("qcache", ("The statement is not a SELECT; Not cached"));
+       goto err;
+     }
+-    
+     if (query_length > 20 && has_no_cache_directive(&sql[i+6]))
+     {
+       /*
+@@ -1481,6 +1757,12 @@
+   DBUG_ASSERT(thd->net.query_cache_query == 0);
+ 
+   Query_cache_block *query_block;
++  if(opt_query_cache_strip_comments)
++  {
++    query_strip_comments->set(sql, query_length, thd->db_length + 1 + QUERY_CACHE_FLAGS_SIZE);
++    sql          = query_strip_comments->query();
++    query_length = query_strip_comments->query_length();
++  }
+ 
+   tot_length= query_length + thd->db_length + 1 + QUERY_CACHE_FLAGS_SIZE;
+   if (thd->db_length)
+@@ -1547,6 +1829,8 @@
+ 	 (uchar*) &flags, QUERY_CACHE_FLAGS_SIZE);
+   query_block = (Query_cache_block *)  hash_search(&queries, (uchar*) sql,
+ 						   tot_length);
++  sql          = sql_backup;
++  query_length = query_length_backup;
+   /* Quick abort on unlocked data */
+   if (query_block == 0 ||
+       query_block->query()->result() == 0 ||
+@@ -1727,6 +2011,8 @@
+ 			     my_bool using_transactions)
+ {
+   DBUG_ENTER("Query_cache::invalidate (table list)");
++  if (is_disabled())
++    DBUG_VOID_RETURN;
+ 
+   using_transactions= using_transactions &&
+     (thd->options & (OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN));
+@@ -1757,6 +2043,9 @@
+ void Query_cache::invalidate(CHANGED_TABLE_LIST *tables_used)
+ {
+   DBUG_ENTER("Query_cache::invalidate (changed table list)");
++  if (is_disabled())
++    DBUG_VOID_RETURN;
++
+   THD *thd= current_thd;
+   for (; tables_used; tables_used= tables_used->next)
+   {
+@@ -1782,8 +2071,11 @@
+ */
+ void Query_cache::invalidate_locked_for_write(TABLE_LIST *tables_used)
+ {
+-  THD *thd= current_thd;
+   DBUG_ENTER("Query_cache::invalidate_locked_for_write");
++  if (is_disabled())
++    DBUG_VOID_RETURN;
++
++  THD *thd= current_thd;
+   for (; tables_used; tables_used= tables_used->next_local)
+   {
+     thd_proc_info(thd, "invalidating query cache entries (table)");
+@@ -1804,7 +2096,9 @@
+ 			     my_bool using_transactions)
+ {
+   DBUG_ENTER("Query_cache::invalidate (table)");
+-  
++  if (is_disabled())
++    DBUG_VOID_RETURN;
++
+   using_transactions= using_transactions &&
+     (thd->options & (OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN));
+   if (using_transactions && 
+@@ -1821,6 +2115,8 @@
+ 			     my_bool using_transactions)
+ {
+   DBUG_ENTER("Query_cache::invalidate (key)");
++  if (is_disabled())
++   DBUG_VOID_RETURN;
+ 
+   using_transactions= using_transactions &&
+     (thd->options & (OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN));
+@@ -1839,9 +2135,11 @@
+ 
+ void Query_cache::invalidate(char *db)
+ {
+-  bool restart= FALSE;
+-  DBUG_ENTER("Query_cache::invalidate (db)");
+ 
++  DBUG_ENTER("Query_cache::invalidate (db)");
++  if (is_disabled())
++    DBUG_VOID_RETURN;
++  bool restart= FALSE;
+   /*
+     Lock the query cache and queue all invalidation attempts to avoid
+     the risk of a race between invalidation, cache inserts and flushes.
+@@ -1926,6 +2224,9 @@
+ void Query_cache::flush()
+ {
+   DBUG_ENTER("Query_cache::flush");
++  if (is_disabled())
++    DBUG_VOID_RETURN;
++
+   DBUG_EXECUTE_IF("wait_in_query_cache_flush1",
+                   debug_wait_for_kill("wait_in_query_cache_flush1"););
+ 
+@@ -1957,6 +2258,9 @@
+ {
+   DBUG_ENTER("Query_cache::pack");
+ 
++  if (is_disabled())
++    DBUG_VOID_RETURN;
++
+   /*
+     If the entire qc is being invalidated we can bail out early
+     instead of waiting for the lock.
+@@ -2014,6 +2318,15 @@
+   pthread_cond_init(&COND_cache_status_changed, NULL);
+   m_cache_lock_status= Query_cache::UNLOCKED;
+   initialized = 1;
++  /*
++    If we explicitly turn off query cache from the command line query cache will
++    be disabled for the reminder of the server life time. This is because we
++    want to avoid locking the QC specific mutex if query cache isn't going to
++    be used.
++  */
++  if (global_system_variables.query_cache_type == 0)
++    query_cache.disable_query_cache();
++
+   DBUG_VOID_RETURN;
+ }
+ 
+@@ -4717,3 +5030,4 @@
+ #endif /* DBUG_OFF */
+ 
+ #endif /*HAVE_QUERY_CACHE*/
++
+diff -ruN a/sql/sql_class.h b/sql/sql_class.h
+--- a/sql/sql_class.h	2010-07-28 16:47:41.134069529 +0400
++++ b/sql/sql_class.h	2010-07-28 16:47:41.764070446 +0400
+@@ -22,7 +22,9 @@
+ 
+ #include "log.h"
+ #include "rpl_tblmap.h"
+-
++#ifdef HAVE_QUERY_CACHE
++#include "query_strip_comments.h"
++#endif // HAVE_QUERY_CACHE
+ /**
+   An interface that is used to take an action when
+   the locking module notices that a table version has changed
+@@ -667,6 +669,9 @@
+   */
+   LEX_STRING query_string;
+   Server_side_cursor *cursor;
++#ifdef HAVE_QUERY_CACHE
++  QueryStripComments query_strip_comments; // see sql_cache.cc
++#endif //HAVE_QUERY_CACHE
+ 
+   inline char *query() { return query_string.str; }
+   inline uint32 query_length() { return query_string.length; }
+diff -ruN a/mysql-test/r/query_cache_disabled.result b/mysql-test/r/query_cache_disabled.result
+--- a/mysql-test/r/query_cache_disabled.result	1970-01-01 03:00:00.000000000 +0300
++++ b/mysql-test/r/query_cache_disabled.result	2010-07-31 20:44:34.764016531 +0400
+@@ -0,0 +1,14 @@
++SHOW GLOBAL VARIABLES LIKE 'query_cache_type';
++Variable_name	Value
++query_cache_type	OFF
++SET GLOBAL query_cache_type=ON;
++ERROR HY000: Query cache is disabled; restart the server with query_cache_type=1 to enable it
++SET GLOBAL query_cache_type=DEMAND;
++ERROR HY000: Query cache is disabled; restart the server with query_cache_type=1 to enable it
++SET GLOBAL query_cache_type=OFF;
++ERROR HY000: Query cache is disabled; restart the server with query_cache_type=1 to enable it
++SET GLOBAL query_cache_size=1024*1024;
++SHOW GLOBAL VARIABLES LIKE 'query_cache_size';
++Variable_name	Value
++query_cache_size	1048576
++SET GLOBAL query_cache_size=0;
+diff -ruN a/mysql-test/t/query_cache_disabled-master.opt b/mysql-test/t/query_cache_disabled-master.opt
+--- a/mysql-test/t/query_cache_disabled-master.opt	1970-01-01 03:00:00.000000000 +0300
++++ b/mysql-test/t/query_cache_disabled-master.opt	2010-07-31 20:41:47.184017514 +0400
+@@ -0,0 +1 @@
++--query_cache_type=0
+diff -ruN a/mysql-test/t/query_cache_disabled.test b/mysql-test/t/query_cache_disabled.test
+--- a/mysql-test/t/query_cache_disabled.test	1970-01-01 03:00:00.000000000 +0300
++++ b/mysql-test/t/query_cache_disabled.test	2010-07-31 20:41:47.184017514 +0400
+@@ -0,0 +1,15 @@
++-- source include/have_query_cache.inc
++#
++# Bug#38551 query cache can still consume [very little] cpu time even when it is off.
++#
++SHOW GLOBAL VARIABLES LIKE 'query_cache_type';
++--error ER_QUERY_CACHE_DISABLED
++SET GLOBAL query_cache_type=ON;
++--error ER_QUERY_CACHE_DISABLED
++SET GLOBAL query_cache_type=DEMAND;
++--error ER_QUERY_CACHE_DISABLED
++SET GLOBAL query_cache_type=OFF;
++SET GLOBAL query_cache_size=1024*1024;
++SHOW GLOBAL VARIABLES LIKE 'query_cache_size';
++SET GLOBAL query_cache_size=0;
++
+diff -ruN a/sql/set_var.h b/sql/set_var.h
+--- a/sql/set_var.h	2010-07-31 20:42:00.884030418 +0400
++++ b/sql/set_var.h	2010-07-31 20:41:47.224016185 +0400
+@@ -519,10 +519,16 @@
+   { chain_sys_var(chain); }
+   bool check(THD *thd, set_var *var)
+   {
+-    int ret= 0;
+-    if (check_func)
+-      ret= (*check_func)(thd, var);
+-    return ret ? ret : check_enum(thd, var, enum_names);
++    /*
++      check_enum fails if the character representation supplied was wrong
++      or that the integer value was wrong or missing.
++    */
++    if (check_enum(thd, var, enum_names))
++      return TRUE;
++    else if ((check_func && (*check_func)(thd, var)))
++      return TRUE;
++    else
++      return FALSE;
+   }
+   bool update(THD *thd, set_var *var);
+   void set_default(THD *thd, enum_var_type type);
+diff -ruN a/sql/share/errmsg.txt b/sql/share/errmsg.txt
+--- a/sql/share/errmsg.txt	2010-07-09 16:35:08.000000000 +0400
++++ b/sql/share/errmsg.txt	2010-07-31 20:41:47.244015659 +0400
+@@ -6213,3 +6213,8 @@
+ ER_DEBUG_SYNC_HIT_LIMIT
+   eng "debug sync point hit limit reached"
+   ger "Debug Sync Point Hit Limit erreicht"
++PADD_QUERY_CACHE_DISABLED 1651
++  eng "ER_QUERY_CACHE_DISABLED padding to 1651 error"
++ER_QUERY_CACHE_DISABLED
++  eng "Query cache is disabled; restart the server with query_cache_type=1 to enable it"
++
+diff -ruN a/sql/sql_cache.h b/sql/sql_cache.h
+--- a/sql/sql_cache.h	2010-07-09 16:35:15.000000000 +0400
++++ b/sql/sql_cache.h	2010-07-31 20:41:47.264017369 +0400
+@@ -279,8 +279,11 @@
+   enum Cache_lock_status { UNLOCKED, LOCKED_NO_WAIT, LOCKED };
+   Cache_lock_status m_cache_lock_status;
+ 
++  bool m_query_cache_is_disabled;
++
+   void free_query_internal(Query_cache_block *point);
+   void invalidate_table_internal(THD *thd, uchar *key, uint32 key_length);
++  void disable_query_cache(void) { m_query_cache_is_disabled= TRUE; }
+ 
+ protected:
+   /*
+@@ -423,6 +426,8 @@
+ 	      uint def_query_hash_size = QUERY_CACHE_DEF_QUERY_HASH_SIZE,
+ 	      uint def_table_hash_size = QUERY_CACHE_DEF_TABLE_HASH_SIZE);
+ 
++  bool is_disabled(void) { return m_query_cache_is_disabled; }
++
+   /* initialize cache (mutex) */
+   void init();
+   /* resize query cache (return real query size, 0 if disabled) */
