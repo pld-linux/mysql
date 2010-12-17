@@ -32,7 +32,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.53
-Release:	0.1
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -942,7 +942,7 @@ done
 %attr(755,root,root) %{_bindir}/mysql_install_db
 %dir %{_libdir}/mysql
 %dir %{_libdir}/mysql/plugin
-%attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb_plugin.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb.so
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/mysql/plugin/sphinx.so
 %endif
