@@ -4288,3 +4288,15 @@ diff -r 592f6c3641ba zlib/Makefile.in
  LIBS = $(NON_THREADED_LIBS)
  LIBTOOL = @LIBTOOL@
  LIB_EXTRA_CCFLAGS = @LIB_EXTRA_CCFLAGS@
+diff -Nur a/include/mysql_com.h b/include/mysql_com.h
+--- a/include/mysql_com.h	2010-05-22 00:26:45.000000000 -0700
++++ b/include/mysql_com.h	2010-05-22 00:27:14.000000000 -0700
+@@ -228,7 +228,7 @@
+ 
+   my_bool report_error; /* We should report error (we have unreported error) */
+   my_bool return_errno;
+-#if defined(MYSQL_SERVER) && !defined(EMBEDDED_LIBRARY)
++#if defined(MYSQL_SERVER)
+   /*
+     Controls whether a big packet should be skipped.
+ 

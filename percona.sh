@@ -1,8 +1,9 @@
 #!/bin/sh
 # updates percona patches
 # http://www.percona.com/docs/wiki/release:start
+# https://launchpad.net/percona-server/release-5.0.91-22
 
-version=release-5.1.53-11
+version=release-5.0.91-22
 bzr_branch=lp:percona-server/$version
 branch=MYSQL_5_1
 

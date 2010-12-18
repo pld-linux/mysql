@@ -25,7 +25,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.91
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
@@ -67,7 +67,6 @@ Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
 Patch16:	%{name}-errorlog-no-rename.patch
 Patch18:	%{name}-xtrabackup.patch
-Patch19:	%{name}-fixes.patch
 Patch21:	%{name}-atomic.patch
 Patch22:	%{name}-fix-dummy-thread-race-condition.patch
 # ourdelta
@@ -563,7 +562,6 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch120 -p1
 # </percona>
 
-%patch19 -p1
 %patch21 -p0
 %patch22 -p1
 %patch23 -p1

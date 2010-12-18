@@ -832,16 +832,25 @@ diff -ruN a/innobase/buf/buf0flu.c b/innobase/buf/buf0flu.c
  	(buf_pool->init_flush)[flush_type] = FALSE;
  
  	if ((buf_pool->n_flush[flush_type] == 0)
-@@ -1014,7 +1048,7 @@
+@@ -1013,11 +1047,15 @@
+ 	buf_block_t*	block;
  	ulint		n_replaceable;
  	ulint		distance	= 0;
++	ibool		optimistic = TRUE;
  	
 -	mutex_enter(&(buf_pool->mutex));
-+	//mutex_enter(&(buf_pool->mutex)); /* optimistic */
- 
+-
++	//mutex_enter(&(buf_pool->mutex));
++retry:
  	n_replaceable = UT_LIST_GET_LEN(buf_pool->free);
  
-@@ -1025,6 +1059,12 @@
++	if (!optimistic)
++		mutex_enter(&(buf_pool->LRU_mutex));
++
+ 	block = UT_LIST_GET_LAST(buf_pool->LRU);
+ 
+ 	while ((block != NULL)
+@@ -1025,6 +1063,12 @@
  	       				+ BUF_FLUSH_EXTRA_MARGIN)
  	       && (distance < BUF_LRU_FREE_SEARCH_LEN)) {
  
@@ -854,16 +863,26 @@ diff -ruN a/innobase/buf/buf0flu.c b/innobase/buf/buf0flu.c
  		mutex_enter(&block->mutex);
  
  		if (buf_flush_ready_for_replace(block)) {
-@@ -1038,7 +1078,7 @@
+@@ -1038,11 +1082,17 @@
  		block = UT_LIST_GET_PREV(LRU, block);
  	}
  	
 -	mutex_exit(&(buf_pool->mutex));
-+	//mutex_exit(&(buf_pool->mutex)); /* optimistic */
++	//mutex_exit(&(buf_pool->mutex));
++	if (!optimistic)
++		mutex_exit(&(buf_pool->LRU_mutex));
  
  	if (n_replaceable >= BUF_FLUSH_FREE_BLOCK_MARGIN) {
  
-@@ -1057,8 +1097,9 @@
+ 		return(0);
++	} else if (optimistic) {
++		/* confirm it again with LRU_mutex for exactness */
++		optimistic = FALSE;
++		goto retry;
+ 	}
+ 	
+ 	return(BUF_FLUSH_FREE_BLOCK_MARGIN + BUF_FLUSH_EXTRA_MARGIN
+@@ -1057,8 +1107,9 @@
  immediately, without waiting. */ 
  
  void
@@ -874,7 +893,7 @@ diff -ruN a/innobase/buf/buf0flu.c b/innobase/buf/buf0flu.c
  {
  	ulint	n_to_flush;
  	ulint	n_flushed;
-@@ -1068,7 +1109,7 @@
+@@ -1068,7 +1119,7 @@
  	if (n_to_flush > 0) {
  		n_flushed = buf_flush_batch(BUF_FLUSH_LRU, n_to_flush,
  							ut_dulint_zero);
@@ -883,7 +902,7 @@ diff -ruN a/innobase/buf/buf0flu.c b/innobase/buf/buf0flu.c
  			/* There was an LRU type flush batch already running;
  			let us wait for it to end */
  		   
-@@ -1118,11 +1159,11 @@
+@@ -1118,11 +1169,11 @@
  {
  	ibool	ret;
  	
