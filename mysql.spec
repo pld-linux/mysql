@@ -25,6 +25,13 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
+%if "%{pld_release}" == "ac"
+# add suffix, but allow ccache, etc in ~/.rpmmacros
+%{expand:%%define	__cc	%(echo '%__cc' | sed -e 's,-gcc,-gcc4,')}
+%{expand:%%define	__cxx	%(echo '%__cxx' | sed -e 's,-g++,-g++4,')}
+%{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
+%endif
+
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -96,6 +103,10 @@ BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.577
 BuildRequires:	sed >= 4.0
 BuildRequires:	zlib-devel
+# gcc4 might be installed, but not current __cc
+%if "%(echo %{cxx_version} | cut -d. -f1,2)" < "4.0"
+BuildRequires:	__cxx >= 4.0
+%endif
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/groupdel
 Requires(postun):	/usr/sbin/userdel
@@ -536,6 +547,14 @@ cd build
 # NOTE that /var/lib/mysql/mysql.sock is symlink to real sock file
 # (it defaults to first cluster but user may change it to whatever
 # cluster it wants)
+
+%if "%{pld_release}" == "ac"
+# this needs to be redefined for ./repackage.sh to work
+%{expand:%%define	__cc	%(echo '%__cc' | sed -e 's,-gcc,-gcc4,')}
+%{expand:%%define	__cxx	%(echo '%__cxx' | sed -e 's,-g++,-g++4,')}
+%{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
+%endif
+
 %cmake \
 	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG" \
 	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG" \
@@ -548,7 +567,7 @@ cd build
 	-DWITH_ZLIB=system \
 	-DWITH_COMMENT="PLD Linux Distribution MySQL RPM" \
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{?!with_tcpd:OFF} \
-	-DCURSES_INCLUDE_PATH=%{_includedir}/ncurses \
+	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
 	-DCMAKE_INSTALl_PREFIX="" \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	-DINSTALL_INCLUDEDIR=%{_includedir}/%{name} \
