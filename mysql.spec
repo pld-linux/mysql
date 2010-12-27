@@ -25,13 +25,6 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%if "%{pld_release}" == "ac"
-# add suffix, but allow ccache, etc in ~/.rpmmacros
-%{expand:%%define	__cc	%(echo '%__cc' | sed -e 's,-gcc,-gcc4,')}
-%{expand:%%define	__cxx	%(echo '%__cxx' | sed -e 's,-g++,-g++4,')}
-%{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
-%endif
-
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -545,7 +538,7 @@ cd build
 # cluster it wants)
 
 %if "%{pld_release}" == "ac"
-# this needs to be redefined for ./repackage.sh to work
+# add suffix, but allow ccache, etc in ~/.rpmmacros
 %{expand:%%define	__cc	%(echo '%__cc' | sed -e 's,-gcc,-gcc4,')}
 %{expand:%%define	__cxx	%(echo '%__cxx' | sed -e 's,-g++,-g++4,')}
 %{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
