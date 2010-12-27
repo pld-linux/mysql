@@ -557,22 +557,9 @@ cd build
 	-DWITH_COMMENT="PLD Linux Distribution MySQL RPM" \
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{?!with_tcpd:OFF} \
 	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
-	-DCMAKE_INSTALl_PREFIX="" \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
-	-DINSTALL_INCLUDEDIR=%{_includedir}/%{name} \
-	-DINSTALL_BINDIR=%{_bindir} \
-	-DINSTALL_DOCDIR=%{_docdir}/%{name}-%{version} \
-	-DINSTALL_DOCREADMEDIR=%{_docdir}/%{name}-%{version} \
-	-DINSTALL_INFODIR=%{_infodir} \
-	-DINSTALL_LIBDIR=%{_libdir} \
-	-DINSTALL_MANDIR=%{_mandir} \
-	-DINSTALL_MYSQLDATADIR=/var/lib/%{name} \
-	-DINSTALL_MYSQLSHAREDIR=%{_datadir}/%{name} \
-	-DINSTALL_MYSQLTESTDIR=%{_datadir}/%{name}-test \
-	-DINSTALL_PLUGINDIR=%{_libdir}/%{name}/plugin \
-	-DINSTALL_SBINDIR=%{_sbindir} \
-	-DINSTALL_SCRIPTDIR=%{_bindir} \
-	-DINSTALL_SHAREDIR=%{_datadir} \
+	-DINSTALL_LAYOUT=RPM \
+	-DINSTALL_MYSQLTESTDIR_RPM="" \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/%{name}-support \
 	..
@@ -632,7 +619,6 @@ sed -i -e 's,/usr//usr,%{_prefix},g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # remove known unpackaged files
-rm -rf $RPM_BUILD_ROOT%{_datadir}/mysql-test
 rm -rf $RPM_BUILD_ROOT%{_datadir}/mysql-support
 
 # remove .txt variants for .sys messages
