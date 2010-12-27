@@ -91,7 +91,7 @@ URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
 BuildRequires:	cmake >= 2.6
 BuildRequires:	groff
-BuildRequires:	libstdc++-devel >= 5:3.0
+BuildRequires:	libstdc++-devel >= 5:4.0
 BuildRequires:	libtool
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
@@ -100,13 +100,9 @@ BuildRequires:	ncurses-devel >= 4.2
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.577
+BuildRequires:	rpmbuild(macros) >= 1.597
 BuildRequires:	sed >= 4.0
 BuildRequires:	zlib-devel
-# gcc4 might be installed, but not current __cc
-%if "%(echo %{cxx_version} | cut -d. -f1,2)" < "4.0"
-BuildRequires:	__cxx >= 4.0
-%endif
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/groupdel
 Requires(postun):	/usr/sbin/userdel
