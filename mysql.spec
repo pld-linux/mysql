@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.8
-Release:	0.1
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -551,11 +551,11 @@ cd build
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITH_FAST_MUTEXES=ON \
 	-DWITH_LIBEDIT=OFF \
-	-DWITH_READLINE=ON \
-	-DWITH_SSL=%{?with_ssl:yes}%{?!with_ssl:no} \
+	-DWITH_READLINE=system \
+	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 	-DWITH_ZLIB=system \
 	-DWITH_COMMENT="PLD Linux Distribution MySQL RPM" \
-	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{?!with_tcpd:OFF} \
+	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
 	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	-DINSTALL_LAYOUT=RPM \
