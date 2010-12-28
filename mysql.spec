@@ -556,7 +556,11 @@ cd build
 	-DWITH_FAST_MUTEXES=ON \
 	-DWITH_LIBEDIT=OFF \
 	-DWITH_READLINE=system \
+%if "%{pld_release}" == "ac"
+	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
+%else
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
+%endif
 	-DWITH_ZLIB=system \
 	-DWITH_COMMENT="PLD Linux Distribution MySQL RPM" \
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
