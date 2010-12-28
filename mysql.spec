@@ -84,7 +84,11 @@ URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
 BuildRequires:	cmake >= 2.6
 BuildRequires:	groff
+%if "%{pld_release}" == "ac"
+BuildRequires:	libstdc++4-devel >= 5:4.0
+%else
 BuildRequires:	libstdc++-devel >= 5:4.0
+%endif
 BuildRequires:	libtool
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
