@@ -57,9 +57,13 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
+# from fedora
+Source15:	lib%{name}.version
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-info.patch
 Patch4:		%{name}-sql-cxx-pic.patch
+# from fedora
+Patch5:		%{name}-versioning.patch
 Patch6:		%{name}-system-users.patch
 Patch7:		%{name}-bug-34192.patch
 Patch8:		%{name}-client-config.patch
@@ -69,11 +73,12 @@ Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
 Patch14:	%{name}-bug-43594.patch
 Patch18:	%{name}-sphinx.patch
+Patch19:	%{name}-chain-certs.patch
 # <percona patches, http://bazaar.launchpad.net/~percona-dev/percona-server/5.5.8/files>
 # series file shows the order of patches
 Patch100:	microsec_process.patch
 Patch101:	optimizer_fix.patch
-Patch102:	mysql_dump_ignore_ct.patch
+Patch102:	%{name}_dump_ignore_ct.patch
 Patch103:	control_online_alter_index.patch
 Patch104:	show_temp.patch
 Patch105:	innodb_show_status.patch
@@ -372,6 +377,14 @@ Summary(pl.UTF-8):	Biblioteki dzielone MySQL
 Group:		Libraries
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
+# drop these provides when everyting is rebuilt
+%ifarch %{x8664}
+Provides:	libmysqlclient_r.so.16()(64bit)
+Provides:	libmysqlclient_r.so.16(libmysqlclient_16)(64bit)
+%else
+Provides:	libmysqlclient_r.so.16()
+Provides:	libmysqlclient_r.so.16(libmysqlclient_16)
+%endif
 
 %description libs
 Shared libraries for MySQL.
@@ -545,6 +558,7 @@ mv sphinx-*/mysqlse storage/sphinx
 # gcc 3.3.x ICE
 %patch10 -p1
 %endif
+%patch5 -p1
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
@@ -552,6 +566,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch11 -p1
 %patch12 -p1
 %patch14 -p0
+%patch19 -p1
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
@@ -599,10 +614,11 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch143 -p1
 %patch144 -p1
 %patch145 -p1
+# </percona>
+
 # to get these files rebuild
 rm sql/sql_yacc.cc
 rm sql/sql_yacc.h
-# </percona>
 
 %build
 install -d build
@@ -618,6 +634,10 @@ cd build
 %{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
 %endif
 
+# upstream has fallen down badly on symbol versioning, do it ourselves
+install -d libmysql
+cp -a %{SOURCE15} libmysql/libmysql.version
+
 %cmake \
 	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG" \
 	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG" \
@@ -625,7 +645,7 @@ cd build
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITH_FAST_MUTEXES=ON \
 	-DWITH_LIBEDIT=OFF \
-	-DWITH_READLINE=system \
+	-DWITH_READLINE=OFF \
 %if "%{pld_release}" == "ac"
 	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
 %else
