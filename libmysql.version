@@ -113,6 +113,7 @@ libmysqlclient_16 {
 	handle_options;
 	load_defaults;
 	my_print_help;
+	client_errors;
   local:
 	*;
 };
