@@ -385,7 +385,7 @@ mysqlinit() {
 		MYSQL_CONFIG="$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
 
-	show "Initializing cluster %s" "$clusterdir"; echo
+	show "Initializing cluster %s" "$clusterdir"; started
 
 	# Check if not exist init database
 	if [ -d "$MYSQL_DATA_DIR/mysql" ]; then
@@ -433,7 +433,6 @@ EOF
 		--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
 		--bootstrap \
 		--skip-grant-tables \
-		--skip-innodb \
 		--datadir=$MYSQL_DATA_DIR \
 		--user=$MYSQL_USER \
 		--slave-load-tmpdir=$MYSQL_DATA_DIR \
@@ -469,7 +468,6 @@ END_OF_MSG
 			--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
 			--bootstrap \
 			--skip-grant-tables \
-			--skip-innodb \
 			--datadir=$MYSQL_DATA_DIR \
 			--user=$MYSQL_USER \
 			--slave-load-tmpdir=$MYSQL_DATA_DIR \
