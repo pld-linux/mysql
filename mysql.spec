@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.8
-Release:	0.2
+Release:	0.5
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -57,12 +57,9 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
-Patch0:		%{name}-libs.patch
-Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-info.patch
 Patch4:		%{name}-sql-cxx-pic.patch
-Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-system-users.patch
 Patch7:		%{name}-bug-34192.patch
 Patch8:		%{name}-client-config.patch
@@ -71,14 +68,55 @@ Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
 Patch14:	%{name}-bug-43594.patch
-Patch15:	plugin-avoid-version.patch
-Patch16:	%{name}-fix-dummy-thread-race-condition.patch
 Patch18:	%{name}-sphinx.patch
-# <percona patches, http://bazaar.launchpad.net/~percona-dev/percona-server/5.5.7/files>
-Patch100:	%{name}-userstat.patch
-Patch101:	%{name}-innodb_extend_slow.patch
-Patch102:	%{name}-microsec_process.patch
-Patch103:	%{name}-innodb_split_buf_pool_mutex.patch
+# <percona patches, http://bazaar.launchpad.net/~percona-dev/percona-server/5.5.8/files>
+# series file shows the order of patches
+Patch100:	microsec_process.patch
+Patch101:	optimizer_fix.patch
+Patch102:	mysql_dump_ignore_ct.patch
+Patch103:	control_online_alter_index.patch
+Patch104:	show_temp.patch
+Patch105:	innodb_show_status.patch
+Patch106:	innodb_io_patches.patch
+Patch107:	innodb_opt_lru_count.patch
+Patch108:	innodb_extra_rseg.patch
+Patch109:	innodb_overwrite_relay_log_info.patch
+Patch110:	innodb_thread_concurrency_timer_based.patch
+Patch111:	innodb_dict_size_limit.patch
+Patch112:	innodb_split_buf_pool_mutex.patch
+Patch113:	innodb_expand_import.patch
+Patch114:	innodb_show_sys_tables.patch
+Patch115:	innodb_stats.patch
+Patch116:	innodb_recovery_patches.patch
+Patch117:	innodb_admin_command_base.patch
+Patch118:	innodb_show_lock_name.patch
+Patch119:	innodb_extend_slow.patch
+Patch120:	innodb_lru_dump_restore.patch
+Patch121:	innodb_separate_doublewrite.patch
+Patch122:	innodb_pass_corrupt_table.patch
+Patch123:	innodb_fast_checksum.patch
+Patch124:	innodb_files_extend.patch
+Patch125:	innodb_fix_misc.patch
+Patch126:	innodb_deadlock_count.patch
+Patch127:	innodb_adaptive_hash_index_partitions.patch
+Patch128:	innodb_buffer_pool_pages_i_s.patch
+Patch129:	innodb_buffer_pool_shm.patch
+Patch130:	innodb_show_status_extend.patch
+Patch131:	slow_extended.patch
+Patch132:	percona_support.patch
+Patch133:	query_cache_enhance.patch
+Patch134:	log_connection_error.patch
+Patch135:	mysql_syslog.patch
+Patch136:	response_time_distribution.patch
+Patch137:	error_pad.patch
+Patch138:	remove_fcntl_excessive_calls.patch
+Patch139:	sql_no_fcache.patch
+Patch140:	show_slave_status_nolock.patch
+Patch141:	log_warnings_silence.patch
+Patch142:	userstat.patch
+Patch143:	bug580324.patch
+Patch144:	mysql_remove_eol_carret.patch
+Patch145:	mysql-test.diff
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
@@ -497,9 +535,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
-# CHECK ME, seems obsolete
-#%patch0 -p1
-#%{?with_tcpd:%patch1 -p1}  # WHATS PURPOSE OF THIS PATCH?
 #%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
 %patch3 -p1
 %ifarch alpha
@@ -510,8 +545,6 @@ mv sphinx-*/mysqlse storage/sphinx
 # gcc 3.3.x ICE
 %patch10 -p1
 %endif
-# CHECK ME, obsolete
-#%patch5 -p1
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
@@ -519,19 +552,56 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch11 -p1
 %patch12 -p1
 %patch14 -p0
-# CHECK ME, obsolete
-#%patch15 -p1
-# OBSOLETE, YES
-#%patch16 -p1
 # <percona %patches>
-# CHECK ME
-#%patch100 -p1
-# CHECK ME
-#%patch101 -p1
-# CHECK ME
+%patch100 -p1
+%patch101 -p1
 #%patch102 -p1
-# CHECK ME
-#%patch103 -p1
+%patch103 -p1
+%patch104 -p1
+%patch105 -p1
+%patch106 -p1
+%patch107 -p1
+%patch108 -p1
+%patch109 -p1
+%patch110 -p1
+%patch111 -p1
+%patch112 -p1
+%patch113 -p1
+%patch114 -p1
+%patch115 -p1
+%patch116 -p1
+%patch117 -p1
+%patch118 -p1
+%patch119 -p1
+%patch120 -p1
+%patch121 -p1
+%patch122 -p1
+%patch123 -p1
+%patch124 -p1
+%patch125 -p1
+%patch126 -p1
+%patch127 -p1
+%patch128 -p1
+%patch129 -p1
+%patch130 -p1
+%patch131 -p1
+%patch132 -p1
+%patch133 -p1
+%patch134 -p1
+%patch135 -p1
+%patch136 -p1
+%patch137 -p1
+%patch138 -p1
+%patch139 -p1
+%patch140 -p1
+%patch141 -p1
+%patch142 -p1
+%patch143 -p1
+%patch144 -p1
+%patch145 -p1
+# to get these files rebuild
+rm sql/sql_yacc.cc
+rm sql/sql_yacc.h
 # </percona>
 
 %build

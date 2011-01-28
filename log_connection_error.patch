@@ -1,0 +1,53 @@
+# name       : log_connection_error.patch
+# introduced : 12
+# maintainer : Oleg
+#
+#!!! notice !!!
+# Any small change to this file in the main branch
+# should be done or reviewed by the maintainer!
+diff -ruN a/patch_info/log_connection_error.patch b/patch_info/log_connection_error.patch
+--- a/patch_info/log_connection_error.patch	1970-01-01 03:00:00.000000000 +0300
++++ b/patch_info/log_connection_error.patch	2010-07-28 16:47:47.634070367 +0400
+@@ -0,0 +1,6 @@
++File=log_connection_error.patch
++Name=logging abandoned connections
++Version=1.0
++Author=Percona <info@percona.com>
++License=GPL
++Comment=
+diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
+--- a/sql/mysqld.cc	2010-07-28 16:47:47.105319218 +0400
++++ b/sql/mysqld.cc	2010-07-28 16:47:47.644101813 +0400
+@@ -4995,6 +4995,10 @@
+ 
+     DBUG_PRINT("error",("Too many connections"));
+     close_connection(thd, ER_CON_COUNT_ERROR, 1);
++    if (global_system_variables.log_warnings)
++    {
++      sql_print_warning("%s", ER_DEFAULT(ER_CON_COUNT_ERROR));
++    }
+     delete thd;
+     DBUG_VOID_RETURN;
+   }
+@@ -5375,6 +5379,10 @@
+     if (!(thd->net.vio= vio_new_win32pipe(hConnectedPipe)) ||
+ 	my_net_init(&thd->net, thd->net.vio))
+     {
++      if (global_system_variables.log_warnings)
++      {
++        sql_print_warning("%s", ER_DEFAULT(ER_OUT_OF_RESOURCES));
++      }
+       close_connection(thd, ER_OUT_OF_RESOURCES, 1);
+       delete thd;
+       continue;
+@@ -5570,6 +5578,10 @@
+                                                    event_conn_closed)) ||
+                         my_net_init(&thd->net, thd->net.vio))
+     {
++      if (global_system_variables.log_warnings)
++      {
++        sql_print_warning("%s", ER_DEFAULT(ER_OUT_OF_RESOURCES));
++      }
+       close_connection(thd, ER_OUT_OF_RESOURCES, 1);
+       errmsg= 0;
+       goto errorconn;
