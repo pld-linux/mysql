@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.8
-Release:	0.5
+Release:	0.6
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -639,6 +639,7 @@ install -d libmysql
 cp -a %{SOURCE15} libmysql/libmysql.version
 
 %cmake \
+	-DFEATURE_SET="community" \
 	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG" \
 	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG" \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
@@ -652,7 +653,7 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 %endif
 	-DWITH_ZLIB=system \
-	-DWITH_COMMENT="PLD Linux Distribution MySQL RPM" \
+	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
 	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
