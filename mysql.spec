@@ -795,8 +795,8 @@ if [ "$1" = "0" ]; then
 	/sbin/chkconfig --del mysql
 fi
 
-%postun -p /sbin/postshell
--/usr/sbin/fix-info-dir -c %{_infodir}
+%postun
+[ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 
 if [ "$1" = "0" ]; then
 	%userremove mysql
