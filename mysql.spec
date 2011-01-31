@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.8
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -377,14 +377,6 @@ Summary(pl.UTF-8):	Biblioteki dzielone MySQL
 Group:		Libraries
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
-# drop these provides when everyting is rebuilt
-%ifarch %{x8664}
-Provides:	libmysqlclient_r.so.16()(64bit)
-Provides:	libmysqlclient_r.so.16(libmysqlclient_16)(64bit)
-%else
-Provides:	libmysqlclient_r.so.16()
-Provides:	libmysqlclient_r.so.16(libmysqlclient_16)
-%endif
 
 %description libs
 Shared libraries for MySQL.
