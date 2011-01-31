@@ -763,6 +763,7 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
+rm -rf $RPM_BUILD_ROOT%{_datadir}/mysql-test
 
 # not needed
 rm -f $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
