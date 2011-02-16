@@ -916,6 +916,34 @@ for config in $configs; do
 done
 ) | %banner -e %{name}-5.1
 
+%triggerpostun -- mysql < 5.5.0
+configs=""
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
+	if echo "$config" | grep -q '^/'; then
+		config_file="$config"
+	elif [ -f "/etc/%{name}/$config" ]; then
+		config_file=/etc/%{name}/$config
+	else
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
+		if [ -z "$clusterdir" ]; then
+			echo >&2 "Can't find cluster dir for $config!"
+			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
+			exit 1
+		fi
+		config_file="$clusterdir/mysqld.conf"
+	fi
+
+	if [ ! -f "$config_file" ]; then
+		echo >&2 "ERROR: Can't find real config file for $config! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
+		continue
+	fi
+	configs="$configs $config_file"
+done
+
+for config in $configs; do
+	sed -i -e 's#^language *= *polish#lc-messages = pl_PL#gi' $config
+done
+
 %files
 %defattr(644,root,root,755)
 %doc build/support-files/*.cnf build/support-files/*.ini
