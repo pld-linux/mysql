@@ -8,7 +8,7 @@
 diff -ruN a/storage/innodb_plugin/btr/btr0sea.c b/storage/innodb_plugin/btr/btr0sea.c
 --- a/storage/innodb_plugin/btr/btr0sea.c	2010-08-04 02:24:19.000000000 +0900
 +++ b/storage/innodb_plugin/btr/btr0sea.c	2010-08-27 16:09:42.926020757 +0900
-@@ -1173,6 +1173,126 @@
+@@ -1173,6 +1173,173 @@
  	mem_free(folds);
  }
  
@@ -20,7 +20,7 @@ diff -ruN a/storage/innodb_plugin/btr/btr0sea.c b/storage/innodb_plugin/btr/btr0
 +/*=====================================*/
 +	dict_index_t*	index)		/* in: record descriptor */
 +{
-+	buf_page_t*	bpage;
++
 +	hash_table_t*	table;
 +	buf_block_t*	block;
 +	ulint		n_fields;
@@ -36,96 +36,143 @@ diff -ruN a/storage/innodb_plugin/btr/btr0sea.c b/storage/innodb_plugin/btr/btr0
 +	ulint		i;
 +	mem_heap_t*	heap	= NULL;
 +	ulint*		offsets;
++	ibool		released_search_latch;
 +
-+	rw_lock_x_lock(&btr_search_latch);
-+	buf_pool_mutex_enter();
++	rw_lock_s_lock(&btr_search_latch);
 +
 +	table = btr_search_sys->hash_index;
 +
-+	bpage = UT_LIST_GET_LAST(buf_pool->LRU);
++	do {
++		buf_chunk_t*	chunks	= buf_pool->chunks;
++		buf_chunk_t*	chunk	= chunks + buf_pool->n_chunks;
 +
-+	while (bpage != NULL) {
-+		block = (buf_block_t*) bpage;
-+		if (block->index == index && block->is_hashed) {
-+			page = block->frame;
++		released_search_latch = FALSE;
 +
-+			/* from btr_search_drop_page_hash_index() */
-+			n_fields = block->curr_n_fields;
-+			n_bytes = block->curr_n_bytes;
++		while (--chunk >= chunks) {
++			block	= chunk->blocks;
++			i	= chunk->size;
 +
-+			ut_a(n_fields + n_bytes > 0);
-+
-+			n_recs = page_get_n_recs(page);
-+
-+			/* Calculate and cache fold values into an array for fast deletion
-+			from the hash index */
-+
-+			folds = mem_alloc(n_recs * sizeof(ulint));
-+
-+			n_cached = 0;
-+
-+			rec = page_get_infimum_rec(page);
-+			rec = page_rec_get_next_low(rec, page_is_comp(page));
-+
-+			index_id = btr_page_get_index_id(page);
-+	
-+			ut_a(0 == ut_dulint_cmp(index_id, index->id));
-+
-+			prev_fold = 0;
-+
-+			offsets = NULL;
-+
-+			while (!page_rec_is_supremum(rec)) {
-+				offsets = rec_get_offsets(rec, index, offsets,
-+							n_fields + (n_bytes > 0), &heap);
-+				ut_a(rec_offs_n_fields(offsets) == n_fields + (n_bytes > 0));
-+				fold = rec_fold(rec, offsets, n_fields, n_bytes, index_id);
-+
-+				if (fold == prev_fold && prev_fold != 0) {
-+
-+					goto next_rec;
++retry:
++			for (; i--; block++) {
++				if (buf_block_get_state(block)
++				    != BUF_BLOCK_FILE_PAGE
++				    || block->index != index
++				    || !block->is_hashed) {
++					continue;
 +				}
 +
-+				/* Remove all hash nodes pointing to this page from the
-+				hash chain */
++				page = block->frame;
 +
-+				folds[n_cached] = fold;
-+				n_cached++;
-+next_rec:
-+				rec = page_rec_get_next_low(rec, page_rec_is_comp(rec));
-+				prev_fold = fold;
-+			}
++				/* from btr_search_drop_page_hash_index() */
++				n_fields = block->curr_n_fields;
++				n_bytes = block->curr_n_bytes;
 +
-+			for (i = 0; i < n_cached; i++) {
 +
-+				ha_remove_all_nodes_to_page(table, folds[i], page);
-+			}
++				/* keeping latch order */
++				rw_lock_s_unlock(&btr_search_latch);
++				released_search_latch = TRUE;
++				rw_lock_x_lock(&block->lock);
 +
-+			ut_a(index->search_info->ref_count > 0);
-+			index->search_info->ref_count--;
 +
-+			block->is_hashed = FALSE;
-+			block->index = NULL;
++				ut_a(n_fields + n_bytes > 0);
++
++				n_recs = page_get_n_recs(page);
++
++				/* Calculate and cache fold values into an array for fast deletion
++				from the hash index */
++
++				folds = mem_alloc(n_recs * sizeof(ulint));
++
++				n_cached = 0;
++
++				rec = page_get_infimum_rec(page);
++				rec = page_rec_get_next_low(rec, page_is_comp(page));
++
++				index_id = btr_page_get_index_id(page);
 +	
++				ut_a(0 == ut_dulint_cmp(index_id, index->id));
++
++				prev_fold = 0;
++
++				offsets = NULL;
++
++				while (!page_rec_is_supremum(rec)) {
++					offsets = rec_get_offsets(rec, index, offsets,
++								n_fields + (n_bytes > 0), &heap);
++					ut_a(rec_offs_n_fields(offsets) == n_fields + (n_bytes > 0));
++					fold = rec_fold(rec, offsets, n_fields, n_bytes, index_id);
++
++					if (fold == prev_fold && prev_fold != 0) {
++
++						goto next_rec;
++					}
++
++					/* Remove all hash nodes pointing to this page from the
++					hash chain */
++
++					folds[n_cached] = fold;
++					n_cached++;
++next_rec:
++					rec = page_rec_get_next_low(rec, page_rec_is_comp(rec));
++					prev_fold = fold;
++				}
++
++				if (UNIV_LIKELY_NULL(heap)) {
++					mem_heap_empty(heap);
++				}
++
++				rw_lock_x_lock(&btr_search_latch);
++
++				if (UNIV_UNLIKELY(!block->is_hashed)) {
++					goto cleanup;
++				}
++
++				ut_a(block->index == index);
++
++				if (UNIV_UNLIKELY(block->curr_n_fields != n_fields)
++				    || UNIV_UNLIKELY(block->curr_n_bytes != n_bytes)) {
++					rw_lock_x_unlock(&btr_search_latch);
++					rw_lock_x_unlock(&block->lock);
++
++					mem_free(folds);
++
++					rw_lock_s_lock(&btr_search_latch);
++					goto retry;
++				}
++
++				for (i = 0; i < n_cached; i++) {
++
++					ha_remove_all_nodes_to_page(table, folds[i], page);
++				}
++
++				ut_a(index->search_info->ref_count > 0);
++				index->search_info->ref_count--;
++
++				block->is_hashed = FALSE;
++				block->index = NULL;
++
++cleanup:	
 +#if defined UNIV_AHI_DEBUG || defined UNIV_DEBUG
-+			if (UNIV_UNLIKELY(block->n_pointers)) {
-+				/* Corruption */
-+				ut_print_timestamp(stderr);
-+				fprintf(stderr,
++				if (UNIV_UNLIKELY(block->n_pointers)) {
++					/* Corruption */
++					ut_print_timestamp(stderr);
++					fprintf(stderr,
 +"  InnoDB: Corruption of adaptive hash index. After dropping\n"
 +"InnoDB: the hash index to a page of %s, still %lu hash nodes remain.\n",
-+					index->name, (ulong) block->n_pointers);
-+			}
++						index->name, (ulong) block->n_pointers);
++				}
 +#endif /* UNIV_AHI_DEBUG || UNIV_DEBUG */
++				rw_lock_x_unlock(&btr_search_latch);
++				rw_lock_x_unlock(&block->lock);
 +
-+			mem_free(folds);
++				mem_free(folds);
++
++				rw_lock_s_lock(&btr_search_latch);
++			}
 +		}
++	} while (released_search_latch);
 +
-+		bpage = UT_LIST_GET_PREV(LRU, bpage);
-+	}
-+
-+	buf_pool_mutex_exit();
-+	rw_lock_x_unlock(&btr_search_latch);
++	rw_lock_s_unlock(&btr_search_latch);
 +
 +	if (UNIV_LIKELY_NULL(heap)) {
 +		mem_heap_free(heap);
@@ -198,7 +245,7 @@ diff -ruN a/storage/innodb_plugin/dict/dict0crea.c b/storage/innodb_plugin/dict/
 diff -ruN a/storage/innodb_plugin/dict/dict0dict.c b/storage/innodb_plugin/dict/dict0dict.c
 --- a/storage/innodb_plugin/dict/dict0dict.c	2010-08-04 02:24:19.000000000 +0900
 +++ b/storage/innodb_plugin/dict/dict0dict.c	2010-08-27 16:09:42.930057360 +0900
-@@ -582,6 +582,8 @@
+@@ -613,6 +613,8 @@
  
  	table = dict_table_get_on_id_low(table_id);
  
@@ -207,7 +254,7 @@ diff -ruN a/storage/innodb_plugin/dict/dict0dict.c b/storage/innodb_plugin/dict/
  	mutex_exit(&(dict_sys->mutex));
  
  	return(table);
-@@ -697,6 +699,8 @@
+@@ -728,6 +730,8 @@
  		table->n_mysql_handles_opened++;
  	}
  
@@ -216,7 +263,7 @@ diff -ruN a/storage/innodb_plugin/dict/dict0dict.c b/storage/innodb_plugin/dict/
  	mutex_exit(&(dict_sys->mutex));
  
  	if (table != NULL) {
-@@ -1211,6 +1215,64 @@
+@@ -1241,6 +1245,64 @@
  	dict_mem_table_free(table);
  }
  
@@ -281,7 +328,7 @@ diff -ruN a/storage/innodb_plugin/dict/dict0dict.c b/storage/innodb_plugin/dict/
  /****************************************************************//**
  If the given column name is reserved for InnoDB system columns, return
  TRUE.
-@@ -1673,6 +1735,11 @@
+@@ -1703,6 +1765,11 @@
  	ut_ad(index->magic_n == DICT_INDEX_MAGIC_N);
  	ut_ad(mutex_own(&(dict_sys->mutex)));
  
@@ -305,7 +352,7 @@ diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/h
    {"have_atomic_builtins",
    (char*) &export_vars.innodb_have_atomic_builtins,	  SHOW_BOOL},
    {"log_waits",
-@@ -11308,6 +11310,11 @@
+@@ -11310,6 +11312,11 @@
    "Number of extra user rollback segments when create new database.",
    NULL, NULL, 0, 0, 126, 0);
  
@@ -317,7 +364,7 @@ diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/h
  static struct st_mysql_sys_var* innobase_system_variables[]= {
    MYSQL_SYSVAR(additional_mem_pool_size),
    MYSQL_SYSVAR(autoextend_increment),
-@@ -11375,6 +11382,7 @@
+@@ -11377,6 +11384,7 @@
    MYSQL_SYSVAR(flush_log_at_trx_commit_session),
    MYSQL_SYSVAR(enable_unsafe_group_commit),
    MYSQL_SYSVAR(extra_rsegments),
@@ -366,7 +413,7 @@ diff -ruN a/storage/innodb_plugin/include/btr0sea.h b/storage/innodb_plugin/incl
 diff -ruN a/storage/innodb_plugin/include/dict0dict.h b/storage/innodb_plugin/include/dict0dict.h
 --- a/storage/innodb_plugin/include/dict0dict.h	2010-08-04 02:24:19.000000000 +0900
 +++ b/storage/innodb_plugin/include/dict0dict.h	2010-08-27 16:09:42.953188223 +0900
-@@ -1132,6 +1132,12 @@
+@@ -1131,6 +1131,12 @@
  /*====================================*/
  	dict_table_t*	table,	/*!< in: table */
  	const char*	name);	/*!< in: name of the index to find */

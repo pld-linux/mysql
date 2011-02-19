@@ -37,9 +37,9 @@ diff -ruN a/storage/innodb_plugin/buf/buf0buf.c b/storage/innodb_plugin/buf/buf0
 +					block->page.offset, DPAH_SIZE << 3);
 +	block_hash_byte = block_hash >> 3;
 +	block_hash_offset = (byte) block_hash & 0x07;
-+	if (block_hash_byte < 0 || block_hash_byte >= DPAH_SIZE)
++	if (block_hash_byte >= DPAH_SIZE)
 +		fprintf(stderr, "!!! block_hash_byte = %lu  block_hash_offset = %d !!!\n", block_hash_byte, block_hash_offset);
-+	if (block_hash_offset < 0 || block_hash_offset > 7)
++	if (block_hash_offset > 7)
 +		fprintf(stderr, "!!! block_hash_byte = %lu  block_hash_offset = %d !!!\n", block_hash_byte, block_hash_offset);
 +	if ((trx->distinct_page_access_hash[block_hash_byte] & ((byte) 0x01 << block_hash_offset)) == 0)
 +		trx->distinct_page_access++;
@@ -337,7 +337,7 @@ diff -ruN a/storage/innodb_plugin/buf/buf0rea.c b/storage/innodb_plugin/buf/buf0
 diff -ruN a/storage/innodb_plugin/fil/fil0fil.c b/storage/innodb_plugin/fil/fil0fil.c
 --- a/storage/innodb_plugin/fil/fil0fil.c	2010-08-27 16:15:55.187400372 +0900
 +++ b/storage/innodb_plugin/fil/fil0fil.c	2010-08-27 16:30:47.346992376 +0900
-@@ -4325,7 +4325,7 @@
+@@ -4371,7 +4371,7 @@
  				 node->name, node->handle, buf,
  				 offset_low, offset_high,
  				 page_size * n_pages,
@@ -346,7 +346,7 @@ diff -ruN a/storage/innodb_plugin/fil/fil0fil.c b/storage/innodb_plugin/fil/fil0
  #endif
  		if (success) {
  			node->size += n_pages;
-@@ -4652,7 +4652,7 @@
+@@ -4698,7 +4698,7 @@
  i/o on a tablespace which does not exist */
  UNIV_INTERN
  ulint
@@ -355,7 +355,7 @@ diff -ruN a/storage/innodb_plugin/fil/fil0fil.c b/storage/innodb_plugin/fil/fil0
  /*===*/
  	ulint	type,		/*!< in: OS_FILE_READ or OS_FILE_WRITE,
  				ORed to OS_FILE_LOG, if a log i/o
-@@ -4677,8 +4677,9 @@
+@@ -4723,8 +4723,9 @@
  	void*	buf,		/*!< in/out: buffer where to store read data
  				or from where to write; in aio this must be
  				appropriately aligned */
@@ -366,7 +366,7 @@ diff -ruN a/storage/innodb_plugin/fil/fil0fil.c b/storage/innodb_plugin/fil/fil0
  {
  	ulint		mode;
  	fil_space_t*	space;
-@@ -4848,7 +4849,7 @@
+@@ -4894,7 +4895,7 @@
  #else
  	/* Queue the aio request */
  	ret = os_aio(type, mode | wake_later, node->name, node->handle, buf,
@@ -428,7 +428,7 @@ diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/h
  /*********************************************************************//**
  Construct ha_innobase handler. */
  UNIV_INTERN
-@@ -8940,6 +8976,25 @@
+@@ -8953,6 +8989,25 @@
  	statement has ended */
  
  	if (trx->n_mysql_tables_in_use == 0) {
@@ -629,7 +629,7 @@ diff -ruN a/storage/innodb_plugin/lock/lock0lock.c b/storage/innodb_plugin/lock/
  
  	ut_a(que_thr_stop(thr));
  
-@@ -3695,6 +3701,8 @@
+@@ -3767,6 +3773,8 @@
  {
  	lock_t*	lock;
  	trx_t*	trx;
@@ -638,7 +638,7 @@ diff -ruN a/storage/innodb_plugin/lock/lock0lock.c b/storage/innodb_plugin/lock/
  
  	ut_ad(mutex_own(&kernel_mutex));
  
-@@ -3750,6 +3758,10 @@
+@@ -3822,6 +3830,10 @@
  		return(DB_SUCCESS);
  	}
  
@@ -766,17 +766,7 @@ diff -ruN a/storage/innodb_plugin/os/os0file.c b/storage/innodb_plugin/os/os0fil
  
  	if ((ulint)ret == n) {
  
-@@ -3356,7 +3390,8 @@
- 				offset */
- 	ulint		offset_high, /*!< in: most significant 32 bits of
- 				offset */
--	ulint		len)	/*!< in: length of the block to read or write */
-+	ulint		len,	/*!< in: length of the block to read or write */
-+	trx_t*		trx)
- {
- 	os_aio_slot_t*	slot;
- 	ulint		i;
-@@ -3642,10 +3677,11 @@
+@@ -3642,10 +3676,11 @@
  				(can be used to identify a completed
  				aio operation); ignored if mode is
  				OS_AIO_SYNC */
@@ -789,7 +779,7 @@ diff -ruN a/storage/innodb_plugin/os/os0file.c b/storage/innodb_plugin/os/os0fil
  {
  	os_aio_array_t*	array;
  	os_aio_slot_t*	slot;
-@@ -3687,8 +3723,8 @@
+@@ -3687,8 +3722,8 @@
  		wait in the Windows case. */
  
  		if (type == OS_FILE_READ) {
@@ -800,7 +790,7 @@ diff -ruN a/storage/innodb_plugin/os/os0file.c b/storage/innodb_plugin/os/os0fil
  		}
  
  		ut_a(type == OS_FILE_WRITE);
-@@ -3721,8 +3757,13 @@
+@@ -3721,6 +3756,11 @@
  		ut_error;
  	}
  
@@ -810,11 +800,8 @@ diff -ruN a/storage/innodb_plugin/os/os0file.c b/storage/innodb_plugin/os/os0fil
 +		trx->io_read += n;
 +	}
  	slot = os_aio_array_reserve_slot(type, array, message1, message2, file,
--					 name, buf, offset, offset_high, n);
-+					 name, buf, offset, offset_high, n, trx);
+ 					 name, buf, offset, offset_high, n);
  	if (type == OS_FILE_READ) {
- 		if (os_aio_use_native_aio) {
- #ifdef WIN_ASYNC_IO
 diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0srv.c
 --- a/storage/innodb_plugin/srv/srv0srv.c	2010-08-27 16:27:30.233022109 +0900
 +++ b/storage/innodb_plugin/srv/srv0srv.c	2010-08-27 16:30:47.384058509 +0900
