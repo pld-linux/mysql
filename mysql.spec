@@ -31,13 +31,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.53
+Version:	5.1.55
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	e5e7c5b0b5c382489e6a66778703bc46
+# Source0-md5:	e07e79edad557874d0870c914c9c81e1
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -1068,7 +1068,6 @@ done
 
 %files libs
 %defattr(644,root,root,755)
-%doc EXCEPTIONS-CLIENT
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
