@@ -8,7 +8,7 @@
 diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_innodb.cc
 --- a/storage/innobase/handler/ha_innodb.cc	2010-12-03 17:34:35.285040381 +0900
 +++ b/storage/innobase/handler/ha_innodb.cc	2010-12-03 17:35:12.974975252 +0900
-@@ -9491,8 +9491,8 @@
+@@ -9498,8 +9498,8 @@
  			rw_lock_wait_time += mutex->lspent_time;
  		}
  #else /* UNIV_DEBUG */
@@ -19,7 +19,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  		buf2len= (uint) my_snprintf(buf2, sizeof(buf2), "os_waits=%lu",
  				     (ulong) mutex->count_os_wait);
  
-@@ -9507,9 +9507,8 @@
+@@ -9514,9 +9514,8 @@
  
  	if (block_mutex) {
  		buf1len = (uint) my_snprintf(buf1, sizeof buf1,
@@ -31,7 +31,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  		buf2len = (uint) my_snprintf(buf2, sizeof buf2,
  					     "os_waits=%lu",
  					     (ulong) block_mutex_oswait_count);
-@@ -9538,8 +9537,8 @@
+@@ -9545,8 +9544,8 @@
  			continue;
  		}
  
@@ -42,7 +42,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  		buf2len = my_snprintf(buf2, sizeof buf2, "os_waits=%lu",
  				      (ulong) lock->count_os_wait);
  
-@@ -9553,9 +9552,8 @@
+@@ -9560,9 +9559,8 @@
  
  	if (block_lock) {
  		buf1len = (uint) my_snprintf(buf1, sizeof buf1,
@@ -57,35 +57,57 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
 diff -ruN a/storage/innobase/include/sync0rw.h b/storage/innobase/include/sync0rw.h
 --- a/storage/innobase/include/sync0rw.h	2010-12-03 15:49:59.225953164 +0900
 +++ b/storage/innobase/include/sync0rw.h	2010-12-03 17:35:12.978024458 +0900
-@@ -144,7 +144,7 @@
+@@ -138,14 +138,14 @@
+ # ifdef UNIV_DEBUG
+ #  ifdef UNIV_SYNC_DEBUG
+ #   define rw_lock_create(K, L, level)				\
+-	rw_lock_create_func((L), (level), #L, __FILE__, __LINE__)
++	rw_lock_create_func((L), (level), __FILE__, __LINE__, #L)
+ #  else	/* UNIV_SYNC_DEBUG */
+ #   define rw_lock_create(K, L, level)				\
+-	rw_lock_create_func((L), #L, __FILE__, __LINE__)
++	rw_lock_create_func((L), __FILE__, __LINE__, #L)
  #  endif/* UNIV_SYNC_DEBUG */
  # else /* UNIV_DEBUG */
  #  define rw_lock_create(K, L, level)				\
 -	rw_lock_create_func((L), __FILE__, __LINE__)
-+	rw_lock_create_func((L), #L, NULL, 0)
++	rw_lock_create_func((L), #L)
  # endif	/* UNIV_DEBUG */
  
  /**************************************************************//**
-@@ -197,7 +197,7 @@
+@@ -191,14 +191,14 @@
+ # ifdef UNIV_DEBUG
+ #  ifdef UNIV_SYNC_DEBUG
+ #   define rw_lock_create(K, L, level)				\
+-	pfs_rw_lock_create_func((K), (L), (level), #L, __FILE__, __LINE__)
++	pfs_rw_lock_create_func((K), (L), (level), __FILE__, __LINE__, #L)
+ #  else	/* UNIV_SYNC_DEBUG */
+ #   define rw_lock_create(K, L, level)				\
+-	pfs_rw_lock_create_func((K), (L), #L, __FILE__, __LINE__)
++	pfs_rw_lock_create_func((K), (L), __FILE__, __LINE__, #L)
  #  endif/* UNIV_SYNC_DEBUG */
  # else	/* UNIV_DEBUG */
  #  define rw_lock_create(K, L, level)				\
 -	pfs_rw_lock_create_func((K), (L), __FILE__, __LINE__)
-+	pfs_rw_lock_create_func((K), (L), #L, NULL, 0)
++	pfs_rw_lock_create_func((K), (L), #L)
  # endif	/* UNIV_DEBUG */
  
  /******************************************************************
-@@ -255,8 +255,8 @@
+@@ -256,10 +256,10 @@
  # ifdef UNIV_SYNC_DEBUG
  	ulint		level,		/*!< in: level */
  # endif /* UNIV_SYNC_DEBUG */
 -	const char*	cmutex_name,	/*!< in: mutex name */
- #endif /* UNIV_DEBUG */
-+	const char*	cmutex_name,	/*!< in: mutex name */
+-#endif /* UNIV_DEBUG */
  	const char*	cfile_name,	/*!< in: file name where created */
- 	ulint		cline);		/*!< in: file line where created */
+-	ulint		cline);		/*!< in: file line where created */
++	ulint		cline,		/*!< in: file line where created */
++#endif /* UNIV_DEBUG */
++	const char*	cmutex_name);	/*!< in: mutex name */
  /******************************************************************//**
-@@ -609,7 +609,8 @@
+ Calling this function is obligatory only if the memory buffer containing
+ the rw-lock is freed. Removes an rw-lock object from the global list. The
+@@ -610,7 +610,8 @@
  	struct PSI_rwlock *pfs_psi;/*!< The instrumentation hook */
  #endif
  	ulint count_os_wait;	/*!< Count of os_waits. May not be accurate */
@@ -95,7 +117,7 @@ diff -ruN a/storage/innobase/include/sync0rw.h b/storage/innobase/include/sync0r
          /* last s-lock file/line is not guaranteed to be correct */
  	const char*	last_s_file_name;/*!< File name where last s-locked */
  	const char*	last_x_file_name;/*!< File name where last x-locked */
-@@ -620,7 +621,7 @@
+@@ -621,7 +622,7 @@
  				are at the start of this struct, thus we can
  				peek this field without causing much memory
  				bus traffic */
@@ -104,80 +126,124 @@ diff -ruN a/storage/innobase/include/sync0rw.h b/storage/innobase/include/sync0r
  	unsigned	last_s_line:14;	/*!< Line number where last time s-locked */
  	unsigned	last_x_line:14;	/*!< Line number where last time x-locked */
  #ifdef UNIV_DEBUG
-@@ -690,8 +691,8 @@
+@@ -691,10 +692,10 @@
  # ifdef UNIV_SYNC_DEBUG
  	ulint		level,		/*!< in: level */
  # endif /* UNIV_SYNC_DEBUG */
 -	const char*	cmutex_name,	/*!< in: mutex name */
- #endif /* UNIV_DEBUG */
-+	const char*	cmutex_name,	/*!< in: mutex name */
+-#endif /* UNIV_DEBUG */
  	const char*	cfile_name,	/*!< in: file name where created */
- 	ulint		cline);		/*!< in: file line where created */
+-	ulint		cline);		/*!< in: file line where created */
++	ulint		cline,		/*!< in: file line where created */
++#endif /* UNIV_DEBUG */
++	const char*	cmutex_name);	/*!< in: mutex name */
  
+ /******************************************************************//**
+ Performance schema instrumented wrap function for rw_lock_x_lock_func()
 diff -ruN a/storage/innobase/include/sync0rw.ic b/storage/innobase/include/sync0rw.ic
 --- a/storage/innobase/include/sync0rw.ic	2010-11-03 07:01:13.000000000 +0900
 +++ b/storage/innobase/include/sync0rw.ic	2010-12-03 17:35:12.980024605 +0900
-@@ -640,8 +640,8 @@
+@@ -640,10 +640,10 @@
  #  ifdef UNIV_SYNC_DEBUG
  	ulint		level,		/*!< in: level */
  #  endif /* UNIV_SYNC_DEBUG */
 -	const char*	cmutex_name,	/*!< in: mutex name */
- # endif /* UNIV_DEBUG */
-+	const char*	cmutex_name,	/*!< in: mutex name */
+-# endif /* UNIV_DEBUG */
  	const char*	cfile_name,	/*!< in: file name where created */
- 	ulint		cline)		/*!< in: file line where created */
+-	ulint		cline)		/*!< in: file line where created */
++	ulint		cline,		/*!< in: file line where created */
++# endif /* UNIV_DEBUG */
++	const char*	cmutex_name)	/*!< in: mutex name */
  {
-@@ -656,8 +656,8 @@
+ 	/* Initialize the rwlock for performance schema */
+ 	lock->pfs_psi = (PSI_server && PFS_IS_INSTRUMENTED(key))
+@@ -656,10 +656,10 @@
  #  ifdef UNIV_SYNC_DEBUG
  			    level,
  #  endif /* UNIV_SYNC_DEBUG */
 -			    cmutex_name,
- # endif /* UNIV_DEBUG */
-+			    cmutex_name,
+-# endif /* UNIV_DEBUG */
  			    cfile_name,
- 		            cline);
+-		            cline);
++			    cline,
++# endif /* UNIV_DEBUG */
++			    cmutex_name);
  }
+ /******************************************************************//**
+ Performance schema instrumented wrap function for rw_lock_x_lock_func()
 diff -ruN a/storage/innobase/include/sync0sync.h b/storage/innobase/include/sync0sync.h
 --- a/storage/innobase/include/sync0sync.h	2010-12-03 15:49:59.227955503 +0900
 +++ b/storage/innobase/include/sync0sync.h	2010-12-03 17:35:12.982023946 +0900
-@@ -166,7 +166,7 @@
+@@ -159,14 +159,14 @@
+ # ifdef UNIV_DEBUG
+ #  ifdef UNIV_SYNC_DEBUG
+ #   define mutex_create(K, M, level)				\
+-	pfs_mutex_create_func((K), (M), #M, (level), __FILE__, __LINE__)
++	pfs_mutex_create_func((K), (M), (level), __FILE__, __LINE__, #M)
+ #  else
+ #   define mutex_create(K, M, level)				\
+-	pfs_mutex_create_func((K), (M), #M, __FILE__, __LINE__)
++	pfs_mutex_create_func((K), (M), __FILE__, __LINE__, #M)
  #  endif/* UNIV_SYNC_DEBUG */
  # else
  #  define mutex_create(K, M, level)				\
 -	pfs_mutex_create_func((K), (M), __FILE__, __LINE__)
-+	pfs_mutex_create_func((K), (M), #M, NULL, 0)
++	pfs_mutex_create_func((K), (M), #M)
  # endif	/* UNIV_DEBUG */
  
  # define mutex_enter(M)						\
-@@ -193,7 +193,7 @@
+@@ -186,14 +186,14 @@
+ # ifdef UNIV_DEBUG
+ #  ifdef UNIV_SYNC_DEBUG
+ #   define mutex_create(K, M, level)			\
+-	mutex_create_func((M), #M, (level), __FILE__, __LINE__)
++	mutex_create_func((M), (level), __FILE__, __LINE__, #M)
+ #  else /* UNIV_SYNC_DEBUG */
+ #   define mutex_create(K, M, level)				\
+-	mutex_create_func((M), #M, __FILE__, __LINE__)
++	mutex_create_func((M), __FILE__, __LINE__, #M)
  #  endif /* UNIV_SYNC_DEBUG */
  # else /* UNIV_DEBUG */
  #  define mutex_create(K, M, level)				\
 -	mutex_create_func((M), __FILE__, __LINE__)
-+	mutex_create_func((M), #M, NULL, 0)
++	mutex_create_func((M), #M)
  # endif	/* UNIV_DEBUG */
  
  # define mutex_enter(M)	mutex_enter_func((M), __FILE__, __LINE__)
-@@ -217,8 +217,8 @@
- mutex_create_func(
+@@ -218,13 +218,13 @@
  /*==============*/
  	mutex_t*	mutex,		/*!< in: pointer to memory */
--#ifdef UNIV_DEBUG
- 	const char*	cmutex_name,	/*!< in: mutex name */
-+#ifdef UNIV_DEBUG
+ #ifdef UNIV_DEBUG
+-	const char*	cmutex_name,	/*!< in: mutex name */
  # ifdef UNIV_SYNC_DEBUG
  	ulint		level,		/*!< in: level */
  # endif /* UNIV_SYNC_DEBUG */
-@@ -291,8 +291,8 @@
- /*==================*/
+-#endif /* UNIV_DEBUG */
+ 	const char*	cfile_name,	/*!< in: file name where created */
+-	ulint		cline);		/*!< in: file line where created */
++	ulint		cline,		/*!< in: file line where created */
++#endif /* UNIV_DEBUG */
++	const char*	cmutex_name);	/*!< in: mutex name */
+ 
+ /******************************************************************//**
+ NOTE! Use the corresponding macro mutex_free(), not directly this function!
+@@ -292,13 +292,13 @@
  	PSI_mutex_key	key,		/*!< in: Performance Schema key */
  	mutex_t*	mutex,		/*!< in: pointer to memory */
--# ifdef UNIV_DEBUG
- 	const char*	cmutex_name,	/*!< in: mutex name */
-+# ifdef UNIV_DEBUG
+ # ifdef UNIV_DEBUG
+-	const char*	cmutex_name,	/*!< in: mutex name */
  #  ifdef UNIV_SYNC_DEBUG
  	ulint		level,		/*!< in: level */
  #  endif /* UNIV_SYNC_DEBUG */
+-# endif /* UNIV_DEBUG */
+ 	const char*	cfile_name,	/*!< in: file name where created */
+-	ulint		cline);		/*!< in: file line where created */
++	ulint		cline,		/*!< in: file line where created */
++# endif /* UNIV_DEBUG */
++	const char*	cmutex_name);
+ /******************************************************************//**
+ NOTE! Please use the corresponding macro mutex_enter(), not directly
+ this function!
 @@ -723,9 +723,9 @@
  	ulint	line;		/*!< Line where the mutex was locked */
  	ulint	level;		/*!< Level in the global latching order */
@@ -203,26 +269,40 @@ diff -ruN a/storage/innobase/include/sync0sync.h b/storage/innobase/include/sync
 diff -ruN a/storage/innobase/include/sync0sync.ic b/storage/innobase/include/sync0sync.ic
 --- a/storage/innobase/include/sync0sync.ic	2010-11-03 07:01:13.000000000 +0900
 +++ b/storage/innobase/include/sync0sync.ic	2010-12-03 17:35:12.984024599 +0900
-@@ -320,8 +320,8 @@
- /*==================*/
+@@ -321,13 +321,13 @@
  	mysql_pfs_key_t	key,		/*!< in: Performance Schema key */
  	mutex_t*	mutex,		/*!< in: pointer to memory */
--# ifdef UNIV_DEBUG
- 	const char*	cmutex_name,	/*!< in: mutex name */
-+# ifdef UNIV_DEBUG
+ # ifdef UNIV_DEBUG
+-	const char*	cmutex_name,	/*!< in: mutex name */
  #  ifdef UNIV_SYNC_DEBUG
  	ulint		level,		/*!< in: level */
  #  endif /* UNIV_SYNC_DEBUG */
-@@ -334,8 +334,8 @@
- 				: NULL;
+-# endif /* UNIV_DEBUG */
+ 	const char*	cfile_name,	/*!< in: file name where created */
+-	ulint		cline)		/*!< in: file line where created */
++	ulint		cline,		/*!< in: file line where created */
++# endif /* UNIV_DEBUG */
++	const char*	cmutex_name)	/*!< in: mutex name */
+ {
+ 	mutex->pfs_psi = (PSI_server && PFS_IS_INSTRUMENTED(key))
+ 				? PSI_server->init_mutex(key, mutex)
+@@ -335,13 +335,13 @@
  
  	mutex_create_func(mutex,
--# ifdef UNIV_DEBUG
- 			  cmutex_name,
-+# ifdef UNIV_DEBUG
+ # ifdef UNIV_DEBUG
+-			  cmutex_name,
  #  ifdef UNIV_SYNC_DEBUG
  			  level,
  #  endif /* UNIV_SYNC_DEBUG */
+-# endif /* UNIV_DEBUG */
+ 			  cfile_name,
+-			  cline);
++			  cline,
++# endif /* UNIV_DEBUG */
++			  cmutex_name);
+ }
+ /******************************************************************//**
+ NOTE! Please use the corresponding macro mutex_free(), not directly
 diff -ruN a/storage/innobase/sync/sync0arr.c b/storage/innobase/sync/sync0arr.c
 --- a/storage/innobase/sync/sync0arr.c	2010-12-03 15:09:51.304953409 +0900
 +++ b/storage/innobase/sync/sync0arr.c	2010-12-03 17:35:12.985024561 +0900
@@ -256,16 +336,20 @@ diff -ruN a/storage/innobase/sync/sync0arr.c b/storage/innobase/sync/sync0arr.c
 diff -ruN a/storage/innobase/sync/sync0rw.c b/storage/innobase/sync/sync0rw.c
 --- a/storage/innobase/sync/sync0rw.c	2010-11-03 07:01:13.000000000 +0900
 +++ b/storage/innobase/sync/sync0rw.c	2010-12-03 17:35:12.987029059 +0900
-@@ -241,8 +241,8 @@
+@@ -241,10 +241,10 @@
  # ifdef UNIV_SYNC_DEBUG
  	ulint		level,		/*!< in: level */
  # endif /* UNIV_SYNC_DEBUG */
 -	const char*	cmutex_name,	/*!< in: mutex name */
- #endif /* UNIV_DEBUG */
-+	const char*	cmutex_name,	/*!< in: mutex name */
+-#endif /* UNIV_DEBUG */
  	const char*	cfile_name,	/*!< in: file name where created */
- 	ulint		cline)		/*!< in: file line where created */
+-	ulint		cline)		/*!< in: file line where created */
++	ulint		cline,		/*!< in: file line where created */
++#endif /* UNIV_DEBUG */
++	const char*	cmutex_name)	/*!< in: mutex name */
  {
+ 	/* If this is the very first time a synchronization object is
+ 	created, then the following call initializes the sync system. */
 @@ -253,14 +253,15 @@
  	mutex_create(rw_lock_mutex_key, rw_lock_get_mutex(lock),
  		     SYNC_NO_ORDER_CHECK);
@@ -349,16 +433,23 @@ diff -ruN a/storage/innobase/sync/sync0rw.c b/storage/innobase/sync/sync0rw.c
 diff -ruN a/storage/innobase/sync/sync0sync.c b/storage/innobase/sync/sync0sync.c
 --- a/storage/innobase/sync/sync0sync.c	2010-12-03 15:49:59.233955565 +0900
 +++ b/storage/innobase/sync/sync0sync.c	2010-12-03 17:35:12.989024400 +0900
-@@ -249,8 +249,8 @@
- mutex_create_func(
+@@ -250,13 +250,13 @@
  /*==============*/
  	mutex_t*	mutex,		/*!< in: pointer to memory */
--#ifdef UNIV_DEBUG
- 	const char*	cmutex_name,	/*!< in: mutex name */
-+#ifdef UNIV_DEBUG
+ #ifdef UNIV_DEBUG
+-	const char*	cmutex_name,	/*!< in: mutex name */
  # ifdef UNIV_SYNC_DEBUG
  	ulint		level,		/*!< in: level */
  # endif /* UNIV_SYNC_DEBUG */
+-#endif /* UNIV_DEBUG */
+ 	const char*	cfile_name,	/*!< in: file name where created */
+-	ulint		cline)		/*!< in: file line where created */
++	ulint		cline,		/*!< in: file line where created */
++#endif /* UNIV_DEBUG */
++	const char*	cmutex_name)	/*!< in: mutex name */
+ {
+ #if defined(HAVE_ATOMIC_BUILTINS)
+ 	mutex_reset_lock_word(mutex);
 @@ -274,11 +274,13 @@
  	mutex->file_name = "not yet reserved";
  	mutex->level = level;
