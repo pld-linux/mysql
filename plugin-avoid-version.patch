@@ -70,18 +70,6 @@ diff -ur mysql-5.1.50.org/storage/federated/Makefile.am mysql-5.1.50/storage/fed
  ha_federated_la_CXXFLAGS=	$(AM_CXXFLAGS) -DMYSQL_DYNAMIC_PLUGIN
  ha_federated_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
  ha_federated_la_SOURCES =	ha_federated.cc
-diff -ur mysql-5.1.50.org/storage/ibmdb2i/Makefile.am mysql-5.1.50/storage/ibmdb2i/Makefile.am
---- mysql-5.1.50.org/storage/ibmdb2i/Makefile.am	2010-08-03 19:24:22.000000000 +0200
-+++ mysql-5.1.50/storage/ibmdb2i/Makefile.am	2010-09-23 20:53:04.491021090 +0200
-@@ -33,7 +33,7 @@
- EXTRA_LTLIBRARIES =	ha_ibmdb2i.la
- pkgplugin_LTLIBRARIES =	@plugin_ibmdb2i_shared_target@
- ha_ibmdb2i_la_LIBADD =  -liconv
--ha_ibmdb2i_la_LDFLAGS =	-module -rpath $(MYSQLLIBdir)
-+ha_ibmdb2i_la_LDFLAGS =	-module -avoid-version -rpath $(MYSQLLIBdir)
- ha_ibmdb2i_la_CXXFLAGS=	$(AM_CXXFLAGS) -DMYSQL_DYNAMIC_PLUGIN
- ha_ibmdb2i_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
- ha_ibmdb2i_la_SOURCES =	ha_ibmdb2i.cc db2i_ileBridge.cc db2i_conversion.cc \
 diff -ur mysql-5.1.50.org/storage/innobase/Makefile.am mysql-5.1.50/storage/innobase/Makefile.am
 --- mysql-5.1.50.org/storage/innobase/Makefile.am	2010-08-03 19:24:20.000000000 +0200
 +++ mysql-5.1.50/storage/innobase/Makefile.am	2010-09-23 20:53:04.494354584 +0200
