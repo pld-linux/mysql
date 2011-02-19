@@ -8,7 +8,7 @@
 diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/handler/ha_innodb.cc
 --- a/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:50:59.626327847 +0900
 +++ b/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:55:20.281021252 +0900
-@@ -11735,7 +11735,7 @@
+@@ -11783,7 +11783,7 @@
    &innobase_storage_engine,
    innobase_hton_name,
    "Innobase Oy",
@@ -22,10 +22,10 @@ diff -ruN a/storage/innodb_plugin/include/univ.i b/storage/innodb_plugin/include
 +++ b/storage/innodb_plugin/include/univ.i	2010-04-30 16:41:46.000000000 +0900
 @@ -48,6 +48,11 @@
  #define INNODB_VERSION_MINOR	0
- #define INNODB_VERSION_BUGFIX	13
+ #define INNODB_VERSION_BUGFIX	15
  
 +#ifndef PERCONA_INNODB_VERSION
-+#define PERCONA_INNODB_VERSION 12.1
++#define PERCONA_INNODB_VERSION 12.5
 +#endif
 +
 +
@@ -51,10 +51,30 @@ diff -ruN a/storage/innodb_plugin/include/univ.i b/storage/innodb_plugin/include
  
  #define REFMAN "http://dev.mysql.com/doc/refman/5.1/en/"
  
+diff -ruN a/storage/innodb_plugin/mtr/mtr0log.c b/storage/innodb_plugin/mtr/mtr0log.c
+--- a/storage/innodb_plugin/mtr/mtr0log.c	2010-11-29 19:38:03.000000000 +0900
++++ b/storage/innodb_plugin/mtr/mtr0log.c	2011-02-02 23:31:34.000000000 +0900
+@@ -408,7 +408,7 @@
+ 	ptr += 2;
+ 
+ 	if (UNIV_UNLIKELY(offset >= UNIV_PAGE_SIZE)
+-			|| UNIV_UNLIKELY(len + offset) > UNIV_PAGE_SIZE) {
++			|| UNIV_UNLIKELY(len + offset > UNIV_PAGE_SIZE)) {
+ 		recv_sys->found_corrupt_log = TRUE;
+ 
+ 		return(NULL);
 diff -ruN a/storage/innodb_plugin/row/row0mysql.c b/storage/innodb_plugin/row/row0mysql.c
 --- a/storage/innodb_plugin/row/row0mysql.c	2010-07-20 16:33:04.097866666 +0900
 +++ b/storage/innodb_plugin/row/row0mysql.c	2010-07-20 16:33:53.995828763 +0900
-@@ -1134,6 +1134,13 @@
+@@ -51,6 +51,7 @@
+ #include "btr0sea.h"
+ #include "fil0fil.h"
+ #include "ibuf0ibuf.h"
++#include "ha_prototypes.h"
+ 
+ /** Provide optional 4.x backwards compatibility for 5.0 and above */
+ UNIV_INTERN ibool	row_rollback_on_timeout	= FALSE;
+@@ -1135,6 +1136,13 @@
  
  	thr = que_fork_get_first_thr(prebuilt->ins_graph);
  
@@ -71,7 +91,7 @@ diff -ruN a/storage/innodb_plugin/row/row0mysql.c b/storage/innodb_plugin/row/ro
 diff -ruN a/storage/innodb_plugin/row/row0sel.c b/storage/innodb_plugin/row/row0sel.c
 --- a/storage/innodb_plugin/row/row0sel.c	2010-07-20 16:33:04.204866103 +0900
 +++ b/storage/innodb_plugin/row/row0sel.c	2010-07-20 16:33:53.998864025 +0900
-@@ -3362,6 +3362,7 @@
+@@ -3374,6 +3374,7 @@
  	ulint		offsets_[REC_OFFS_NORMAL_SIZE];
  	ulint*		offsets				= offsets_;
  	ibool		table_lock_waited		= FALSE;
@@ -79,7 +99,7 @@ diff -ruN a/storage/innodb_plugin/row/row0sel.c b/storage/innodb_plugin/row/row0
  
  	rec_offs_init(offsets_);
  
-@@ -3728,6 +3729,15 @@
+@@ -3740,6 +3741,15 @@
  
  	/* Do some start-of-statement preparations */
  
@@ -95,7 +115,7 @@ diff -ruN a/storage/innodb_plugin/row/row0sel.c b/storage/innodb_plugin/row/row0
  	if (!prebuilt->sql_stat_start) {
  		/* No need to set an intention lock or assign a read view */
  
-@@ -3738,6 +3748,14 @@
+@@ -3750,6 +3760,14 @@
  			      " perform a consistent read\n"
  			      "InnoDB: but the read view is not assigned!\n",
  			      stderr);
@@ -113,7 +133,7 @@ diff -ruN a/storage/innodb_plugin/row/row0sel.c b/storage/innodb_plugin/row/row0
 diff -ruN a/storage/innodb_plugin/srv/srv0start.c b/storage/innodb_plugin/srv/srv0start.c
 --- a/storage/innodb_plugin/srv/srv0start.c	2010-04-30 16:37:05.000000000 +0900
 +++ b/storage/innodb_plugin/srv/srv0start.c	2010-04-30 16:41:46.000000000 +0900
-@@ -1967,7 +1967,7 @@
+@@ -2006,7 +2006,7 @@
  	if (srv_print_verbose_log) {
  		ut_print_timestamp(stderr);
  		fprintf(stderr,

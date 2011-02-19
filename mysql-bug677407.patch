@@ -49,6 +49,7 @@ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+diff -ruN a/storage/innodb_plugin/trx/trx0i_s.c b/storage/innodb_plugin/trx/trx0i_s.c
 --- a/storage/innodb_plugin/trx/trx0i_s.c	2010-11-03 16:39:54.000000000 +0300
 +++ b/storage/innodb_plugin/trx/trx0i_s.c	2010-11-30 13:57:03.000000000 +0300
 @@ -157,10 +157,6 @@
@@ -62,7 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  	i_s_table_cache_t innodb_trx;	/*!< innodb_trx table */
  	i_s_table_cache_t innodb_locks;	/*!< innodb_locks table */
  	i_s_table_cache_t innodb_lock_waits;/*!< innodb_lock_waits table */
-@@ -1101,13 +1097,6 @@
+@@ -1142,13 +1138,6 @@
  {
  	ullint	now;
  
@@ -76,7 +77,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  #ifdef UNIV_SYNC_DEBUG
  	ut_a(rw_lock_own(&cache->rw_lock, RW_LOCK_EX));
  #endif
-@@ -1205,6 +1194,12 @@
+@@ -1246,6 +1235,12 @@
  /*===================================*/
  	trx_i_s_cache_t*	cache)	/*!< in/out: cache */
  {
@@ -89,7 +90,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  	if (!can_cache_be_updated(cache)) {
  
  		return(1);
-@@ -1217,6 +1212,10 @@
+@@ -1258,6 +1253,10 @@
  
  	mutex_exit(&kernel_mutex);
  
@@ -100,7 +101,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  	return(0);
  }
  
-@@ -1247,16 +1246,12 @@
+@@ -1288,16 +1287,12 @@
  	release kernel_mutex
  	release trx_i_s_cache_t::rw_lock
  	acquire trx_i_s_cache_t::rw_lock, S
@@ -117,7 +118,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  	table_cache_init(&cache->innodb_trx, sizeof(i_s_trx_row_t));
  	table_cache_init(&cache->innodb_locks, sizeof(i_s_locks_row_t));
  	table_cache_init(&cache->innodb_lock_waits,
-@@ -1307,18 +1302,10 @@
+@@ -1348,18 +1343,10 @@
  /*===================*/
  	trx_i_s_cache_t*	cache)	/*!< in: cache */
  {

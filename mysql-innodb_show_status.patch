@@ -33,7 +33,7 @@ diff -ruN a/storage/innodb_plugin/buf/buf0buf.c b/storage/innodb_plugin/buf/buf0
 diff -ruN a/storage/innodb_plugin/fil/fil0fil.c b/storage/innodb_plugin/fil/fil0fil.c
 --- a/storage/innodb_plugin/fil/fil0fil.c	2010-04-06 23:07:12.000000000 +0900
 +++ b/storage/innodb_plugin/fil/fil0fil.c	2010-04-29 15:28:56.000000000 +0900
-@@ -4787,3 +4787,30 @@
+@@ -4833,3 +4833,30 @@
  
  	fil_system = NULL;
  }
@@ -115,9 +115,9 @@ diff -ruN a/storage/innodb_plugin/handler/innodb_patch_info.h b/storage/innodb_p
 diff -ruN a/storage/innodb_plugin/include/fil0fil.h b/storage/innodb_plugin/include/fil0fil.h
 --- a/storage/innodb_plugin/include/fil0fil.h	2010-04-06 23:07:12.000000000 +0900
 +++ b/storage/innodb_plugin/include/fil0fil.h	2010-04-29 15:28:56.000000000 +0900
-@@ -716,6 +716,16 @@
- /*==============*/
- 	const byte*	page);	/*!< in: file page */
+@@ -725,6 +725,17 @@
+ /*============================*/
+ 	ulint		id);	/*!< in: space id */
  
 +/*************************************************************************
 +Return local hash table informations. */
@@ -129,9 +129,10 @@ diff -ruN a/storage/innodb_plugin/include/fil0fil.h b/storage/innodb_plugin/incl
 +ulint
 +fil_system_hash_nodes(void);
 +/*========================*/
- 
++
  typedef	struct fil_space_struct	fil_space_t;
  
+ #endif
 diff -ruN a/storage/innodb_plugin/include/srv0srv.h b/storage/innodb_plugin/include/srv0srv.h
 --- a/storage/innodb_plugin/include/srv0srv.h	2010-04-06 23:07:13.000000000 +0900
 +++ b/storage/innodb_plugin/include/srv0srv.h	2010-04-29 15:28:56.000000000 +0900
@@ -169,7 +170,7 @@ diff -ruN a/storage/innodb_plugin/include/thr0loc.h b/storage/innodb_plugin/incl
 diff -ruN a/storage/innodb_plugin/lock/lock0lock.c b/storage/innodb_plugin/lock/lock0lock.c
 --- a/storage/innodb_plugin/lock/lock0lock.c	2010-04-06 23:07:13.000000000 +0900
 +++ b/storage/innodb_plugin/lock/lock0lock.c	2010-04-29 15:33:51.000000000 +0900
-@@ -4307,6 +4307,7 @@
+@@ -4379,6 +4379,7 @@
  
  	putc('\n', file);
  
@@ -177,7 +178,7 @@ diff -ruN a/storage/innodb_plugin/lock/lock0lock.c b/storage/innodb_plugin/lock/
  	block = buf_page_try_get(space, page_no, &mtr);
  
  	for (i = 0; i < lock_rec_get_n_bits(lock); ++i) {
-@@ -4333,6 +4334,7 @@
+@@ -4405,6 +4406,7 @@
  
  		putc('\n', file);
  	}
@@ -185,7 +186,7 @@ diff -ruN a/storage/innodb_plugin/lock/lock0lock.c b/storage/innodb_plugin/lock/
  
  	mtr_commit(&mtr);
  	if (UNIV_LIKELY_NULL(heap)) {
-@@ -4518,7 +4520,7 @@
+@@ -4590,7 +4592,7 @@
  		}
  	}
  
@@ -194,7 +195,7 @@ diff -ruN a/storage/innodb_plugin/lock/lock0lock.c b/storage/innodb_plugin/lock/
  		nth_trx++;
  		goto loop;
  	}
-@@ -4590,8 +4592,8 @@
+@@ -4662,8 +4664,8 @@
  
  	nth_lock++;
  
@@ -408,7 +409,7 @@ diff -ruN a/storage/innodb_plugin/thr/thr0loc.c b/storage/innodb_plugin/thr/thr0
  
  /** Thread local data */
  typedef struct thr_local_struct thr_local_t;
-@@ -197,6 +198,7 @@
+@@ -216,6 +217,7 @@
  		    os_thread_pf(os_thread_get_curr_id()),
  		    local);
  
@@ -416,7 +417,7 @@ diff -ruN a/storage/innodb_plugin/thr/thr0loc.c b/storage/innodb_plugin/thr/thr0
  	mutex_exit(&thr_local_mutex);
  }
  
-@@ -224,6 +226,7 @@
+@@ -244,6 +246,7 @@
  
  	HASH_DELETE(thr_local_t, hash, thr_local_hash,
  		    os_thread_pf(id), local);
@@ -424,7 +425,7 @@ diff -ruN a/storage/innodb_plugin/thr/thr0loc.c b/storage/innodb_plugin/thr/thr0
  
  	mutex_exit(&thr_local_mutex);
  
-@@ -277,3 +280,29 @@
+@@ -299,3 +302,29 @@
  	hash_table_free(thr_local_hash);
  	thr_local_hash = NULL;
  }
