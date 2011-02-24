@@ -960,8 +960,6 @@ done
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
-%attr(755,root,root) %{_bindir}/mysql_install_db
-%attr(755,root,root) %{_bindir}/resolveip
 %dir %{_libdir}/%{name}
 %dir %{_libdir}/%{name}/plugin
 %attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
@@ -986,11 +984,9 @@ done
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
 #%{_mandir}/man1/mysql_fix_privilege_tables.1*
-%{_mandir}/man1/mysql_install_db.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man8/mysqld.8*
-%{_mandir}/man1/resolveip.1*
 
 %if %{?debug:1}0
 %attr(755,root,root) %{_bindir}/*resolve_stack_dump
@@ -1047,16 +1043,20 @@ done
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/msql2mysql
 %attr(755,root,root) %{_bindir}/myisam_ftdump
+%attr(755,root,root) %{_bindir}/mysql_install_db
 %attr(755,root,root) %{_bindir}/mysql_secure_installation
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/replace
+%attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
+%{_mandir}/man1/mysql_install_db.1*
 %{_mandir}/man1/mysql_secure_installation.1*
 %{_mandir}/man1/mysql_tzinfo_to_sql.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
+%{_mandir}/man1/resolveip.1*
 
 %files -n mysqlhotcopy
 %defattr(644,root,root,755)
