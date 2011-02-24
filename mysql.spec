@@ -633,11 +633,12 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 
 %cmake \
 	-DFEATURE_SET="community" \
-	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG" \
-	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG" \
+	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
+	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITH_FAST_MUTEXES=ON \
+	-DWITH_PIC=ON \
 	-DWITH_LIBEDIT=OFF \
 	-DWITH_READLINE=OFF \
 %if "%{pld_release}" == "ac"
@@ -648,6 +649,7 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DWITH_ZLIB=system \
 	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
+	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	-DINSTALL_LAYOUT=RPM \
