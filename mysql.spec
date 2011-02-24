@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.9
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -753,8 +753,8 @@ rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
-rm $RPM_BUILD_ROOT%{_bindir}/resolveip
-rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
+#rm $RPM_BUILD_ROOT%{_bindir}/resolveip
+#rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
@@ -961,6 +961,7 @@ done
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
 %attr(755,root,root) %{_bindir}/mysql_install_db
+%attr(755,root,root) %{_bindir}/resolveip
 %dir %{_libdir}/%{name}
 %dir %{_libdir}/%{name}/plugin
 %attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
@@ -989,6 +990,7 @@ done
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man8/mysqld.8*
+%{_mandir}/man1/resolveip.1*
 
 %if %{?debug:1}0
 %attr(755,root,root) %{_bindir}/*resolve_stack_dump
