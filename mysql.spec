@@ -317,7 +317,7 @@ innobackup.
 Summary:	MySQL additional utilities
 Summary(pl.UTF-8):	Dodatkowe narzędzia do MySQL
 Group:		Applications/Databases
-Requires:	%{name} = %{version}-%{release}
+Requires:	%{name}-client = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 
 %description extras
