@@ -141,7 +141,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  ulint	srv_n_data_files = 0;
  char**	srv_data_file_names = NULL;
  ulint*	srv_data_file_sizes = NULL;	/* size in database pages */ 
-diff -ruN a/patch_info/innodb_recovery_patches.info b/patch_info/innodb_recovery_patches.info
+diff -ruN /dev/null b/patch_info/innodb_recovery_patches.info
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/patch_info/innodb_recovery_patches.info	2009-08-04 16:58:07.000000000 +0900
 @@ -0,0 +1,6 @@
@@ -162,7 +162,7 @@ diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
  
  static char *internal_innobase_data_file_path	= NULL;
  
-@@ -1534,6 +1535,8 @@
+@@ -1519,6 +1520,8 @@
  	srv_lock_wait_timeout = (ulint) innobase_lock_wait_timeout;
  	srv_force_recovery = (ulint) innobase_force_recovery;
  
@@ -185,7 +185,7 @@ diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
 diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 --- a/sql/mysqld.cc	2009-08-04 16:53:42.000000000 +0900
 +++ b/sql/mysqld.cc	2009-08-04 17:48:25.000000000 +0900
-@@ -5102,6 +5102,7 @@
+@@ -5119,6 +5119,7 @@
    OPT_INNODB_READ_IO_THREADS,
    OPT_INNODB_WRITE_IO_THREADS,
    OPT_INNODB_USE_SYS_MALLOC,
@@ -193,7 +193,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
    OPT_INNODB_THREAD_CONCURRENCY_TIMER_BASED,
    OPT_INNODB_EXTRA_RSEGMENTS,
    OPT_INNODB_DICT_SIZE_LIMIT,
-@@ -5347,6 +5348,10 @@
+@@ -5365,6 +5366,10 @@
    {"innodb_doublewrite", OPT_INNODB_DOUBLEWRITE, "Enable InnoDB doublewrite buffer (enabled by default). \
  Disable with --skip-innodb-doublewrite.", (gptr*) &innobase_use_doublewrite,
     (gptr*) &innobase_use_doublewrite, 0, GET_BOOL, NO_ARG, 1, 0, 0, 0, 0, 0},
@@ -207,7 +207,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 diff -ruN a/sql/set_var.cc b/sql/set_var.cc
 --- a/sql/set_var.cc	2009-08-04 16:53:42.000000000 +0900
 +++ b/sql/set_var.cc	2009-08-04 17:51:49.000000000 +0900
-@@ -1088,6 +1088,7 @@
+@@ -1094,6 +1094,7 @@
    {"innodb_read_io_threads", (char*) &innobase_read_io_threads, SHOW_LONG},
    {"innodb_write_io_threads", (char*) &innobase_write_io_threads, SHOW_LONG},
    {"innodb_use_sys_malloc", (char*) &innobase_use_sys_malloc, SHOW_MY_BOOL},

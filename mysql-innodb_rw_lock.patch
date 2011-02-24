@@ -2468,7 +2468,7 @@ diff -ruN a/innobase/sync/sync0sync.c b/innobase/sync/sync0sync.c
  }
  
  /***********************************************************************
-diff -ruN a/patch_info/innodb_rw_lock.info b/patch_info/innodb_rw_lock.info
+diff -ruN /dev/null b/patch_info/innodb_rw_lock.info
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/patch_info/innodb_rw_lock.info	2009-10-22 15:18:30.000000000 +0900
 @@ -0,0 +1,6 @@

@@ -166,7 +166,7 @@ diff -ruN a/innobase/ut/ut0mem.c b/innobase/ut/ut0mem.c
  retry:
  	os_fast_mutex_lock(&ut_list_mutex);
  
-@@ -223,6 +236,11 @@
+@@ -223,6 +234,11 @@
  {
          ut_mem_block_t* block;
  
@@ -178,7 +178,7 @@ diff -ruN a/innobase/ut/ut0mem.c b/innobase/ut/ut0mem.c
  	block = (ut_mem_block_t*)((byte*)ptr - sizeof(ut_mem_block_t));
  
  	os_fast_mutex_lock(&ut_list_mutex);
-@@ -275,6 +293,10 @@
+@@ -275,6 +291,10 @@
  	ulint		min_size;
  	void*		new_ptr;
  
@@ -189,7 +189,7 @@ diff -ruN a/innobase/ut/ut0mem.c b/innobase/ut/ut0mem.c
  	if (ptr == NULL) {
  
  		return(ut_malloc(size));
-diff -ruN a/patch_info/innodb_use_sys_malloc.info b/patch_info/innodb_use_sys_malloc.info
+diff -ruN /dev/null b/patch_info/innodb_use_sys_malloc.info
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/patch_info/innodb_use_sys_malloc.info	2009-07-06 16:04:24.000000000 +0900
 @@ -0,0 +1,6 @@
@@ -210,7 +210,7 @@ diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
  my_bool innobase_thread_concurrency_timer_based;
  long innobase_extra_rsegments;
  longlong innobase_buffer_pool_size, innobase_log_file_size;
-@@ -1492,6 +1493,8 @@
+@@ -1477,6 +1478,8 @@
  	srv_n_log_files = (ulint) innobase_log_files_in_group;
  	srv_log_file_size = (ulint) innobase_log_file_size;
  
@@ -233,7 +233,7 @@ diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
 diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 --- a/sql/mysqld.cc	2009-07-06 15:59:52.000000000 +0900
 +++ b/sql/mysqld.cc	2009-07-06 16:16:56.000000000 +0900
-@@ -5102,6 +5102,7 @@
+@@ -5118,6 +5118,7 @@
    OPT_INNODB_ADAPTIVE_CHECKPOINT,
    OPT_INNODB_READ_IO_THREADS,
    OPT_INNODB_WRITE_IO_THREADS,
@@ -241,7 +241,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
    OPT_INNODB_THREAD_CONCURRENCY_TIMER_BASED,
    OPT_INNODB_EXTRA_RSEGMENTS,
    OPT_INNODB_DICT_SIZE_LIMIT,
-@@ -5470,6 +5471,10 @@
+@@ -5485,6 +5486,10 @@
     "Number of background write I/O threads in InnoDB.",
     (gptr*) &innobase_write_io_threads, (gptr*) &innobase_write_io_threads,
     0, GET_LONG, REQUIRED_ARG, 8, 1, 64, 0, 0, 0},

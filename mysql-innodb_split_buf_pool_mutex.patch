@@ -1885,7 +1885,7 @@ diff -ruN a/innobase/ut/ut0ut.c b/innobase/ut/ut0ut.c
  		j += i;
  	}
  
-diff -ruN a/patch_info/innodb_split_buf_pool_mutex.info b/patch_info/innodb_split_buf_pool_mutex.info
+diff -ruN /dev/null b/patch_info/innodb_split_buf_pool_mutex.info
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/patch_info/innodb_split_buf_pool_mutex.info	2009-08-28 11:06:30.000000000 +0900
 @@ -0,0 +1,6 @@
@@ -1898,7 +1898,7 @@ diff -ruN a/patch_info/innodb_split_buf_pool_mutex.info b/patch_info/innodb_spli
 diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
 --- a/sql/ha_innodb.cc	2009-08-28 11:08:17.000000000 +0900
 +++ b/sql/ha_innodb.cc	2009-08-28 11:06:30.000000000 +0900
-@@ -1507,6 +1507,13 @@
+@@ -1504,6 +1504,13 @@
          /* We set srv_pool_size here in units of 1 kB. InnoDB internally
          changes the value so that it becomes the number of database pages. */
  

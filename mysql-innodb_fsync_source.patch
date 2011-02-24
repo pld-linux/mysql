@@ -1,4 +1,4 @@
-diff -r ef44d8017b6b innobase/buf/buf0flu.c
+diff -ruN a/innobase/buf/buf0flu.c b/innobase/buf/buf0flu.c
 --- a/innobase/buf/buf0flu.c	Fri Jul 03 15:41:25 2009 -0700
 +++ b/innobase/buf/buf0flu.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -341,7 +341,7 @@
@@ -29,7 +29,7 @@ diff -r ef44d8017b6b innobase/buf/buf0flu.c
  #endif	
  	buf_flush_init_for_writing(block->frame, block->newest_modification,
  						block->space, block->offset);
-diff -r ef44d8017b6b innobase/fil/fil0fil.c
+diff -ruN a/innobase/fil/fil0fil.c b/innobase/fil/fil0fil.c
 --- a/innobase/fil/fil0fil.c	Fri Jul 03 15:41:25 2009 -0700
 +++ b/innobase/fil/fil0fil.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -245,6 +245,7 @@
@@ -61,13 +61,10 @@ diff -r ef44d8017b6b innobase/fil/fil0fil.c
  	return(system);
  }
  
-@@ -1437,6 +1441,23 @@
- 	}
+@@ -1440,6 +1444,23 @@
+ }
  
- 	mutex_exit(&(system->mutex));
-+}
-+
-+/********************************************************************
+ /********************************************************************
 +Prints internal counters */
 +
 +void
@@ -82,9 +79,12 @@ diff -r ef44d8017b6b innobase/fil/fil0fil.c
 +		fil_system->flush_types[FLUSH_FROM_LOG_IO_COMPLETE],
 +		fil_system->flush_types[FLUSH_FROM_LOG_WRITE_UP_TO],
 +		fil_system->flush_types[FLUSH_FROM_ARCHIVE]);
- }
- 
- /********************************************************************
++}
++
++/********************************************************************
+ Initializes the ibuf data structure for space 0 == the system tablespace.
+ This can be called after the file space headers have been created and the
+ dictionary system has been initialized. */
 @@ -2256,7 +2277,7 @@
  
  		os_thread_sleep(20000);
@@ -142,7 +142,7 @@ diff -r ef44d8017b6b innobase/fil/fil0fil.c
  	}
  
  	mem_free(space_ids);
-diff -r ef44d8017b6b innobase/include/fil0fil.h
+diff -ruN a/innobase/include/fil0fil.h b/innobase/include/fil0fil.h
 --- a/innobase/include/fil0fil.h	Fri Jul 03 15:41:25 2009 -0700
 +++ b/innobase/include/fil0fil.h	Fri Jul 03 15:41:32 2009 -0700
 @@ -197,6 +197,13 @@
@@ -197,7 +197,7 @@ diff -r ef44d8017b6b innobase/include/fil0fil.h
  /**********************************************************************
  Checks the consistency of the tablespace cache. */
  
-diff -r ef44d8017b6b innobase/include/log0log.h
+diff -ruN a/innobase/include/log0log.h b/innobase/include/log0log.h
 --- a/innobase/include/log0log.h	Fri Jul 03 15:41:25 2009 -0700
 +++ b/innobase/include/log0log.h	Fri Jul 03 15:41:32 2009 -0700
 @@ -146,6 +146,22 @@
@@ -223,7 +223,7 @@ diff -r ef44d8017b6b innobase/include/log0log.h
  /**********************************************************
  This function is called, e.g., when a transaction wants to commit. It checks
  that the log has been written to the log file up to the last log entry written
-@@ -159,14 +175,21 @@
+@@ -159,9 +175,9 @@
  			be written, ut_dulint_max if not specified */
  	ulint	wait,	/* in: LOG_NO_WAIT, LOG_WAIT_ONE_GROUP,
  			or LOG_WAIT_ALL_GROUPS */
@@ -236,8 +236,10 @@ diff -r ef44d8017b6b innobase/include/log0log.h
  /********************************************************************
  Does a syncronous flush of the log buffer to disk. */
  
+@@ -174,6 +190,13 @@
+ 
  void
- log_buffer_flush_to_disk(void);
+ log_buffer_flush_maybe_sync(void);
 +/*==========================*/
 +/********************************************************************
 +Flushes the log buffer. Forces it to disk depending on the value of
@@ -245,9 +247,9 @@ diff -r ef44d8017b6b innobase/include/log0log.h
 +
 +void
 +log_buffer_flush_maybe_sync(void);
- /*==========================*/
+ /*=============================*/
  /********************************************************************
- Flushes the log buffer. Forces it to disk depending on the value of
+ Advances the smallest lsn for which there are unflushed dirty blocks in the
 @@ -751,6 +774,12 @@
  					AND flushed to disk */
  	ulint		n_pending_writes;/* number of currently pending flushes
@@ -261,7 +263,7 @@ diff -r ef44d8017b6b innobase/include/log0log.h
  	/* NOTE on the 'flush' in names of the fields below: starting from
  	4.0.14, we separate the write of the log file and the actual fsync()
  	or other method to flush it to disk. The names below shhould really
-diff -r ef44d8017b6b innobase/log/log0log.c
+diff -ruN a/innobase/log/log0log.c b/innobase/log/log0log.c
 --- a/innobase/log/log0log.c	Fri Jul 03 15:41:25 2009 -0700
 +++ b/innobase/log/log0log.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -782,6 +782,15 @@
@@ -419,7 +421,7 @@ diff -r ef44d8017b6b innobase/log/log0log.c
  
  	fil_close_all_files();
  
-@@ -3363,15 +3381,45 @@
+@@ -3363,16 +3381,46 @@
  	time_elapsed = 0.001 + difftime(current_time,
  					log_sys->last_printout_time);
  	fprintf(file,
@@ -440,7 +442,7 @@ diff -r ef44d8017b6b innobase/log/log0log.c
  
  	log_sys->n_log_ios_old = log_sys->n_log_ios;
  	log_sys->last_printout_time = current_time;
-+
+ 
 +	fprintf(file,
 +		"log sync callers: %lu buffer pool, background %lu sync and %lu async, "
 +		"%lu internal, checkpoint %lu sync and %lu async, %lu archive, "
@@ -468,10 +470,11 @@ diff -r ef44d8017b6b innobase/log/log0log.c
 +		log_sys->log_sync_syncers[LOG_WRITE_FROM_LOG_ARCHIVE],
 +		log_sys->log_sync_syncers[LOG_WRITE_FROM_COMMIT_SYNC],
 +		log_sys->log_sync_syncers[LOG_WRITE_FROM_COMMIT_ASYNC]);
- 
++
  	mutex_exit(&(log_sys->mutex));
  }
-diff -r ef44d8017b6b innobase/srv/srv0srv.c
+ 
+diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
 --- a/innobase/srv/srv0srv.c	Fri Jul 03 15:41:25 2009 -0700
 +++ b/innobase/srv/srv0srv.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -1698,6 +1698,12 @@
@@ -487,7 +490,7 @@ diff -r ef44d8017b6b innobase/srv/srv0srv.c
  		"SEMAPHORES\n"
  		"----------\n", file);
  	sync_print(file);
-diff -r ef44d8017b6b innobase/trx/trx0sys.c
+diff -ruN a/innobase/trx/trx0sys.c b/innobase/trx/trx0sys.c
 --- a/innobase/trx/trx0sys.c	Fri Jul 03 15:41:25 2009 -0700
 +++ b/innobase/trx/trx0sys.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -511,7 +511,7 @@
@@ -499,7 +502,7 @@ diff -r ef44d8017b6b innobase/trx/trx0sys.c
  	
  leave_func:
  	ut_free(unaligned_read_buf);
-diff -r ef44d8017b6b innobase/trx/trx0trx.c
+diff -ruN a/innobase/trx/trx0trx.c b/innobase/trx/trx0trx.c
 --- a/innobase/trx/trx0trx.c	Fri Jul 03 15:41:25 2009 -0700
 +++ b/innobase/trx/trx0trx.c	Fri Jul 03 15:41:32 2009 -0700
 @@ -942,19 +942,21 @@
@@ -553,7 +556,7 @@ diff -r ef44d8017b6b innobase/trx/trx0trx.c
          } else {
                  ut_error;
          }
-@@ -1948,19 +1953,21 @@
+@@ -1946,19 +1951,21 @@
                     	if (srv_unix_file_flush_method == SRV_UNIX_NOSYNC) {
                          	/* Write the log but do not flush it to disk */
  
@@ -579,7 +582,7 @@ diff -r ef44d8017b6b innobase/trx/trx0trx.c
                  } else {
                          ut_error;
                  }
-diff -r ef44d8017b6b patch_info/innodb_fsync_source.info
+diff -ruN /dev/null b/patch_info/innodb_fsync_source.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
 +++ b/patch_info/innodb_fsync_source.info	Fri Jul 03 15:41:32 2009 -0700
 @@ -0,0 +1,9 @@

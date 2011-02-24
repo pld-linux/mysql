@@ -1,16 +1,16 @@
-diff -r 85e7025cf2d1 innobase/include/srv0srv.h
+diff -ruN a/innobase/include/srv0srv.h b/innobase/include/srv0srv.h
 --- a/innobase/include/srv0srv.h	Fri Jul 03 15:41:41 2009 -0700
 +++ b/innobase/include/srv0srv.h	Fri Jul 03 15:41:47 2009 -0700
-@@ -146,6 +146,8 @@
- extern ulint	srv_enable_unsafe_group_commit;
+@@ -147,6 +147,8 @@
  extern uint	srv_read_ahead;
  extern uint	srv_adaptive_checkpoint;
-+
-+extern ulint	srv_extra_rsegments;
  
++extern ulint	srv_extra_rsegments;
++
  extern ulint	srv_dict_size_limit;
  
-diff -r 85e7025cf2d1 innobase/include/trx0sys.h
+ extern volatile ibool srv_io_pattern;
+diff -ruN a/innobase/include/trx0sys.h b/innobase/include/trx0sys.h
 --- a/innobase/include/trx0sys.h	Fri Jul 03 15:41:41 2009 -0700
 +++ b/innobase/include/trx0sys.h	Fri Jul 03 15:41:47 2009 -0700
 @@ -105,6 +105,13 @@
@@ -27,19 +27,19 @@ diff -r 85e7025cf2d1 innobase/include/trx0sys.h
  /********************************************************************
  Looks for a free slot for a rollback segment in the trx system file copy. */
  
-diff -r 85e7025cf2d1 innobase/srv/srv0srv.c
+diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
 --- a/innobase/srv/srv0srv.c	Fri Jul 03 15:41:41 2009 -0700
 +++ b/innobase/srv/srv0srv.c	Fri Jul 03 15:41:47 2009 -0700
-@@ -352,6 +352,8 @@
- 
+@@ -353,6 +353,8 @@
  uint	srv_read_ahead = 3; /* 1: random  2: linear  3: Both */
  uint	srv_adaptive_checkpoint = 0; /* 0: none  1: reflex  2: estimate */
-+
-+ulint	srv_extra_rsegments = 0; /* extra rseg for users */
  
++ulint	srv_extra_rsegments = 0; /* extra rseg for users */
++
  ulint	srv_dict_size_limit = 0;
  
-diff -r 85e7025cf2d1 innobase/srv/srv0start.c
+ volatile ibool srv_io_pattern = FALSE;
+diff -ruN a/innobase/srv/srv0start.c b/innobase/srv/srv0start.c
 --- a/innobase/srv/srv0start.c	Fri Jul 03 15:41:41 2009 -0700
 +++ b/innobase/srv/srv0start.c	Fri Jul 03 15:41:47 2009 -0700
 @@ -1418,6 +1418,8 @@
@@ -51,7 +51,7 @@ diff -r 85e7025cf2d1 innobase/srv/srv0start.c
  #ifdef UNIV_LOG_ARCHIVE
  	} else if (srv_archive_recovery) {
  		fprintf(stderr,
-diff -r 85e7025cf2d1 innobase/trx/trx0sys.c
+diff -ruN a/innobase/trx/trx0sys.c b/innobase/trx/trx0sys.c
 --- a/innobase/trx/trx0sys.c	Fri Jul 03 15:41:41 2009 -0700
 +++ b/innobase/trx/trx0sys.c	Fri Jul 03 15:41:47 2009 -0700
 @@ -944,3 +944,28 @@
@@ -83,7 +83,7 @@ diff -r 85e7025cf2d1 innobase/trx/trx0sys.c
 +	}
 +	mtr_commit(&mtr);
 +}
-diff -r 85e7025cf2d1 patch_info/innodb_extra_rseg.info
+diff -ruN /dev/null b/patch_info/innodb_extra_rseg.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
 +++ b/patch_info/innodb_extra_rseg.info	Fri Jul 03 15:41:47 2009 -0700
 @@ -0,0 +1,6 @@
@@ -93,7 +93,7 @@ diff -r 85e7025cf2d1 patch_info/innodb_extra_rseg.info
 +Author=Percona <info@percona.com>
 +License=GPL
 +Comment
-diff -r 85e7025cf2d1 sql/ha_innodb.cc
+diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
 --- a/sql/ha_innodb.cc	Fri Jul 03 15:41:41 2009 -0700
 +++ b/sql/ha_innodb.cc	Fri Jul 03 15:41:47 2009 -0700
 @@ -152,6 +152,7 @@
@@ -104,7 +104,7 @@ diff -r 85e7025cf2d1 sql/ha_innodb.cc
  longlong innobase_buffer_pool_size, innobase_log_file_size;
  
  /* The default values for the following char* start-up parameters
-@@ -1521,6 +1522,8 @@
+@@ -1506,6 +1507,8 @@
  	srv_n_read_io_threads = (ulint) innobase_read_io_threads;
  	srv_n_write_io_threads = (ulint) innobase_write_io_threads;
  
@@ -113,7 +113,7 @@ diff -r 85e7025cf2d1 sql/ha_innodb.cc
  	srv_lock_wait_timeout = (ulint) innobase_lock_wait_timeout;
  	srv_force_recovery = (ulint) innobase_force_recovery;
  
-diff -r 85e7025cf2d1 sql/ha_innodb.h
+diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
 --- a/sql/ha_innodb.h	Fri Jul 03 15:41:41 2009 -0700
 +++ b/sql/ha_innodb.h	Fri Jul 03 15:41:47 2009 -0700
 @@ -205,6 +205,7 @@
@@ -124,10 +124,10 @@ diff -r 85e7025cf2d1 sql/ha_innodb.h
  extern long innobase_force_recovery;
  extern long innobase_open_files;
  extern char *innobase_data_home_dir, *innobase_data_file_path;
-diff -r 85e7025cf2d1 sql/mysqld.cc
+diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 --- a/sql/mysqld.cc	Fri Jul 03 15:41:41 2009 -0700
 +++ b/sql/mysqld.cc	Fri Jul 03 15:41:47 2009 -0700
-@@ -5101,6 +5101,7 @@
+@@ -5118,6 +5118,7 @@
    OPT_INNODB_ADAPTIVE_CHECKPOINT,
    OPT_INNODB_READ_IO_THREADS,
    OPT_INNODB_WRITE_IO_THREADS,
@@ -135,7 +135,7 @@ diff -r 85e7025cf2d1 sql/mysqld.cc
    OPT_INNODB_DICT_SIZE_LIMIT,
    OPT_INNODB_ADAPTIVE_HASH_INDEX,
    OPT_FEDERATED,
-@@ -5465,6 +5466,10 @@
+@@ -5483,6 +5484,10 @@
     "Number of background write I/O threads in InnoDB.",
     (gptr*) &innobase_write_io_threads, (gptr*) &innobase_write_io_threads,
     0, GET_LONG, REQUIRED_ARG, 8, 1, 64, 0, 0, 0},
@@ -146,10 +146,10 @@ diff -r 85e7025cf2d1 sql/mysqld.cc
    {"innodb_dict_size_limit", OPT_INNODB_DICT_SIZE_LIMIT,
     "Limit the allocated memory for dictionary cache. (0: unlimited)",
     (gptr*) &srv_dict_size_limit, (gptr*) &srv_dict_size_limit, 0,
-diff -r 85e7025cf2d1 sql/set_var.cc
+diff -ruN a/sql/set_var.cc b/sql/set_var.cc
 --- a/sql/set_var.cc	Fri Jul 03 15:41:41 2009 -0700
 +++ b/sql/set_var.cc	Fri Jul 03 15:41:47 2009 -0700
-@@ -1087,6 +1087,7 @@
+@@ -1093,6 +1093,7 @@
    {sys_innodb_adaptive_checkpoint.name, (char*) &sys_innodb_adaptive_checkpoint, SHOW_SYS},
    {"innodb_read_io_threads", (char*) &innobase_read_io_threads, SHOW_LONG},
    {"innodb_write_io_threads", (char*) &innobase_write_io_threads, SHOW_LONG},
@@ -157,7 +157,7 @@ diff -r 85e7025cf2d1 sql/set_var.cc
    {sys_innodb_dict_size_limit.name, (char*) &sys_innodb_dict_size_limit, SHOW_SYS},
    {sys_innodb_io_pattern_trace.name, (char*) &sys_innodb_io_pattern_trace, SHOW_SYS},
    {sys_innodb_io_pattern_trace_running.name, (char*) &sys_innodb_io_pattern_trace_running, SHOW_SYS},
-diff -r 85e7025cf2d1 sql/sql_show.cc
+diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
 --- a/sql/sql_show.cc	Fri Jul 03 15:41:41 2009 -0700
 +++ b/sql/sql_show.cc	Fri Jul 03 15:41:47 2009 -0700
 @@ -39,6 +39,8 @@
@@ -169,7 +169,7 @@ diff -r 85e7025cf2d1 sql/sql_show.cc
  }
  /* We need to undef it in InnoDB */
  #undef byte
-@@ -4180,6 +4182,45 @@
+@@ -4186,6 +4188,45 @@
    DBUG_RETURN(returnable);
  }
  
@@ -215,12 +215,10 @@ diff -r 85e7025cf2d1 sql/sql_show.cc
  /*
    Find schema_tables elment by name
  
-@@ -4996,6 +5037,16 @@
-   {"INDEX_NAME", 32, MYSQL_TYPE_STRING, 0, 0, "index name"},
-   {"N_READ", 11, MYSQL_TYPE_LONG, 0, 0, "read ios"},
+@@ -5004,6 +5045,16 @@
    {"N_WRITE", 11, MYSQL_TYPE_LONG, 0, 0, "write ios"},
-+  {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
-+};
+   {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
+ };
 +
 +ST_FIELD_INFO innodb_rseg_fields_info[]=
 +{
@@ -229,10 +227,12 @@ diff -r 85e7025cf2d1 sql/sql_show.cc
 +  {"PAGE_NO", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, ""},
 +  {"MAX_SIZE", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, ""},
 +  {"CURR_SIZE", MY_INT64_NUM_DECIMAL_DIGITS, MYSQL_TYPE_LONG, 0, 0, ""},
-   {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
- };
++  {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
++};
  #endif
-@@ -5177,6 +5228,8 @@
+ 
+ ST_FIELD_INFO variables_fields_info[]=
+@@ -5183,6 +5234,8 @@
  #ifdef HAVE_INNOBASE_DB
    {"INNODB_IO_PATTERN", innodb_io_pattern_field_info, create_schema_table,
      innodb_io_pattern_fill_table, 0, 0, -1, -1, 0},

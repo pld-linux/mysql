@@ -414,7 +414,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
          export_vars.innodb_buffer_pool_read_requests= buf_pool->n_page_gets;
          export_vars.innodb_buffer_pool_write_requests= srv_buf_pool_write_requests;
          export_vars.innodb_buffer_pool_wait_free= srv_buf_pool_wait_free;
-diff -ruN a/mysql-test/r/innodb_dict_size_limit.result b/mysql-test/r/innodb_dict_size_limit.result
+diff -ruN /dev/null b/mysql-test/r/innodb_dict_size_limit.result
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/mysql-test/r/innodb_dict_size_limit.result	2009-08-27 18:42:59.000000000 +0900
 @@ -0,0 +1,60 @@
@@ -478,7 +478,7 @@ diff -ruN a/mysql-test/r/innodb_dict_size_limit.result b/mysql-test/r/innodb_dic
 +DROP TABLE `test_3`;
 +DROP TABLE `test_2`;
 +DROP TABLE `test_1`;
-diff -ruN a/mysql-test/t/innodb_dict_size_limit.test b/mysql-test/t/innodb_dict_size_limit.test
+diff -ruN /dev/null b/mysql-test/t/innodb_dict_size_limit.test
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/mysql-test/t/innodb_dict_size_limit.test	2009-08-27 18:42:59.000000000 +0900
 @@ -0,0 +1,63 @@
@@ -545,7 +545,7 @@ diff -ruN a/mysql-test/t/innodb_dict_size_limit.test b/mysql-test/t/innodb_dict_
 +DROP TABLE `test_2`;
 +DROP TABLE `test_1`;
 +
-diff -ruN a/patch_info/innodb_dict_size_limit.info b/patch_info/innodb_dict_size_limit.info
+diff -ruN /dev/null b/patch_info/innodb_dict_size_limit.info
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/patch_info/innodb_dict_size_limit.info	2009-08-27 18:42:59.000000000 +0900
 @@ -0,0 +1,9 @@
@@ -561,7 +561,7 @@ diff -ruN a/patch_info/innodb_dict_size_limit.info b/patch_info/innodb_dict_size
 diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
 --- a/sql/ha_innodb.cc	2009-08-27 18:42:17.000000000 +0900
 +++ b/sql/ha_innodb.cc	2009-08-27 18:42:59.000000000 +0900
-@@ -288,6 +288,8 @@
+@@ -306,6 +306,8 @@
    (char*) &export_vars.innodb_dblwr_pages_written,        SHOW_LONG},
    {"dblwr_writes",
    (char*) &export_vars.innodb_dblwr_writes,               SHOW_LONG},
@@ -584,7 +584,7 @@ diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
 diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 --- a/sql/mysqld.cc	2009-08-27 18:42:17.000000000 +0900
 +++ b/sql/mysqld.cc	2009-08-27 18:42:59.000000000 +0900
-@@ -5101,6 +5101,7 @@
+@@ -5118,6 +5118,7 @@
    OPT_INNODB_ADAPTIVE_CHECKPOINT,
    OPT_INNODB_READ_IO_THREADS,
    OPT_INNODB_WRITE_IO_THREADS,
@@ -592,7 +592,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
    OPT_INNODB_ADAPTIVE_HASH_INDEX,
    OPT_FEDERATED,
    OPT_INNODB_USE_LEGACY_CARDINALITY_ALGORITHM
-@@ -5464,6 +5465,10 @@
+@@ -5482,6 +5483,10 @@
     "Number of background write I/O threads in InnoDB.",
     (gptr*) &innobase_write_io_threads, (gptr*) &innobase_write_io_threads,
     0, GET_LONG, REQUIRED_ARG, 8, 1, 64, 0, 0, 0},
@@ -606,7 +606,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 diff -ruN a/sql/set_var.cc b/sql/set_var.cc
 --- a/sql/set_var.cc	2009-08-27 18:42:17.000000000 +0900
 +++ b/sql/set_var.cc	2009-08-27 18:42:59.000000000 +0900
-@@ -540,6 +540,8 @@
+@@ -541,6 +541,8 @@
  sys_var_enum	sys_innodb_adaptive_checkpoint("innodb_adaptive_checkpoint",
                             &srv_adaptive_checkpoint,
                             &innodb_adaptive_checkpoint_typelib, fix_innodb_adaptive_checkpoint);
@@ -615,7 +615,7 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
  sys_var_long_ptr  sys_innodb_show_locks_held(
                                          "innodb_show_locks_held",
                                          &srv_show_locks_held);
-@@ -930,6 +932,7 @@
+@@ -936,6 +938,7 @@
    &sys_innodb_read_ahead,
    &sys_innodb_enable_unsafe_group_commit,
    &sys_innodb_adaptive_checkpoint,
@@ -623,7 +623,7 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
    &sys_innodb_show_locks_held,
    &sys_innodb_show_verbose_locks,
    &sys_innodb_io_pattern_trace,
-@@ -1084,6 +1087,7 @@
+@@ -1090,6 +1093,7 @@
    {sys_innodb_adaptive_checkpoint.name, (char*) &sys_innodb_adaptive_checkpoint, SHOW_SYS},
    {"innodb_read_io_threads", (char*) &innobase_read_io_threads, SHOW_LONG},
    {"innodb_write_io_threads", (char*) &innobase_write_io_threads, SHOW_LONG},

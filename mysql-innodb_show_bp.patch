@@ -1,4 +1,4 @@
-diff -r fe944d2c6e1f innobase/btr/btr0btr.c
+diff -ruN a/innobase/btr/btr0btr.c b/innobase/btr/btr0btr.c
 --- a/innobase/btr/btr0btr.c	Mon Nov 10 19:47:27 2008 -0800
 +++ b/innobase/btr/btr0btr.c	Mon Nov 10 19:48:24 2008 -0800
 @@ -2989,3 +2989,11 @@
@@ -13,10 +13,10 @@ diff -r fe944d2c6e1f innobase/btr/btr0btr.c
 +{
 +  return btr_page_get_index_id(page);
 +}
-diff -r fe944d2c6e1f innobase/buf/buf0buf.c
+diff -ruN a/innobase/buf/buf0buf.c b/innobase/buf/buf0buf.c
 --- a/innobase/buf/buf0buf.c	Mon Nov 10 19:47:27 2008 -0800
 +++ b/innobase/buf/buf0buf.c	Mon Nov 10 19:48:24 2008 -0800
-@@ -2629,3 +2629,13 @@
+@@ -2647,3 +2647,13 @@
  	buf_block_print(block);
  }
  
@@ -30,26 +30,26 @@ diff -r fe944d2c6e1f innobase/buf/buf0buf.c
 +return buf_pool_get_nth_block(buf_pool, i);
 +
 +}
-diff -r fe944d2c6e1f innobase/include/btr0btr.h
+diff -ruN a/innobase/include/btr0btr.h b/innobase/include/btr0btr.h
 --- a/innobase/include/btr0btr.h	Mon Nov 10 19:47:27 2008 -0800
 +++ b/innobase/include/btr0btr.h	Mon Nov 10 19:48:24 2008 -0800
-@@ -69,6 +69,12 @@
- UNIV_INLINE
- dulint
- btr_page_get_index_id(
-+/*==================*/
-+				/* out: index id */
-+	page_t*		page);	/* in: index page */
-+
-+dulint
-+btr_page_get_index_id_noninline(
+@@ -72,6 +72,12 @@
  /*==================*/
  				/* out: index id */
  	page_t*		page);	/* in: index page */
-diff -r fe944d2c6e1f innobase/include/buf0buf.h
++
++dulint
++btr_page_get_index_id_noninline(
++/*==================*/
++				/* out: index id */
++	page_t*		page);	/* in: index page */
+ /************************************************************
+ Gets the node level field in an index page. */
+ UNIV_INLINE
+diff -ruN a/innobase/include/buf0buf.h b/innobase/include/buf0buf.h
 --- a/innobase/include/buf0buf.h	Mon Nov 10 19:47:27 2008 -0800
 +++ b/innobase/include/buf0buf.h	Mon Nov 10 19:48:24 2008 -0800
-@@ -703,6 +703,8 @@
+@@ -706,6 +706,8 @@
  buf_get_free_list_len(void);
  /*=======================*/
  
@@ -58,7 +58,7 @@ diff -r fe944d2c6e1f innobase/include/buf0buf.h
  
  			
  /* The buffer control block structure */
-diff -r fe944d2c6e1f innobase/include/page0page.h
+diff -ruN a/innobase/include/page0page.h b/innobase/include/page0page.h
 --- a/innobase/include/page0page.h	Mon Nov 10 19:47:27 2008 -0800
 +++ b/innobase/include/page0page.h	Mon Nov 10 19:48:24 2008 -0800
 @@ -260,6 +260,12 @@
@@ -74,20 +74,20 @@ diff -r fe944d2c6e1f innobase/include/page0page.h
  /*******************************************************************
  Returns the number of records before the given record in chain.
  The number includes infimum and supremum records. */
-@@ -519,6 +525,12 @@
- UNIV_INLINE
- ulint
- page_get_data_size(
-+/*===============*/
-+			/* out: data in bytes */
-+	page_t*	page);	/* in: index page */
-+
-+ulint
-+page_get_data_size_noninline(
+@@ -522,6 +528,12 @@
  /*===============*/
  			/* out: data in bytes */
  	page_t*	page);	/* in: index page */
-diff -r fe944d2c6e1f innobase/page/page0page.c
++
++ulint
++page_get_data_size_noninline(
++/*===============*/
++			/* out: data in bytes */
++	page_t*	page);	/* in: index page */
+ /****************************************************************
+ Allocates a block of memory from an index page. */
+ 
+diff -ruN a/innobase/page/page0page.c b/innobase/page/page0page.c
 --- a/innobase/page/page0page.c	Mon Nov 10 19:47:27 2008 -0800
 +++ b/innobase/page/page0page.c	Mon Nov 10 19:48:24 2008 -0800
 @@ -1994,3 +1994,25 @@
@@ -116,7 +116,7 @@ diff -r fe944d2c6e1f innobase/page/page0page.c
 +
 +
 +
-diff -r fe944d2c6e1f mysql-test/r/information_schema.result
+diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_schema.result
 --- a/mysql-test/r/information_schema.result	Mon Nov 10 19:47:27 2008 -0800
 +++ b/mysql-test/r/information_schema.result	Mon Nov 10 19:48:25 2008 -0800
 @@ -42,6 +42,7 @@
@@ -177,7 +177,7 @@ diff -r fe944d2c6e1f mysql-test/r/information_schema.result
  KEY_COLUMN_USAGE	information_schema.KEY_COLUMN_USAGE	1
  PROCESSLIST	information_schema.PROCESSLIST	1
  PROFILING	information_schema.PROFILING	1
-diff -r fe944d2c6e1f mysql-test/r/information_schema_db.result
+diff -ruN a/mysql-test/r/information_schema_db.result b/mysql-test/r/information_schema_db.result
 --- a/mysql-test/r/information_schema_db.result	Mon Nov 10 19:47:27 2008 -0800
 +++ b/mysql-test/r/information_schema_db.result	Mon Nov 10 19:48:25 2008 -0800
 @@ -11,6 +11,7 @@
@@ -188,7 +188,7 @@ diff -r fe944d2c6e1f mysql-test/r/information_schema_db.result
  INDEX_STATISTICS
  KEY_COLUMN_USAGE
  PROCESSLIST
-diff -r fe944d2c6e1f mysql-test/r/mysqlshow.result
+diff -ruN a/mysql-test/r/mysqlshow.result b/mysql-test/r/mysqlshow.result
 --- a/mysql-test/r/mysqlshow.result	Mon Nov 10 19:47:27 2008 -0800
 +++ b/mysql-test/r/mysqlshow.result	Mon Nov 10 19:48:25 2008 -0800
 @@ -85,6 +85,7 @@
@@ -207,7 +207,7 @@ diff -r fe944d2c6e1f mysql-test/r/mysqlshow.result
  | INDEX_STATISTICS                      |
  | KEY_COLUMN_USAGE                      |
  | PROCESSLIST                           |
-diff -r fe944d2c6e1f patch_info/innodb_show_bp.info
+diff -ruN /dev/null b/patch_info/innodb_show_bp.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
 +++ b/patch_info/innodb_show_bp.info	Mon Nov 10 19:48:25 2008 -0800
 @@ -0,0 +1,6 @@
@@ -217,7 +217,7 @@ diff -r fe944d2c6e1f patch_info/innodb_show_bp.info
 +Author=Percona <info@percona.com>
 +License=GPL
 +Comment=
-diff -r fe944d2c6e1f sql/ha_innodb.cc
+diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
 --- a/sql/ha_innodb.cc	Mon Nov 10 19:47:27 2008 -0800
 +++ b/sql/ha_innodb.cc	Mon Nov 10 19:48:25 2008 -0800
 @@ -128,10 +128,12 @@
@@ -233,7 +233,7 @@ diff -r fe944d2c6e1f sql/ha_innodb.cc
  #include "../innobase/include/trx0xa.h"
  }
  
-@@ -6483,6 +6485,116 @@
+@@ -6557,6 +6559,116 @@
    	DBUG_RETURN(FALSE);
  }
  
@@ -350,10 +350,10 @@ diff -r fe944d2c6e1f sql/ha_innodb.cc
  /****************************************************************************
  Implements the SHOW MUTEX STATUS command. . */
  
-diff -r fe944d2c6e1f sql/ha_innodb.h
+diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
 --- a/sql/ha_innodb.h	Mon Nov 10 19:47:27 2008 -0800
 +++ b/sql/ha_innodb.h	Mon Nov 10 19:48:25 2008 -0800
-@@ -263,6 +263,7 @@
+@@ -274,6 +274,7 @@
  
  int innobase_drop_database(char *path);
  bool innodb_show_status(THD* thd);
@@ -361,10 +361,10 @@ diff -r fe944d2c6e1f sql/ha_innodb.h
  bool innodb_mutex_show_status(THD* thd);
  void innodb_export_status(void);
  
-diff -r fe944d2c6e1f sql/sql_parse.cc
+diff -ruN a/sql/sql_parse.cc b/sql/sql_parse.cc
 --- a/sql/sql_parse.cc	Mon Nov 10 19:47:27 2008 -0800
 +++ b/sql/sql_parse.cc	Mon Nov 10 19:48:25 2008 -0800
-@@ -2926,6 +2926,7 @@
+@@ -3037,6 +3037,7 @@
    case SCH_COLUMN_PRIVILEGES:
    case SCH_TABLE_CONSTRAINTS:
    case SCH_KEY_COLUMN_USAGE:
@@ -372,21 +372,21 @@ diff -r fe944d2c6e1f sql/sql_parse.cc
    default:
      break;
    }
-diff -r fe944d2c6e1f sql/sql_show.cc
+diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
 --- a/sql/sql_show.cc	Mon Nov 10 19:47:27 2008 -0800
 +++ b/sql/sql_show.cc	Mon Nov 10 19:48:25 2008 -0800
-@@ -27,6 +27,10 @@
- 
- #ifdef HAVE_BERKELEY_DB
+@@ -29,6 +29,10 @@
  #include "ha_berkeley.h"			// For berkeley_show_logs
-+#endif
-+
-+#ifdef HAVE_INNOBASE_DB
-+#include "ha_innodb.h"
  #endif
  
++#ifdef HAVE_INNOBASE_DB
++#include "ha_innodb.h"
++#endif
++
  #ifndef NO_EMBEDDED_ACCESS_CHECKS
-@@ -4042,6 +4046,19 @@
+ static const char *grant_names[]={
+   "select","insert","update","delete","create","drop","reload","shutdown",
+@@ -4091,6 +4095,19 @@
    DBUG_RETURN(res);
  }
  
@@ -406,7 +406,7 @@ diff -r fe944d2c6e1f sql/sql_show.cc
  
  /*
    Find schema_tables elment by name
-@@ -4951,6 +4962,24 @@
+@@ -4994,6 +5011,24 @@
  };
  
  
@@ -431,7 +431,7 @@ diff -r fe944d2c6e1f sql/sql_show.cc
  /*
    Description of ST_FIELD_INFO in table.h
  */
-@@ -4969,6 +4998,8 @@
+@@ -5012,6 +5047,8 @@
     get_all_tables, make_columns_old_format, get_schema_column_record, 1, 2, 0},
    {"COLUMN_PRIVILEGES", column_privileges_fields_info, create_schema_table,
      fill_schema_column_privileges, 0, 0, -1, -1, 0},
@@ -440,10 +440,10 @@ diff -r fe944d2c6e1f sql/sql_show.cc
    {"INDEX_STATISTICS", index_stats_fields_info, create_schema_table,
     fill_schema_index_stats, make_old_format, 0, -1, -1, 0},
    {"KEY_COLUMN_USAGE", key_column_usage_fields_info, create_schema_table,
-diff -r fe944d2c6e1f sql/table.h
+diff -ruN a/sql/table.h b/sql/table.h
 --- a/sql/table.h	Mon Nov 10 19:47:27 2008 -0800
 +++ b/sql/table.h	Mon Nov 10 19:48:25 2008 -0800
-@@ -375,6 +375,7 @@
+@@ -376,6 +376,7 @@
    SCH_COLLATION_CHARACTER_SET_APPLICABILITY,
    SCH_COLUMNS,
    SCH_COLUMN_PRIVILEGES,

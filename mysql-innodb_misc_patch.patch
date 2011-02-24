@@ -1,6 +1,6 @@
-diff -ru mysql-5.0.84_p_orig/innobase/row/row0sel.c mysql-5.0.84/innobase/row/row0sel.c
---- mysql-5.0.84_p_orig/innobase/row/row0sel.c	2009-07-07 21:54:10.000000000 +0900
-+++ mysql-5.0.84/innobase/row/row0sel.c	2009-08-28 09:28:56.000000000 +0900
+diff -ruN a/innobase/row/row0sel.c b/innobase/row/row0sel.c
+--- a/innobase/row/row0sel.c	2009-07-07 21:54:10.000000000 +0900
++++ b/innobase/row/row0sel.c	2009-08-28 09:28:56.000000000 +0900
 @@ -2988,6 +2988,15 @@
  	return(SEL_FOUND);
  }
@@ -40,10 +40,10 @@ diff -ru mysql-5.0.84_p_orig/innobase/row/row0sel.c mysql-5.0.84/innobase/row/ro
  	}
  	
  	/* Note that if the search mode was GE or G, then the cursor
-diff -ru mysql-5.0.84_p_orig/sql/ha_innodb.cc mysql-5.0.84/sql/ha_innodb.cc
---- mysql-5.0.84_p_orig/sql/ha_innodb.cc	2009-08-27 16:06:21.000000000 +0900
-+++ mysql-5.0.84/sql/ha_innodb.cc	2009-08-28 09:33:38.000000000 +0900
-@@ -394,6 +394,18 @@
+diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
+--- a/sql/ha_innodb.cc	2009-08-27 16:06:21.000000000 +0900
++++ b/sql/ha_innodb.cc	2009-08-28 09:33:38.000000000 +0900
+@@ -412,6 +412,18 @@
  	}
  }
  

@@ -1,7 +1,7 @@
-diff -ruN mysql-5.0.67_highperf/innobase/buf/buf0buf.c mysql-5.0.67_highperf_tmp/innobase/buf/buf0buf.c
---- mysql-5.0.67_highperf/innobase/buf/buf0buf.c	2008-11-12 09:25:58.000000000 +0900
-+++ mysql-5.0.67_highperf_tmp/innobase/buf/buf0buf.c	2008-11-12 09:27:52.000000000 +0900
-@@ -2454,13 +2454,15 @@
+diff -ruN a/innobase/buf/buf0buf.c b/innobase/buf/buf0buf.c
+--- a/innobase/buf/buf0buf.c	2008-11-12 09:25:58.000000000 +0900
++++ b/innobase/buf/buf0buf.c	2008-11-12 09:27:52.000000000 +0900
+@@ -2472,13 +2472,15 @@
  				(ulong) UT_LIST_GET_LEN(buf_pool->awe_LRU_free_mapped));
  	}
  	fprintf(file,
@@ -21,9 +21,9 @@ diff -ruN mysql-5.0.67_highperf/innobase/buf/buf0buf.c mysql-5.0.67_highperf_tmp
  		(ulong) UT_LIST_GET_LEN(buf_pool->free),
  		(ulong) UT_LIST_GET_LEN(buf_pool->LRU),
  		(ulong) UT_LIST_GET_LEN(buf_pool->flush_list),
-diff -ruN mysql-5.0.67_highperf/innobase/fil/fil0fil.c mysql-5.0.67_highperf_tmp/innobase/fil/fil0fil.c
---- mysql-5.0.67_highperf/innobase/fil/fil0fil.c	2008-11-12 09:26:07.000000000 +0900
-+++ mysql-5.0.67_highperf_tmp/innobase/fil/fil0fil.c	2008-11-12 09:27:52.000000000 +0900
+diff -ruN a/innobase/fil/fil0fil.c b/innobase/fil/fil0fil.c
+--- a/innobase/fil/fil0fil.c	2008-11-12 09:26:07.000000000 +0900
++++ b/innobase/fil/fil0fil.c	2008-11-12 09:27:52.000000000 +0900
 @@ -4472,3 +4472,30 @@
  
  	return(mach_read_from_2(page + FIL_PAGE_TYPE));
@@ -55,9 +55,9 @@ diff -ruN mysql-5.0.67_highperf/innobase/fil/fil0fil.c mysql-5.0.67_highperf_tmp
 +		return 0;
 +	}
 +}
-diff -ruN mysql-5.0.67_highperf/innobase/include/fil0fil.h mysql-5.0.67_highperf_tmp/innobase/include/fil0fil.h
---- mysql-5.0.67_highperf/innobase/include/fil0fil.h	2008-11-12 09:26:07.000000000 +0900
-+++ mysql-5.0.67_highperf_tmp/innobase/include/fil0fil.h	2008-11-12 09:27:52.000000000 +0900
+diff -ruN a/innobase/include/fil0fil.h b/innobase/include/fil0fil.h
+--- a/innobase/include/fil0fil.h	2008-11-12 09:26:07.000000000 +0900
++++ b/innobase/include/fil0fil.h	2008-11-12 09:27:52.000000000 +0900
 @@ -701,6 +701,16 @@
  			written to page, the return value not defined */
  	byte* 	page);	/* in: file page */
@@ -75,10 +75,10 @@ diff -ruN mysql-5.0.67_highperf/innobase/include/fil0fil.h mysql-5.0.67_highperf
  
  typedef	struct fil_space_struct	fil_space_t;
  
-diff -ruN mysql-5.0.67_highperf/innobase/include/thr0loc.h mysql-5.0.67_highperf_tmp/innobase/include/thr0loc.h
---- mysql-5.0.67_highperf/innobase/include/thr0loc.h	2008-11-12 09:24:58.000000000 +0900
-+++ mysql-5.0.67_highperf_tmp/innobase/include/thr0loc.h	2008-11-12 09:27:52.000000000 +0900
-@@ -77,6 +77,17 @@
+diff -ruN a/innobase/include/thr0loc.h b/innobase/include/thr0loc.h
+--- a/innobase/include/thr0loc.h	2008-11-12 09:24:58.000000000 +0900
++++ b/innobase/include/thr0loc.h	2008-11-12 09:27:52.000000000 +0900
+@@ -60,6 +60,17 @@
  /*=============================*/
  			/* out: pointer to the in_ibuf field */
  
@@ -96,10 +96,10 @@ diff -ruN mysql-5.0.67_highperf/innobase/include/thr0loc.h mysql-5.0.67_highperf
  #ifndef UNIV_NONINL
  #include "thr0loc.ic"
  #endif
-diff -ruN mysql-5.0.67_highperf/innobase/srv/srv0srv.c mysql-5.0.67_highperf_tmp/innobase/srv/srv0srv.c
---- mysql-5.0.67_highperf/innobase/srv/srv0srv.c	2008-11-12 09:26:07.000000000 +0900
-+++ mysql-5.0.67_highperf_tmp/innobase/srv/srv0srv.c	2008-11-12 09:54:19.000000000 +0900
-@@ -1645,6 +1645,14 @@
+diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
+--- a/innobase/srv/srv0srv.c	2008-11-12 09:26:07.000000000 +0900
++++ b/innobase/srv/srv0srv.c	2008-11-12 09:54:19.000000000 +0900
+@@ -1675,6 +1675,14 @@
  	time_t	current_time;
  	ulint   n_reserved;
  
@@ -114,7 +114,7 @@ diff -ruN mysql-5.0.67_highperf/innobase/srv/srv0srv.c mysql-5.0.67_highperf_tmp
  	mutex_enter(&srv_innodb_monitor_mutex);
  
  	current_time = time(NULL);
-@@ -1747,6 +1755,91 @@
+@@ -1759,6 +1767,91 @@
  				ut_total_allocated_memory,
  				mem_pool_get_reserved(mem_comm_pool));
  
@@ -206,9 +206,9 @@ diff -ruN mysql-5.0.67_highperf/innobase/srv/srv0srv.c mysql-5.0.67_highperf_tmp
  	if (srv_use_awe) {
  		fprintf(file,
  	"In addition to that %lu MB of AWE memory allocated\n",
-diff -ruN mysql-5.0.67_highperf/innobase/thr/thr0loc.c mysql-5.0.67_highperf_tmp/innobase/thr/thr0loc.c
---- mysql-5.0.67_highperf/innobase/thr/thr0loc.c	2008-11-12 09:24:58.000000000 +0900
-+++ mysql-5.0.67_highperf_tmp/innobase/thr/thr0loc.c	2008-11-12 09:27:52.000000000 +0900
+diff -ruN a/innobase/thr/thr0loc.c b/innobase/thr/thr0loc.c
+--- a/innobase/thr/thr0loc.c	2008-11-12 09:24:58.000000000 +0900
++++ b/innobase/thr/thr0loc.c	2008-11-12 09:27:52.000000000 +0900
 @@ -32,6 +32,7 @@
  
  /* The hash table. The module is not yet initialized when it is NULL. */
@@ -217,7 +217,7 @@ diff -ruN mysql-5.0.67_highperf/innobase/thr/thr0loc.c mysql-5.0.67_highperf_tmp
  
  /* The private data for each thread should be put to
  the structure below and the accessor functions written
-@@ -223,6 +224,7 @@
+@@ -178,6 +179,7 @@
  	HASH_INSERT(thr_local_t, hash, thr_local_hash,
  			os_thread_pf(os_thread_get_curr_id()),
  			local);
@@ -225,7 +225,7 @@ diff -ruN mysql-5.0.67_highperf/innobase/thr/thr0loc.c mysql-5.0.67_highperf_tmp
  				
  	mutex_exit(&thr_local_mutex);
  }
-@@ -251,6 +253,7 @@
+@@ -206,6 +208,7 @@
  						
  	HASH_DELETE(thr_local_t, hash, thr_local_hash,
  				os_thread_pf(id), local);
@@ -233,7 +233,7 @@ diff -ruN mysql-5.0.67_highperf/innobase/thr/thr0loc.c mysql-5.0.67_highperf_tmp
  
  	mutex_exit(&thr_local_mutex);
  				
-@@ -274,3 +277,29 @@
+@@ -229,3 +232,29 @@
  	mutex_create(&thr_local_mutex);
  	mutex_set_level(&thr_local_mutex, SYNC_THR_LOCAL);
  }
@@ -263,9 +263,9 @@ diff -ruN mysql-5.0.67_highperf/innobase/thr/thr0loc.c mysql-5.0.67_highperf_tmp
 +		return 0;
 +	}
 +}
-diff -ruN mysql-5.0.67_highperf/patch_info/innodb_show_hashed_memory.info mysql-5.0.67_highperf_tmp/patch_info/innodb_show_hashed_memory.info
+diff -ruN /dev/null b/patch_info/innodb_show_hashed_memory.info
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
-+++ mysql-5.0.67_highperf_tmp/patch_info/innodb_show_hashed_memory.info	2008-11-12 09:27:52.000000000 +0900
++++ b/patch_info/innodb_show_hashed_memory.info	2008-11-12 09:27:52.000000000 +0900
 @@ -0,0 +1,6 @@
 +File=innodb_show_hashed_memory.patch
 +Name=Adds additional information of InnoDB internal hash table memories in SHOW INNODB STATUS

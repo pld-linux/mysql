@@ -1063,7 +1063,7 @@ diff -ruN a/innobase/srv/srv0start.c b/innobase/srv/srv0start.c
  					SRV_MAX_N_PENDING_SYNC_IOS);
  	}
  	
-diff -ruN a/patch_info/innodb_io_patches.info b/patch_info/innodb_io_patches.info
+diff -ruN /dev/null b/patch_info/innodb_io_patches.info
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/patch_info/innodb_io_patches.info	2009-07-02 16:44:49.000000000 +0900
 @@ -0,0 +1,11 @@
@@ -1089,7 +1089,7 @@ diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
  longlong innobase_buffer_pool_size, innobase_log_file_size;
  
  /* The default values for the following char* start-up parameters
-@@ -1417,6 +1418,8 @@
+@@ -1402,6 +1403,8 @@
  	srv_mem_pool_size = (ulint) innobase_additional_mem_pool_size;
  
  	srv_n_file_io_threads = (ulint) innobase_file_io_threads;
@@ -1139,7 +1139,7 @@ diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
 diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 --- a/sql/mysqld.cc	2009-07-02 16:43:23.000000000 +0900
 +++ b/sql/mysqld.cc	2009-07-02 18:00:04.000000000 +0900
-@@ -5086,6 +5086,16 @@
+@@ -5103,6 +5103,16 @@
    OPT_INNODB_ROLLBACK_ON_TIMEOUT,
    OPT_SECURE_FILE_PRIV,
    OPT_KEEP_FILES_ON_CREATE,
@@ -1156,7 +1156,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
    OPT_INNODB_ADAPTIVE_HASH_INDEX,
    OPT_FEDERATED,
    OPT_INNODB_USE_LEGACY_CARDINALITY_ALGORITHM
-@@ -5403,6 +5413,44 @@
+@@ -5421,6 +5431,44 @@
     (gptr*) &srv_use_legacy_cardinality_algorithm,
     (gptr*) &srv_use_legacy_cardinality_algorithm,
     0, GET_BOOL, OPT_ARG, 1, 0, 0, 0, 0, 0},
@@ -1201,7 +1201,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
  #endif /* End HAVE_INNOBASE_DB */
    {"isam", OPT_ISAM, "Obsolete. ISAM storage engine is no longer supported.",
     (gptr*) &opt_isam, (gptr*) &opt_isam, 0, GET_BOOL, NO_ARG, 0, 0, 0,
-@@ -7644,6 +7692,38 @@
+@@ -7666,6 +7714,38 @@
    case OPT_INNODB_LOG_ARCHIVE:
      innobase_log_archive= argument ? test(atoi(argument)) : 1;
      break;
@@ -1243,7 +1243,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 diff -ruN a/sql/set_var.cc b/sql/set_var.cc
 --- a/sql/set_var.cc	2009-07-02 16:43:23.000000000 +0900
 +++ b/sql/set_var.cc	2009-07-02 17:45:29.000000000 +0900
-@@ -489,6 +489,57 @@
+@@ -490,6 +490,57 @@
  sys_var_long_ptr  sys_innodb_flush_log_at_trx_commit(
                                          "innodb_flush_log_at_trx_commit",
                                          &srv_flush_log_at_trx_commit);
@@ -1301,7 +1301,7 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
  sys_var_const_os_str_ptr sys_innodb_data_file_path("innodb_data_file_path", 
                                                 &innobase_data_file_path);
  sys_var_const_os_str_ptr sys_innodb_data_home_dir("innodb_data_home_dir", 
-@@ -860,6 +911,13 @@
+@@ -866,6 +917,13 @@
    &sys_innodb_thread_concurrency,
    &sys_innodb_commit_concurrency,
    &sys_innodb_flush_log_at_trx_commit,
@@ -1315,7 +1315,7 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
  #endif
    &sys_trust_routine_creators,
    &sys_trust_function_creators,
-@@ -997,6 +1055,16 @@
+@@ -1003,6 +1061,16 @@
    {sys_innodb_table_locks.name, (char*) &sys_innodb_table_locks, SHOW_SYS},
    {sys_innodb_thread_concurrency.name, (char*) &sys_innodb_thread_concurrency, SHOW_SYS},
    {sys_innodb_thread_sleep_delay.name, (char*) &sys_innodb_thread_sleep_delay, SHOW_SYS},
@@ -1332,7 +1332,7 @@ diff -ruN a/sql/set_var.cc b/sql/set_var.cc
    {sys_innodb_use_legacy_cardinality_algorithm.name,
     (char*) &sys_innodb_use_legacy_cardinality_algorithm, SHOW_SYS},
  #endif
-@@ -1459,6 +1527,18 @@
+@@ -1466,6 +1534,18 @@
    }
  }
  
@@ -1366,7 +1366,7 @@ diff -ruN a/sql/set_var.h b/sql/set_var.h
  typedef int (*sys_check_func)(THD *,  set_var *);
  typedef bool (*sys_update_func)(THD *, set_var *);
  typedef void (*sys_after_update_func)(THD *,enum_var_type);
-@@ -1148,6 +1153,10 @@
+@@ -1170,6 +1175,10 @@
  int sql_set_variables(THD *thd, List<set_var_base> *var_list);
  bool not_all_support_one_shot(List<set_var_base> *var_list);
  void fix_delay_key_write(THD *thd, enum_var_type type);

@@ -1,4 +1,4 @@
-diff -r e3b747e556c8 mysql-test/r/information_schema.result
+diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_schema.result
 --- a/mysql-test/r/information_schema.result	Mon May 18 18:44:04 2009 -0700
 +++ b/mysql-test/r/information_schema.result	Mon May 18 18:48:11 2009 -0700
 @@ -44,6 +44,7 @@
@@ -59,7 +59,7 @@ diff -r e3b747e556c8 mysql-test/r/information_schema.result
  PROFILING	information_schema.PROFILING	1
  ROUTINES	information_schema.ROUTINES	1
  SCHEMATA	information_schema.SCHEMATA	1
-diff -r e3b747e556c8 mysql-test/r/information_schema_db.result
+diff -ruN a/mysql-test/r/information_schema_db.result b/mysql-test/r/information_schema_db.result
 --- a/mysql-test/r/information_schema_db.result	Mon May 18 18:44:04 2009 -0700
 +++ b/mysql-test/r/information_schema_db.result	Mon May 18 18:48:11 2009 -0700
 @@ -13,6 +13,7 @@
@@ -70,7 +70,7 @@ diff -r e3b747e556c8 mysql-test/r/information_schema_db.result
  PROFILING
  ROUTINES
  SCHEMATA
-diff -r e3b747e556c8 mysql-test/r/mysqlshow.result
+diff -ruN a/mysql-test/r/mysqlshow.result b/mysql-test/r/mysqlshow.result
 --- a/mysql-test/r/mysqlshow.result	Mon May 18 18:44:04 2009 -0700
 +++ b/mysql-test/r/mysqlshow.result	Mon May 18 18:48:11 2009 -0700
 @@ -87,6 +87,7 @@
@@ -89,7 +89,7 @@ diff -r e3b747e556c8 mysql-test/r/mysqlshow.result
  | PROFILING                             |
  | ROUTINES                              |
  | SCHEMATA                              |
-diff -r e3b747e556c8 patch_info/microsec_process.info
+diff -ruN /dev/null b/patch_info/microsec_process.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
 +++ b/patch_info/microsec_process.info	Mon May 18 18:48:11 2009 -0700
 @@ -0,0 +1,6 @@
@@ -99,7 +99,7 @@ diff -r e3b747e556c8 patch_info/microsec_process.info
 +Author=Percona <info@percona.com>
 +License=GPL
 +Comment=
-diff -r e3b747e556c8 sql/mysql_priv.h
+diff -ruN a/sql/mysql_priv.h b/sql/mysql_priv.h
 --- a/sql/mysql_priv.h	Mon May 18 18:44:04 2009 -0700
 +++ b/sql/mysql_priv.h	Mon May 18 18:48:11 2009 -0700
 @@ -249,6 +249,8 @@
@@ -111,10 +111,10 @@ diff -r e3b747e556c8 sql/mysql_priv.h
  
  #define PRECISION_FOR_DOUBLE 53
  #define PRECISION_FOR_FLOAT  24
-diff -r e3b747e556c8 sql/sql_show.cc
+diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
 --- a/sql/sql_show.cc	Mon May 18 18:44:04 2009 -0700
 +++ b/sql/sql_show.cc	Mon May 18 18:48:11 2009 -0700
-@@ -1480,6 +1480,122 @@
+@@ -1493,6 +1493,122 @@
    DBUG_VOID_RETURN;
  }
  
@@ -237,7 +237,7 @@ diff -r e3b747e556c8 sql/sql_show.cc
  /*****************************************************************************
    Status functions
  *****************************************************************************/
-@@ -4849,6 +4965,22 @@
+@@ -4862,6 +4978,22 @@
    {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
  };
  
@@ -260,7 +260,7 @@ diff -r e3b747e556c8 sql/sql_show.cc
  /*
    Description of ST_FIELD_INFO in table.h
  */
-@@ -4873,6 +5005,8 @@
+@@ -4886,6 +5018,8 @@
      get_all_tables, 0, get_schema_key_column_usage_record, 4, 5, 0},
    {"OPEN_TABLES", open_tables_fields_info, create_schema_table,
     fill_open_tables, make_old_format, 0, -1, -1, 1},
@@ -269,7 +269,7 @@ diff -r e3b747e556c8 sql/sql_show.cc
    {"PROFILING", query_profile_statistics_info, create_schema_table,
     fill_query_profile_statistics_info, make_profile_table_for_show, 
     NULL, -1, -1, false},
-diff -r e3b747e556c8 sql/table.h
+diff -ruN a/sql/table.h b/sql/table.h
 --- a/sql/table.h	Mon May 18 18:44:04 2009 -0700
 +++ b/sql/table.h	Mon May 18 18:48:11 2009 -0700
 @@ -379,6 +379,7 @@

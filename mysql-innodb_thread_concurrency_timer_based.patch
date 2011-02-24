@@ -75,7 +75,7 @@ diff -ruN a/innobase/include/srv0srv.h b/innobase/include/srv0srv.h
 diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
 --- a/innobase/srv/srv0srv.c	2009-05-06 15:38:01.000000000 +0900
 +++ b/innobase/srv/srv0srv.c	2009-05-06 17:12:54.000000000 +0900
-@@ -267,6 +267,7 @@
+@@ -273,6 +273,7 @@
  computer. Bigger computers need bigger values. Value 0 will disable the
  concurrency check. */
  
@@ -83,7 +83,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  ulong	srv_thread_concurrency	= 0;
  ulong   srv_commit_concurrency  = 0;
  
-@@ -1020,6 +1021,74 @@
+@@ -1026,6 +1027,74 @@
  Puts an OS thread to wait if there are too many concurrent threads
  (>= srv_thread_concurrency) inside InnoDB. The threads wait in a FIFO queue. */
  
@@ -158,7 +158,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  void
  srv_conc_enter_innodb(
  /*==================*/
-@@ -1043,6 +1112,13 @@
+@@ -1049,6 +1118,13 @@
  		return;
  	}
  
@@ -172,7 +172,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  	os_fast_mutex_lock(&srv_conc_mutex);
  retry:
  	if (trx->declared_to_be_inside_innodb) {
-@@ -1196,6 +1272,15 @@
+@@ -1202,6 +1278,15 @@
  		return;
  	}
  
@@ -188,7 +188,7 @@ diff -ruN a/innobase/srv/srv0srv.c b/innobase/srv/srv0srv.c
  	os_fast_mutex_lock(&srv_conc_mutex);
  
  	srv_conc_n_threads++;
-@@ -1227,8 +1312,16 @@
+@@ -1233,8 +1318,16 @@
  		return;
  	}
  
@@ -220,7 +220,7 @@ diff -ruN a/innobase/srv/srv0start.c b/innobase/srv/srv0start.c
  	/* Since InnoDB does not currently clean up all its internal data
  	   structures in MySQL Embedded Server Library server_end(), we
  	   print an error message if someone tries to start up InnoDB a
-diff -ruN a/patch_info/innodb_thread_concurrency_timer_based.info b/patch_info/innodb_thread_concurrency_timer_based.info
+diff -ruN /dev/null b/patch_info/innodb_thread_concurrency_timer_based.info
 --- /dev/null	1970-01-01 09:00:00.000000000 +0900
 +++ b/patch_info/innodb_thread_concurrency_timer_based.info	2009-05-06 17:17:12.000000000 +0900
 @@ -0,0 +1,6 @@
@@ -241,7 +241,7 @@ diff -ruN a/sql/ha_innodb.cc b/sql/ha_innodb.cc
  long innobase_extra_rsegments;
  longlong innobase_buffer_pool_size, innobase_log_file_size;
  
-@@ -1477,6 +1478,9 @@
+@@ -1476,6 +1477,9 @@
  	srv_n_log_files = (ulint) innobase_log_files_in_group;
  	srv_log_file_size = (ulint) innobase_log_file_size;
  
@@ -265,7 +265,7 @@ diff -ruN a/sql/ha_innodb.h b/sql/ha_innodb.h
 diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 --- a/sql/mysqld.cc	2009-05-06 15:38:01.000000000 +0900
 +++ b/sql/mysqld.cc	2009-05-06 16:22:06.000000000 +0900
-@@ -5096,6 +5096,7 @@
+@@ -5118,6 +5118,7 @@
    OPT_INNODB_ADAPTIVE_CHECKPOINT,
    OPT_INNODB_READ_IO_THREADS,
    OPT_INNODB_WRITE_IO_THREADS,
@@ -273,7 +273,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
    OPT_INNODB_EXTRA_RSEGMENTS,
    OPT_INNODB_DICT_SIZE_LIMIT,
    OPT_INNODB_ADAPTIVE_HASH_INDEX,
-@@ -5455,6 +5456,11 @@
+@@ -5484,6 +5485,11 @@
     "Number of background write I/O threads in InnoDB.",
     (gptr*) &innobase_write_io_threads, (gptr*) &innobase_write_io_threads,
     0, GET_LONG, REQUIRED_ARG, 8, 1, 64, 0, 0, 0},
@@ -288,7 +288,7 @@ diff -ruN a/sql/mysqld.cc b/sql/mysqld.cc
 diff -ruN a/sql/set_var.cc b/sql/set_var.cc
 --- a/sql/set_var.cc	2009-05-06 15:38:01.000000000 +0900
 +++ b/sql/set_var.cc	2009-05-06 16:02:27.000000000 +0900
-@@ -1063,6 +1063,7 @@
+@@ -1093,6 +1093,7 @@
    {sys_innodb_adaptive_checkpoint.name, (char*) &sys_innodb_adaptive_checkpoint, SHOW_SYS},
    {"innodb_read_io_threads", (char*) &innobase_read_io_threads, SHOW_LONG},
    {"innodb_write_io_threads", (char*) &innobase_write_io_threads, SHOW_LONG},
