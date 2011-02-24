@@ -2178,9 +2178,8 @@ diff -ruN a/sql/sql_class.cc b/sql/sql_class.cc
  }
  
  
-diff -ruN a/sql/sql_class.h b/sql/sql_class.h
---- a/sql/sql_class.h	Tue Jul 28 23:39:12 2009 -0700
-+++ b/sql/sql_class.h	Tue Jul 28 23:42:44 2009 -0700
+--- mysql-5.0.92/sql/sql_class.h	Tue Jul 28 23:39:12 2009 -0700
++++ mysql-5.0.92/sql/sql_class.h	Tue Jul 28 23:42:44 2009 -0700
 @@ -43,6 +43,7 @@
  extern char internal_table_name[2];
  extern char empty_c_string[1];
@@ -2278,7 +2277,7 @@ diff -ruN a/sql/sql_class.h b/sql/sql_class.h
    /* <> 0 if we are inside of trigger or stored function. */
    uint in_sub_stmt;
  
-@@ -1702,11 +1732,11 @@
+@@ -1732,11 +1732,11 @@
        sql_print_information("time() failed with %d", errno);
    }
  
@@ -2292,9 +2291,9 @@ diff -ruN a/sql/sql_class.h b/sql/sql_class.h
 +  inline void	end_time()    { end_timer(); safe_time(&start_time); }
 +  inline void	set_time(time_t t) { set_timer(); time_after_lock=start_time=user_time=t; }
 +  inline void	lock_time()   { lock_timer(); safe_time(&time_after_lock); }
-   inline void	insert_id(ulonglong id_arg)
-   {
-     last_insert_id= id_arg;
+   /*TODO: this will be obsolete when we have support for 64 bit my_time_t */
+   inline bool	is_valid_time() 
+   { 
 diff -ruN a/sql/sql_parse.cc b/sql/sql_parse.cc
 --- a/sql/sql_parse.cc	Tue Jul 28 23:39:12 2009 -0700
 +++ b/sql/sql_parse.cc	Tue Jul 28 23:42:44 2009 -0700

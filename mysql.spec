@@ -24,14 +24,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.91
-Release:	3
+Version:	5.0.92
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-#Source0:	http://ftp.gwdg.de/pub/misc/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-Source0:	http://downloads.mysql.com/archives/mysql-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	e28f93b1a1b10b028135c1d51bbd4c46
-#Source0:	http://mysql.he.net/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
+# Source0-md5:	a72ee3d1d54bff74836de9500858a311
+#Source0:	http://downloads.mysql.com/archives/mysql-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
@@ -675,6 +674,14 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 	awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 %endif
 
+%if %{with sphinx}
+rm -f $RPM_BUILD_ROOT/usr/lib/mysql/sphinx.a
+rm -f $RPM_BUILD_ROOT/usr/lib/mysql/sphinx.la
+# TODO: patch build with -avoid-version
+rm -f $RPM_BUILD_ROOT/usr/lib/mysql/sphinx.so.0
+mv -f $RPM_BUILD_ROOT/usr/lib/mysql/sphinx.so{.0.0.0,}
+%endif
+
 install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/mysql/mysql-client.conf
 cp -a %{SOURCE15} $RPM_BUILD_ROOT/etc/skel/.my.cnf
@@ -880,6 +887,10 @@ EOF
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
+%if %{with sphinx}
+%dir %{_libdir}/%{name}
+%attr(755,root,root) %{_libdir}/%{name}/sphinx.so
+%endif
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
@@ -1004,7 +1015,6 @@ EOF
 
 %files libs
 %defattr(644,root,root,755)
-%doc EXCEPTIONS-CLIENT
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysql/mysql-client.conf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*
