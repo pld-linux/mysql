@@ -374,7 +374,7 @@ Este pacote contém os clientes padrão para o MySQL.
 
 %package libs
 Summary:	Shared libraries for MySQL
-Summary(pl.UTF-8):	Biblioteki dzielone MySQL
+Summary(pl.UTF-8):	Biblioteki współdzielone MySQL
 Group:		Libraries
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
@@ -383,11 +383,11 @@ Obsoletes:	mysql-doc < 4.1.12
 Shared libraries for MySQL.
 
 %description libs -l pl.UTF-8
-Biblioteki dzielone MySQL.
+Biblioteki współdzielone MySQL.
 
 %package devel
-Summary:	MySQL - Development header files and libraries
-Summary(pl.UTF-8):	MySQL - Pliki nagłówkowe i biblioteki dla programistów
+Summary:	MySQL - development header files and other files
+Summary(pl.UTF-8):	MySQL - Pliki nagłówkowe i inne dla programistów
 Summary(pt.UTF-8):	MySQL - Medições de desempenho
 Summary(ru.UTF-8):	MySQL - хедеры и библиотеки разработчика
 Summary(uk.UTF-8):	MySQL - хедери та бібліотеки програміста
@@ -399,7 +399,7 @@ Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
 
 %description devel
-This package contains the development header files and libraries
+This package contains the development header files and other files
 necessary to develop MySQL client applications.
 
 %description devel -l fr.UTF-8
@@ -408,7 +408,7 @@ developpement necessaires pour developper des applications clientes
 MySQL.
 
 %description devel -l pl.UTF-8
-Pliki nagłówkowe i biblioteki konieczne do kompilacji aplikacji
+Pliki nagłówkowe i inne pliki konieczne do kompilacji aplikacji
 klienckich MySQL.
 
 %description devel -l pt_BR.UTF-8
@@ -713,18 +713,15 @@ sed -i -e 's,/usr//usr,%{_prefix},g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # remove known unpackaged files
-rm -rf $RPM_BUILD_ROOT%{_datadir}/mysql-support
-
-# remove .txt variants for .sys messages
-rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/*/*.txt
+%{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-support
 
 # rename not to be so generic name
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
 
 # not useful without -debug build
-%{!?debug:rm -f $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
-%{!?debug:rm -f $RPM_BUILD_ROOT%{_mandir}/man1/mysql_resolve_stack_dump.1}
+%{!?debug:%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
+%{!?debug:%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_resolve_stack_dump.1}
 # generate symbols file, so one can generate backtrace using it
 # mysql_resolve_stack_dump -s %{_datadir}/%{name}/mysqld.sym -n mysqld.stack.
 # http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
@@ -742,36 +739,30 @@ sed -i -e 's#/usr/bin/my_print_defaults#%{_sbindir}/my_print_defaults#g' $RPM_BU
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 
 # delete - functionality in initscript / rpm
-# mysql_install_db is needed by digikam
-#rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
-#rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1*
-rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
-rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
+# note: mysql_install_db (and thus resolveip) are needed by digikam
+%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
+%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
 #rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 #rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 #rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
-rm $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg-utf8.txt
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
-#rm $RPM_BUILD_ROOT%{_bindir}/resolveip
-#rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
+%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg-utf8.txt
+%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1*
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test.1*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
-rm -rf $RPM_BUILD_ROOT%{_datadir}/mysql-test
+%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test.1*
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1*
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
+%{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
 
 # not needed
-rm -f $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
-rm -f $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/ha_example.*
-rm -f $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/sphinx.{a,la}
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -1093,7 +1084,6 @@ done
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
 %attr(755,root,root) %{_bindir}/mysqlshow
-#%attr(755,root,root) %{_sbindir}/mysqlmanager
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqlbinlog.1*
@@ -1101,7 +1091,6 @@ done
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
 %{_mandir}/man1/mysqlshow.1*
-#%{_mandir}/man8/mysqlmanager.8*
 
 %files libs
 %defattr(644,root,root,755)
