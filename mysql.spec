@@ -125,7 +125,7 @@ Patch149:	%{name}-bug677407.patch
 Patch150:	%{name}-fix-bug671764.patch
 Patch151:	%{name}-mysql_remove_eol_carret.patch
 # </percona>
-URL:		http://www.mysql.com/products/database/mysql/community_edition.html
+URL:		http://www.mysql.com/products/community/
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	bison
@@ -375,7 +375,7 @@ Este pacote contém os clientes padrão para o MySQL.
 
 %package libs
 Summary:	Shared libraries for MySQL
-Summary(pl.UTF-8):	Biblioteki dzielone MySQL
+Summary(pl.UTF-8):	Biblioteki współdzielone MySQL
 Group:		Libraries
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
@@ -384,11 +384,11 @@ Obsoletes:	mysql-doc < 4.1.12
 Shared libraries for MySQL.
 
 %description libs -l pl.UTF-8
-Biblioteki dzielone MySQL.
+Biblioteki współdzielone MySQL.
 
 %package devel
-Summary:	MySQL - Development header files and libraries
-Summary(pl.UTF-8):	MySQL - Pliki nagłówkowe i biblioteki dla programistów
+Summary:	MySQL - development header files and other files
+Summary(pl.UTF-8):	MySQL - Pliki nagłówkowe i inne dla programistów
 Summary(pt.UTF-8):	MySQL - Medições de desempenho
 Summary(ru.UTF-8):	MySQL - хедеры и библиотеки разработчика
 Summary(uk.UTF-8):	MySQL - хедери та бібліотеки програміста
@@ -400,7 +400,7 @@ Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
 
 %description devel
-This package contains the development header files and libraries
+This package contains the development header files and other files
 necessary to develop MySQL client applications.
 
 %description devel -l fr.UTF-8
@@ -409,7 +409,7 @@ developpement necessaires pour developper des applications clientes
 MySQL.
 
 %description devel -l pl.UTF-8
-Pliki nagłówkowe i biblioteki konieczne do kompilacji aplikacji
+Pliki nagłówkowe i inne pliki konieczne do kompilacji aplikacji
 klienckich MySQL.
 
 %description devel -l pt_BR.UTF-8
@@ -862,32 +862,32 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %triggerpostun -- mysql < 4.0.20-2.4
-# For clusters in /etc/mysql/clusters.conf
+# For clusters in /etc/%{name}/clusters.conf
 if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
 	if [ -n "$MYSQL_DB_CLUSTERS" ]; then
 		for i in "$MYSQL_DB_CLUSTERS"; do
-			echo "$i/mysqld.conf=$i" >> /etc/mysql/clusters.conf
+			echo "$i/mysqld.conf=$i" >> /etc/%{name}/clusters.conf
 		done
 		echo "# Do not use **obsolete** option MYSQL_DB_CLUSTERS" >> /etc/sysconfig/mysql
-		echo "# USE /etc/mysql/clusters.conf instead" >> /etc/sysconfig/mysql
-		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/mysql/clusters.conf."
-		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/mysql/clusters.conf."
+		echo "# USE /etc/%{name}/clusters.conf instead" >> /etc/sysconfig/mysql
+		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/%{name}/clusters.conf."
+		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/%{name}/clusters.conf."
 	fi
 fi
 
 %triggerpostun -- mysql < 4.1.1
 # For better compatibility with prevoius versions:
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
-	elif [ -f "/etc/mysql/$config" ]; then
-		config_file=/etc/mysql/$config
+	elif [ -f "/etc/%{name}/$config" ]; then
+		config_file=/etc/%{name}/$config
 	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
 		if [ -z "$clusterdir" ]; then
 			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/mysql/clusters.conf"
+			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
 			exit 1
 		fi
 		config_file="$clusterdir/mysqld.conf"
@@ -917,16 +917,16 @@ EOF
 
 %triggerpostun -- mysql < 5.1.0
 configs=""
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
-	elif [ -f "/etc/mysql/$config" ]; then
-		config_file=/etc/mysql/$config
+	elif [ -f "/etc/%{name}/$config" ]; then
+		config_file=/etc/%{name}/$config
 	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
 		if [ -z "$clusterdir" ]; then
 			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/mysql/clusters.conf"
+			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
 			exit 1
 		fi
 		config_file="$clusterdir/mysqld.conf"
@@ -943,6 +943,10 @@ done
 echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
 echo 'Thus, you should invoke:'
 for config in $configs; do
+	sed -i -e '
+		#set-variable\s*=\s* ##
+	' $config
+
 	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
 	echo "# mysql_upgrade --datadir=$datadir"
 done
