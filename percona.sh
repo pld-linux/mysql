@@ -32,7 +32,12 @@ fi
 > .patch.spec
 i=100
 for patch in $(cat $version/series | filter_names); do
-	file=mysql-$patch
+	# if patch already existed, use mysql- prefix
+	if [ -f mysql-$patch ]; then
+		file=mysql-$patch
+	else
+		file=$patch
+	fi
 	cat $version/$patch | filter_files > $file
 
 	if [ -z "$(awk -vfile=$file -F/ '$2 == file{print}' CVS/Entries)" ]; then
@@ -41,7 +46,7 @@ for patch in $(cat $version/series | filter_names); do
 	fi
 
 	echo >&2 "Adding: $patch"
-	printf "Patch%d:\t%s\n" $i %{name}-$patch >> .percona.spec
+	printf "Patch%d:\t%s\n" $i $(echo "$file" | sed -e 's,^mysql-,%{name}-,') >> .percona.spec
 	printf "%%patch%d -p1\n" $i >> .patch.spec
 	i=$((i+1))
 done
