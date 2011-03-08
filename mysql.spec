@@ -901,14 +901,16 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	configs="$configs $config_file"
 done
 
-(
 echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
 echo 'Thus, you should invoke:'
 for config in $configs; do
+	sed -i -e '
+		#set-variable\s*=\s* ##
+	' $config
+
 	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
 	echo "# mysql_upgrade --datadir=$datadir"
 done
-) | %banner -e %{name}-5.1
 
 %triggerpostun -- mysql < 5.5.0
 configs=""
@@ -935,7 +937,10 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 done
 
 for config in $configs; do
-	sed -i -e 's#^language *= *polish#lc-messages = pl_PL#gi' $config
+	sed -i -e '
+		s#^language *= *polish#lc-messages = pl_PL#gi
+		#set-variable\s*=\s* ##
+	' $config
 done
 
 %files
