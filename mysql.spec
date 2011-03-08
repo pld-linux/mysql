@@ -32,7 +32,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.1.55
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
@@ -109,9 +109,21 @@ Patch133:	%{name}-innodb_fix_misc.patch
 Patch134:	%{name}-innodb_adjust_defaults.patch
 Patch135:	%{name}-innodb_deadlock_count.patch
 Patch136:	%{name}-bug580324.patch
-Patch137:	%{name}-error_pad.patch
+Patch137:	%{name}-bugfix48929.patch
 Patch138:	%{name}-query_cache_enhance.patch
-Patch139:	%{name}-bug677407.patch
+Patch139:	%{name}-control_online_alter_index.patch
+Patch140:	%{name}-log_connection_error.patch
+Patch141:	%{name}-mysql-syslog.patch
+Patch142:	%{name}-innodb_buffer_pool_shm.patch
+Patch143:	%{name}-response-time-distribution.patch
+Patch144:	%{name}-error_pad.patch
+Patch145:	%{name}-remove_fcntl_excessive_calls.patch
+Patch146:	%{name}-sql_no_fcache.patch
+Patch147:	%{name}-show_slave_status_nolock.patch
+Patch148:	%{name}-innodb_fast_shutdown.patch
+Patch149:	%{name}-bug677407.patch
+Patch150:	%{name}-fix-bug671764.patch
+Patch151:	%{name}-mysql_remove_eol_carret.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -593,6 +605,18 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch137 -p1
 %patch138 -p1
 %patch139 -p1
+%patch140 -p1
+%patch141 -p1
+%patch142 -p1
+%patch143 -p1
+%patch144 -p1
+%patch145 -p1
+%patch146 -p1
+%patch147 -p1
+%patch148 -p1
+%patch149 -p1
+%patch150 -p1
+%patch151 -p1
 # </percona>
 
 %build
