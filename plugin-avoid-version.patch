@@ -1,0 +1,114 @@
+diff -ur mysql-5.1.50.org/plugin/daemon_example/Makefile.am mysql-5.1.50/plugin/daemon_example/Makefile.am
+--- mysql-5.1.50.org/plugin/daemon_example/Makefile.am	2010-08-03 19:24:29.000000000 +0200
++++ mysql-5.1.50/plugin/daemon_example/Makefile.am	2010-09-23 20:52:58.514057048 +0200
+@@ -26,7 +26,7 @@
+ 
+ EXTRA_LTLIBRARIES =	libdaemon_example.la
+ pkgplugin_LTLIBRARIES =	@plugin_daemon_example_shared_target@
+-libdaemon_example_la_LDFLAGS =	-module -rpath $(pkgplugindir)
++libdaemon_example_la_LDFLAGS =	-module -avoid-version -rpath $(pkgplugindir)
+ libdaemon_example_la_CXXFLAGS=	$(AM_CXXFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ libdaemon_example_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ libdaemon_example_la_SOURCES =	daemon_example.cc
+diff -ur mysql-5.1.50.org/storage/archive/Makefile.am mysql-5.1.50/storage/archive/Makefile.am
+--- mysql-5.1.50.org/storage/archive/Makefile.am	2010-08-03 19:24:29.000000000 +0200
++++ mysql-5.1.50/storage/archive/Makefile.am	2010-09-23 20:53:04.487687594 +0200
+@@ -35,7 +35,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_archive.la
+ pkgplugin_LTLIBRARIES =	@plugin_archive_shared_target@
+-ha_archive_la_LDFLAGS =	-module -rpath $(pkgplugindir)
++ha_archive_la_LDFLAGS =	-module -avoid-version -rpath $(pkgplugindir)
+ ha_archive_la_CXXFLAGS=	$(AM_CXXFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_archive_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_archive_la_SOURCES =	ha_archive.cc azio.c
+diff -ur mysql-5.1.50.org/storage/blackhole/Makefile.am mysql-5.1.50/storage/blackhole/Makefile.am
+--- mysql-5.1.50.org/storage/blackhole/Makefile.am	2010-08-03 19:24:29.000000000 +0200
++++ mysql-5.1.50/storage/blackhole/Makefile.am	2010-09-23 20:53:04.487687594 +0200
+@@ -34,7 +34,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_blackhole.la
+ pkgplugin_LTLIBRARIES =	@plugin_blackhole_shared_target@
+-ha_blackhole_la_LDFLAGS=-module -rpath $(pkgplugindir)
++ha_blackhole_la_LDFLAGS=-module -avoid-version -rpath $(pkgplugindir)
+ ha_blackhole_la_CXXFLAGS=$(AM_CXXFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_blackhole_la_CFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_blackhole_la_SOURCES=ha_blackhole.cc
+diff -ur mysql-5.1.50.org/storage/csv/Makefile.am mysql-5.1.50/storage/csv/Makefile.am
+--- mysql-5.1.50.org/storage/csv/Makefile.am	2010-08-03 19:24:29.000000000 +0200
++++ mysql-5.1.50/storage/csv/Makefile.am	2010-09-23 20:53:04.487687596 +0200
+@@ -31,7 +31,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_csv.la
+ pkglib_LTLIBRARIES =	@plugin_csv_shared_target@
+-ha_csv_la_LDFLAGS =	-module -rpath $(MYSQLLIBdir)
++ha_csv_la_LDFLAGS =	-module -avoid-version -rpath $(MYSQLLIBdir)
+ ha_csv_la_CXXFLAGS =	$(AM_CXXFLAGS) -DMYSQL_PLUGIN
+ ha_csv_la_SOURCES =	transparent_file.cc ha_tina.cc 
+ 
+diff -ur mysql-5.1.50.org/storage/example/Makefile.am mysql-5.1.50/storage/example/Makefile.am
+--- mysql-5.1.50.org/storage/example/Makefile.am	2010-08-03 19:24:29.000000000 +0200
++++ mysql-5.1.50/storage/example/Makefile.am	2010-09-23 20:53:04.487687596 +0200
+@@ -34,7 +34,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_example.la
+ pkgplugin_LTLIBRARIES =	@plugin_example_shared_target@
+-ha_example_la_LDFLAGS =	-module -rpath $(pkgplugindir)
++ha_example_la_LDFLAGS =	-module -avoid-version -rpath $(pkgplugindir)
+ ha_example_la_CXXFLAGS=	$(AM_CXXFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_example_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_example_la_SOURCES =	ha_example.cc
+diff -ur mysql-5.1.50.org/storage/federated/Makefile.am mysql-5.1.50/storage/federated/Makefile.am
+--- mysql-5.1.50.org/storage/federated/Makefile.am	2010-08-03 19:24:29.000000000 +0200
++++ mysql-5.1.50/storage/federated/Makefile.am	2010-09-23 20:53:04.487687596 +0200
+@@ -34,7 +34,7 @@
+ 
+ EXTRA_LTLIBRARIES =	ha_federated.la
+ pkgplugin_LTLIBRARIES =	@plugin_federated_shared_target@
+-ha_federated_la_LDFLAGS =	-module -rpath $(pkgplugindir)
++ha_federated_la_LDFLAGS =	-module -avoid-version -rpath $(pkgplugindir)
+ ha_federated_la_CXXFLAGS=	$(AM_CXXFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_federated_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_federated_la_SOURCES =	ha_federated.cc
+diff -ur mysql-5.1.50.org/storage/innobase/Makefile.am mysql-5.1.50/storage/innobase/Makefile.am
+--- mysql-5.1.50.org/storage/innobase/Makefile.am	2010-08-03 19:24:20.000000000 +0200
++++ mysql-5.1.50/storage/innobase/Makefile.am	2010-09-23 20:53:04.494354584 +0200
+@@ -162,7 +162,7 @@
+ EXTRA_LTLIBRARIES=	ha_innodb.la
+ pkgplugin_LTLIBRARIES=	@plugin_innobase_shared_target@
+ 
+-ha_innodb_la_LDFLAGS=	-module -rpath $(pkgplugindir)
++ha_innodb_la_LDFLAGS=	-module -avoid-version -rpath $(pkgplugindir)
+ ha_innodb_la_CXXFLAGS=	$(AM_CXXFLAGS) $(INNODB_DYNAMIC_CFLAGS)
+ ha_innodb_la_CFLAGS=	$(AM_CFLAGS) $(INNODB_DYNAMIC_CFLAGS)
+ ha_innodb_la_SOURCES=	$(libinnobase_a_SOURCES)
+diff -ur mysql-5.1.50.org/storage/innodb_plugin/Makefile.am mysql-5.1.50/storage/innodb_plugin/Makefile.am
+--- mysql-5.1.50.org/storage/innodb_plugin/Makefile.am	2010-08-03 19:24:19.000000000 +0200
++++ mysql-5.1.50/storage/innodb_plugin/Makefile.am	2010-09-23 20:53:04.494354584 +0200
+@@ -331,7 +331,7 @@
+ EXTRA_LTLIBRARIES=	ha_innodb_plugin.la
+ pkgplugin_LTLIBRARIES=	@plugin_innodb_plugin_shared_target@
+ 
+-ha_innodb_plugin_la_LDFLAGS=	-module -rpath $(pkgplugindir)
++ha_innodb_plugin_la_LDFLAGS=	-module -avoid-version -rpath $(pkgplugindir)
+ ha_innodb_plugin_la_CXXFLAGS=	$(AM_CXXFLAGS) $(INNODB_DYNAMIC_CFLAGS)
+ ha_innodb_plugin_la_CFLAGS=	$(AM_CFLAGS) $(INNODB_DYNAMIC_CFLAGS)
+ ha_innodb_plugin_la_SOURCES=	$(libinnobase_a_SOURCES)
+diff -ur mysql-5.1.50.org/storage/sphinx/Makefile.am mysql-5.1.50/storage/sphinx/Makefile.am
+--- mysql-5.1.50.org/storage/sphinx/Makefile.am	2010-09-23 20:51:48.660581537 +0200
++++ mysql-5.1.50/storage/sphinx/Makefile.am	2010-09-23 20:53:05.261059401 +0200
+@@ -38,12 +38,12 @@
+ EXTRA_LTLIBRARIES =	ha_sphinx.la
+ pkgplugin_LTLIBRARIES = @plugin_sphinx_shared_target@ sphinx.la
+ 
+-ha_sphinx_la_LDFLAGS =	-module -avoid-version -rpath $(MYSQLLIBdir)
++ha_sphinx_la_LDFLAGS =	-module -avoid-version -avoid-version -rpath $(MYSQLLIBdir)
+ ha_sphinx_la_CXXFLAGS=	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_sphinx_la_CFLAGS =	$(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ ha_sphinx_la_SOURCES =	ha_sphinx.cc
+ 
+-sphinx_la_LDFLAGS = -module -avoid-version -rpath $(MYSQLLIBdir)
++sphinx_la_LDFLAGS = -module -avoid-version -avoid-version -rpath $(MYSQLLIBdir)
+ sphinx_la_CXXFLAGS = $(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ sphinx_la_CFLAGS = $(AM_CFLAGS) -DMYSQL_DYNAMIC_PLUGIN
+ sphinx_la_SOURCES = snippets_udf.cc
