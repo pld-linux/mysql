@@ -22,7 +22,7 @@ filter_files() {
 
 if [ -d $version ]; then
 	cd $version
-	bzr up
+	bzr pull
 	cd ..
 else
 	bzr branch $bzr_branch $version
@@ -40,6 +40,7 @@ for patch in $(cat $version/series | filter_names); do
 		${branch:+cvs up -r $branch $file}
 	fi
 
+	echo >&2 "Adding: $patch"
 	printf "Patch%d:\t%s\n" $i %{name}-$patch >> .percona.spec
 	printf "%%patch%d -p1\n" $i >> .patch.spec
 	i=$((i+1))
