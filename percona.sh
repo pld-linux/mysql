@@ -43,7 +43,11 @@ for patch in $(cat $version/series | filter_names); do
 		${branch:+cvs up -r $branch $file}
 	fi
 
-	echo >&2 "Adding: $patch"
+	if [ "$patch" != "$file" ]; then
+		echo >&2 "Adding: $file ($patch)"
+	else
+		echo >&2 "Adding: $file"
+	fi
 	printf "Patch%d:\t%s\n" $i $(echo "$file" | sed -e 's,^mysql-,%{name}-,') >> .percona.spec
 	printf "%%patch%d -p1\n" $i >> .patch.spec
 	i=$((i+1))
