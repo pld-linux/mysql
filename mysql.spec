@@ -940,7 +940,7 @@ for config in $configs; do
 	sed -i -e '
 		s/^language *= *polish/lc-messages = pl_PL/i
 		s/set-variable\s*=\s* //
-		/^skip-locking/; removed: &/
+		/^skip-locking/skip-external-locking/
 		s/default-character-set/character-set-server/
 	' $config
 done
