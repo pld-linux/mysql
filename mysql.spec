@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.9
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -774,6 +774,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %post
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+/sbin/ldconfig
 /sbin/chkconfig --add mysql
 %service mysql restart
 
@@ -785,6 +786,7 @@ fi
 
 %postun
 [ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
+/sbin/ldconfig
 
 if [ "$1" = "0" ]; then
 	%userremove mysql
@@ -981,6 +983,8 @@ done
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/sphinx.so
 %endif
+# for plugins
+%attr(755,root,root) %attr(755,root,root) %{_libdir}/libmysqlservices.so
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
@@ -1119,8 +1123,6 @@ done
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/libmysqlclient.so
 %attr(755,root,root) %{_libdir}/libmysqlclient_r.so
-# what's this?
-%attr(755,root,root) %{_libdir}/libmysqlservices.so
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so
 %endif
