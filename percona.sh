@@ -1,14 +1,18 @@
 #!/bin/sh
 # updates percona patches
 # http://www.percona.com/docs/wiki/repositories:start
+# http://bazaar.launchpad.net/~percona-dev/percona-server/5.5.8/files
 # https://launchpad.net/percona-server/5.5
 # bzr branch lp:percona-server/5.5
 
 version=5.5
 bzr_branch=lp:percona-server/$version
+#version=5.5.9
+#bzr_branch=lp:percona-dev/percona-server/$version
 branch=
 
 filter_names() {
+	grep -v 'mysql_dump_ignore_ct.patch' | \
 	grep -v 'percona-support.patch' | \
 	grep -v 'mysqld_safe_syslog.patch' | \
 	grep -v 'mysql-test.diff'
@@ -17,6 +21,8 @@ filter_names() {
 filter_files() {
 	filterdiff -x '*/configure'
 }
+
+set -e
 
 if [ -d $version ]; then
 	cd $version
