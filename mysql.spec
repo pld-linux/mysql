@@ -905,7 +905,7 @@ echo 'You should run MySQL upgrade script *after* restarting MySQL server for al
 echo 'Thus, you should invoke:'
 for config in $configs; do
 	sed -i -e '
-		#set-variable\s*=\s* ##
+		s/set-variable\s*=\s* //
 	' $config
 
 	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
@@ -938,8 +938,10 @@ done
 
 for config in $configs; do
 	sed -i -e '
-		s#^language *= *polish#lc-messages = pl_PL#gi
-		#set-variable\s*=\s* ##
+		s/^language *= *polish/lc-messages = pl_PL/i
+		s/set-variable\s*=\s* //
+		/^skip-locking/; removed: &/
+		s/default-character-set/character-set-server/
 	' $config
 done
 
