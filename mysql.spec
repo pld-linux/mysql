@@ -904,16 +904,20 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	configs="$configs $config_file"
 done
 
+(
 echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
 echo 'Thus, you should invoke:'
 for config in $configs; do
 	sed -i -e '
 		s/set-variable\s*=\s* //
+		# use # as comment in config
+		s/^;/#/
 	' $config
 
 	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
 	echo "# mysql_upgrade --datadir=$datadir"
 done
+) | %banner -e %{name}-5.1
 
 %triggerpostun -- mysql < 5.5.0
 configs=""
@@ -939,6 +943,9 @@ for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	configs="$configs $config_file"
 done
 
+(
+echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
+echo 'Thus, you should invoke:'
 for config in $configs; do
 	sed -i -e '
 		s/^language *= *polish/lc-messages = pl_PL/i
@@ -946,8 +953,14 @@ for config in $configs; do
 		/^skip-locking/skip-external-locking/
 		# this is not valid for server. it is client option
 		s/default-character-set/# client-config: &/
+		# use # as comment in config
+		s/^;/#/
 	' $config
+
+	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
+	echo "# mysql_upgrade --datadir=$datadir"
 done
+) | %banner -e %{name}-5.5
 
 %files
 %defattr(644,root,root,755)
