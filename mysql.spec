@@ -25,7 +25,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.92
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
@@ -675,11 +675,11 @@ touch $RPM_BUILD_ROOT/var/log/mysql/{err,log,update}
 %endif
 
 %if %{with sphinx}
-rm -f $RPM_BUILD_ROOT/usr/lib/mysql/sphinx.a
-rm -f $RPM_BUILD_ROOT/usr/lib/mysql/sphinx.la
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/sphinx.a
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/sphinx.la
 # TODO: patch build with -avoid-version
-rm -f $RPM_BUILD_ROOT/usr/lib/mysql/sphinx.so.0
-mv -f $RPM_BUILD_ROOT/usr/lib/mysql/sphinx.so{.0.0.0,}
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/sphinx.so.0
+mv $RPM_BUILD_ROOT%{_libdir}/mysql/sphinx.so{.0.0.0,}
 %endif
 
 install mysqld.conf $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld.conf
