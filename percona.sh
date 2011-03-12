@@ -8,11 +8,9 @@ bzr_branch=lp:percona-server/$version
 branch=MYSQL_5_1
 
 filter_names() {
-	# mysql_dump_ignore_ct.patch is broken, therefore we skip
-	grep -v 'mysql_dump_ignore_ct.patch' | \
 	grep -v 'percona-support.patch' | \
 	grep -v 'mysqld_safe_syslog.patch' | \
-	grep -v 'mysql-test.diff'
+	grep -v 'mysql-test.patch'
 }
 
 filter_files() {

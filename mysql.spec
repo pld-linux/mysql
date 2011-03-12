@@ -92,7 +92,6 @@ Patch116:	%{name}-innodb_recovery_patches.patch
 Patch117:	%{name}-innodb_misc_patch.patch
 Patch118:	%{name}-innodb_split_buf_pool_mutex.patch
 Patch119:	%{name}-innodb_rw_lock.patch
-Patch120:	%{name}-mysql-test.patch
 # </percona>
 URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
@@ -559,7 +558,6 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch117 -p1
 %patch118 -p1
 %patch119 -p1
-%patch120 -p1
 # </percona>
 
 %patch21 -p0
