@@ -1147,6 +1147,39 @@ diff -ruN a/netware/Makefile.in b/netware/Makefile.in
  LIBS = @LIBS@
  LIBTOOL = @LIBTOOL@
  LIB_EXTRA_CCFLAGS = @LIB_EXTRA_CCFLAGS@
+diff -ruN a/os2/Makefile.in b/os2/Makefile.in
+--- a/os2/Makefile.in	Wed Jul 29 13:33:34 2009 -0700
++++ b/os2/Makefile.in	Wed Jul 29 13:34:11 2009 -0700
+@@ -156,6 +156,7 @@
+ LIBDL = @LIBDL@
+ LIBEDIT_LOBJECTS = @LIBEDIT_LOBJECTS@
+ LIBOBJS = @LIBOBJS@
++LIBRT = @LIBRT@
+ LIBS = @LIBS@
+ LIBTOOL = @LIBTOOL@
+ LIB_EXTRA_CCFLAGS = @LIB_EXTRA_CCFLAGS@
+diff -ruN a/os2/include/Makefile.in b/os2/include/Makefile.in
+--- a/os2/include/Makefile.in	Wed Jul 29 13:33:34 2009 -0700
++++ b/os2/include/Makefile.in	Wed Jul 29 13:34:11 2009 -0700
+@@ -156,6 +156,7 @@
+ LIBDL = @LIBDL@
+ LIBEDIT_LOBJECTS = @LIBEDIT_LOBJECTS@
+ LIBOBJS = @LIBOBJS@
++LIBRT = @LIBRT@
+ LIBS = @LIBS@
+ LIBTOOL = @LIBTOOL@
+ LIB_EXTRA_CCFLAGS = @LIB_EXTRA_CCFLAGS@
+diff -ruN a/os2/include/sys/Makefile.in b/os2/include/sys/Makefile.in
+--- a/os2/include/sys/Makefile.in	Wed Jul 29 13:33:34 2009 -0700
++++ b/os2/include/sys/Makefile.in	Wed Jul 29 13:34:11 2009 -0700
+@@ -144,6 +144,7 @@
+ LIBDL = @LIBDL@
+ LIBEDIT_LOBJECTS = @LIBEDIT_LOBJECTS@
+ LIBOBJS = @LIBOBJS@
++LIBRT = @LIBRT@
+ LIBS = @LIBS@
+ LIBTOOL = @LIBTOOL@
+ LIB_EXTRA_CCFLAGS = @LIB_EXTRA_CCFLAGS@
 diff -ruN /dev/null b/patch_info/userstats.info
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
 +++ b/patch_info/userstats.info	Wed Jul 29 13:34:11 2009 -0700
@@ -3454,8 +3487,9 @@ diff -ruN a/sql/sql_prepare.cc b/sql/sql_prepare.cc
    DBUG_VOID_RETURN;
  }
  
---- mysql-5.0.92/sql/sql_show.cc~	2011-02-24 15:55:10.000000000 +0200
-+++ mysql-5.0.92/sql/sql_show.cc	2011-02-24 15:56:28.993570019 +0200
+diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
+--- a/sql/sql_show.cc	Wed Jul 29 13:33:34 2009 -0700
++++ b/sql/sql_show.cc	Wed Jul 29 13:34:11 2009 -0700
 @@ -540,6 +540,7 @@
  		sctx->master_access);
    if (!(db_access & DB_ACLS) && (!grant_option || check_grant_db(thd,dbname)))
@@ -3843,13 +3877,13 @@ diff -ruN a/sql/sql_prepare.cc b/sql/sql_prepare.cc
  
  /*
    Description of ST_FIELD_INFO in table.h
-@@ -4906,6 +4906,8 @@
+@@ -4504,6 +4870,8 @@
  {
-   {"CHARACTER_SETS", charsets_fields_info, create_schema_table,
+   {"CHARACTER_SETS", charsets_fields_info, create_schema_table, 
     fill_schema_charsets, make_character_sets_old_format, 0, -1, -1, 0},
 +  {"CLIENT_STATISTICS", client_stats_fields_info, create_schema_table, 
 +    fill_schema_client_stats, make_old_format, 0, -1, -1, 0},
-   {"COLLATIONS", collation_fields_info, create_schema_table,
+   {"COLLATIONS", collation_fields_info, create_schema_table, 
     fill_schema_collation, make_old_format, 0, -1, -1, 0},
    {"COLLATION_CHARACTER_SET_APPLICABILITY", coll_charset_app_fields_info,
 @@ -4512,6 +4880,8 @@
@@ -3861,7 +3895,7 @@ diff -ruN a/sql/sql_prepare.cc b/sql/sql_prepare.cc
    {"KEY_COLUMN_USAGE", key_column_usage_fields_info, create_schema_table,
      get_all_tables, 0, get_schema_key_column_usage_record, 4, 5, 0},
    {"OPEN_TABLES", open_tables_fields_info, create_schema_table,
-@@ -4941,10 +4943,14 @@
+@@ -4537,10 +4907,14 @@
     get_all_tables, make_table_names_old_format, 0, 1, 2, 1},
    {"TABLE_PRIVILEGES", table_privileges_fields_info, create_schema_table,
      fill_schema_table_privileges, 0, 0, -1, -1, 0},
@@ -3869,13 +3903,13 @@ diff -ruN a/sql/sql_prepare.cc b/sql/sql_prepare.cc
 +    fill_schema_table_stats, make_old_format, 0, -1, -1, 0},
    {"TRIGGERS", triggers_fields_info, create_schema_table,
     get_all_tables, make_old_format, get_schema_triggers_record, 5, 6, 0},
-   {"USER_PRIVILEGES", user_privileges_fields_info, create_schema_table,
+   {"USER_PRIVILEGES", user_privileges_fields_info, create_schema_table, 
      fill_schema_user_privileges, 0, 0, -1, -1, 0},
 +  {"USER_STATISTICS", user_stats_fields_info, create_schema_table, 
 +    fill_schema_user_stats, make_old_format, 0, -1, -1, 0},
    {"VARIABLES", variables_fields_info, create_schema_table, fill_variables,
     make_old_format, 0, -1, -1, 1},
-   {"VIEWS", view_fields_info, create_schema_table,
+   {"VIEWS", view_fields_info, create_schema_table, 
 diff -ruN a/sql/sql_update.cc b/sql/sql_update.cc
 --- a/sql/sql_update.cc	Wed Jul 29 13:33:34 2009 -0700
 +++ b/sql/sql_update.cc	Wed Jul 29 13:34:11 2009 -0700
