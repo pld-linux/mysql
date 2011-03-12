@@ -1,6 +1,7 @@
 #!/bin/sh
 # updates percona patches
 # http://www.percona.com/docs/wiki/repositories:start
+# https://code.launchpad.net/percona-server
 # https://launchpad.net/percona-server/5.1
 # bzr branch lp:percona-server/5.1
 
