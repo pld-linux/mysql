@@ -1,7 +1,6 @@
-diff -urN mysql-4.0.24.org/sql/mysqld.cc mysql-4.0.24/sql/mysqld.cc
---- mysql-4.0.24.org/sql/mysqld.cc	2005-03-05 01:38:14.000000000 +0100
-+++ mysql-4.0.24/sql/mysqld.cc	2005-03-13 12:11:01.312220224 +0100
-@@ -99,7 +99,16 @@
+--- mysql-4.1.9/sql/mysqld.cc.orig	2005-01-11 23:06:00.000000000 +0100
++++ mysql-4.1.9/sql/mysqld.cc	2005-02-06 17:21:26.238717200 +0100
+@@ -133,7 +133,16 @@
  #endif /* __WIN__ */
  
  #ifdef HAVE_LIBWRAP
