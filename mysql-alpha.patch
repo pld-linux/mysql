@@ -1,11 +1,10 @@
---- mysql-5.0.15.org/storage/ndb/src/kernel/blocks/dbtc/Makefile.am	2005-10-17 03:27:27.000000000 +0200
-+++ mysql-5.0.15/storage/ndb/src/kernel/blocks/dbtc/Makefile.am	2005-10-25 15:15:29.000000000 +0200
-@@ -1,5 +1,7 @@
- noinst_LIBRARIES = libdbtc.a
+--- mysql-5.1.55/storage/ndb/src/kernel/blocks/Makefile.am~	2011-01-25 17:04:48.000000000 +0200
++++ mysql-5.1.55/storage/ndb/src/kernel/blocks/Makefile.am	2011-03-13 13:41:42.430831048 +0200
+@@ -23,6 +23,7 @@
+ noinst_LIBRARIES = libblocks.a
  
-+CXXFLAGS += -O0
-+
- libdbtc_a_SOURCES = DbtcInit.cpp DbtcMain.cpp
- 
- include $(top_srcdir)/ndb/config/common.mk.am
-
+ INCLUDES_LOC = -I$(top_srcdir)/storage/ndb/src/kernel/blocks/dblqh
++libblocks_a_CXXFLAGS = -O0
+ libblocks_a_SOURCES = tsman.cpp lgman.cpp pgman.cpp diskpage.cpp restore.cpp\
+   cmvmi/Cmvmi.cpp \
+   dbacc/DbaccInit.cpp dbacc/DbaccMain.cpp \
