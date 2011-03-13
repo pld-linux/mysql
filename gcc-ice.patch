@@ -1,0 +1,27 @@
+avoid gcc 3.3 ICE:
+
+ccache i686-pld-linux-g++ -DHAVE_CONFIG_H -I. -I../../include -I../../include -I../../include -I../../regex -I./include -I../../sql -I.     -O2 -march=i686 -gdwarf-2 -g2  -fPIC -fno-implicit-templates -fno-rtti -fno-exceptions   -fno-implicit-templates -fno-exceptions -fno-rtti -MT libinnobase_a-i_s.o -MD -MP -MF .deps/libinnobase_a-i_s.Tpo -c -o libinnobase_a-i_s.o `test -f 'handler/i_s.cc' || echo './'`handler/i_s.cc
+handler/i_s.cc: In function `int i_s_innodb_schema_table_fill(THD*,
+   TABLE_LIST*, COND*)':
+handler/i_s.cc:3682: internal compiler error: in expected_value_to_br_prob, at
+   predict.c:705
+Please submit a full bug report,
+with preprocessed source if appropriate.
+See <URL:http://bugs.pld-linux.org/> for instructions.
+make[2]: *** [libinnobase_a-i_s.o] Error 1
+make[2]: Leaving directory `/home/glen/rpm/pld/BUILD/mysql-5.1.55/storage/innodb_plugin'
+make[1]: *** [all-recursive] Error 1
+make[1]: Leaving directory `/home/glen/rpm/pld/BUILD/mysql-5.1.55/storage'
+make: *** [all-recursive] Error 1
+error: Bad exit status from /home/glen/tmp/rpm-tmp.36429 (%build)
+
+--- mysql-5.1.55/storage/innodb_plugin/Makefile.am	2011-03-13 18:13:02.230037916 +0200
++++ mysql-5.1.55/storage/innodb_plugin/Makefile.am	2011-03-13 18:10:17.299219863 +0200
+@@ -326,6 +326,7 @@
+ 			ut/ut0vec.c			\
+ 			ut/ut0wqueue.c
+ 
++CXXFLAGS +=	-O0
+ libinnobase_a_CXXFLAGS=	$(AM_CXXFLAGS)
+ libinnobase_a_CFLAGS=	$(AM_CFLAGS)
+ 
