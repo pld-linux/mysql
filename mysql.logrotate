@@ -1,0 +1,27 @@
+# This section is used from mysqld.conf for logrotation.
+# Be sure that the password in config matches the actual one.
+#
+# ATTENTION: The mysqld.conf should be readable ONLY for *system* root!
+#
+# [mysqladmin]
+# user = mysql_sysadmin
+# password = <secret>
+#
+# where "<secret>" is the password.
+#
+# You must do this for every active cluster defined in /etc/mysql/clusters.conf
+
+/var/log/mysql/query.log
+/var/log/mysql/mysqld.log
+/var/log/mysql/slow.log
+/var/log/mysql/update*
+{
+	olddir /var/log/archive/mysql
+	notifempty
+	missingok
+	create 640 mysql mysql
+	sharedscripts
+	postrotate
+		/sbin/service mysql flush-logs
+	endscript
+}
