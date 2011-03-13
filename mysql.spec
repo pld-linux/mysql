@@ -131,7 +131,11 @@ BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	bison
 BuildRequires:	groff
-BuildRequires:	libstdc++-devel >= 5:3.0
+%if "%{pld_release}" == "ac"
+BuildRequires:	libstdc++4-devel >= 5:4.0
+%else
+BuildRequires:	libstdc++-devel >= 5:4.0
+%endif
 BuildRequires:	libtool
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
@@ -624,6 +628,13 @@ mv sphinx-*/mysqlse storage/sphinx
 # </percona>
 
 %build
+%if "%{pld_release}" == "ac"
+# add suffix, but allow ccache, etc in ~/.rpmmacros
+%{expand:%%define	__cc	%(echo '%__cc' | sed -e 's,-gcc,-gcc4,')}
+%{expand:%%define	__cxx	%(echo '%__cxx' | sed -e 's,-g++,-g++4,')}
+%{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
+%endif
+
 %{__libtoolize}
 %{__aclocal} -I config/ac-macros
 %{__automake}
