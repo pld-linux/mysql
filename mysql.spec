@@ -1,5 +1,6 @@
 # TODO:
 # - unpackaged:
+# - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 #   /usr/bin/mysqlaccess.conf
 #   /usr/data/mysql/.empty
 #   /usr/data/test/.empty
