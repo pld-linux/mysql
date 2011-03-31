@@ -34,13 +34,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.9
-Release:	7
+Version:	5.5.10
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-# Source0-md5:	701c0c44b7f1c2300adc0dc45729f903
+# Source0-md5:	ee604aff531ff85abeb10cf332c1355a
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -78,7 +78,7 @@ Patch20:	%{name}-dubious-exports.patch
 # <percona patches, updated with percona.sh>
 Patch100:	microsec_process.patch
 Patch101:	optimizer_fix.patch
-Patch102:	%{name}_dump_ignore_ct.patch
+Patch102:	mysql_dump_ignore_ct.patch
 Patch103:	control_online_alter_index.patch
 Patch104:	show_temp.patch
 Patch105:	innodb_show_status.patch
@@ -111,7 +111,7 @@ Patch131:	slow_extended.patch
 Patch132:	percona_support.patch
 Patch133:	query_cache_enhance.patch
 Patch134:	log_connection_error.patch
-Patch135:	%{name}_syslog.patch
+Patch135:	mysql_syslog.patch
 Patch136:	response_time_distribution.patch
 Patch137:	error_pad.patch
 Patch138:	remove_fcntl_excessive_calls.patch
@@ -120,7 +120,8 @@ Patch140:	show_slave_status_nolock.patch
 Patch141:	log_warnings_suppress.patch
 Patch142:	userstat.patch
 Patch143:	bug580324.patch
-Patch144:	%{name}_remove_eol_carret.patch
+Patch144:	mysql_remove_eol_carret.patch
+Patch145:	processlist_row_stats.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
@@ -563,7 +564,7 @@ mv sphinx-*/mysqlse storage/sphinx
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
-%patch102 -p1
+#%patch102 -p1
 %patch103 -p1
 %patch104 -p1
 %patch105 -p1
@@ -606,6 +607,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch142 -p1
 %patch143 -p1
 %patch144 -p1
+%patch145 -p1
 # </percona>
 
 # to get these files rebuild
@@ -706,8 +708,8 @@ cp -a %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 %endif
 
 # symlinks point to the .so file, fix it
-ln -sf libmysqlclient.so.16 $RPM_BUILD_ROOT%{_libdir}/libmysqlclient_r.so.16
-ln -sf libmysqlclient.so.16.0.0 $RPM_BUILD_ROOT%{_libdir}/libmysqlclient_r.so.16.0.0
+ln -sf libmysqlclient.so.18 $RPM_BUILD_ROOT%{_libdir}/libmysqlclient_r.so.18
+ln -sf libmysqlclient.so.18.0.0 $RPM_BUILD_ROOT%{_libdir}/libmysqlclient_r.so.18.0.0
 
 sed -i -e 's,/usr//usr,%{_prefix},g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
@@ -1122,9 +1124,9 @@ done
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.16
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.18
 %attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.16
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.18
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
