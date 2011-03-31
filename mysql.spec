@@ -37,7 +37,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.9
-Release:	6
+Release:	6.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -75,10 +75,12 @@ Patch12:	%{name}-config.patch
 Patch14:	%{name}-bug-43594.patch
 Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
+# from fedora
+Patch20:	%{name}-dubious-exports.patch
 # <percona patches, updated with percona.sh>
 Patch100:	microsec_process.patch
 Patch101:	optimizer_fix.patch
-Patch102:	mysql_dump_ignore_ct.patch
+Patch102:	%{name}_dump_ignore_ct.patch
 Patch103:	control_online_alter_index.patch
 Patch104:	show_temp.patch
 Patch105:	innodb_show_status.patch
@@ -111,7 +113,7 @@ Patch131:	slow_extended.patch
 Patch132:	percona_support.patch
 Patch133:	query_cache_enhance.patch
 Patch134:	log_connection_error.patch
-Patch135:	mysql_syslog.patch
+Patch135:	%{name}_syslog.patch
 Patch136:	response_time_distribution.patch
 Patch137:	error_pad.patch
 Patch138:	remove_fcntl_excessive_calls.patch
@@ -120,7 +122,7 @@ Patch140:	show_slave_status_nolock.patch
 Patch141:	log_warnings_suppress.patch
 Patch142:	userstat.patch
 Patch143:	bug580324.patch
-Patch144:	mysql_remove_eol_carret.patch
+Patch144:	%{name}_remove_eol_carret.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
@@ -559,6 +561,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch12 -p1
 %patch14 -p0
 %patch19 -p1
+%patch20 -p1
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
