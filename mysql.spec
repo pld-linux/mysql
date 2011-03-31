@@ -2,8 +2,6 @@
 # - unpackaged:
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 #   /usr/bin/mysqlaccess.conf
-#   /usr/data/mysql/.empty
-#   /usr/data/test/.empty
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
 # - missing have_archive, have_merge
@@ -37,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.9
-Release:	6.3
+Release:	6.5
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -951,7 +949,7 @@ for config in $configs; do
 	sed -i -e '
 		s/^language *= *polish/lc-messages = pl_PL/i
 		s/set-variable\s*=\s* //
-		/^skip-locking/skip-external-locking/
+		s/^skip-locking/skip-external-locking/
 		# this is not valid for server. it is client option
 		s/default-character-set/# client-config: &/
 		# use # as comment in config
