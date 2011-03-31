@@ -140,6 +140,5 @@ libmysqlclient_16.1 {
 # PHP's mysqli.so requires this (via the ER() macro)
 	mysql_client_errors;
 # perl-DBD-mysql-4.018 for is_prefix
-# TODO: add it to mysql-dubious-exports.patch
-	is_prefix;
+	mysql_is_prefix;
 };
