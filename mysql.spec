@@ -1,6 +1,6 @@
 # TODO:
-# - unpackaged:
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
+# - unpackaged:
 #   /usr/bin/mysqlaccess.conf
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
