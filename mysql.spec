@@ -34,13 +34,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.10
-Release:	2
+Version:	5.5.11
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-# Source0-md5:	ee604aff531ff85abeb10cf332c1355a
+# Source0-md5:	befa4e0d0aa95be6c8f6f143ae3b0641
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -122,6 +122,8 @@ Patch142:	userstat.patch
 Patch143:	bug580324.patch
 Patch144:	mysql_remove_eol_carret.patch
 Patch145:	processlist_row_stats.patch
+Patch146:	innodb_expand_fast_index_creation.patch
+Patch147:	innodb_bug60788.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
@@ -564,7 +566,7 @@ mv sphinx-*/mysqlse storage/sphinx
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
-#%patch102 -p1
+%patch102 -p1
 %patch103 -p1
 %patch104 -p1
 %patch105 -p1
@@ -608,6 +610,8 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch143 -p1
 %patch144 -p1
 %patch145 -p1
+%patch146 -p1
+%patch147 -p1
 # </percona>
 
 # to get these files rebuild
