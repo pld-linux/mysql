@@ -616,7 +616,9 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch140 -p1
 %patch141 -p1
 %patch142 -p1
+%ifnarch i386 alpha sparc ppc
 %patch143 -p1
+%endif
 %patch144 -p1
 %patch145 -p1
 %patch146 -p1
