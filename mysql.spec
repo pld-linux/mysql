@@ -1,4 +1,5 @@
 # TODO:
+# - make response_time_distribution.patch compatible with i386 alpha sparc ppc arches
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 # - unpackaged:
 #   /usr/bin/mysqlaccess.conf
@@ -600,7 +601,9 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch133 -p1
 %patch134 -p1
 %patch135 -p1
+%ifnarch i386 alpha sparc ppc
 %patch136 -p1
+%endif
 %patch137 -p1
 %patch138 -p1
 %patch139 -p1
