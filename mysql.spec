@@ -61,14 +61,12 @@ Source14:	my.cnf
 Source15:	lib%{name}.version
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-info.patch
-Patch4:		%{name}-sql-cxx-pic.patch
 # from fedora
 Patch5:		%{name}-versioning.patch
 Patch6:		%{name}-system-users.patch
 Patch7:		%{name}-bug-34192.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
-Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
 Patch14:	%{name}-bug-43594.patch
@@ -546,14 +544,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %endif
 #%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
 %patch3 -p1
-%ifarch alpha
-# this is strange: mysqld functions for UDF modules are not explicitly defined,
-# so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
-# in objects compiled without -fPIC
-%patch4 -p1
-# gcc 3.3.x ICE
-%patch10 -p1
-%endif
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
