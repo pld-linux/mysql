@@ -31,13 +31,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.55
-Release:	3
+Version:	5.1.57
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	e07e79edad557874d0870c914c9c81e1
+# Source0-md5:	8d6998ef0f2e2d1dac2a761348c71c21
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -125,6 +125,8 @@ Patch148:	%{name}-innodb_fast_shutdown.patch
 Patch149:	%{name}-bug677407.patch
 Patch150:	%{name}-fix-bug671764.patch
 Patch151:	%{name}-mysql_remove_eol_carret.patch
+Patch152:	%{name}-innodb_expand_fast_index_creation.patch
+Patch153:	%{name}-innodb_bug60788.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	autoconf
@@ -616,9 +618,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch140 -p1
 %patch141 -p1
 %patch142 -p1
-%ifnarch i386 alpha sparc ppc
 %patch143 -p1
-%endif
 %patch144 -p1
 %patch145 -p1
 %patch146 -p1
@@ -627,6 +627,8 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch149 -p1
 %patch150 -p1
 %patch151 -p1
+%patch152 -p1
+%patch153 -p1
 # </percona>
 
 %build
