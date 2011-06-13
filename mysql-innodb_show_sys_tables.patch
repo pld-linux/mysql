@@ -8,7 +8,7 @@
 diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/handler/ha_innodb.cc
 --- a/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:45:46.194411503 +0900
 +++ b/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:49:26.171990559 +0900
-@@ -11806,6 +11806,9 @@
+@@ -11871,6 +11871,9 @@
  i_s_innodb_table_stats,
  i_s_innodb_index_stats,
  i_s_innodb_admin_command,
@@ -29,7 +29,7 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
  #include "buf0lru.h" /* for XTRA_LRU_[DUMP/RESTORE] */
  }
  
-@@ -3111,6 +3112,664 @@
+@@ -3111,6 +3112,674 @@
  	STRUCT_FLD(deinit, i_s_common_deinit),
  	STRUCT_FLD(version, 0x0100 /* 1.0 */),
  	STRUCT_FLD(status_vars, NULL),
@@ -198,6 +198,14 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +	 STRUCT_FLD(field_type,		MYSQL_TYPE_LONGLONG),
 +	 STRUCT_FLD(value,		0),
 +	 STRUCT_FLD(field_flags,	MY_I_S_UNSIGNED),
++	 STRUCT_FLD(old_name,		""),
++	 STRUCT_FLD(open_method,	SKIP_OPEN_TABLE)},
++
++	{STRUCT_FLD(field_name,		"NON_NULL_VALS"),
++	 STRUCT_FLD(field_length,	MY_INT64_NUM_DECIMAL_DIGITS),
++	 STRUCT_FLD(field_type,		MYSQL_TYPE_LONGLONG),
++	 STRUCT_FLD(value,		0),
++	 STRUCT_FLD(field_flags,	MY_I_S_UNSIGNED | MY_I_S_MAYBE_NULL),
 +	 STRUCT_FLD(old_name,		""),
 +	 STRUCT_FLD(open_method,	SKIP_OPEN_TABLE)},
 +
@@ -469,6 +477,9 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +{
 +	int	status;
 +	int	field;
++	ulint	n_fields;
++
++	n_fields = rec_get_n_fields_old(rec);
 +
 +	/* INDEX_ID */
 +	field = dict_index_get_nth_col_pos(index, 0);
@@ -487,6 +498,16 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +	status = copy_id_field(table, 2, rec, field);
 +	if (status) {
 +		return status;
++	}
++	/* NON_NULL_VALS */
++	if (n_fields < 6) {
++		table->field[3]->set_null();
++	} else {
++		field = dict_index_get_nth_col_pos(index, 3);
++		status = copy_id_field(table, 3, rec, field);
++		if (status) {
++			return status;
++		}
 +	}
 +
 +	return 0;
@@ -551,15 +572,14 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +		rec = btr_pcur_get_rec(&pcur);
 +		if (!btr_pcur_is_on_user_rec(&pcur)) {
 +			/* end of index */
-+			btr_pcur_close(&pcur);
-+			mtr_commit(&mtr);
 +			break;
 +		}
++
++		btr_pcur_store_position(&pcur, &mtr);
++
 +		if (rec_get_deleted_flag(rec, 0)) {
 +			/* record marked as deleted */
-+			btr_pcur_close(&pcur);
-+			mtr_commit(&mtr);
-+			continue;
++			goto next_record;
 +		}
 +
 +		if (id == 0) {
@@ -570,32 +590,22 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +			status = copy_sys_stats_rec(table, index, rec);
 +		}
 +		if (status) {
-+			btr_pcur_close(&pcur);
-+			mtr_commit(&mtr);
 +			break;
 +		}
-+
-+#if 0
-+		btr_pcur_store_position(&pcur, &mtr);
-+		mtr_commit(&mtr);
 +
 +		status = schema_table_store_record(thd, table);
 +		if (status) {
-+			btr_pcur_close(&pcur);
 +			break;
 +		}
++next_record:
++		mtr_commit(&mtr);
 +
 +		mtr_start(&mtr);
 +		btr_pcur_restore_position(BTR_SEARCH_LEAF, &pcur, &mtr);
-+#else
-+		status = schema_table_store_record(thd, table);
-+		if (status) {
-+			btr_pcur_close(&pcur);
-+			mtr_commit(&mtr);
-+			break;
-+		}
-+#endif
 +	}
++
++	btr_pcur_close(&pcur);
++	mtr_commit(&mtr);
 +
 +	mutex_exit(&(dict_sys->mutex));
 +
@@ -652,7 +662,7 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +	STRUCT_FLD(type, MYSQL_INFORMATION_SCHEMA_PLUGIN),
 +	STRUCT_FLD(info, &i_s_info),
 +	STRUCT_FLD(name, "INNODB_SYS_TABLES"),
-+	STRUCT_FLD(author, plugin_author),
++	STRUCT_FLD(author, "Percona"),
 +	STRUCT_FLD(descr, "InnoDB SYS_TABLES table"),
 +	STRUCT_FLD(license, PLUGIN_LICENSE_GPL),
 +	STRUCT_FLD(init, i_s_innodb_sys_tables_init),
@@ -668,7 +678,7 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +	STRUCT_FLD(type, MYSQL_INFORMATION_SCHEMA_PLUGIN),
 +	STRUCT_FLD(info, &i_s_info),
 +	STRUCT_FLD(name, "INNODB_SYS_INDEXES"),
-+	STRUCT_FLD(author, plugin_author),
++	STRUCT_FLD(author, "Percona"),
 +	STRUCT_FLD(descr, "InnoDB SYS_INDEXES table"),
 +	STRUCT_FLD(license, PLUGIN_LICENSE_GPL),
 +	STRUCT_FLD(init, i_s_innodb_sys_indexes_init),
@@ -684,7 +694,7 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +	STRUCT_FLD(type, MYSQL_INFORMATION_SCHEMA_PLUGIN),
 +	STRUCT_FLD(info, &i_s_info),
 +	STRUCT_FLD(name, "INNODB_SYS_STATS"),
-+	STRUCT_FLD(author, plugin_author),
++	STRUCT_FLD(author, "Percona"),
 +	STRUCT_FLD(descr, "InnoDB SYS_STATS table"),
 +	STRUCT_FLD(license, PLUGIN_LICENSE_GPL),
 +	STRUCT_FLD(init, i_s_innodb_sys_stats_init),

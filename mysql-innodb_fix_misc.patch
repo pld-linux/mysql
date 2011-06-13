@@ -13,7 +13,7 @@
 diff -ruN a/storage/innodb_plugin/buf/buf0buf.c b/storage/innodb_plugin/buf/buf0buf.c
 --- a/storage/innodb_plugin/buf/buf0buf.c	2011-02-21 20:31:57.781983359 +0900
 +++ b/storage/innodb_plugin/buf/buf0buf.c	2011-02-21 20:32:39.523946003 +0900
-@@ -3224,6 +3224,7 @@
+@@ -3243,6 +3243,7 @@
  		bpage->state	= BUF_BLOCK_ZIP_PAGE;
  		bpage->space	= space;
  		bpage->offset	= offset;
@@ -50,7 +50,7 @@ diff -ruN a/storage/innodb_plugin/buf/buf0flu.c b/storage/innodb_plugin/buf/buf0
 diff -ruN a/storage/innodb_plugin/buf/buf0lru.c b/storage/innodb_plugin/buf/buf0lru.c
 --- a/storage/innodb_plugin/buf/buf0lru.c	2011-02-21 20:31:57.451983310 +0900
 +++ b/storage/innodb_plugin/buf/buf0lru.c	2011-02-21 20:32:39.526949096 +0900
-@@ -530,6 +530,30 @@
+@@ -550,6 +550,30 @@
  	}
  }
  
@@ -81,7 +81,7 @@ diff -ruN a/storage/innodb_plugin/buf/buf0lru.c b/storage/innodb_plugin/buf/buf0
  /********************************************************************//**
  Insert a compressed block into buf_pool->zip_clean in the LRU order. */
  UNIV_INTERN
-@@ -1498,6 +1522,10 @@
+@@ -1492,6 +1516,10 @@
  		return(BUF_LRU_NOT_FREED);
  	}
  
@@ -108,16 +108,25 @@ diff -ruN a/storage/innodb_plugin/fil/fil0fil.c b/storage/innodb_plugin/fil/fil0
  	ut_ad(mutex_own(&(system->mutex)));
  	ut_a(node->open);
 -	ut_a(node->n_pending == 0);
-+	ut_a(node->n_pending == 0 || srv_lazy_drop_table);
++	ut_a(node->n_pending == 0 || node->space->is_being_deleted);
  	ut_a(node->n_pending_flushes == 0);
  	ut_a(node->modification_counter == node->flush_counter);
  
+@@ -829,7 +830,7 @@
+ 	ut_a(system->n_open > 0);
+ 	system->n_open--;
+ 
+-	if (node->space->purpose == FIL_TABLESPACE && !trx_sys_sys_space(node->space->id)) {
++	if (node->n_pending == 0 && node->space->purpose == FIL_TABLESPACE && !trx_sys_sys_space(node->space->id)) {
+ 		ut_a(UT_LIST_GET_LEN(system->LRU) > 0);
+ 
+ 		/* The node is in the LRU list, remove it */
 @@ -1028,7 +1029,7 @@
  	ut_ad(node && system && space);
  	ut_ad(mutex_own(&(system->mutex)));
  	ut_a(node->magic_n == FIL_NODE_MAGIC_N);
 -	ut_a(node->n_pending == 0);
-+	ut_a(node->n_pending == 0 || srv_lazy_drop_table);
++	ut_a(node->n_pending == 0 || space->is_being_deleted);
  
  	if (node->open) {
  		/* We fool the assertion in fil_node_close_file() to think
@@ -282,7 +291,7 @@ diff -ruN a/storage/innodb_plugin/fil/fil0fil.c b/storage/innodb_plugin/fil/fil0
 diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/handler/ha_innodb.cc
 --- a/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:50:59.626327847 +0900
 +++ b/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:55:20.281021252 +0900
-@@ -11685,6 +11685,12 @@
+@@ -11750,6 +11750,12 @@
    "except for the deletion.",
    NULL, NULL, 0, 0, 1, 0);
  
@@ -295,7 +304,7 @@ diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/h
  static struct st_mysql_sys_var* innobase_system_variables[]= {
    MYSQL_SYSVAR(page_size),
    MYSQL_SYSVAR(log_block_size),
-@@ -11774,6 +11780,7 @@
+@@ -11839,6 +11845,7 @@
    MYSQL_SYSVAR(auto_lru_dump),
    MYSQL_SYSVAR(use_purge_thread),
    MYSQL_SYSVAR(pass_corrupt_table),
@@ -303,7 +312,7 @@ diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/h
    NULL
  };
  
-@@ -11783,7 +11790,7 @@
+@@ -11848,7 +11855,7 @@
    &innobase_storage_engine,
    innobase_hton_name,
    "Innobase Oy",
@@ -321,7 +330,7 @@ diff -ruN a/storage/innodb_plugin/include/buf0buf.h b/storage/innodb_plugin/incl
  	/* @} */
 +	ibool		space_was_being_deleted;
  	ibool		is_corrupt;
- # ifdef UNIV_DEBUG_FILE_ACCESSES
+ # if defined UNIV_DEBUG_FILE_ACCESSES || defined UNIV_DEBUG
  	ibool		file_page_was_freed;
 diff -ruN a/storage/innodb_plugin/include/buf0buf.ic b/storage/innodb_plugin/include/buf0buf.ic
 --- a/storage/innodb_plugin/include/buf0buf.ic	2011-02-21 20:31:57.725983812 +0900
@@ -385,7 +394,7 @@ diff -ruN a/storage/innodb_plugin/include/os0file.h b/storage/innodb_plugin/incl
 diff -ruN a/storage/innodb_plugin/include/srv0srv.h b/storage/innodb_plugin/include/srv0srv.h
 --- a/storage/innodb_plugin/include/srv0srv.h	2011-02-21 20:31:57.824983518 +0900
 +++ b/storage/innodb_plugin/include/srv0srv.h	2011-02-21 20:32:39.541913033 +0900
-@@ -235,6 +235,8 @@
+@@ -236,6 +236,8 @@
  
  extern ulint	srv_extra_rsegments;
  extern ulint	srv_dict_size_limit;
@@ -410,7 +419,7 @@ diff -ruN a/storage/innodb_plugin/include/univ.i b/storage/innodb_plugin/include
 +++ b/storage/innodb_plugin/include/univ.i	2010-04-30 16:41:46.000000000 +0900
 @@ -48,6 +48,11 @@
  #define INNODB_VERSION_MINOR	0
- #define INNODB_VERSION_BUGFIX	15
+ #define INNODB_VERSION_BUGFIX	16
  
 +#ifndef PERCONA_INNODB_VERSION
 +#define PERCONA_INNODB_VERSION 12.5
@@ -439,18 +448,6 @@ diff -ruN a/storage/innodb_plugin/include/univ.i b/storage/innodb_plugin/include
  
  #define REFMAN "http://dev.mysql.com/doc/refman/5.1/en/"
  
-diff -ruN a/storage/innodb_plugin/mtr/mtr0log.c b/storage/innodb_plugin/mtr/mtr0log.c
---- a/storage/innodb_plugin/mtr/mtr0log.c	2010-11-29 19:38:03.000000000 +0900
-+++ b/storage/innodb_plugin/mtr/mtr0log.c	2011-02-02 23:31:34.000000000 +0900
-@@ -408,7 +408,7 @@
- 	ptr += 2;
- 
- 	if (UNIV_UNLIKELY(offset >= UNIV_PAGE_SIZE)
--			|| UNIV_UNLIKELY(len + offset) > UNIV_PAGE_SIZE) {
-+			|| UNIV_UNLIKELY(len + offset > UNIV_PAGE_SIZE)) {
- 		recv_sys->found_corrupt_log = TRUE;
- 
- 		return(NULL);
 diff -ruN a/storage/innodb_plugin/os/os0file.c b/storage/innodb_plugin/os/os0file.c
 --- a/storage/innodb_plugin/os/os0file.c	2011-02-21 20:31:57.437945953 +0900
 +++ b/storage/innodb_plugin/os/os0file.c	2011-02-21 20:32:39.546945763 +0900
@@ -603,7 +600,7 @@ diff -ruN a/storage/innodb_plugin/row/row0sel.c b/storage/innodb_plugin/row/row0
 diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0srv.c
 --- a/storage/innodb_plugin/srv/srv0srv.c	2011-02-21 20:31:57.900982316 +0900
 +++ b/storage/innodb_plugin/srv/srv0srv.c	2011-02-21 20:32:39.549912950 +0900
-@@ -414,6 +414,8 @@
+@@ -418,6 +418,8 @@
  
  UNIV_INTERN ulint	srv_extra_rsegments = 0; /* extra rseg for users */
  UNIV_INTERN ulint	srv_dict_size_limit = 0;
@@ -615,7 +612,7 @@ diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0
 diff -ruN a/storage/innodb_plugin/srv/srv0start.c b/storage/innodb_plugin/srv/srv0start.c
 --- a/storage/innodb_plugin/srv/srv0start.c	2010-04-30 16:37:05.000000000 +0900
 +++ b/storage/innodb_plugin/srv/srv0start.c	2010-04-30 16:41:46.000000000 +0900
-@@ -2006,7 +2006,7 @@
+@@ -2012,7 +2012,7 @@
  	if (srv_print_verbose_log) {
  		ut_print_timestamp(stderr);
  		fprintf(stderr,

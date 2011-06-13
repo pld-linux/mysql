@@ -8,7 +8,7 @@
 diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/handler/ha_innodb.cc
 --- a/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:27:30.222410116 +0900
 +++ b/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:27:44.073104773 +0900
-@@ -11547,6 +11547,7 @@
+@@ -11612,6 +11612,7 @@
  i_s_innodb_cmpmem_reset,
  i_s_innodb_table_stats,
  i_s_innodb_index_stats,
@@ -149,7 +149,7 @@ diff -ruN a/storage/innodb_plugin/handler/i_s.cc b/storage/innodb_plugin/handler
 +	STRUCT_FLD(type, MYSQL_INFORMATION_SCHEMA_PLUGIN),
 +	STRUCT_FLD(info, &i_s_info),
 +	STRUCT_FLD(name, "XTRADB_ADMIN_COMMAND"),
-+	STRUCT_FLD(author, plugin_author),
++	STRUCT_FLD(author, "Percona"),
 +	STRUCT_FLD(descr, "XtraDB specific command acceptor"),
 +	STRUCT_FLD(license, PLUGIN_LICENSE_GPL),
 +	STRUCT_FLD(init, i_s_innodb_admin_command_init),
