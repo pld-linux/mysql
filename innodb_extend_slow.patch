@@ -49,7 +49,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  
  /*
  		IMPLEMENTATION OF THE BUFFER POOL
-@@ -2399,11 +2433,19 @@
+@@ -2403,8 +2437,16 @@
  	mutex_t*	block_mutex;
  	ibool		must_read;
  	unsigned	access_time;
@@ -60,16 +60,13 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
 +	ib_uint64_t	finish_time;
  	buf_pool_t*	buf_pool = buf_pool_get(space, offset);
  
- #ifndef UNIV_LOG_DEBUG
- 	ut_ad(!ibuf_inside());
- #endif
 +	if (innobase_get_slow_log()) {
 +		trx = innobase_get_trx();
 +	}
  	buf_pool->stat.n_page_gets++;
  
  	for (;;) {
-@@ -2421,7 +2463,7 @@
+@@ -2422,7 +2464,7 @@
  		//buf_pool_mutex_exit(buf_pool);
  		rw_lock_s_unlock(&buf_pool->page_hash_latch);
  
@@ -78,7 +75,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  
  #if defined UNIV_DEBUG || defined UNIV_BUF_DEBUG
  		ut_a(++buf_dbg_counter % 37 || buf_validate());
-@@ -2498,6 +2540,13 @@
+@@ -2499,6 +2541,13 @@
  		/* Let us wait until the read operation
  		completes */
  
@@ -92,7 +89,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  		for (;;) {
  			enum buf_io_fix	io_fix;
  
-@@ -2512,6 +2561,12 @@
+@@ -2513,6 +2562,12 @@
  				break;
  			}
  		}
@@ -105,7 +102,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  	}
  
  #ifdef UNIV_IBUF_COUNT_DEBUG
-@@ -2824,6 +2879,11 @@
+@@ -2828,6 +2883,11 @@
  	ibool		must_read;
  	ulint		retries = 0;
  	mutex_t*	block_mutex = NULL;
@@ -117,9 +114,9 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  	buf_pool_t*	buf_pool = buf_pool_get(space, offset);
  
  	ut_ad(mtr);
-@@ -2842,6 +2902,9 @@
- 	ut_ad(!ibuf_inside() || ibuf_page_low(space, zip_size, offset,
- 					      FALSE, file, line, NULL));
+@@ -2856,6 +2916,9 @@
+ 	      || ibuf_page_low(space, zip_size, offset,
+ 			       FALSE, file, line, NULL));
  #endif
 +	if (innobase_get_slow_log()) {
 +		trx = innobase_get_trx();
@@ -127,7 +124,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  	buf_pool->stat.n_page_gets++;
  	fold = buf_page_address_fold(space, offset);
  loop:
-@@ -2915,7 +2978,7 @@
+@@ -2930,7 +2993,7 @@
  			return(NULL);
  		}
  
@@ -136,7 +133,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  			retries = 0;
  		} else if (retries < BUF_PAGE_READ_MAX_RETRIES) {
  			++retries;
-@@ -3220,6 +3283,13 @@
+@@ -3239,6 +3302,13 @@
  			/* Let us wait until the read operation
  			completes */
  
@@ -150,7 +147,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  			for (;;) {
  				enum buf_io_fix	io_fix;
  
-@@ -3234,6 +3304,12 @@
+@@ -3253,6 +3323,12 @@
  					break;
  				}
  			}
@@ -163,12 +160,12 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  		}
  
  		fix_type = MTR_MEMO_BUF_FIX;
-@@ -3259,13 +3335,17 @@
- 		/* In the case of a first access, try to apply linear
+@@ -3279,13 +3355,17 @@
  		read-ahead */
  
--		buf_read_ahead_linear(space, zip_size, offset);
-+		buf_read_ahead_linear(space, zip_size, offset, trx);
+ 		buf_read_ahead_linear(space, zip_size, offset,
+-				      ibuf_inside(mtr));
++				      ibuf_inside(mtr), trx);
  	}
  
  #ifdef UNIV_IBUF_COUNT_DEBUG
@@ -182,7 +179,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  	return(block);
  }
  
-@@ -3289,6 +3369,7 @@
+@@ -3309,6 +3389,7 @@
  	unsigned	access_time;
  	ibool		success;
  	ulint		fix_type;
@@ -190,7 +187,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  
  	ut_ad(block);
  	ut_ad(mtr);
-@@ -3366,13 +3447,17 @@
+@@ -3386,6 +3467,10 @@
  #if defined UNIV_DEBUG_FILE_ACCESSES || defined UNIV_DEBUG
  	ut_a(block->page.file_page_was_freed == FALSE);
  #endif
@@ -201,15 +198,16 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  	if (UNIV_UNLIKELY(!access_time)) {
  		/* In the case of a first access, try to apply linear
  		read-ahead */
- 
+@@ -3393,7 +3478,7 @@
  		buf_read_ahead_linear(buf_block_get_space(block),
  				      buf_block_get_zip_size(block),
--				      buf_block_get_page_no(block));
-+				      buf_block_get_page_no(block), trx);
+ 				      buf_block_get_page_no(block),
+-				      ibuf_inside(mtr));
++				      ibuf_inside(mtr), trx);
  	}
  
  #ifdef UNIV_IBUF_COUNT_DEBUG
-@@ -3382,6 +3467,9 @@
+@@ -3403,6 +3488,9 @@
  	buf_pool = buf_pool_from_block(block);
  	buf_pool->stat.n_page_gets++;
  
@@ -219,7 +217,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  	return(TRUE);
  }
  
-@@ -3404,6 +3492,7 @@
+@@ -3425,6 +3513,7 @@
  	buf_pool_t*	buf_pool;
  	ibool		success;
  	ulint		fix_type;
@@ -227,7 +225,7 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  
  	ut_ad(mtr);
  	ut_ad(mtr->state == MTR_ACTIVE);
-@@ -3490,6 +3579,11 @@
+@@ -3511,6 +3600,11 @@
  #endif
  	buf_pool->stat.n_page_gets++;
  
@@ -291,27 +289,26 @@ diff -ruN a/storage/innobase/buf/buf0rea.c b/storage/innobase/buf/buf0rea.c
  	srv_buf_pool_reads += count;
  	if (err == DB_TABLESPACE_DELETED) {
  		ut_print_timestamp(stderr);
-@@ -278,8 +280,9 @@
- /*==================*/
- 	ulint	space,	/*!< in: space id */
- 	ulint	zip_size,/*!< in: compressed page size in bytes, or 0 */
--	ulint	offset)	/*!< in: page number of a page; NOTE: the current thread
-+	ulint	offset,	/*!< in: page number of a page; NOTE: the current thread
- 			must want access to this page (see NOTE 3 above) */
+@@ -279,7 +281,8 @@
+ 	ulint	space,		/*!< in: space id */
+ 	ulint	zip_size,	/*!< in: compressed page size in bytes, or 0 */
+ 	ulint	offset,		/*!< in: page number; see NOTE 3 above */
+-	ibool	inside_ibuf)	/*!< in: TRUE if we are inside ibuf routine */
++	ibool	inside_ibuf,	/*!< in: TRUE if we are inside ibuf routine */
 +	trx_t*	trx)
  {
  	buf_pool_t*	buf_pool = buf_pool_get(space, offset);
  	ib_int64_t	tablespace_version;
-@@ -500,7 +503,7 @@
+@@ -498,7 +501,7 @@
  			count += buf_read_page_low(
  				&err, FALSE,
- 				ibuf_mode | OS_AIO_SIMULATED_WAKE_LATER,
+ 				ibuf_mode,
 -				space, zip_size, FALSE, tablespace_version, i);
 +				space, zip_size, FALSE, tablespace_version, i, trx);
  			if (err == DB_TABLESPACE_DELETED) {
  				ut_print_timestamp(stderr);
  				fprintf(stderr,
-@@ -594,7 +597,7 @@
+@@ -591,7 +594,7 @@
  		buf_read_page_low(&err, sync && (i + 1 == n_stored),
  				  BUF_READ_ANY_PAGE, space_ids[i],
  				  zip_size, TRUE, space_versions[i],
@@ -320,7 +317,7 @@ diff -ruN a/storage/innobase/buf/buf0rea.c b/storage/innobase/buf/buf0rea.c
  
  		if (UNIV_UNLIKELY(err == DB_TABLESPACE_DELETED)) {
  tablespace_deleted:
-@@ -736,12 +739,12 @@
+@@ -733,12 +736,12 @@
  		if ((i + 1 == n_stored) && sync) {
  			buf_read_page_low(&err, TRUE, BUF_READ_ANY_PAGE, space,
  					  zip_size, TRUE, tablespace_version,
@@ -338,7 +335,7 @@ diff -ruN a/storage/innobase/buf/buf0rea.c b/storage/innobase/buf/buf0rea.c
 diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
 --- a/storage/innobase/fil/fil0fil.c	2010-12-03 15:53:54.610037199 +0900
 +++ b/storage/innobase/fil/fil0fil.c	2010-12-03 17:42:42.079064198 +0900
-@@ -4423,7 +4423,7 @@
+@@ -4747,7 +4747,7 @@
  				 node->name, node->handle, buf,
  				 offset_low, offset_high,
  				 page_size * n_pages,
@@ -347,7 +344,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  #endif
  		if (success) {
  			node->size += n_pages;
-@@ -4750,7 +4750,7 @@
+@@ -5074,7 +5074,7 @@
  i/o on a tablespace which does not exist */
  UNIV_INTERN
  ulint
@@ -356,7 +353,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  /*===*/
  	ulint	type,		/*!< in: OS_FILE_READ or OS_FILE_WRITE,
  				ORed to OS_FILE_LOG, if a log i/o
-@@ -4775,8 +4775,9 @@
+@@ -5099,8 +5099,9 @@
  	void*	buf,		/*!< in/out: buffer where to store read data
  				or from where to write; in aio this must be
  				appropriately aligned */
@@ -367,7 +364,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  {
  	ulint		mode;
  	fil_space_t*	space;
-@@ -4946,7 +4947,7 @@
+@@ -5268,7 +5269,7 @@
  #else
  	/* Queue the aio request */
  	ret = os_aio(type, mode | wake_later, node->name, node->handle, buf,
@@ -379,7 +376,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
 diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_innodb.cc
 --- a/storage/innobase/handler/ha_innodb.cc	2010-12-03 17:36:44.293955189 +0900
 +++ b/storage/innobase/handler/ha_innodb.cc	2010-12-03 17:42:42.090024586 +0900
-@@ -1546,6 +1546,16 @@
+@@ -1573,6 +1573,16 @@
  	trx->check_unique_secondary = !thd_test_options(
  		thd, OPTION_RELAXED_UNIQUE_CHECKS);
  
@@ -396,7 +393,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  	DBUG_VOID_RETURN;
  }
  
-@@ -1600,6 +1610,32 @@
+@@ -1627,6 +1637,32 @@
  	return(trx);
  }
  
@@ -429,7 +426,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  /*********************************************************************//**
  Note that a transaction has been registered with MySQL.
  @return true if transaction is registered with MySQL 2PC coordinator */
-@@ -9284,6 +9320,25 @@
+@@ -9301,6 +9337,25 @@
  	statement has ended */
  
  	if (trx->n_mysql_tables_in_use == 0) {
@@ -476,13 +473,12 @@ diff -ruN a/storage/innobase/include/buf0rea.h b/storage/innobase/include/buf0re
  /********************************************************************//**
  Applies linear read-ahead if in the buf_pool the page is a border page of
  a linear read-ahead area and all the pages in the area have been accessed.
-@@ -72,8 +74,9 @@
- /*==================*/
- 	ulint	space,	/*!< in: space id */
- 	ulint	zip_size,/*!< in: compressed page size in bytes, or 0 */
--	ulint	offset);/*!< in: page number of a page; NOTE: the current thread
-+	ulint	offset, /*!< in: page number of a page; NOTE: the current thread
- 			must want access to this page (see NOTE 3 above) */
+@@ -73,7 +75,8 @@
+ 	ulint	space,		/*!< in: space id */
+ 	ulint	zip_size,	/*!< in: compressed page size in bytes, or 0 */
+ 	ulint	offset,		/*!< in: page number; see NOTE 3 above */
+-	ibool	inside_ibuf);	/*!< in: TRUE if we are inside ibuf routine */
++	ibool	inside_ibuf,	/*!< in: TRUE if we are inside ibuf routine */
 +	trx_t*	trx);
  /********************************************************************//**
  Issues read requests for pages which the ibuf module wants to read in, in
@@ -652,13 +648,13 @@ diff -ruN a/storage/innobase/include/srv0srv.h b/storage/innobase/include/srv0sr
 +/* prototypes for new functions added to ha_innodb.cc */
 +ibool	innobase_get_slow_log();
 +
- /* This is set to the MySQL server value for this variable. */
- extern uint	srv_lower_case_table_names;
- 
+ /* Mutex for locking srv_monitor_file */
+ extern mutex_t	srv_monitor_file_mutex;
+ /* Temporary file for innodb monitor output */
 diff -ruN a/storage/innobase/include/trx0trx.h b/storage/innobase/include/trx0trx.h
 --- a/storage/innobase/include/trx0trx.h	2010-12-03 15:41:52.049372966 +0900
 +++ b/storage/innobase/include/trx0trx.h	2010-12-03 17:42:42.107024532 +0900
-@@ -738,6 +738,17 @@
+@@ -743,6 +743,17 @@
  	/*------------------------------*/
  	char detailed_error[256];	/*!< detailed error message for last
  					error, or empty. */
@@ -847,8 +843,8 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  		}
  
  		ut_a(type == OS_FILE_WRITE);
-@@ -4099,6 +4131,11 @@
- 		ut_error;
+@@ -4101,6 +4133,11 @@
+ 		array = NULL; /* Eliminate compiler warning */
  	}
  
 +	if (trx && type == OS_FILE_READ)
@@ -862,17 +858,17 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
 diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
 --- a/storage/innobase/srv/srv0srv.c	2010-12-03 17:32:15.648024399 +0900
 +++ b/storage/innobase/srv/srv0srv.c	2010-12-03 17:45:05.067023254 +0900
-@@ -88,6 +88,9 @@
+@@ -87,6 +87,9 @@
  #include "mysql/plugin.h"
  #include "mysql/service_thd_wait.h"
  
 +/* prototypes for new functions added to ha_innodb.cc */
 +ibool	innobase_get_slow_log();
 +
- /* This is set to the MySQL server value for this variable.  It is only
- needed for FOREIGN KEY definition parsing since FOREIGN KEY names are not
- stored in the server metadata. The server stores and enforces it for
-@@ -1259,6 +1262,10 @@
+ /* The following counter is incremented whenever there is some user activity
+ in the server */
+ UNIV_INTERN ulint	srv_activity_count	= 0;
+@@ -1232,6 +1235,10 @@
  	ibool			has_slept = FALSE;
  	srv_conc_slot_t*	slot	  = NULL;
  	ulint			i;
@@ -881,9 +877,9 @@ diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
 +	ulint                   sec;
 +	ulint                   ms;
  
- 	if (trx->mysql_thd != NULL
- 	    && thd_is_replication_slave_thread(trx->mysql_thd)) {
-@@ -1335,6 +1342,7 @@
+ #ifdef UNIV_SYNC_DEBUG
+ 	ut_ad(!sync_thread_levels_nonempty_trx(trx->has_search_latch));
+@@ -1312,6 +1319,7 @@
  		switches. */
  		if (SRV_THREAD_SLEEP_DELAY > 0) {
  			os_thread_sleep(SRV_THREAD_SLEEP_DELAY);
@@ -891,10 +887,11 @@ diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
  		}
  
  		trx->op_info = "";
-@@ -1390,6 +1398,13 @@
- 	/* Go to wait for the event; when a thread leaves InnoDB it will
- 	release this thread */
- 
+@@ -1371,6 +1379,14 @@
+ #ifdef UNIV_SYNC_DEBUG
+ 	ut_ad(!sync_thread_levels_nonempty_trx(trx->has_search_latch));
+ #endif /* UNIV_SYNC_DEBUG */
++
 +	if (innobase_get_slow_log() && trx->take_stats) {
 +		ut_usectime(&sec, &ms);
 +		start_time = (ib_uint64_t)sec * 1000000 + ms;
@@ -905,7 +902,7 @@ diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
  	trx->op_info = "waiting in InnoDB queue";
  
  	thd_wait_begin(trx->mysql_thd, THD_WAIT_ROW_TABLE_LOCK);
-@@ -1398,6 +1413,12 @@
+@@ -1379,6 +1395,12 @@
  
  	trx->op_info = "";
  
@@ -921,7 +918,7 @@ diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
 diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
 --- a/storage/innobase/trx/trx0trx.c	2010-12-03 15:41:52.053955669 +0900
 +++ b/storage/innobase/trx/trx0trx.c	2010-12-03 17:42:42.127023410 +0900
-@@ -186,6 +186,15 @@
+@@ -188,6 +188,15 @@
  	trx->global_read_view = NULL;
  	trx->read_view = NULL;
  
@@ -937,9 +934,9 @@ diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
  	/* Set X/Open XA transaction identification to NULL */
  	memset(&trx->xid, 0, sizeof(trx->xid));
  	trx->xid.formatID = -1;
-@@ -223,6 +232,11 @@
+@@ -221,6 +230,11 @@
  
- 	trx->mysql_process_no = os_proc_get_number();
+ 	mutex_exit(&kernel_mutex);
  
 +	if (innobase_get_slow_log() && trx->take_stats) {
 +		trx->distinct_page_access_hash = mem_alloc(DPAH_SIZE);
@@ -949,7 +946,7 @@ diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
  	return(trx);
  }
  
-@@ -354,6 +368,12 @@
+@@ -406,6 +420,12 @@
  /*===============*/
  	trx_t*	trx)	/*!< in, own: trx object */
  {
@@ -962,7 +959,7 @@ diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
  	mutex_enter(&kernel_mutex);
  
  	UT_LIST_REMOVE(mysql_trx_list, trx_sys->mysql_trx_list, trx);
-@@ -375,6 +395,12 @@
+@@ -427,6 +447,12 @@
  /*====================*/
  	trx_t*	trx)	/*!< in, own: trx object */
  {
@@ -975,7 +972,7 @@ diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
  	mutex_enter(&kernel_mutex);
  
  	trx_free(trx);
-@@ -1153,6 +1179,9 @@
+@@ -1212,6 +1238,9 @@
  	trx_t*	trx)	/*!< in: transaction */
  {
  	que_thr_t*	thr;
@@ -985,7 +982,7 @@ diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
  
  	ut_ad(mutex_own(&kernel_mutex));
  	ut_ad(trx->que_state == TRX_QUE_LOCK_WAIT);
-@@ -1167,6 +1196,11 @@
+@@ -1226,6 +1255,11 @@
  		thr = UT_LIST_GET_FIRST(trx->wait_thrs);
  	}
  
@@ -997,7 +994,7 @@ diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
  	trx->que_state = TRX_QUE_RUNNING;
  }
  
-@@ -1180,6 +1214,9 @@
+@@ -1239,6 +1273,9 @@
  	trx_t*	trx)	/*!< in: transaction in the TRX_QUE_LOCK_WAIT state */
  {
  	que_thr_t*	thr;
@@ -1007,7 +1004,7 @@ diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
  
  	ut_ad(mutex_own(&kernel_mutex));
  	ut_ad(trx->que_state == TRX_QUE_LOCK_WAIT);
-@@ -1194,6 +1231,11 @@
+@@ -1253,6 +1290,11 @@
  		thr = UT_LIST_GET_FIRST(trx->wait_thrs);
  	}
  
