@@ -593,9 +593,11 @@ case "$action" in
 	done
 	;;
   status)
+	RETVAL=3
 	for mysqldir in $DB_CLUSTERS; do
 		mysqlstatus "$mysqldir"
 		if [ "$MYSQL_STATUS" = "running" ]; then
+			RETVAL=0
 			addr=${MYSQL_BIND_ADDRESS:-0.0.0.0}
 			port=${MYSQL_PORT:-3306}
 			socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
