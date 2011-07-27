@@ -102,7 +102,7 @@ mysqlstatus() {
 	clusterdir="$1"
 	mode="$2"
 	
-	mysqlgetconfig "$clusterdir"
+	mysqlgetconfig "$clusterdir" status
 
 	MYSQL_STATUS="not running"
 	MYSQL_PID="unknown"
@@ -153,9 +153,11 @@ mysqlstatus() {
 #
 # arguments
 # $1 - db cluster
+# $2 - status | other
 
 mysqlgetconfig() {
 	local clusterdir="$1" config_file
+	local mode="$2"
 
 	# emulate old behaviour if only one cluster specified
 	if [ "$clusterdir" = "$MYSQL_DB_CLUSTERS" -a "$clusterdir" = "/var/lib/mysql" -a -f /etc/mysqld.conf ]; then
@@ -176,7 +178,11 @@ mysqlgetconfig() {
 
 	if [ -z "$config_file" ]; then
 		nls "Error: Can't find config file for %s cluster" "$clusterdir"
-		exit 6
+		if [ "$mode" = "status" ]; then 
+			exit 3
+		else
+			exit 6
+		fi
 	else
 		MYSQL_CONFIG="$config_file"
 	fi
@@ -184,7 +190,11 @@ mysqlgetconfig() {
 	if [ ! -f "$config_file" ]; then
 		nls "Error: config file %s not found" "$config_file"
 		nls "MySQL can't be run. Did you initialize DB by doing \`$0 init'?"
-		exit 6
+		if [ "$mode" = "status" ]; then 
+			exit 3
+		else
+			exit 6
+		fi
 	fi
 
 	# reset to initial state
