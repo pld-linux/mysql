@@ -34,14 +34,15 @@ fi
 > .percona.spec
 > .patch.spec
 i=100
-for patch in $(cat $version/series | filter_names); do
+[ -d "$version/patches" ] && dir=$version/patches || dir=$version
+for patch in $(cat $dir/series | filter_names); do
 	# if patch already existed, use mysql- prefix
 	if [ -f mysql-$patch ]; then
 		file=mysql-$patch
 	else
 		file=$patch
 	fi
-	cat $version/$patch | filter_files > $file
+	cat $dir/$patch | filter_files > $file
 
 	if [ -z "$(awk -vfile=$file -F/ '$2 == file{print}' CVS/Entries)" ]; then
 		cvs add $file

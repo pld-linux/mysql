@@ -5,9 +5,8 @@
 #!!! notice !!!
 # Any small change to this file in the main branch
 # should be done or reviewed by the maintainer!
-diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
---- a/storage/innobase/buf/buf0buf.c	2010-12-03 15:09:51.273986410 +0900
-+++ b/storage/innobase/buf/buf0buf.c	2010-12-03 15:10:08.934990091 +0900
+--- a/storage/innobase/buf/buf0buf.c
++++ b/storage/innobase/buf/buf0buf.c
 @@ -320,6 +320,7 @@
  
  	/* When we traverse all the flush lists we don't want another
@@ -24,10 +23,9 @@ diff -ruN a/storage/innobase/buf/buf0buf.c b/storage/innobase/buf/buf0buf.c
  	log_flush_order_mutex_exit();
  
  	/* The returned answer may be out of date: the flush_list can
-diff -ruN a/storage/innobase/buf/buf0flu.c b/storage/innobase/buf/buf0flu.c
---- a/storage/innobase/buf/buf0flu.c	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/buf/buf0flu.c	2010-12-03 15:10:08.934990091 +0900
-@@ -855,7 +855,7 @@
+--- a/storage/innobase/buf/buf0flu.c
++++ b/storage/innobase/buf/buf0flu.c
+@@ -857,7 +857,7 @@
  flush:
  	/* Now flush the doublewrite buffer data to disk */
  
@@ -36,7 +34,7 @@ diff -ruN a/storage/innobase/buf/buf0flu.c b/storage/innobase/buf/buf0flu.c
  
  	/* We know that the writes have been flushed to disk now
  	and in recovery we will find them in the doublewrite buffer
-@@ -1376,7 +1376,7 @@
+@@ -1378,7 +1378,7 @@
  
  	ut_ad(flush_type == BUF_FLUSH_LRU || flush_type == BUF_FLUSH_LIST);
  
@@ -45,9 +43,8 @@ diff -ruN a/storage/innobase/buf/buf0flu.c b/storage/innobase/buf/buf0flu.c
  		/* If there is little space, it is better not to flush
  		any block except from the end of the LRU list */
  
-diff -ruN a/storage/innobase/buf/buf0rea.c b/storage/innobase/buf/buf0rea.c
---- a/storage/innobase/buf/buf0rea.c	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/buf/buf0rea.c	2010-12-03 15:10:08.937050537 +0900
+--- a/storage/innobase/buf/buf0rea.c
++++ b/storage/innobase/buf/buf0rea.c
 @@ -260,6 +260,10 @@
  		= BUF_READ_AHEAD_LINEAR_AREA(buf_pool);
  	ulint		threshold;
@@ -59,10 +56,9 @@ diff -ruN a/storage/innobase/buf/buf0rea.c b/storage/innobase/buf/buf0rea.c
  	if (UNIV_UNLIKELY(srv_startup_is_before_trx_rollback_phase)) {
  		/* No read-ahead to avoid thread deadlocks */
  		return(0);
-diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
---- a/storage/innobase/fil/fil0fil.c	2011-06-29 17:48:24.797971571 +0900
-+++ b/storage/innobase/fil/fil0fil.c	2011-06-29 18:04:02.548053286 +0900
-@@ -2600,7 +2600,7 @@
+--- a/storage/innobase/fil/fil0fil.c
++++ b/storage/innobase/fil/fil0fil.c
+@@ -2601,7 +2601,7 @@
  
  		os_thread_sleep(20000);
  
@@ -71,7 +67,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  
  		goto retry;
  
-@@ -2814,7 +2814,7 @@
+@@ -2815,7 +2815,7 @@
  		goto error_exit;
  	}
  
@@ -80,7 +76,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  
  	if (!ret) {
  		fputs("InnoDB: Error: file flush of tablespace ", stderr);
-@@ -3000,7 +3000,7 @@
+@@ -3001,7 +3001,7 @@
  		}
  	}
  
@@ -89,7 +85,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  	if (!success) {
  
  		goto func_exit;
-@@ -3022,7 +3022,7 @@
+@@ -3023,7 +3023,7 @@
  
  		goto func_exit;
  	}
@@ -98,7 +94,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  func_exit:
  	os_file_close(file);
  	ut_free(buf2);
-@@ -4005,7 +4005,7 @@
+@@ -4006,7 +4006,7 @@
  	size_after_extend, *actual_size); */
  	mutex_exit(&fil_system->mutex);
  
@@ -107,7 +103,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  
  	return(success);
  }
-@@ -4576,8 +4576,9 @@
+@@ -4577,8 +4577,9 @@
  void
  fil_flush(
  /*======*/
@@ -118,7 +114,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  {
  	fil_space_t*	space;
  	fil_node_t*	node;
-@@ -4648,7 +4649,7 @@
+@@ -4649,7 +4650,7 @@
  			/* fprintf(stderr, "Flushing to file %s\n",
  			node->name); */
  
@@ -127,7 +123,7 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  
  			mutex_enter(&fil_system->mutex);
  
-@@ -4731,7 +4732,7 @@
+@@ -4732,7 +4733,7 @@
  	a non-existing space id. */
  	for (i = 0; i < n_space_ids; i++) {
  
@@ -136,10 +132,9 @@ diff -ruN a/storage/innobase/fil/fil0fil.c b/storage/innobase/fil/fil0fil.c
  	}
  
  	mem_free(space_ids);
-diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_innodb.cc
---- a/storage/innobase/handler/ha_innodb.cc	2010-12-03 15:09:51.283956391 +0900
-+++ b/storage/innobase/handler/ha_innodb.cc	2010-12-03 15:10:08.963980444 +0900
-@@ -444,6 +444,12 @@
+--- a/storage/innobase/handler/ha_innodb.cc
++++ b/storage/innobase/handler/ha_innodb.cc
+@@ -445,6 +445,12 @@
    "Timeout in seconds an InnoDB transaction may wait for a lock before being rolled back. Values above 100000000 disable the timeout.",
    NULL, NULL, 50, 1, 1024 * 1024 * 1024, 0);
  
@@ -152,7 +147,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  
  static handler *innobase_create_handler(handlerton *hton,
                                          TABLE_SHARE *table,
-@@ -838,6 +844,17 @@
+@@ -839,6 +845,17 @@
  	}
  }
  
@@ -170,7 +165,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  /********************************************************************//**
  Obtain the InnoDB transaction of a MySQL thread.
  @return	reference to transaction pointer */
-@@ -2437,6 +2454,9 @@
+@@ -2442,6 +2459,9 @@
  	srv_n_read_io_threads = (ulint) innobase_read_io_threads;
  	srv_n_write_io_threads = (ulint) innobase_write_io_threads;
  
@@ -180,7 +175,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  	srv_force_recovery = (ulint) innobase_force_recovery;
  
  	srv_use_doublewrite_buf = (ibool) innobase_use_doublewrite;
-@@ -11025,7 +11045,7 @@
+@@ -11036,7 +11056,7 @@
    PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
    "Purge threads can be either 0 or 1.",
    NULL, NULL,
@@ -189,7 +184,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
    0,			/* Minimum value */
    1, 0);		/* Maximum value */
  
-@@ -11067,12 +11087,18 @@
+@@ -11078,12 +11098,18 @@
    innodb_file_format_max_validate,
    innodb_file_format_max_update, "Antelope");
  
@@ -214,7 +209,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  
  static MYSQL_SYSVAR_STR(flush_method, innobase_file_flush_method,
    PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
-@@ -11167,7 +11193,7 @@
+@@ -11183,7 +11209,7 @@
  static MYSQL_SYSVAR_LONGLONG(buffer_pool_size, innobase_buffer_pool_size,
    PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
    "The size of the memory buffer InnoDB uses to cache data and indexes of its tables.",
@@ -223,7 +218,7 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  
  static MYSQL_SYSVAR_LONG(buffer_pool_instances, innobase_buffer_pool_instances,
    PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
-@@ -11319,6 +11345,95 @@
+@@ -11335,6 +11361,95 @@
    "trigger a readahead.",
    NULL, NULL, 56, 0, 64, 0);
  
@@ -319,15 +314,15 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
  static struct st_mysql_sys_var* innobase_system_variables[]= {
    MYSQL_SYSVAR(additional_mem_pool_size),
    MYSQL_SYSVAR(autoextend_increment),
-@@ -11339,6 +11454,7 @@
+@@ -11355,6 +11470,7 @@
    MYSQL_SYSVAR(file_format_check),
    MYSQL_SYSVAR(file_format_max),
    MYSQL_SYSVAR(flush_log_at_trx_commit),
 +  MYSQL_SYSVAR(use_global_flush_log_at_trx_commit),
    MYSQL_SYSVAR(flush_method),
    MYSQL_SYSVAR(force_recovery),
-   MYSQL_SYSVAR(locks_unsafe_for_binlog),
-@@ -11376,6 +11492,13 @@
+   MYSQL_SYSVAR(large_prefix),
+@@ -11393,6 +11509,13 @@
    MYSQL_SYSVAR(show_verbose_locks),
    MYSQL_SYSVAR(show_locks_held),
    MYSQL_SYSVAR(version),
@@ -341,9 +336,8 @@ diff -ruN a/storage/innobase/handler/ha_innodb.cc b/storage/innobase/handler/ha_
    MYSQL_SYSVAR(use_sys_malloc),
    MYSQL_SYSVAR(use_native_aio),
    MYSQL_SYSVAR(change_buffering),
-diff -ruN a/storage/innobase/ibuf/ibuf0ibuf.c b/storage/innobase/ibuf/ibuf0ibuf.c
---- a/storage/innobase/ibuf/ibuf0ibuf.c	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/ibuf/ibuf0ibuf.c	2010-12-03 15:10:09.073984282 +0900
+--- a/storage/innobase/ibuf/ibuf0ibuf.c
++++ b/storage/innobase/ibuf/ibuf0ibuf.c
 @@ -514,8 +514,10 @@
  	grow in size, as the references on the upper levels of the tree can
  	change */
@@ -369,9 +363,8 @@ diff -ruN a/storage/innobase/ibuf/ibuf0ibuf.c b/storage/innobase/ibuf/ibuf0ibuf.
  
  	sync = (size >= max_size + IBUF_CONTRACT_ON_INSERT_SYNC);
  
-diff -ruN a/storage/innobase/include/buf0rea.h b/storage/innobase/include/buf0rea.h
---- a/storage/innobase/include/buf0rea.h	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/include/buf0rea.h	2010-12-03 15:10:09.076066335 +0900
+--- a/storage/innobase/include/buf0rea.h
++++ b/storage/innobase/include/buf0rea.h
 @@ -124,8 +124,7 @@
  
  /** The size in pages of the area which the read-ahead algorithms read if
@@ -382,9 +375,8 @@ diff -ruN a/storage/innobase/include/buf0rea.h b/storage/innobase/include/buf0re
  
  /** @name Modes used in read-ahead @{ */
  /** read only pages belonging to the insert buffer tree */
-diff -ruN a/storage/innobase/include/fil0fil.h b/storage/innobase/include/fil0fil.h
---- a/storage/innobase/include/fil0fil.h	2011-06-29 17:48:24.818969583 +0900
-+++ b/storage/innobase/include/fil0fil.h	2011-06-29 17:58:49.215971540 +0900
+--- a/storage/innobase/include/fil0fil.h
++++ b/storage/innobase/include/fil0fil.h
 @@ -658,8 +658,9 @@
  void
  fil_flush(
@@ -396,9 +388,8 @@ diff -ruN a/storage/innobase/include/fil0fil.h b/storage/innobase/include/fil0fi
  /**********************************************************************//**
  Flushes to disk writes in file spaces of the given type possibly cached by
  the OS. */
-diff -ruN a/storage/innobase/include/ha_prototypes.h b/storage/innobase/include/ha_prototypes.h
---- a/storage/innobase/include/ha_prototypes.h	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/include/ha_prototypes.h	2010-12-03 15:10:09.078026360 +0900
+--- a/storage/innobase/include/ha_prototypes.h
++++ b/storage/innobase/include/ha_prototypes.h
 @@ -284,6 +284,13 @@
  /*===================*/
          void*   thd,	/*!< in: thread handle (THD*) */
@@ -413,9 +404,8 @@ diff -ruN a/storage/innobase/include/ha_prototypes.h b/storage/innobase/include/
  
  /**********************************************************************//**
  Get the current setting of the lower_case_table_names global parameter from
-diff -ruN a/storage/innobase/include/os0file.h b/storage/innobase/include/os0file.h
---- a/storage/innobase/include/os0file.h	2011-05-11 20:54:12.000000000 +0900
-+++ b/storage/innobase/include/os0file.h	2011-06-29 17:55:21.947041132 +0900
+--- a/storage/innobase/include/os0file.h
++++ b/storage/innobase/include/os0file.h
 @@ -296,8 +296,8 @@
  	pfs_os_file_write_func(name, file, buf, offset, offset_high,	\
  			       n, __FILE__, __LINE__)
@@ -454,9 +444,8 @@ diff -ruN a/storage/innobase/include/os0file.h b/storage/innobase/include/os0fil
  /***********************************************************************//**
  Retrieves the last error number if an error occurs in a file io function.
  The number should be retrieved before any other OS calls (because they may
-diff -ruN a/storage/innobase/include/os0file.ic b/storage/innobase/include/os0file.ic
---- a/storage/innobase/include/os0file.ic	2011-05-11 20:54:12.000000000 +0900
-+++ b/storage/innobase/include/os0file.ic	2011-06-29 17:56:01.510958172 +0900
+--- a/storage/innobase/include/os0file.ic
++++ b/storage/innobase/include/os0file.ic
 @@ -369,6 +369,7 @@
  pfs_os_file_flush_func(
  /*===================*/
@@ -474,9 +463,8 @@ diff -ruN a/storage/innobase/include/os0file.ic b/storage/innobase/include/os0fi
  
  	register_pfs_file_io_end(locker, 0);
  
-diff -ruN a/storage/innobase/include/srv0srv.h b/storage/innobase/include/srv0srv.h
---- a/storage/innobase/include/srv0srv.h	2010-12-03 15:09:51.291955835 +0900
-+++ b/storage/innobase/include/srv0srv.h	2010-12-03 15:10:09.079029047 +0900
+--- a/storage/innobase/include/srv0srv.h
++++ b/storage/innobase/include/srv0srv.h
 @@ -138,7 +138,8 @@
  extern ulint	srv_n_log_files;
  extern ulint	srv_log_file_size;
@@ -515,9 +503,8 @@ diff -ruN a/storage/innobase/include/srv0srv.h b/storage/innobase/include/srv0sr
  };
  
  /** Alternatives for file i/o in Windows */
-diff -ruN a/storage/innobase/log/log0log.c b/storage/innobase/log/log0log.c
---- a/storage/innobase/log/log0log.c	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/log/log0log.c	2010-12-03 15:10:09.084023562 +0900
+--- a/storage/innobase/log/log0log.c
++++ b/storage/innobase/log/log0log.c
 @@ -48,6 +48,7 @@
  #include "srv0start.h"
  #include "trx0sys.h"
@@ -674,9 +661,8 @@ diff -ruN a/storage/innobase/log/log0log.c b/storage/innobase/log/log0log.c
  	current_time = time(NULL);
  
  	time_elapsed = 0.001 + difftime(current_time,
-diff -ruN a/storage/innobase/log/log0recv.c b/storage/innobase/log/log0recv.c
---- a/storage/innobase/log/log0recv.c	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/log/log0recv.c	2010-12-03 15:10:09.089024191 +0900
+--- a/storage/innobase/log/log0recv.c
++++ b/storage/innobase/log/log0recv.c
 @@ -2906,9 +2906,12 @@
  	ib_uint64_t	archived_lsn;
  #endif /* UNIV_LOG_ARCHIVE */
@@ -709,9 +695,8 @@ diff -ruN a/storage/innobase/log/log0recv.c b/storage/innobase/log/log0recv.c
  	os_file_close(log_file);
  
  	ut_free(buf);
-diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
---- a/storage/innobase/os/os0file.c	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/os/os0file.c	2010-12-03 15:10:09.093023540 +0900
+--- a/storage/innobase/os/os0file.c
++++ b/storage/innobase/os/os0file.c
 @@ -1424,7 +1424,7 @@
  #endif
  #ifdef UNIV_NON_BUFFERED_IO
@@ -761,23 +746,24 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  {
  	int	ret;
  	int	failures;
-@@ -2055,7 +2061,15 @@
+@@ -2055,7 +2061,16 @@
  	failures = 0;
  
  	do {
-+#ifdef HAVE_FDATASYNC
++#if defined(HAVE_FDATASYNC) && HAVE_DECL_FDATASYNC
 +		if (metadata) {
 +			ret = fsync(file);
 +		} else {
 +			ret = fdatasync(file);
 +		}
 +#else
++		(void) metadata;
  		ret = fsync(file);
 +#endif
  
  		os_n_fsyncs++;
  
-@@ -2092,7 +2106,8 @@
+@@ -2092,7 +2107,8 @@
  ibool
  os_file_flush_func(
  /*===============*/
@@ -787,7 +773,7 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  {
  #ifdef __WIN__
  	BOOL	ret;
-@@ -2142,18 +2157,18 @@
+@@ -2142,18 +2158,18 @@
  		/* If we are not on an operating system that supports this,
  		then fall back to a plain fsync. */
  
@@ -809,7 +795,7 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  #endif
  
  	if (ret == 0) {
-@@ -2336,7 +2351,7 @@
+@@ -2336,7 +2352,7 @@
  		the OS crashes, a database page is only partially
  		physically written to disk. */
  
@@ -818,7 +804,7 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  	}
  # endif /* UNIV_DO_FLUSH */
  
-@@ -2378,7 +2393,7 @@
+@@ -2378,7 +2394,7 @@
  			the OS crashes, a database page is only partially
  			physically written to disk. */
  
@@ -827,7 +813,7 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  		}
  # endif /* UNIV_DO_FLUSH */
  
-@@ -2750,7 +2765,7 @@
+@@ -2750,7 +2766,7 @@
  
  # ifdef UNIV_DO_FLUSH
  	if (!os_do_not_call_flush_at_each_write) {
@@ -836,7 +822,7 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  	}
  # endif /* UNIV_DO_FLUSH */
  
-@@ -4289,7 +4304,7 @@
+@@ -4296,7 +4312,7 @@
  #ifdef UNIV_DO_FLUSH
  		if (slot->type == OS_FILE_WRITE
  		    && !os_do_not_call_flush_at_each_write) {
@@ -845,7 +831,7 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  				ut_error;
  			}
  		}
-@@ -4590,7 +4605,7 @@
+@@ -4597,7 +4613,7 @@
  #ifdef UNIV_DO_FLUSH
  		if (slot->type == OS_FILE_WRITE
  		    && !os_do_not_call_flush_at_each_write)
@@ -854,9 +840,8 @@ diff -ruN a/storage/innobase/os/os0file.c b/storage/innobase/os/os0file.c
  			ut_error;
  		}
  #endif /* UNIV_DO_FLUSH */
-diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
---- a/storage/innobase/srv/srv0srv.c	2010-12-03 15:09:51.301987792 +0900
-+++ b/storage/innobase/srv/srv0srv.c	2010-12-03 15:13:29.369986988 +0900
+--- a/storage/innobase/srv/srv0srv.c
++++ b/storage/innobase/srv/srv0srv.c
 @@ -183,7 +183,8 @@
  UNIV_INTERN ulint	srv_log_file_size	= ULINT_MAX;
  /* size in database pages */
@@ -885,6 +870,15 @@ diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
  /*-------------------------------------------*/
  UNIV_INTERN ulong	srv_n_spin_wait_rounds	= 30;
  UNIV_INTERN ulong	srv_n_free_tickets_to_enter = 500;
+@@ -2709,7 +2721,7 @@
+ 
+ 	ut_ad(!mutex_own(&kernel_mutex));
+ 
+-	ut_a(srv_n_purge_threads == 0);
++	ut_a(srv_n_purge_threads == 0 || (srv_shutdown_state > 0 && srv_n_threads_active[SRV_WORKER] == 0));
+ 
+ 	do {
+ 		/* Check for shutdown and change in purge config. */
 @@ -2742,6 +2754,7 @@
  	ulint		n_pages_purged	= 0;
  	ulint		n_bytes_merged;
@@ -1220,7 +1214,7 @@ diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
  		}
  
  		if (srv_activity_count == old_activity_count) {
-@@ -2941,7 +3213,7 @@
+@@ -2941,12 +3213,12 @@
  	even if the server were active */
  
  	srv_main_thread_op_info = "doing insert buffer merge";
@@ -1229,6 +1223,21 @@ diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
  
  	/* Flush logs if needed */
  	srv_sync_log_buffer_in_background();
+ 
+-	if (srv_n_purge_threads == 0) {
++	if (srv_n_purge_threads == 0 || (srv_shutdown_state > 0 && srv_n_threads_active[SRV_WORKER] == 0)) {
+ 		srv_main_thread_op_info = "master purging";
+ 
+ 		srv_master_do_purge();
+@@ -3024,7 +3296,7 @@
+ 		}
+ 	}
+ 
+-	if (srv_n_purge_threads == 0) {
++	if (srv_n_purge_threads == 0 || (srv_shutdown_state > 0 && srv_n_threads_active[SRV_WORKER] == 0)) {
+ 		srv_main_thread_op_info = "master purging";
+ 
+ 		srv_master_do_purge();
 @@ -3049,7 +3321,7 @@
  		buf_flush_list below. Otherwise, the system favors
  		clean pages over cleanup throughput. */
@@ -1276,9 +1285,8 @@ diff -ruN a/storage/innobase/srv/srv0srv.c b/storage/innobase/srv/srv0srv.c
  	}
  
  	mutex_enter(&kernel_mutex);
-diff -ruN a/storage/innobase/srv/srv0start.c b/storage/innobase/srv/srv0start.c
---- a/storage/innobase/srv/srv0start.c	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/srv/srv0start.c	2010-12-03 15:10:09.103023543 +0900
+--- a/storage/innobase/srv/srv0start.c
++++ b/storage/innobase/srv/srv0start.c
 @@ -1217,6 +1217,9 @@
  	} else if (0 == ut_strcmp(srv_file_flush_method_str, "O_DIRECT")) {
  		srv_unix_file_flush_method = SRV_UNIX_O_DIRECT;
@@ -1289,9 +1297,8 @@ diff -ruN a/storage/innobase/srv/srv0start.c b/storage/innobase/srv/srv0start.c
  	} else if (0 == ut_strcmp(srv_file_flush_method_str, "littlesync")) {
  		srv_unix_file_flush_method = SRV_UNIX_LITTLESYNC;
  
-diff -ruN a/storage/innobase/trx/trx0purge.c b/storage/innobase/trx/trx0purge.c
---- a/storage/innobase/trx/trx0purge.c	2011-04-12 14:14:14.000000000 +0900
-+++ b/storage/innobase/trx/trx0purge.c	2011-04-12 14:15:44.000000000 +0900
+--- a/storage/innobase/trx/trx0purge.c
++++ b/storage/innobase/trx/trx0purge.c
 @@ -392,10 +392,10 @@
  	trx_sys->rseg_history_len++;
  	mutex_exit(&kernel_mutex);
@@ -1305,9 +1312,8 @@ diff -ruN a/storage/innobase/trx/trx0purge.c b/storage/innobase/trx/trx0purge.c
  }
  
  /**********************************************************************//**
-diff -ruN a/storage/innobase/trx/trx0trx.c b/storage/innobase/trx/trx0trx.c
---- a/storage/innobase/trx/trx0trx.c	2010-11-03 07:01:13.000000000 +0900
-+++ b/storage/innobase/trx/trx0trx.c	2010-12-03 15:10:09.106023937 +0900
+--- a/storage/innobase/trx/trx0trx.c
++++ b/storage/innobase/trx/trx0trx.c
 @@ -984,6 +984,7 @@
  	trx->read_view = NULL;
  
