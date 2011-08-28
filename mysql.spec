@@ -42,8 +42,8 @@ Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 # Source0-md5:	306b5549c7bd72e8e705a890db0da82b
-Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
-# Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
+Source100:	http://www.sphinxsearch.com/files/sphinx-2.0.1-beta.tar.gz
+# Source100-md5:	95c217d81d0b7a4ff73d5297318c3481
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -74,6 +74,8 @@ Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
 # from fedora
 Patch20:	%{name}-dubious-exports.patch
+# http://sphinxsearch.com/bugs/view.php?id=676
+Patch21:	sphinx-mysql.patch
 # <percona patches, updated with percona.sh>
 Patch100:	microsec_process.patch
 Patch101:	optimizer_fix.patch
@@ -561,6 +563,9 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch19 -p1
 %patch20 -p1
+cd storage/sphinx
+%patch21 -p1
+cd ../..
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
@@ -1004,7 +1009,7 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
 %if %{with sphinx}
-%attr(755,root,root) %{_libdir}/%{name}/plugin/sphinx.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
 # for plugins
 %attr(755,root,root) %{_libdir}/libmysqlservices.so

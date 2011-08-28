@@ -1,0 +1,189 @@
+Index: mysqlse/ha_sphinx.cc
+===================================================================
+--- mysqlse/ha_sphinx.cc	(wersja 2920)
++++ mysqlse/ha_sphinx.cc	(wersja 2921)
+@@ -24,7 +24,10 @@
+ 
+ #include <mysql_version.h>
+ 
+-#if MYSQL_VERSION_ID>50100
++#if MYSQL_VERSION_ID>=50515
++#include "sql_class.h"
++#include "sql_array.h"
++#elif MYSQL_VERSION_ID>50100
+ #include "mysql_priv.h"
+ #include <mysql/plugin.h>
+ #else
+@@ -119,6 +122,22 @@
+ 
+ #endif
+ 
++#if MYSQL_VERSION_ID>=50515
++
++#define sphinx_hash_init my_hash_init
++#define sphinx_hash_free my_hash_free
++#define sphinx_hash_search my_hash_search
++#define sphinx_hash_delete my_hash_delete
++
++#else
++
++#define sphinx_hash_init hash_init
++#define sphinx_hash_free hash_free
++#define sphinx_hash_search hash_search
++#define sphinx_hash_delete hash_delete
++
++#endif
++
+ /////////////////////////////////////////////////////////////////////////////
+ 
+ // FIXME! make this all dynamic
+@@ -675,8 +694,8 @@
+ 	if ( !sphinx_init )
+ 	{
+ 		sphinx_init = 1;
+-		VOID ( pthread_mutex_init ( &sphinx_mutex, MY_MUTEX_INIT_FAST ) );
+-		hash_init ( &sphinx_open_tables, system_charset_info, 32, 0, 0,
++		void ( pthread_mutex_init ( &sphinx_mutex, MY_MUTEX_INIT_FAST ) );
++		sphinx_hash_init ( &sphinx_open_tables, system_charset_info, 32, 0, 0,
+ 			sphinx_get_key, 0, 0 );
+ 
+ 		#if MYSQL_VERSION_ID > 50100
+@@ -726,7 +745,7 @@
+ 		sphinx_init = 0;
+ 		if ( sphinx_open_tables.records )
+ 			error = 1;
+-		hash_free ( &sphinx_open_tables );
++		sphinx_hash_free ( &sphinx_open_tables );
+ 		pthread_mutex_destroy ( &sphinx_mutex );
+ 	}
+ 
+@@ -1131,12 +1150,12 @@
+ 	{
+ 		// check if we already have this share
+ #if MYSQL_VERSION_ID>=50120
+-		pShare = (CSphSEShare*) hash_search ( &sphinx_open_tables, (const uchar *) table_name, strlen(table_name) );
++		pShare = (CSphSEShare*) sphinx_hash_search ( &sphinx_open_tables, (const uchar *) table_name, strlen(table_name) );
+ #else
+ #ifdef __WIN__
+-		pShare = (CSphSEShare*) hash_search ( &sphinx_open_tables, (const byte *) table_name, strlen(table_name) );
++		pShare = (CSphSEShare*) sphinx_hash_search ( &sphinx_open_tables, (const byte *) table_name, strlen(table_name) );
+ #else
+-		pShare = (CSphSEShare*) hash_search ( &sphinx_open_tables, table_name, strlen(table_name) );
++		pShare = (CSphSEShare*) sphinx_hash_search ( &sphinx_open_tables, table_name, strlen(table_name) );
+ #endif // win
+ #endif // pre-5.1.20
+ 
+@@ -1188,7 +1207,7 @@
+ 
+ 	if ( !--pShare->m_iUseCount )
+ 	{
+-		hash_delete ( &sphinx_open_tables, (byte *)pShare );
++		sphinx_hash_delete ( &sphinx_open_tables, (byte *)pShare );
+ 		SafeDelete ( pShare );
+ 	}
+ 
+@@ -2073,15 +2092,29 @@
+ 		} else
+ 		{
+ 			int tmp_errno;
++			bool bError = false;
++
++#if MYSQL_VERSION_ID>=50515
++			struct addrinfo tmp_hostent, *hp;
++			tmp_errno = getaddrinfo ( sHost, NULL, &tmp_hostent, &hp );
++			if ( !tmp_errno )
++			{
++				freeaddrinfo ( hp );
++				bError = true;
++			}
++#else
+ 			struct hostent tmp_hostent, *hp;
+ 			char buff2 [ GETHOSTBYNAME_BUFF_SIZE ];
+-
+-			hp = my_gethostbyname_r ( sHost, &tmp_hostent,
+-				buff2, sizeof(buff2), &tmp_errno );
++			hp = my_gethostbyname_r ( sHost, &tmp_hostent, buff2, sizeof(buff2), &tmp_errno );
+ 			if ( !hp )
+ 			{
+ 				my_gethostbyname_r_free();
++				bError = true;
++			}
++#endif
+ 
++			if ( bError )
++			{
+ 				char sError[256];
+ 				my_snprintf ( sError, sizeof(sError), "failed to resolve searchd host (name=%s)", sHost );
+ 
+@@ -2089,9 +2122,13 @@
+ 				SPH_RET(-1);
+ 			}
+ 
+-			memcpy ( &sin.sin_addr, hp->h_addr,
+-				Min ( sizeof(sin.sin_addr), (size_t)hp->h_length ) );
++#if MYSQL_VERSION_ID>=50515
++			memcpy ( &sin.sin_addr, hp->ai_addr, Min ( sizeof(sin.sin_addr), (size_t)hp->ai_addrlen ) );
++			freeaddrinfo ( hp );
++#else
++			memcpy ( &sin.sin_addr, hp->h_addr, Min ( sizeof(sin.sin_addr), (size_t)hp->h_length ) );
+ 			my_gethostbyname_r_free();
++#endif
+ 		}
+ 	} else
+ 	{
+@@ -2932,7 +2969,7 @@
+ 
+ 	for ( uint32 i=0; i<m_iAttrs; i++ )
+ 	{
+-		longlong iValue64;
++		longlong iValue64 = 0;
+ 		uint32 uValue = UnpackDword ();
+ 		if ( m_dAttrs[i].m_uType==SPH_ATTR_BIGINT )
+ 			iValue64 = ( (longlong)uValue<<32 ) | UnpackDword();
+Index: mysqlse/ha_sphinx.h
+===================================================================
+--- mysqlse/ha_sphinx.h	(wersja 2920)
++++ mysqlse/ha_sphinx.h	(wersja 2921)
+@@ -7,7 +7,9 @@
+ #endif
+ 
+ 
+-#if MYSQL_VERSION_ID>50100
++#if MYSQL_VERSION_ID>=50515
++#define TABLE_ARG	TABLE_SHARE
++#elif MYSQL_VERSION_ID>50100
+ #define TABLE_ARG	st_table_share
+ #else
+ #define TABLE_ARG	st_table
+@@ -47,7 +49,7 @@
+ 
+ public:
+ #if MYSQL_VERSION_ID<50100
+-					ha_sphinx ( TABLE_ARG * table_arg );
++					ha_sphinx ( TABLE_ARG * table_arg ); // NOLINT
+ #else
+ 					ha_sphinx ( handlerton * hton, TABLE_ARG * table_arg );
+ #endif
+@@ -90,7 +92,7 @@
+ 	int				index_init ( uint keynr, bool sorted ); // 5.1.x
+ 	int				index_init ( uint keynr ) { return index_init ( keynr, false ); } // 5.0.x
+ 
+-	int				index_end (); 
++	int				index_end ();
+ 	int				index_read ( byte * buf, const byte * key, uint key_len, enum ha_rkey_function find_flag );
+ 	int				index_read_idx ( byte * buf, uint idx, const byte * key, uint key_len, enum ha_rkey_function find_flag );
+ 	int				index_next ( byte * buf );
+Index: mysqlse/CMakeLists.txt
+===================================================================
+--- mysqlse/CMakeLists.txt	(wersja 2920)
++++ mysqlse/CMakeLists.txt	(wersja 2921)
+@@ -8,4 +8,9 @@
+                     ${CMAKE_SOURCE_DIR}/regex)
+ 
+ SET(SPHINX_SOURCES ha_sphinx.cc)
++IF(MYSQL_VERSION_ID LESS 50515) 
+ ADD_LIBRARY(sphinx ha_sphinx.cc)
++ELSE()
++SET(SPHINX_PLUGIN_DYNAMIC "ha_sphinx")
++MYSQL_ADD_PLUGIN(sphinx ${SPHINX_SOURCES} STORAGE_ENGINE MODULE_ONLY LINK_LIBRARIES mysys)
++ENDIF()
