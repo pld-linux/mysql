@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.15
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -113,8 +113,8 @@ Patch132:	percona_support.patch
 Patch133:	query_cache_enhance.patch
 Patch134:	log_connection_error.patch
 Patch135:	mysql_syslog.patch
-Patch136:	response_time_distribution.patch
-Patch137:	error_pad.patch
+Patch136:	error_pad.patch
+Patch137:	response_time_distribution.patch
 Patch138:	remove_fcntl_excessive_calls.patch
 Patch139:	sql_no_fcache.patch
 Patch140:	show_slave_status_nolock.patch
@@ -132,6 +132,7 @@ Patch151:	utf8_general50_ci.patch
 Patch152:	bug813587.patch
 Patch153:	valgrind_zlib_suppression.patch
 Patch154:	memory_dynamic_rows.patch
+Patch155:	xtradb_bug317074.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
@@ -622,6 +623,7 @@ cd ../..
 %patch152 -p1
 %patch153 -p1
 %patch154 -p1
+%patch155 -p1
 # </percona>
 
 # to get these files rebuild
