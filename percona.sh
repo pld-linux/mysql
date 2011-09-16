@@ -47,7 +47,7 @@ for patch in $(cat $dir/series | filter_names); do
 	cat $dir/$patch | filter_files > $file
 
 	if [ -z "$(awk -vfile=$file -F/ '$2 == file{print}' CVS/Entries)" ]; then
-		cvs add $file
+		cvs add ${branch:+-r $branch} $file
 		${branch:+cvs up -r $branch $file}
 	fi
 
