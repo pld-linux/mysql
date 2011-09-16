@@ -8,16 +8,15 @@
 #
 --- a/storage/federated/ha_federated.cc
 +++ b/storage/federated/ha_federated.cc
-@@ -1675,6 +1675,8 @@
+@@ -1641,6 +1641,7 @@
  
  int ha_federated::close(void)
  {
 +  THD *thd= current_thd;
-+
    DBUG_ENTER("ha_federated::close");
  
    free_result();
-@@ -1685,6 +1687,10 @@
+@@ -1651,6 +1652,10 @@
    mysql_close(mysql);
    mysql= NULL;
  

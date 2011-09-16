@@ -31,13 +31,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.57
+Version:	5.1.58
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	8d6998ef0f2e2d1dac2a761348c71c21
+# Source0-md5:	ae5aef506088e521e4b1cc4f668e96d2
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -116,8 +116,8 @@ Patch139:	%{name}-control_online_alter_index.patch
 Patch140:	%{name}-log_connection_error.patch
 Patch141:	%{name}-mysql-syslog.patch
 Patch142:	%{name}-innodb_buffer_pool_shm.patch
-Patch143:	%{name}-response-time-distribution.patch
-Patch144:	%{name}-error_pad.patch
+Patch143:	%{name}-error_pad.patch
+Patch144:	response_time_distribution.patch
 Patch145:	%{name}-remove_fcntl_excessive_calls.patch
 Patch146:	%{name}-sql_no_fcache.patch
 Patch147:	%{name}-show_slave_status_nolock.patch
@@ -127,6 +127,13 @@ Patch150:	%{name}-fix-bug671764.patch
 Patch151:	%{name}-mysql_remove_eol_carret.patch
 Patch152:	%{name}-innodb_expand_fast_index_creation.patch
 Patch153:	%{name}-innodb_bug60788.patch
+Patch154:	slave_timeout_fix.patch
+Patch155:	utf8_general50_ci.patch
+Patch156:	bug813587.patch
+Patch157:	innodb_bug47167_test_fix.patch
+Patch158:	disable_query_cache_28249_test_sporadic_failure.patch
+Patch159:	bug53761.patch
+Patch160:	xtradb_bug317074.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	autoconf
@@ -629,6 +636,13 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch151 -p1
 %patch152 -p1
 %patch153 -p1
+%patch154 -p1
+%patch155 -p1
+%patch156 -p1
+%patch157 -p1
+%patch158 -p1
+%patch159 -p1
+%patch160 -p1
 # </percona>
 
 %build

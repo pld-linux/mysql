@@ -1,8 +1,7 @@
 --- /dev/null
 +++ b/mysql-test/r/percona_xtradb_bug317074.result
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,4 @@
 +SET @old_innodb_file_format=@@innodb_file_format;
-+SET @old_innodb_file_format_max=@@innodb_file_format_max;
 +SET @old_innodb_file_per_table=@@innodb_file_per_table;
 +SET GLOBAL innodb_file_format='Barracuda';
 +SET GLOBAL innodb_file_per_table=ON;
@@ -12,8 +11,8 @@
 +-- source include/have_innodb.inc
 +
 +SET @old_innodb_file_format=@@innodb_file_format;
-+SET @old_innodb_file_format_max=@@innodb_file_format_max;
 +SET @old_innodb_file_per_table=@@innodb_file_per_table;
++let $innodb_file_format_check_orig=`select @@innodb_file_format_check`;
 +SET GLOBAL innodb_file_format='Barracuda';
 +SET GLOBAL innodb_file_per_table=ON;
 +
@@ -54,5 +53,5 @@
 +
 +DROP TABLE test1;
 +SET GLOBAL innodb_file_format=@old_innodb_file_format;
-+SET GLOBAL innodb_file_format_max=@old_innodb_file_format_max;
 +SET GLOBAL innodb_file_per_table=@old_innodb_file_per_table;
++eval set global innodb_file_format_check=$innodb_file_format_check_orig;
