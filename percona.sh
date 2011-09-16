@@ -1,14 +1,9 @@
 #!/bin/sh
 # updates percona patches
-# http://www.percona.com/docs/wiki/repositories:start
-# http://bazaar.launchpad.net/~percona-dev/percona-server/5.5.8/files
-# https://launchpad.net/percona-server/5.5
-# bzr branch lp:percona-server/5.5
+# http://www.percona.com/docs/wiki/release:start
 
-version=5.1
+version=release-5.1.53-11
 bzr_branch=lp:percona-server/$version
-#version=5.5.9
-#bzr_branch=lp:percona-dev/percona-server/$version
 branch=MYSQL_5_1
 
 filter_names() {
@@ -23,11 +18,9 @@ filter_files() {
 	filterdiff -x '*/configure'
 }
 
-set -e
-
 if [ -d $version ]; then
 	cd $version
-	bzr pull
+	bzr up
 	cd ..
 else
 	bzr branch $bzr_branch $version
@@ -36,27 +29,16 @@ fi
 > .percona.spec
 > .patch.spec
 i=100
-[ -d "$version/patches" ] && dir=$version/patches || dir=$version
-for patch in $(cat $dir/series | filter_names); do
-	# if patch already existed, use mysql- prefix
-	if [ -f mysql-$patch ]; then
-		file=mysql-$patch
-	else
-		file=$patch
-	fi
-	cat $dir/$patch | filter_files > $file
+for patch in $(cat $version/series | filter_names); do
+	file=mysql-$patch
+	cat $version/$patch | filter_files > $file
 
 	if [ -z "$(awk -vfile=$file -F/ '$2 == file{print}' CVS/Entries)" ]; then
 		cvs add $file
 		${branch:+cvs up -r $branch $file}
 	fi
 
-	if [ "$patch" != "$file" ]; then
-		echo >&2 "Adding: $file ($patch)"
-	else
-		echo >&2 "Adding: $file"
-	fi
-	printf "Patch%d:\t%s\n" $i $(echo "$file" | sed -e 's,^mysql-,%{name}-,') >> .percona.spec
+	printf "Patch%d:\t%s\n" $i %{name}-$patch >> .percona.spec
 	printf "%%patch%d -p1\n" $i >> .patch.spec
 	i=$((i+1))
 done

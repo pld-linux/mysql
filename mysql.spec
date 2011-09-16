@@ -31,13 +31,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.57
+Version:	5.1.55
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 #Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	8d6998ef0f2e2d1dac2a761348c71c21
+# Source0-md5:	e07e79edad557874d0870c914c9c81e1
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -67,7 +67,6 @@ Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
-Patch13:	gcc-ice.patch
 Patch14:	%{name}-bug-43594.patch
 Patch15:	plugin-avoid-version.patch
 Patch16:	%{name}-fix-dummy-thread-race-condition.patch
@@ -110,34 +109,16 @@ Patch133:	%{name}-innodb_fix_misc.patch
 Patch134:	%{name}-innodb_adjust_defaults.patch
 Patch135:	%{name}-innodb_deadlock_count.patch
 Patch136:	%{name}-bug580324.patch
-Patch137:	%{name}-bugfix48929.patch
+Patch137:	%{name}-error_pad.patch
 Patch138:	%{name}-query_cache_enhance.patch
-Patch139:	%{name}-control_online_alter_index.patch
-Patch140:	%{name}-log_connection_error.patch
-Patch141:	%{name}-mysql-syslog.patch
-Patch142:	%{name}-innodb_buffer_pool_shm.patch
-Patch143:	%{name}-response-time-distribution.patch
-Patch144:	%{name}-error_pad.patch
-Patch145:	%{name}-remove_fcntl_excessive_calls.patch
-Patch146:	%{name}-sql_no_fcache.patch
-Patch147:	%{name}-show_slave_status_nolock.patch
-Patch148:	%{name}-innodb_fast_shutdown.patch
-Patch149:	%{name}-bug677407.patch
-Patch150:	%{name}-fix-bug671764.patch
-Patch151:	%{name}-mysql_remove_eol_carret.patch
-Patch152:	%{name}-innodb_expand_fast_index_creation.patch
-Patch153:	%{name}-innodb_bug60788.patch
+Patch139:	%{name}-bug677407.patch
 # </percona>
-URL:		http://www.mysql.com/products/community/
+URL:		http://www.mysql.com/products/database/mysql/community_edition.html
 BuildRequires:	autoconf
 BuildRequires:	automake
 BuildRequires:	bison
 BuildRequires:	groff
-%if "%{pld_release}" == "ac"
-BuildRequires:	libstdc++4-devel >= 5:4.0
-%else
-BuildRequires:	libstdc++-devel >= 5:4.0
-%endif
+BuildRequires:	libstdc++-devel >= 5:3.0
 BuildRequires:	libtool
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
@@ -146,7 +127,7 @@ BuildRequires:	ncurses-devel >= 4.2
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.453
+BuildRequires:	rpmbuild(macros) >= 1.414
 BuildRequires:	sed >= 4.0
 BuildRequires:	zlib-devel
 Requires(post,preun):	/sbin/chkconfig
@@ -382,7 +363,7 @@ Este pacote contém os clientes padrão para o MySQL.
 
 %package libs
 Summary:	Shared libraries for MySQL
-Summary(pl.UTF-8):	Biblioteki współdzielone MySQL
+Summary(pl.UTF-8):	Biblioteki dzielone MySQL
 Group:		Libraries
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.1.12
@@ -391,11 +372,11 @@ Obsoletes:	mysql-doc < 4.1.12
 Shared libraries for MySQL.
 
 %description libs -l pl.UTF-8
-Biblioteki współdzielone MySQL.
+Biblioteki dzielone MySQL.
 
 %package devel
-Summary:	MySQL - development header files and other files
-Summary(pl.UTF-8):	MySQL - Pliki nagłówkowe i inne dla programistów
+Summary:	MySQL - Development header files and libraries
+Summary(pl.UTF-8):	MySQL - Pliki nagłówkowe i biblioteki dla programistów
 Summary(pt.UTF-8):	MySQL - Medições de desempenho
 Summary(ru.UTF-8):	MySQL - хедеры и библиотеки разработчика
 Summary(uk.UTF-8):	MySQL - хедери та бібліотеки програміста
@@ -407,7 +388,7 @@ Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
 
 %description devel
-This package contains the development header files and other files
+This package contains the development header files and libraries
 necessary to develop MySQL client applications.
 
 %description devel -l fr.UTF-8
@@ -416,7 +397,7 @@ developpement necessaires pour developper des applications clientes
 MySQL.
 
 %description devel -l pl.UTF-8
-Pliki nagłówkowe i inne pliki konieczne do kompilacji aplikacji
+Pliki nagłówkowe i biblioteki konieczne do kompilacji aplikacji
 klienckich MySQL.
 
 %description devel -l pt_BR.UTF-8
@@ -568,9 +549,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
-%if "%{cc_version}" < "3.4"
-%patch13 -p1
-%endif
 %patch14 -p0
 %patch15 -p1
 %patch16 -p1
@@ -615,30 +593,9 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch137 -p1
 %patch138 -p1
 %patch139 -p1
-%patch140 -p1
-%patch141 -p1
-%patch142 -p1
-%patch143 -p1
-%patch144 -p1
-%patch145 -p1
-%patch146 -p1
-%patch147 -p1
-%patch148 -p1
-%patch149 -p1
-%patch150 -p1
-%patch151 -p1
-%patch152 -p1
-%patch153 -p1
 # </percona>
 
 %build
-%if "%{pld_release}" == "ac"
-# add suffix, but allow ccache, etc in ~/.rpmmacros
-%{expand:%%define	__cc	%(echo '%__cc' | sed -e 's,-gcc,-gcc4,')}
-%{expand:%%define	__cxx	%(echo '%__cxx' | sed -e 's,-g++,-g++4,')}
-%{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
-%endif
-
 %{__libtoolize}
 %{__aclocal} -I config/ac-macros
 %{__automake}
@@ -881,32 +838,32 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %triggerpostun -- mysql < 4.0.20-2.4
-# For clusters in /etc/%{name}/clusters.conf
+# For clusters in /etc/mysql/clusters.conf
 if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
 	if [ -n "$MYSQL_DB_CLUSTERS" ]; then
 		for i in "$MYSQL_DB_CLUSTERS"; do
-			echo "$i/mysqld.conf=$i" >> /etc/%{name}/clusters.conf
+			echo "$i/mysqld.conf=$i" >> /etc/mysql/clusters.conf
 		done
 		echo "# Do not use **obsolete** option MYSQL_DB_CLUSTERS" >> /etc/sysconfig/mysql
-		echo "# USE /etc/%{name}/clusters.conf instead" >> /etc/sysconfig/mysql
-		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/%{name}/clusters.conf."
-		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/%{name}/clusters.conf."
+		echo "# USE /etc/mysql/clusters.conf instead" >> /etc/sysconfig/mysql
+		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/mysql/clusters.conf."
+		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/mysql/clusters.conf."
 	fi
 fi
 
 %triggerpostun -- mysql < 4.1.1
 # For better compatibility with prevoius versions:
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
-	elif [ -f "/etc/%{name}/$config" ]; then
-		config_file=/etc/%{name}/$config
+	elif [ -f "/etc/mysql/$config" ]; then
+		config_file=/etc/mysql/$config
 	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
 		if [ -z "$clusterdir" ]; then
 			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
+			echo >&2 "Please remove extra (leading) spaces from /etc/mysql/clusters.conf"
 			exit 1
 		fi
 		config_file="$clusterdir/mysqld.conf"
@@ -936,16 +893,16 @@ EOF
 
 %triggerpostun -- mysql < 5.1.0
 configs=""
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/mysql/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
 		config_file="$config"
-	elif [ -f "/etc/%{name}/$config" ]; then
-		config_file=/etc/%{name}/$config
+	elif [ -f "/etc/mysql/$config" ]; then
+		config_file=/etc/mysql/$config
 	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/mysql/clusters.conf)
 		if [ -z "$clusterdir" ]; then
 			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
+			echo >&2 "Please remove extra (leading) spaces from /etc/mysql/clusters.conf"
 			exit 1
 		fi
 		config_file="$clusterdir/mysqld.conf"
@@ -962,10 +919,6 @@ done
 echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
 echo 'Thus, you should invoke:'
 for config in $configs; do
-	sed -i -e '
-		#set-variable\s*=\s* ##
-	' $config
-
 	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
 	echo "# mysql_upgrade --datadir=$datadir"
 done

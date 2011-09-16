@@ -8,19 +8,19 @@
 diff -ruN a/storage/innodb_plugin/handler/ha_innodb.cc b/storage/innodb_plugin/handler/ha_innodb.cc
 --- a/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:23:31.022060427 +0900
 +++ b/storage/innodb_plugin/handler/ha_innodb.cc	2010-08-27 16:25:49.004020662 +0900
-@@ -11064,6 +11064,11 @@
+@@ -10987,6 +10987,11 @@
    "Output statistics of recovery process after it.",
    NULL, NULL, FALSE);
  
 +static MYSQL_SYSVAR_ULONG(use_purge_thread, srv_use_purge_thread,
 +  PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_READONLY,
 +  "Number of purge devoted threads. #### over 1 is EXPERIMENTAL ####",
-+  NULL, NULL, 0, 0, UNIV_MAX_PARALLELISM, 0);
++  NULL, NULL, 0, 0, 64, 0);
 +
  static MYSQL_SYSVAR_BOOL(overwrite_relay_log_info, innobase_overwrite_relay_log_info,
    PLUGIN_VAR_NOCMDARG | PLUGIN_VAR_READONLY,
    "During InnoDB crash recovery on slave overwrite relay-log.info "
-@@ -11575,6 +11580,7 @@
+@@ -11510,6 +11515,7 @@
  #endif /* UNIV_DEBUG || UNIV_IBUF_DEBUG */
    MYSQL_SYSVAR(read_ahead_threshold),
    MYSQL_SYSVAR(io_capacity),
@@ -50,7 +50,7 @@ diff -ruN a/storage/innodb_plugin/include/srv0srv.h b/storage/innodb_plugin/incl
  extern ibool	srv_auto_extend_last_data_file;
  extern ulint	srv_last_file_size_max;
  extern char**	srv_log_group_home_dirs;
-@@ -421,6 +423,8 @@
+@@ -407,6 +409,8 @@
  	SRV_RECOVERY,	/**< threads finishing a recovery */
  	SRV_INSERT,	/**< thread flushing the insert buffer to disk */
  #endif
@@ -59,7 +59,7 @@ diff -ruN a/storage/innodb_plugin/include/srv0srv.h b/storage/innodb_plugin/incl
  	SRV_MASTER	/**< the master thread, (whose type number must
  			be biggest) */
  };
-@@ -494,6 +498,21 @@
+@@ -480,6 +484,21 @@
  /*==============*/
  	void*	arg);	/*!< in: a dummy parameter required by
  			os_thread_create */
@@ -154,7 +154,7 @@ diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0
  /* if TRUE, then we auto-extend the last data file */
  UNIV_INTERN ibool	srv_auto_extend_last_data_file	= FALSE;
  /* if != 0, this tells the max size auto-extending may increase the
-@@ -2639,10 +2641,10 @@
+@@ -2626,10 +2628,10 @@
  	srv_main_thread_process_no = os_proc_get_number();
  	srv_main_thread_id = os_thread_pf(os_thread_get_curr_id());
  
@@ -166,7 +166,7 @@ diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0
  	srv_n_threads_active[SRV_MASTER]++;
  
  	mutex_exit(&kernel_mutex);
-@@ -3100,6 +3102,7 @@
+@@ -3087,6 +3089,7 @@
  	/* Flush logs if needed */
  	srv_sync_log_buffer_in_background();
  
@@ -174,7 +174,7 @@ diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0
  	/* We run a full purge every 10 seconds, even if the server
  	were active */
  	do {
-@@ -3116,6 +3119,7 @@
+@@ -3103,6 +3106,7 @@
  		srv_sync_log_buffer_in_background();
  
  	} while (n_pages_purged);
@@ -182,7 +182,7 @@ diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0
  
  	srv_main_thread_op_info = "flushing buffer pool pages";
  
-@@ -3184,6 +3188,7 @@
+@@ -3171,6 +3175,7 @@
  		os_thread_sleep(100000);
  	}
  
@@ -190,7 +190,7 @@ diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0
  	srv_main_thread_op_info = "purging";
  
  	/* Run a full purge */
-@@ -3200,6 +3205,7 @@
+@@ -3187,6 +3192,7 @@
  		srv_sync_log_buffer_in_background();
  
  	} while (n_pages_purged);
@@ -198,7 +198,7 @@ diff -ruN a/storage/innodb_plugin/srv/srv0srv.c b/storage/innodb_plugin/srv/srv0
  
  	srv_main_thread_op_info = "reserving kernel mutex";
  
-@@ -3352,3 +3358,143 @@
+@@ -3339,3 +3345,143 @@
  
  	OS_THREAD_DUMMY_RETURN;	/* Not reached, avoid compiler warning */
  }
@@ -350,14 +350,14 @@ diff -ruN a/storage/innodb_plugin/srv/srv0start.c b/storage/innodb_plugin/srv/sr
  
  /** io_handler_thread parameters for thread identification */
 -static ulint		n[SRV_MAX_N_IO_THREADS + 6];
-+static ulint		n[SRV_MAX_N_IO_THREADS + 6 + UNIV_MAX_PARALLELISM];
++static ulint		n[SRV_MAX_N_IO_THREADS + 6 + 64];
  /** io_handler_thread identifiers */
 -static os_thread_id_t	thread_ids[SRV_MAX_N_IO_THREADS + 6];
-+static os_thread_id_t	thread_ids[SRV_MAX_N_IO_THREADS + 6 + UNIV_MAX_PARALLELISM];
++static os_thread_id_t	thread_ids[SRV_MAX_N_IO_THREADS + 6 + 64];
  
  /** We use this mutex to test the return value of pthread_mutex_trylock
     on successful locking. HP-UX does NOT return 0, though Linux et al do. */
-@@ -1725,6 +1725,20 @@
+@@ -1719,6 +1719,20 @@
  
  	os_thread_create(&srv_master_thread, NULL, thread_ids
  			 + (1 + SRV_MAX_N_IO_THREADS));
