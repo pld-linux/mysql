@@ -1,0 +1,10 @@
+--- mysql-5.1.55/storage/ndb/src/kernel/blocks/Makefile.am~	2011-01-25 17:04:48.000000000 +0200
++++ mysql-5.1.55/storage/ndb/src/kernel/blocks/Makefile.am	2011-03-13 13:41:42.430831048 +0200
+@@ -23,6 +23,7 @@
+ noinst_LIBRARIES = libblocks.a
+ 
+ INCLUDES_LOC = -I$(top_srcdir)/storage/ndb/src/kernel/blocks/dblqh
++libblocks_a_CXXFLAGS = -O0
+ libblocks_a_SOURCES = tsman.cpp lgman.cpp pgman.cpp diskpage.cpp restore.cpp\
+   cmvmi/Cmvmi.cpp \
+   dbacc/DbaccInit.cpp dbacc/DbaccMain.cpp \
