@@ -969,13 +969,13 @@ for config in $configs; do
 		s/set-variable\s*=\s* //
 		s/^skip-locking/skip-external-locking/
 		# this is not valid for server. it is client option
-		s/default-character-set/# client-config: &/
+		s/^default-character-set/# client-config: &/
 		# use # as comment in config
 		s/^;/#/
 	' $config
 
-	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
-	echo "# mysql_upgrade --datadir=$datadir"
+	socket=$(awk -F= '!/^#/ && $1 ~ /socket/{print $2}' $config | xargs)
+	echo "# mysql_upgrade ${socket:+--socket=$socket}"
 done
 ) | %banner -e %{name}-5.5
 
