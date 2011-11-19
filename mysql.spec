@@ -35,13 +35,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.15
-Release:	3
+Version:	5.5.17
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-# Source0-md5:	306b5549c7bd72e8e705a890db0da82b
+# Source0-md5:	dcb6a06e68c5e8f30f57b15300730c9c
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.0.1-beta.tar.gz
 # Source100-md5:	95c217d81d0b7a4ff73d5297318c3481
 Source1:	%{name}.init
@@ -108,31 +108,36 @@ Patch127:	innodb_adaptive_hash_index_partitions.patch
 Patch128:	innodb_buffer_pool_pages_i_s.patch
 Patch129:	innodb_buffer_pool_shm.patch
 Patch130:	innodb_show_status_extend.patch
-Patch131:	slow_extended.patch
-Patch132:	percona_support.patch
-Patch133:	query_cache_enhance.patch
-Patch134:	log_connection_error.patch
-Patch135:	mysql_syslog.patch
-Patch136:	error_pad.patch
-Patch137:	response_time_distribution.patch
-Patch138:	remove_fcntl_excessive_calls.patch
-Patch139:	sql_no_fcache.patch
-Patch140:	show_slave_status_nolock.patch
-Patch141:	log_warnings_suppress.patch
-Patch142:	userstat.patch
-Patch143:	bug580324.patch
-Patch144:	mysql_remove_eol_carret.patch
-Patch145:	processlist_row_stats.patch
-Patch146:	innodb_expand_fast_index_creation.patch
-Patch147:	innodb_bug60788.patch
-Patch148:	start-stop-messages.patch
-Patch149:	file-contents.patch
-Patch150:	slave_timeout_fix.patch
-Patch151:	utf8_general50_ci.patch
-Patch152:	bug813587.patch
-Patch153:	valgrind_zlib_suppression.patch
-Patch154:	memory_dynamic_rows.patch
-Patch155:	xtradb_bug317074.patch
+Patch131:	innodb_kill_idle_transaction.patch
+Patch132:	innodb_fake_changes.patch
+Patch133:	slow_extended.patch
+Patch134:	percona_support.patch
+Patch135:	query_cache_enhance.patch
+Patch136:	log_connection_error.patch
+Patch137:	mysql_syslog.patch
+Patch138:	error_pad.patch
+Patch139:	response_time_distribution.patch
+Patch140:	remove_fcntl_excessive_calls.patch
+Patch141:	sql_no_fcache.patch
+Patch142:	show_slave_status_nolock.patch
+Patch143:	log_warnings_suppress.patch
+Patch144:	userstat.patch
+Patch145:	bug580324.patch
+Patch146:	mysql_remove_eol_carret.patch
+Patch147:	processlist_row_stats.patch
+Patch148:	innodb_expand_fast_index_creation.patch
+Patch149:	innodb_bug60788.patch
+Patch150:	start-stop-messages.patch
+Patch151:	file-contents.patch
+Patch152:	slave_timeout_fix.patch
+Patch153:	utf8_general50_ci.patch
+Patch154:	bug813587.patch
+Patch155:	valgrind_zlib_suppression.patch
+Patch156:	memory_dynamic_rows.patch
+Patch157:	xtradb_bug317074.patch
+Patch158:	subunit.patch
+Patch159:	bug860910.patch
+Patch160:	bug45702.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
@@ -624,6 +629,11 @@ cd ../..
 %patch153 -p1
 %patch154 -p1
 %patch155 -p1
+%patch156 -p1
+%patch157 -p1
+%patch158 -p1
+%patch159 -p1
+%patch160 -p1
 # </percona>
 
 # to get these files rebuild
@@ -746,6 +756,7 @@ mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.sym}
 
 # do not clobber users $PATH
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_plugin
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_upgrade
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/innochecksum
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
@@ -992,6 +1003,7 @@ done
 %attr(755,root,root) %{_sbindir}/myisamlog
 %attr(755,root,root) %{_sbindir}/myisampack
 #%attr(755,root,root) %{_sbindir}/mysql_fix_privilege_tables
+%attr(755,root,root) %{_sbindir}/mysql_plugin
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
@@ -1021,6 +1033,7 @@ done
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
 #%{_mandir}/man1/mysql_fix_privilege_tables.1*
+%{_mandir}/man1/mysql_plugin.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
 %{_mandir}/man8/mysqld.8*

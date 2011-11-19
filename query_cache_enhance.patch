@@ -452,7 +452,7 @@
  
  class Reprepare_observer;
  class Relay_log_info;
-@@ -760,6 +763,9 @@
+@@ -764,6 +767,9 @@
      statement lifetime. FIXME: must be const
    */
     ulong id;
@@ -464,7 +464,7 @@
      MARK_COLUMNS_NONE:  Means mark_used_colums is not set and no indicator to
 --- a/sql/sys_vars.cc
 +++ b/sql/sys_vars.cc
-@@ -1786,6 +1786,11 @@
+@@ -1809,6 +1809,11 @@
         NO_MUTEX_GUARD, NOT_IN_BINLOG, ON_CHECK(0),
         ON_UPDATE(fix_query_cache_size));
  
@@ -3094,3 +3094,24 @@
 +--disconnect conn
 +DROP TABLE t;
 +SET GLOBAL query_cache_size=0;
+--- a/mysql-test/r/mysqld--help-notwin.result
++++ b/mysql-test/r/mysqld--help-notwin.result
+@@ -491,6 +491,10 @@
+  The minimum size for blocks allocated by the query cache
+  --query-cache-size=# 
+  The memory allocated to store results from old queries
++ --query-cache-strip-comments 
++ Enable and disable optimisation "strip comment for query
++ cache" - optimisation strip all comments from query while
++ search query result in query cache
+  --query-cache-type=name 
+  OFF = Don't cache or retrieve results. ON = Cache all
+  results except SELECT SQL_NO_CACHE ... queries. DEMAND =
+@@ -928,6 +932,7 @@
+ query-cache-limit 1048576
+ query-cache-min-res-unit 4096
+ query-cache-size 0
++query-cache-strip-comments FALSE
+ query-cache-type ON
+ query-cache-wlock-invalidate FALSE
+ query-prealloc-size 8192
