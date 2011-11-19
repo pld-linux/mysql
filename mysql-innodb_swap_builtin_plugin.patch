@@ -166,7 +166,7 @@
  #
 --- a/sql/mysqld.cc
 +++ b/sql/mysqld.cc
-@@ -8209,7 +8209,9 @@
+@@ -8207,7 +8207,9 @@
      thd_startup_options|=OPTION_BIG_TABLES;
      break;
    case (int) OPT_IGNORE_BUILTIN_INNODB:
@@ -198,3 +198,14 @@
  MYSQL_PLUGIN_DYNAMIC(innodb_plugin,  [ha_innodb_plugin.la])
  MYSQL_PLUGIN_ACTIONS(innodb_plugin,  [
    AC_CHECK_HEADERS(sched.h)
+--- a/mysql-test/mysql-test-run.pl
++++ b/mysql-test/mysql-test-run.pl
+@@ -157,7 +157,7 @@
+ # executables will be used by the test suite.
+ our $opt_vs_config = $ENV{'MTR_VS_CONFIG'};
+ 
+-my $DEFAULT_SUITES= "main,binlog,federated,rpl,rpl_ndb,ndb,innodb,innodb_plugin";
++my $DEFAULT_SUITES= "main,binlog,federated,rpl,rpl_ndb,ndb,innodb_plugin";
+ my $opt_suites;
+ 
+ our $opt_verbose= 0;  # Verbose output, enable with --verbose

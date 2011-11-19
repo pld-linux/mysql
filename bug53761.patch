@@ -5,7 +5,7 @@
 #
 --- a/storage/innodb_plugin/btr/btr0cur.c
 +++ b/storage/innodb_plugin/btr/btr0cur.c
-@@ -3117,6 +3117,7 @@
+@@ -3238,6 +3238,7 @@
  {
  	btr_path_t*	slot;
  	rec_t*		rec;
@@ -13,7 +13,7 @@
  
  	ut_a(cursor->path_arr);
  
-@@ -3139,8 +3140,155 @@
+@@ -3260,8 +3261,155 @@
  
  	slot = cursor->path_arr + (root_height - height);
  
@@ -170,7 +170,7 @@
  }
  
  /*******************************************************************//**
-@@ -3165,6 +3313,7 @@
+@@ -3286,6 +3434,7 @@
  	ibool		diverged_lot;
  	ulint		divergence_level;
  	ib_int64_t	n_rows;
@@ -178,7 +178,7 @@
  	ulint		i;
  	mtr_t		mtr;
  
-@@ -3207,6 +3356,7 @@
+@@ -3328,6 +3477,7 @@
  	/* We have the path information for the range in path1 and path2 */
  
  	n_rows = 1;
@@ -186,7 +186,7 @@
  	diverged = FALSE;	    /* This becomes true when the path is not
  				    the same any more */
  	diverged_lot = FALSE;	    /* This becomes true when the paths are
-@@ -3222,7 +3372,7 @@
+@@ -3343,7 +3493,7 @@
  		if (slot1->nth_rec == ULINT_UNDEFINED
  		    || slot2->nth_rec == ULINT_UNDEFINED) {
  
@@ -195,7 +195,7 @@
  				/* In trees whose height is > 1 our algorithm
  				tends to underestimate: multiply the estimate
  				by 2: */
-@@ -3234,7 +3384,9 @@
+@@ -3355,7 +3505,9 @@
  			to over 1 / 2 of the estimated rows in the whole
  			table */
  
@@ -206,7 +206,7 @@
  				n_rows = index->table->stat_n_rows / 2;
  
  				/* If there are just 0 or 1 rows in the table,
-@@ -3260,10 +3412,15 @@
+@@ -3381,10 +3533,15 @@
  					divergence_level = i;
  				}
  			} else {
@@ -226,7 +226,7 @@
  			}
  
  		} else if (diverged && !diverged_lot) {
-@@ -3287,8 +3444,9 @@
+@@ -3408,8 +3565,9 @@
  			}
  		} else if (diverged_lot) {
  
@@ -240,7 +240,7 @@
  }
 --- a/storage/innodb_plugin/include/btr0cur.h
 +++ b/storage/innodb_plugin/include/btr0cur.h
-@@ -652,6 +652,11 @@
+@@ -670,6 +670,11 @@
  				order); value ULINT_UNDEFINED
  				denotes array end */
  	ulint	n_recs;		/*!< number of records on the page */
@@ -407,3 +407,66 @@
  SELECT COUNT(*) FROM
  (SELECT * FROM t1 FORCE INDEX (idx,PRIMARY)
  WHERE a BETWEEN 2 AND 7 OR pk=1000000) AS t;
+--- a/mysql-test/r/index_merge_innodb.result
++++ b/mysql-test/r/index_merge_innodb.result
+@@ -346,7 +346,7 @@
+ FROM t1
+ WHERE c = 1 AND b = 1 AND d = 1;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+-1	SIMPLE	t1	index_merge	c,bd	c,bd	5,10	NULL	1	Using intersect(c,bd); Using where; Using index
++1	SIMPLE	t1	ref	c,bd	bd	10	const,const	2	Using where
+ CREATE TABLE t2 ( a INT )
+ SELECT a
+ FROM t1
+--- a/mysql-test/r/rowid_order_innodb.result
++++ b/mysql-test/r/rowid_order_innodb.result
+@@ -15,7 +15,7 @@
+ (10, 1, 1);
+ explain select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+-1	SIMPLE	t1	index_merge	key1,key2	key1,key2	5,5	NULL	4	Using sort_union(key1,key2); Using where
++1	SIMPLE	t1	index_merge	key1,key2	key1,key2	5,5	NULL	5	Using sort_union(key1,key2); Using where
+ select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
+ pk1	key1	key2
+ -100	1	1
+--- a/mysql-test/r/type_bit_innodb.result
++++ b/mysql-test/r/type_bit_innodb.result
+@@ -233,7 +233,7 @@
+ 127	403
+ explain select a+0, b+0 from t1 where a > 40 and b > 200 order by 1;
+ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+-1	SIMPLE	t1	range	a	a	2	NULL	19	Using where; Using index; Using filesort
++1	SIMPLE	t1	range	a	a	2	NULL	27	Using where; Using index; Using filesort
+ select a+0, b+0 from t1 where a > 40 and b > 200 order by 1;
+ a+0	b+0
+ 44	307
+--- a/mysql-test/r/endspace.result
++++ b/mysql-test/r/endspace.result
+@@ -201,12 +201,12 @@
+ text1
+ teststring	
+ teststring 
+-select text1, length(text1) from t1 where text1='teststring' or text1 like 'teststring_%';
++select text1, length(text1) from t1 where text1='teststring' or text1 like 'teststring_%' order by 1, 2;
+ text1	length(text1)
+ teststring		11
+ teststring	10
+ teststring 	11
+-select text1, length(text1) from t1 where text1='teststring' or text1 >= 'teststring\t';
++select text1, length(text1) from t1 where text1='teststring' or text1 >= 'teststring\t' order by 1, 2;
+ text1	length(text1)
+ teststring		11
+ teststring	10
+--- a/mysql-test/t/endspace.test
++++ b/mysql-test/t/endspace.test
+@@ -93,8 +93,8 @@
+ select * from t1 where text1 like 'teststring_%';
+ 
+ # The following gives wrong result in InnoDB
+-select text1, length(text1) from t1 where text1='teststring' or text1 like 'teststring_%';
+-select text1, length(text1) from t1 where text1='teststring' or text1 >= 'teststring\t';
++select text1, length(text1) from t1 where text1='teststring' or text1 like 'teststring_%' order by 1, 2;
++select text1, length(text1) from t1 where text1='teststring' or text1 >= 'teststring\t' order by 1, 2;
+ select concat('|', text1, '|') from t1 order by text1;
+ drop table t1;
+ 
