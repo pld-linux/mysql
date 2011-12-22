@@ -35,13 +35,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.17
-Release:	2
+Version:	5.5.18
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-# Source0-md5:	dcb6a06e68c5e8f30f57b15300730c9c
+# Source0-md5:	38b65815249f3bcacf3b0ee85171c486
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.0.1-beta.tar.gz
 # Source100-md5:	95c217d81d0b7a4ff73d5297318c3481
 Source1:	%{name}.init
@@ -138,6 +138,8 @@ Patch157:	xtradb_bug317074.patch
 Patch158:	subunit.patch
 Patch159:	bug860910.patch
 Patch160:	bug45702.patch
+Patch161:	group_commit.patch
+Patch162:	warning_fixes.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
@@ -634,6 +636,8 @@ cd ../..
 %patch158 -p1
 %patch159 -p1
 %patch160 -p1
+%patch161 -p1
+%patch162 -p1
 # </percona>
 
 # to get these files rebuild
