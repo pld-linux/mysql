@@ -1,0 +1,11 @@
+--- mysql-4.0.30/vio/viosslfactories.c~	2007-02-12 20:38:48.000000000 +0100
++++ mysql-4.0.30/vio/viosslfactories.c	2011-12-29 22:31:44.462803743 +0100
+@@ -84,7 +84,7 @@
+ 		       ctx, cert_file, key_file));
+   if (cert_file != NULL)
+   {
+-    if (SSL_CTX_use_certificate_file(ctx,cert_file,SSL_FILETYPE_PEM) <= 0)
++    if (SSL_CTX_use_certificate_chain_file(ctx,cert_file,SSL_FILETYPE_PEM) <= 0)
+     {
+       DBUG_PRINT("error",("unable to get certificate from '%s'\n",cert_file));
+       /* FIX stderr */
