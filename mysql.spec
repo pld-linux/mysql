@@ -24,7 +24,7 @@ Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
 Summary(zh_CN):	MySQLÊý¾Ý¿â·þÎñÆ÷
 Name:		mysql
 Version:	4.0.30
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://mirror.provenscaling.com/mysql/community/source/4.0/%{name}-%{version}.tar.gz
@@ -46,6 +46,7 @@ Patch7:		%{name}-fix_privilege_tables.patch
 Patch8:		%{name}-nptl.patch
 Patch9:		%{name}-bug-27198.patch
 Patch10:	%{name}-rename-table.patch
+Patch11:	%{name}-sslchain.patch
 URL:		http://www.mysql.com/
 BuildRequires:	/bin/ps
 #BuildRequires:	ORBit-devel
@@ -367,6 +368,7 @@ Podrêcznik MySQL-a w formacie HTML.
 %patch8 -p1
 %patch9 -p1
 %patch10 -p1
+%patch11 -p1
 
 %build
 %{__libtoolize}
