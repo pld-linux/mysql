@@ -146,6 +146,8 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 # CFLAGS for innodb are altered
 %undefine	configure_cache
 
+%define		skip_post_check_so	libndbclient.so.2.0.0
+
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
 Language) database server. SQL is the most popular database language
