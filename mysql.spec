@@ -35,15 +35,15 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.19
-Release:	3
+Version:	5.5.20
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-# Source0-md5:	a78cf450974e9202bd43674860349b5a
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.0.1-beta.tar.gz
-# Source100-md5:	95c217d81d0b7a4ff73d5297318c3481
+# Source0-md5:	375794ebf84b4c7b63f1676bc7416cd0
+Source100:	http://sphinxsearch.com/files/sphinx-2.0.3-release.tar.gz
+# Source100-md5:	a1293aecd5034aa797811610beb7ba89
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -74,8 +74,6 @@ Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
 # from fedora
 Patch20:	%{name}-dubious-exports.patch
-# http://sphinxsearch.com/bugs/view.php?id=676
-Patch21:	sphinx-mysql.patch
 # <percona patches, updated with percona.sh>
 Patch100:	microsec_process.patch
 Patch101:	optimizer_fix.patch
@@ -140,6 +138,7 @@ Patch159:	bug860910.patch
 Patch160:	bug45702.patch
 Patch161:	group_commit.patch
 Patch162:	warning_fixes.patch
+Patch163:	bug917246.patch
 # </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
@@ -571,9 +570,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch19 -p1
 %patch20 -p1
-cd storage/sphinx
-%patch21 -p1
-cd ../..
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
@@ -638,6 +634,7 @@ cd ../..
 %patch160 -p1
 %patch161 -p1
 %patch162 -p1
+%patch163 -p1
 # </percona>
 
 # to get these files rebuild
