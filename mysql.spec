@@ -665,6 +665,7 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
+	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITH_FAST_MUTEXES=ON \
 	-DWITH_PIC=ON \
