@@ -22,8 +22,8 @@ diff -ruN a/client/client_priv.h b/client/client_priv.h
                  opt_dump_triggers= 0, opt_routines=0, opt_tz_utc=1,
                  opt_slave_apply= 0, 
                  opt_include_master_host_port= 0,
--                opt_events= 0,
-+                opt_events= 0, opt_ignore_show_create_table_error=0,
+-                opt_events= 0, opt_comments_used= 0,
++                opt_events= 0, opt_comments_used= 0, opt_ignore_show_create_table_error=0,
                  opt_alltspcs=0, opt_notspcs= 0;
  static my_bool insert_pat_inited= 0, debug_info_flag= 0, debug_check_flag= 0;
  static ulong opt_max_allowed_packet, opt_net_buffer_length;
