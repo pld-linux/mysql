@@ -1,0 +1,39 @@
+--- mysql-5.0.56/configure.in~	2008-04-07 09:44:34.000000000 +0300
++++ mysql-5.0.56/configure.in	2008-04-07 12:23:29.657592515 +0300
+@@ -826,9 +826,9 @@
+ 
+ AC_CHECK_LIB(m, floor, [], AC_CHECK_LIB(m, __infinity))
+ 
+-AC_CHECK_LIB(nsl_r, gethostbyname_r, [],
+-  AC_CHECK_LIB(nsl, gethostbyname_r))
+-AC_CHECK_FUNC(gethostbyname_r)
++AC_CHECK_FUNC(gethostbyname_r, [],
++	[AC_CHECK_LIB(nsl_r, gethostbyname_r, [],
++		[AC_CHECK_LIB(nsl, gethostbyname_r)])])
+ 
+ AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt))
+ AC_CHECK_FUNC(yp_get_default_domain, ,
+@@ -837,7 +837,11 @@
+ # This may get things to compile even if bind-8 is installed
+ AC_CHECK_FUNC(bind, , AC_CHECK_LIB(bind, bind))
+ # Check if crypt() exists in libc or libcrypt, sets LIBS if needed
+-AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
++save_LIBS="$LIBS"
++AC_CHECK_LIB(crypt, crypt, [LIBS="-lcrypt $LIBS"; LIBCRYPT="-lcrypt"])
++AC_SUBST(LIBCRYPT)
++AC_CHECK_FUNC(crypt, AC_DEFINE([HAVE_CRYPT], [1], [crypt]))
++LIBS="$save_LIBS"
+ # See if we need a library for address lookup.
+ AC_SEARCH_LIBS(inet_aton, [socket nsl resolv])
+ 
+--- mysql-5.0.51/sql/Makefile.am~	2007-12-06 22:13:15.000000000 +0200
++++ mysql-5.0.51/sql/Makefile.am	2007-12-06 22:14:55.492574255 +0200
+@@ -43,7 +43,7 @@
+                         @innodb_system_libs@ \
+ 			@ndbcluster_libs@ @ndbcluster_system_libs@ \
+ 			$(LDADD)  $(CXXLDFLAGS) $(WRAPLIBS) @LIBDL@ \
+-			$(yassl_libs) $(openssl_libs) @MYSQLD_EXTRA_LIBS@
++			$(yassl_libs) $(openssl_libs) @MYSQLD_EXTRA_LIBS@ @LIBCRYPT@
+ 
+ noinst_HEADERS =	item.h item_func.h item_sum.h item_cmpfunc.h \
+ 			item_strfunc.h item_timefunc.h item_uniq.h \

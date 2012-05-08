@@ -1,0 +1,571 @@
+diff -ru a/innobase/buf/buf0buf.c b/innobase/buf/buf0buf.c
+--- a/innobase/buf/buf0buf.c	2008-12-19 02:19:35.000000000 +0900
++++ b/innobase/buf/buf0buf.c	2009-04-08 10:52:42.000000000 +0900
+@@ -314,7 +314,7 @@
+ 		return(TRUE);
+ 	}
+ 
+-#ifndef UNIV_HOTBACKUP
++#ifdef UNDEFINED
+ 	if (recv_lsn_checks_on && log_peek_lsn(&current_lsn)) {
+ 		if (ut_dulint_cmp(current_lsn,
+ 				  mach_read_from_8(read_buf + FIL_PAGE_LSN))
+diff -ru a/innobase/buf/buf0rea.c b/innobase/buf/buf0rea.c
+--- a/innobase/buf/buf0rea.c	2008-12-19 02:19:35.000000000 +0900
++++ b/innobase/buf/buf0rea.c	2009-04-09 18:18:30.000000000 +0900
+@@ -125,6 +125,45 @@
+ 	block = buf_page_init_for_read(err, mode, space, tablespace_version,
+ 								offset);
+ 	if (block == NULL) {
++		if (recv_recovery_is_on() && *err == DB_TABLESPACE_DELETED) {
++			/* hashed log recs must be treated here */
++			recv_addr_t*    recv_addr;
++
++			mutex_enter(&(recv_sys->mutex));
++
++			if (recv_sys->apply_log_recs == FALSE) {
++				mutex_exit(&(recv_sys->mutex));
++				goto not_to_recover;
++			}
++
++			/* recv_get_fil_addr_struct() */
++			recv_addr = HASH_GET_FIRST(recv_sys->addr_hash,
++					hash_calc_hash(ut_fold_ulint_pair(space, offset),
++						recv_sys->addr_hash));
++			while (recv_addr) {
++				if ((recv_addr->space == space)
++					&& (recv_addr->page_no == offset)) {
++					break;
++				}
++				recv_addr = HASH_GET_NEXT(addr_hash, recv_addr);
++			}
++
++			if ((recv_addr == NULL)
++			    || (recv_addr->state == RECV_BEING_PROCESSED)
++			    || (recv_addr->state == RECV_PROCESSED)) {
++				mutex_exit(&(recv_sys->mutex));
++				goto not_to_recover;
++			}
++
++			fprintf(stderr, " (space:%lu is deleted)", space);
++			recv_addr->state = RECV_PROCESSED;
++
++			ut_a(recv_sys->n_addrs);
++			recv_sys->n_addrs--;
++
++			mutex_exit(&(recv_sys->mutex));
++		}
++not_to_recover:
+ 		
+ 		return(0);
+ 	}
+@@ -684,11 +723,11 @@
+ 		while (buf_pool->n_pend_reads >= recv_n_pool_free_frames / 2) {
+ 
+ 			os_aio_simulated_wake_handler_threads();
+-			os_thread_sleep(500000);
++			os_thread_sleep(20000);
+ 
+ 			count++;
+ 
+-			if (count > 100) {
++			if (count > 2500) {
+ 				fprintf(stderr,
+ "InnoDB: Error: InnoDB has waited for 50 seconds for pending\n"
+ "InnoDB: reads to the buffer pool to be finished.\n"
+diff -ru a/innobase/fil/fil0fil.c b/innobase/fil/fil0fil.c
+--- a/innobase/fil/fil0fil.c	2008-12-19 02:19:35.000000000 +0900
++++ b/innobase/fil/fil0fil.c	2009-04-08 10:52:42.000000000 +0900
+@@ -2027,7 +2027,7 @@
+ 	}
+ 
+ 	if (success) {
+-#ifndef UNIV_HOTBACKUP
++#ifdef UNDEFINED
+ 		/* Write a log record about the deletion of the .ibd
+ 		file, so that ibbackup can replay it in the
+ 		--apply-log phase. We use a dummy mtr and the familiar
+@@ -2300,7 +2300,7 @@
+ 
+ 	mutex_exit(&(system->mutex));
+ 
+-#ifndef UNIV_HOTBACKUP	
++#ifdef UNDEFINED	
+ 	if (success) {
+ 		mtr_t		mtr;
+ 
+@@ -2471,7 +2471,7 @@
+ 
+ 	fil_node_create(path, size, *space_id, FALSE);
+ 
+-#ifndef UNIV_HOTBACKUP	
++#ifdef UNDEFINED	
+ 	{
+ 	mtr_t		mtr;
+ 
+@@ -2890,7 +2890,7 @@
+ 	cannot be ok. */
+ 
+ 	size = (((ib_longlong)size_high) << 32) + (ib_longlong)size_low;
+-#ifndef UNIV_HOTBACKUP
++#ifdef UNDEFINED
+ 	if (size < FIL_IBD_FILE_INITIAL_SIZE * UNIV_PAGE_SIZE) {
+ 	        fprintf(stderr,
+ "InnoDB: Error: the size of single-table tablespace file %s\n"
+@@ -3009,7 +3009,7 @@
+ A fault-tolerant function that tries to read the next file name in the
+ directory. We retry 100 times if os_file_readdir_next_file() returns -1. The
+ idea is to read as much good data as we can and jump over bad data. */
+-static
++//static
+ int
+ fil_file_readdir_next_file(
+ /*=======================*/
+@@ -3949,6 +3949,16 @@
+ 
+ 	ut_ad((mode != OS_AIO_IBUF) || (space->purpose == FIL_TABLESPACE));
+ 
++	if (space->size <= block_offset) {
++		ulint	actual_size;
++
++		mutex_exit(&(system->mutex));
++		fil_extend_space_to_desired_size(&actual_size, space->id,
++						 ((block_offset + 1) / 64 + 1) * 64);
++		mutex_enter(&(system->mutex));
++		/* should retry? but it may safe for xtrabackup for now. */
++	}
++
+ 	node = UT_LIST_GET_FIRST(space->chain);
+ 
+ 	for (;;) {
+diff -ru a/innobase/include/mem0mem.h b/innobase/include/mem0mem.h
+--- a/innobase/include/mem0mem.h	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/include/mem0mem.h	2009-04-08 10:52:42.000000000 +0900
+@@ -352,6 +352,7 @@
+ 			allocated buffer frame, which can be appended as a
+ 			free block to the heap, if we need more space;
+ 			otherwise, this is NULL */
++	ulint	sum_len;	/* sum of all blocks' len belong to the base node */
+ #ifdef MEM_PERIODIC_CHECK	
+ 	UT_LIST_NODE_T(mem_block_t) mem_block_list;
+ 			/* List of all mem blocks allocated; protected
+diff -ru a/innobase/include/mem0mem.ic b/innobase/include/mem0mem.ic
+--- a/innobase/include/mem0mem.ic	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/include/mem0mem.ic	2009-04-08 10:52:42.000000000 +0900
+@@ -415,6 +415,7 @@
+ 
+ 	/* Add the created block itself as the first block in the list */
+ 	UT_LIST_ADD_FIRST(list, block->base, block);
++	block->sum_len = block->len;
+ 
+ #ifdef UNIV_MEM_DEBUG
+ 
+@@ -546,6 +547,7 @@
+ 
+ 	ut_ad(mem_heap_check(heap));
+ 	
++/*
+ 	block = heap;
+ 
+ 	while (block != NULL) { 
+@@ -553,6 +555,8 @@
+ 		size += mem_block_get_len(block);
+ 		block = UT_LIST_GET_NEXT(list, block);
+ 	}
++*/
++	size = heap->sum_len;
+ 
+ 	if (heap->free_block) {
+ 		size += UNIV_PAGE_SIZE;
+diff -ru a/innobase/include/srv0start.h b/innobase/include/srv0start.h
+--- a/innobase/include/srv0start.h	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/include/srv0start.h	2009-04-08 10:52:42.000000000 +0900
+@@ -80,6 +80,7 @@
+ 				/* out: DB_SUCCESS or error code */
+ extern	dulint	srv_shutdown_lsn;
+ extern	dulint	srv_start_lsn;
++extern	dulint	srv_oldest_lsn;
+ 
+ #ifdef __NETWARE__
+ void set_panic_flag_for_netware(void);
+diff -ru a/innobase/include/ut0byte.ic b/innobase/include/ut0byte.ic
+--- a/innobase/include/ut0byte.ic	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/include/ut0byte.ic	2009-04-08 10:52:42.000000000 +0900
+@@ -152,6 +152,14 @@
+ 	dulint	a,	/* in: dulint */
+ 	ulint	b)	/* in: ulint */
+ {
++	if (sizeof(ulint) != 4) {
++		ulint	b_h;
++
++		b_h = b >> 32;
++		b &= 0xFFFFFFFFUL;
++		a.high += b_h;
++	}
++
+ 	if (0xFFFFFFFFUL - b >= a.low) {
+ 		a.low += b;
+ 
+@@ -175,6 +183,14 @@
+ 	dulint	a,	/* in: dulint */
+ 	ulint	b)	/* in: ulint, b <= a */
+ {
++	if (sizeof(ulint) != 4) {
++		ulint	b_h;
++
++		b_h = b >> 32;
++		b &= 0xFFFFFFFFUL;
++		a.high -= b_h;
++	}
++
+ 	if (a.low >= b) {
+ 		a.low -= b;
+ 
+@@ -218,6 +234,10 @@
+ 	diff += 1 + a.low;
+ 
+ 	ut_ad(diff > a.low);
++
++	if (sizeof(ulint) != 4) {
++		diff += (a.high - b.high - 1) << 32;
++	}
+ 	
+ 	return(diff);
+ } 
+diff -ru a/innobase/log/log0log.c b/innobase/log/log0log.c
+--- a/innobase/log/log0log.c	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/log/log0log.c	2009-04-08 10:52:42.000000000 +0900
+@@ -548,7 +548,9 @@
+ 
+ 	offset = (gr_lsn_size_offset + difference) % group_size;
+ 
++	if (sizeof(ulint) == 4) {
+ 	ut_a(offset < (((ib_longlong) 1) << 32)); /* offset must be < 4 GB */
++	}
+ 
+ 	/* fprintf(stderr,
+ 		"Offset is %lu gr_lsn_offset is %lu difference is %lu\n",
+diff -ru a/innobase/log/log0recv.c b/innobase/log/log0recv.c
+--- a/innobase/log/log0recv.c	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/log/log0recv.c	2009-04-09 18:34:45.000000000 +0900
+@@ -35,19 +35,19 @@
+ #include "fil0fil.h"
+ #include "sync0sync.h"
+ 
+-#ifdef UNIV_HOTBACKUP
++//#ifdef UNIV_HOTBACKUP
+ /* This is set to FALSE if the backup was originally taken with the
+ ibbackup --include regexp option: then we do not want to create tables in
+ directories which were not included */
+ ibool	recv_replay_file_ops	= TRUE;
+-#endif /* UNIV_HOTBACKUP */
++//#endif /* UNIV_HOTBACKUP */
+ 
+ /* Log records are stored in the hash table in chunks at most of this size;
+ this must be less than UNIV_PAGE_SIZE as it is stored in the buffer pool */
+ #define RECV_DATA_BLOCK_SIZE	(MEM_MAX_ALLOC_IN_BUF - sizeof(recv_data_t))
+ 
+ /* Read-ahead area in applying log records to file pages */
+-#define RECV_READ_AHEAD_AREA	32
++#define RECV_READ_AHEAD_AREA	128
+ 
+ recv_sys_t*	recv_sys = NULL;
+ ibool		recv_recovery_on = FALSE;
+@@ -101,7 +101,7 @@
+ use these free frames to read in pages when we start applying the
+ log records to the database. */
+ 
+-ulint  recv_n_pool_free_frames         = 256;
++ulint  recv_n_pool_free_frames         = 1024;
+ 
+ /* The maximum lsn we see for a page during the recovery process. If this
+ is bigger than the lsn we are able to scan up to, that is an indication that
+@@ -450,7 +450,7 @@
+ 
+ /***************************************************************************
+ Checks the consistency of the checkpoint info */
+-static
++//static
+ ibool
+ recv_check_cp_is_consistent(
+ /*========================*/
+@@ -479,7 +479,7 @@
+ 
+ /************************************************************
+ Looks for the maximum consistent checkpoint from the log groups. */
+-static
++//static
+ ulint
+ recv_find_max_checkpoint(
+ /*=====================*/
+@@ -644,7 +644,7 @@
+ Checks the 4-byte checksum to the trailer checksum field of a log block.
+ We also accept a log block in the old format < InnoDB-3.23.52 where the
+ checksum field contains the log block number. */
+-static
++//static
+ ibool
+ log_block_checksum_is_ok_or_old_format(
+ /*===================================*/
+@@ -1135,6 +1135,7 @@
+ 	recv_addr = recv_get_fil_addr_struct(space, page_no);
+ 
+ 	if ((recv_addr == NULL)
++	    || (recv_addr->state == RECV_BEING_READ && !just_read_in)
+ 	    || (recv_addr->state == RECV_BEING_PROCESSED)
+ 	    || (recv_addr->state == RECV_PROCESSED)) {
+ 
+@@ -2076,7 +2077,7 @@
+ 		} else if (store_to_hash && (type == MLOG_FILE_CREATE
+ 					     || type == MLOG_FILE_RENAME
+ 					     || type == MLOG_FILE_DELETE)) {
+-#ifdef UNIV_HOTBACKUP
++//#ifdef UNIV_HOTBACKUP
+ 			if (recv_replay_file_ops) {
+ 
+ 				/* In ibbackup --apply-log, replay an .ibd file
+@@ -2093,7 +2094,7 @@
+ 					ut_a(0);
+ 				}
+ 			}
+-#endif
++//#endif
+ 			/* In normal mysqld crash recovery we do not try to
+ 			replay file operations */
+ 		} else if (store_to_hash) {
+@@ -2514,9 +2515,12 @@
+ 		if (finished || (recv_scan_print_counter % 80 == 0)) {
+ 
+ 			fprintf(stderr, 
+-"InnoDB: Doing recovery: scanned up to log sequence number %lu %lu\n",
++"InnoDB: Doing recovery: scanned up to log sequence number %lu %lu (%lu %)\n",
+ 				(ulong) ut_dulint_get_high(*group_scanned_lsn),
+-				(ulong) ut_dulint_get_low(*group_scanned_lsn));
++				(ulong) ut_dulint_get_low(*group_scanned_lsn),
++				(ulong) ut_dulint_minus(*group_scanned_lsn, srv_oldest_lsn)
++				/ (8 * log_group_get_capacity(UT_LIST_GET_FIRST(log_sys->log_groups))/900)
++			);
+ 		}
+ 	}
+ 
+@@ -2626,12 +2630,14 @@
+ 
+ 	if (srv_force_recovery < SRV_FORCE_NO_LOG_REDO) {
+ 
++#ifdef UNDEFINED
+ 		fprintf(stderr,
+ 			"InnoDB: Restoring possible"
+ 			" half-written data pages from"
+ 			" the doublewrite\n"
+ 			"InnoDB: buffer...\n");
+-		trx_sys_doublewrite_init_or_restore_pages(TRUE);
++#endif
++		trx_sys_doublewrite_init_or_restore_pages(FALSE);
+ 	}
+ 	
+ }
+@@ -2760,6 +2766,7 @@ 
+ 		recv_sys->recovered_lsn = checkpoint_lsn;
+ 
+ 		srv_start_lsn = checkpoint_lsn;
++		srv_oldest_lsn = checkpoint_lsn;
+ 	}
+ 
+ 	contiguous_lsn = ut_dulint_align_down(recv_sys->scanned_lsn,
+diff -ru a/innobase/mem/mem0mem.c b/innobase/mem/mem0mem.c
+--- a/innobase/mem/mem0mem.c	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/mem/mem0mem.c	2009-04-08 10:52:42.000000000 +0900
+@@ -266,6 +266,7 @@
+ 	/* Add the new block as the last block */
+ 
+ 	UT_LIST_INSERT_AFTER(list, heap->base, block, new_block);
++	heap->sum_len += new_block->len;
+ 
+ 	return(new_block);
+ }
+@@ -288,6 +289,7 @@
+ 	}
+ 
+ 	UT_LIST_REMOVE(list, heap->base, block);
++	heap->sum_len -= block->len;
+ 		
+ #ifdef MEM_PERIODIC_CHECK	
+ 	mem_pool_mutex_enter();
+diff -ru a/innobase/os/os0file.c b/innobase/os/os0file.c
+--- a/innobase/os/os0file.c	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/os/os0file.c	2009-04-09 18:22:49.000000000 +0900
+@@ -435,7 +435,7 @@
+ }
+ 
+ #undef USE_FILE_LOCK
+-#define USE_FILE_LOCK
++//#define USE_FILE_LOCK
+ #if defined(UNIV_HOTBACKUP) || defined(__WIN__) || defined(__NETWARE__)
+ /* InnoDB Hot Backup does not lock the data files.
+  * On Windows, mandatory locking is used.
+@@ -3148,6 +3148,13 @@
+ 	struct aiocb*	control;
+ #endif
+ 	ulint		i;
++	ulint		prim_segment;
++	ulint		n;
++
++	n = array->n_slots / array->n_segments;
++	/* 64 blocks' striping ( aligning max(BUF_READ_AHEAD_AREA) ) */
++	prim_segment = ( offset >> (UNIV_PAGE_SIZE_SHIFT + 6) ) % (array->n_segments);
++
+ loop:
+ 	os_mutex_enter(array->mutex);
+ 
+@@ -3166,6 +3173,16 @@
+ 		goto loop;
+ 	}
+ 
++	for (i = prim_segment * n; i < array->n_slots; i++) {
++		slot = os_aio_array_get_nth_slot(array, i);
++
++		if (slot->reserved == FALSE) {
++			break;
++		}
++	}
++
++	if (slot->reserved == TRUE){
++		/* Not found after the intended segment. So we should search before. */
+ 	for (i = 0;; i++) {
+ 		slot = os_aio_array_get_nth_slot(array, i);
+ 
+@@ -3173,6 +3190,7 @@
+ 			break;
+ 		}
+ 	}
++	}
+ 
+ 	array->n_reserved++;
+ 
+diff -ru a/innobase/os/os0thread.c b/innobase/os/os0thread.c
+--- a/innobase/os/os0thread.c	2008-12-19 02:19:36.000000000 +0900
++++ b/innobase/os/os0thread.c	2009-04-08 10:52:42.000000000 +0900
+@@ -266,12 +266,17 @@
+ #elif defined(__NETWARE__)
+ 	delay(tm / 1000);
+ #else
++	/* select() simetimes hang up from xtrabackup */
++	/* change to use usleep() for now */
++	usleep(tm);
++/*
+ 	struct timeval	t;
+ 
+ 	t.tv_sec = tm / 1000000;
+ 	t.tv_usec = tm % 1000000;
+ 	
+ 	select(0, NULL, NULL, NULL, &t);
++*/
+ #endif
+ }
+ 
+diff -ru a/innobase/srv/srv0start.c b/innobase/srv/srv0start.c
+--- a/innobase/srv/srv0start.c	2008-12-19 02:19:37.000000000 +0900
++++ b/innobase/srv/srv0start.c	2009-04-09 18:25:02.000000000 +0900
+@@ -61,6 +61,8 @@
+ /* Log sequence number at shutdown */
+ dulint		srv_shutdown_lsn;
+ 
++dulint		srv_oldest_lsn;
++
+ #ifdef HAVE_DARWIN_THREADS
+ # include <sys/utsname.h>
+ ibool		srv_have_fullfsync = FALSE;
+@@ -547,7 +549,7 @@
+ #ifndef UNIV_HOTBACKUP
+ /*************************************************************************
+ Creates or opens the log files and closes them. */
+-static
++//static
+ ulint
+ open_or_create_log_file(
+ /*====================*/
+@@ -693,7 +695,7 @@
+ 
+ /*************************************************************************
+ Creates or opens database data files and closes them. */
+-static
++//static
+ ulint
+ open_or_create_data_files(
+ /*======================*/
+@@ -1213,12 +1215,12 @@
+ 
+ 	if (!os_aio_use_native_aio) {
+  		/* In simulated aio we currently have use only for 4 threads */
+-		srv_n_file_io_threads = 4;
++		/*srv_n_file_io_threads = 4;*/
+ 
+ 		os_aio_init(8 * SRV_N_PENDING_IOS_PER_THREAD
+ 						* srv_n_file_io_threads,
+ 					srv_n_file_io_threads,
+-					SRV_MAX_N_PENDING_SYNC_IOS);
++					SRV_MAX_N_PENDING_SYNC_IOS * 8);
+ 	} else {
+ 		os_aio_init(SRV_N_PENDING_IOS_PER_THREAD
+ 						* srv_n_file_io_threads,
+@@ -1275,7 +1277,7 @@
+ 	}
+ #endif /* UNIV_LOG_ARCHIVE */
+ 
+-	if (srv_n_log_files * srv_log_file_size >= 262144) {
++	if (sizeof(ulint) == 4 && srv_n_log_files * srv_log_file_size >= 262144) {
+ 		fprintf(stderr,
+ 		"InnoDB: Error: combined size of log files must be < 4 GB\n");
+ 
+@@ -1609,7 +1611,18 @@
+ 
+ 	if (srv_auto_extend_last_data_file
+ 		&& sum_of_data_file_sizes < tablespace_size_in_header) {
++		/* extend table space size aligning with header */
++		ulint	actual_size;
++		fil_extend_space_to_desired_size(&actual_size, 0, tablespace_size_in_header);
++		if (actual_size < tablespace_size_in_header) {
++			fprintf(stderr,
++"InnoDB: Warning: To extend tablespace size aligning with header seems to be failed.\n"
++"InnoDB: The acutual size %lu must be larger than %lu.\n",
++				(ulong) actual_size,
++				(ulong) tablespace_size_in_header);
++		}
+ 
++#ifdef UNDEFINED
+ 		fprintf(stderr,
+ "InnoDB: Error: tablespace size stored in header is %lu pages, but\n"
+ "InnoDB: the sum of data file sizes is only %lu pages\n",
+@@ -1627,6 +1640,7 @@
+ 
+ 			return(DB_ERROR);
+ 		}
++#endif
+ 	}
+ 
+ 	/* Check that os_fast_mutexes work as expected */
+diff -ru a/innobase/trx/trx0trx.c b/innobase/trx/trx0trx.c
+--- a/innobase/trx/trx0trx.c	2008-12-19 02:19:37.000000000 +0900
++++ b/innobase/trx/trx0trx.c	2009-06-18 09:56:54.000000000 +0900
+@@ -486,8 +486,8 @@
+ 					ut_dulint_get_low(trx->id));
+ 
+ 					if (srv_force_recovery == 0) {
+-
+-						trx->conc_state = TRX_PREPARED;
++						/* xtrabackup should rollback it */
++						trx->conc_state = TRX_ACTIVE;
+ 					} else {
+  						fprintf(stderr,
+ "InnoDB: Since innodb_force_recovery > 0, we will rollback it anyway.\n");
+@@ -555,8 +555,8 @@
+ 					    ut_dulint_get_low(trx->id));
+ 
+ 					    if (srv_force_recovery == 0) {
+-
+-						trx->conc_state = TRX_PREPARED;
++						/* xtrabackup should rollback it */
++						trx->conc_state = TRX_ACTIVE;
+ 					    } else {
+  						fprintf(stderr,
+ "InnoDB: Since innodb_force_recovery > 0, we will rollback it anyway.\n");

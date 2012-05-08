@@ -1,0 +1,11 @@
+--- mysql-5.0.81/sql/ha_innodb.cc.orig	2009-05-20 21:59:21.165842451 +0200
++++ mysql-5.0.81/sql/ha_innodb.cc	2009-05-20 22:08:31.797661582 +0200
+@@ -6660,7 +6756,7 @@
+ 				table->field[10]->store(index->name, strlen(index->name), system_charset_info);
+ 				// fprintf(stderr, " index %s, table %s", index->name, index->table_name);
+ 
+-				if((p = strchr(index->table_name, '/')))
++				if(p = (char *)strchr(index->table_name, '/'))
+ 				{
+ 					strncpy(db_name_raw, index->table_name, p-index->table_name);
+ 					db_name_raw[p-index->table_name] = 0;

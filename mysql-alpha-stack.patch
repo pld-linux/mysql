@@ -1,0 +1,11 @@
+--- mysql-5.0.68/sql/Makefile.am~	2008-10-29 05:57:43.000000000 +0000
++++ mysql-5.0.68/sql/Makefile.am	2008-10-30 13:47:56.000000000 +0000
+@@ -167,7 +167,7 @@
+ # this avoid the rebuild of the built files in a source dist
+ lex_hash.h:	gen_lex_hash.cc lex.h
+ 		$(MAKE) $(AM_MAKEFLAGS) gen_lex_hash$(EXEEXT)
+-		./gen_lex_hash$(EXEEXT) > $@-t
++		sh -c 'ulimit -s 8192; ./gen_lex_hash$(EXEEXT) > $@-t'
+ 		$(MV) $@-t $@
+ 
+ # For testing of udf_example.so

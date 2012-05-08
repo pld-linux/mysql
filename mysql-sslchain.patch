@@ -1,0 +1,11 @@
+--- mysql-5.0.92/vio/viosslfactories.c~	2011-01-25 12:28:07.000000000 +0100
++++ mysql-5.0.92/vio/viosslfactories.c	2012-01-01 10:41:08.925627590 +0100
+@@ -101,7 +101,7 @@
+ 		       (long) ctx, cert_file, key_file));
+   if (cert_file)
+   {
+-    if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0)
++    if (SSL_CTX_use_certificate_chain_file(ctx, cert_file) <= 0)
+     {
+       *error= SSL_INITERR_CERT;
+       DBUG_PRINT("error",("%s from file '%s'", sslGetErrString(*error), cert_file));
