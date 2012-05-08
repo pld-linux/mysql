@@ -2332,9 +2332,8 @@ diff -ruN a/sql/sql_lex.h b/sql/sql_lex.h
    /* This should be the last !!! */
    SQLCOM_END
  };
-diff -ruN a/sql/sql_parse.cc b/sql/sql_parse.cc
---- a/sql/sql_parse.cc	Wed Jul 29 13:33:34 2009 -0700
-+++ b/sql/sql_parse.cc	Wed Jul 29 13:34:11 2009 -0700
+--- mysql-5.0.96/sql/sql_parse.cc~	2012-05-08 23:53:39.000000000 +0300
++++ mysql-5.0.96/sql/sql_parse.cc	2012-05-09 00:06:42.467315321 +0300
 @@ -78,6 +78,12 @@
  			       const char *table_name);
  static bool check_show_create_table_access(THD *thd, TABLE_LIST *table);
@@ -3003,7 +3002,7 @@ diff -ruN a/sql/sql_parse.cc b/sql/sql_parse.cc
        return TRUE;
      }
      /*
-@@ -6472,6 +6954,30 @@
+@@ -6993,6 +6993,31 @@
    lex_start(thd);
    mysql_reset_thd_for_next_command(thd);
  
@@ -3020,7 +3019,7 @@ diff -ruN a/sql/sql_parse.cc b/sql/sql_parse.cc
 +
 +  if (opt_userstat_running) {
 +#ifdef HAVE_CLOCK_GETTIME
-+    /* get start cputime */ 
++    /* get start cputime */
 +    if (!(cputime_error = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &tp)))
 +      start_cpu_nsecs = tp.tv_sec*1000000000.0+tp.tv_nsec;
 +#endif
@@ -3031,7 +3030,8 @@ diff -ruN a/sql/sql_parse.cc b/sql/sql_parse.cc
 +    }
 +  }
 +
-   if (query_cache_send_result_to_client(thd, (char*) inBuf, length) <= 0)
++
+   if (query_cache_send_result_to_client(thd, rawbuf, length) <= 0)
    {
      LEX *lex= thd->lex;
 @@ -6550,6 +7056,43 @@

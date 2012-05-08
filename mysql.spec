@@ -1,6 +1,8 @@
 # TODO:
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
+# NOTE:
+# - 5.0 Changes: http://dev.mysql.com/doc/refman/5.0/en/news-5-0-x.html
 #
 # Conditional build:
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
@@ -24,12 +26,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.0.92
-Release:	4
+Version:	5.0.96
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
+# Source0Download: http://dev.mysql.com/downloads/mysql/5.0.html#source
 Source0:	ftp://gd.tuwien.ac.at/db/mysql/Downloads/MySQL-5.0/%{name}-%{version}.tar.gz
-# Source0-md5:	a72ee3d1d54bff74836de9500858a311
+# Source0-md5:	bf280949049161aa68cf29e600d9ec79
 #Source0:	http://downloads.mysql.com/archives/mysql-5.0/%{name}-%{version}.tar.gz
 #Source0:	http://mirror.provenscaling.com/mysql/enterprise/source/5.0/%{name}-%{version}.tar.gz
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
