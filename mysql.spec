@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.21
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -74,6 +74,7 @@ Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
 # from fedora
 Patch20:	%{name}-dubious-exports.patch
+Patch21:	%{name}-CVE-2012-2122.patch
 # <percona patches, updated with percona.sh>
 Patch100:	bug933969.patch
 Patch101:	microsec_process.patch
@@ -573,6 +574,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch19 -p1
 %patch20 -p1
+%patch21 -p1
 # <percona %patches>
 %patch100 -p1
 %patch101 -p1
