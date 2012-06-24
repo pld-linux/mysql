@@ -35,13 +35,15 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.21
-Release:	3
+%define	percona_rel	26.0
+Version:	5.5.24
+Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
-Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-# Source0-md5:	86d6bd335054a0aed1756ed60574c16d
+# Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
+Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/Percona-Server-5.5.24-26.0/source/Percona-Server-5.5.24-rel26.0.tar.gz
+# Source0-md5:	76f835e98ad3c71fcaa33794ee187630
 Source100:	http://sphinxsearch.com/files/sphinx-2.0.3-release.tar.gz
 # Source100-md5:	a1293aecd5034aa797811610beb7ba89
 Source1:	%{name}.init
@@ -74,76 +76,6 @@ Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
 # from fedora
 Patch20:	%{name}-dubious-exports.patch
-Patch21:	%{name}-CVE-2012-2122.patch
-# <percona patches, updated with percona.sh>
-Patch100:	bug933969.patch
-Patch101:	microsec_process.patch
-Patch102:	optimizer_fix.patch
-Patch103:	mysql_dump_ignore_ct.patch
-Patch104:	control_online_alter_index.patch
-Patch105:	show_temp.patch
-Patch106:	innodb_show_status.patch
-Patch107:	innodb_io_patches.patch
-Patch108:	innodb_opt_lru_count.patch
-Patch109:	innodb_extra_rseg.patch
-Patch110:	innodb_overwrite_relay_log_info.patch
-Patch111:	innodb_thread_concurrency_timer_based.patch
-Patch112:	innodb_dict_size_limit.patch
-Patch113:	innodb_split_buf_pool_mutex.patch
-Patch114:	innodb_expand_import.patch
-Patch115:	innodb_show_sys_tables.patch
-Patch116:	innodb_stats.patch
-Patch117:	innodb_recovery_patches.patch
-Patch118:	innodb_admin_command_base.patch
-Patch119:	innodb_show_lock_name.patch
-Patch120:	innodb_extend_slow.patch
-Patch121:	innodb_lru_dump_restore.patch
-Patch122:	innodb_separate_doublewrite.patch
-Patch123:	innodb_pass_corrupt_table.patch
-Patch124:	innodb_fast_checksum.patch
-Patch125:	innodb_files_extend.patch
-Patch126:	innodb_fix_misc.patch
-Patch127:	innodb_deadlock_count.patch
-Patch128:	innodb_adaptive_hash_index_partitions.patch
-Patch129:	innodb_buffer_pool_pages_i_s.patch
-Patch130:	innodb_buffer_pool_shm.patch
-Patch131:	innodb_show_status_extend.patch
-Patch132:	innodb_kill_idle_transaction.patch
-Patch133:	innodb_fake_changes.patch
-Patch134:	slow_extended.patch
-Patch135:	percona_support.patch
-Patch136:	query_cache_enhance.patch
-Patch137:	log_connection_error.patch
-Patch138:	mysql_syslog.patch
-Patch139:	error_pad.patch
-Patch140:	response_time_distribution.patch
-Patch141:	remove_fcntl_excessive_calls.patch
-Patch142:	sql_no_fcache.patch
-Patch143:	show_slave_status_nolock.patch
-Patch144:	log_warnings_suppress.patch
-Patch145:	userstat.patch
-Patch146:	bug580324.patch
-Patch147:	mysql_remove_eol_carret.patch
-Patch148:	processlist_row_stats.patch
-Patch149:	innodb_expand_fast_index_creation.patch
-Patch150:	innodb_bug60788.patch
-Patch151:	start-stop-messages.patch
-Patch152:	file-contents.patch
-Patch153:	slave_timeout_fix.patch
-Patch154:	utf8_general50_ci.patch
-Patch155:	bug813587.patch
-Patch156:	valgrind_zlib_suppression.patch
-Patch157:	memory_dynamic_rows.patch
-Patch158:	xtradb_bug317074.patch
-Patch159:	subunit.patch
-Patch160:	bug860910.patch
-Patch161:	bug45702.patch
-Patch162:	group_commit.patch
-Patch163:	warning_fixes.patch
-Patch164:	bug917246.patch
-Patch165:	bug54330.patch
-Patch166:	bug966844_page_size_error_on_5520_upgrade.patch
-# </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison
 BuildRequires:	cmake >= 2.6
@@ -556,17 +488,19 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q %{?with_sphinx:-a100}
+%setup -q -n Percona-Server-%{version}-rel%{percona_rel} %{?with_sphinx:-a100}
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
 #%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
-%patch3 -p1
+# obsolete, no more docs?
+#%patch3 -p1
 %patch5 -p1
 %patch6 -p1
-%patch7 -p1
+# make sure mysqldump still works with 4.0
+#%patch7 -p1
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
@@ -574,80 +508,10 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch19 -p1
 %patch20 -p1
-%patch21 -p1
-# <percona %patches>
-%patch100 -p1
-%patch101 -p1
-%patch102 -p1
-%patch103 -p1
-%patch104 -p1
-%patch105 -p1
-%patch106 -p1
-%patch107 -p1
-%patch108 -p1
-%patch109 -p1
-%patch110 -p1
-%patch111 -p1
-%patch112 -p1
-%patch113 -p1
-%patch114 -p1
-%patch115 -p1
-%patch116 -p1
-%patch117 -p1
-%patch118 -p1
-%patch119 -p1
-%patch120 -p1
-%patch121 -p1
-%patch122 -p1
-%patch123 -p1
-%patch124 -p1
-%patch125 -p1
-%patch126 -p1
-%patch127 -p1
-%patch128 -p1
-%patch129 -p1
-%patch130 -p1
-%patch131 -p1
-%patch132 -p1
-%patch133 -p1
-%patch134 -p1
-%patch135 -p1
-%patch136 -p1
-%patch137 -p1
-%patch138 -p1
-%patch139 -p1
-%patch140 -p1
-%patch141 -p1
-%patch142 -p1
-%patch143 -p1
-%patch144 -p1
-%patch145 -p1
-%patch146 -p1
-%patch147 -p1
-%patch148 -p1
-%patch149 -p1
-%patch150 -p1
-%patch151 -p1
-%patch152 -p1
-%patch153 -p1
-%patch154 -p1
-%patch155 -p1
-%patch156 -p1
-%patch157 -p1
-%patch158 -p1
-%patch159 -p1
-%patch160 -p1
-%patch161 -p1
-%patch162 -p1
-%patch163 -p1
-%patch164 -p1
-%patch165 -p1
-%patch166 -p1
-# </percona>
 
 # to get these files rebuild
-rm sql/sql_yacc.cc
-rm sql/sql_yacc.h
+[ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
+[ -f sql/sql_yacc.h ] && rm sql/sql_yacc.h
 
 %build
 install -d build
@@ -704,7 +568,8 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
 	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
-	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
+	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}} \
+	   $RPM_BUILD_ROOT%{_libdir}
 
 %{__make} -C build install \
 	DESTDIR=$RPM_BUILD_ROOT
@@ -718,6 +583,9 @@ cp -a %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 cp -a %{SOURCE4} mysqld.conf
 cp -a %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
+
+# percona broke something with lib64 handling
+mv $RPM_BUILD_ROOT%{_prefix}/lib/* $RPM_BUILD_ROOT%{_libdir}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
