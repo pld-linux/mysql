@@ -584,8 +584,10 @@ cp -a %{SOURCE4} mysqld.conf
 cp -a %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
 
+%if "%{_lib}" != "lib"
 # percona broke something with lib64 handling
 mv $RPM_BUILD_ROOT%{_prefix}/lib/* $RPM_BUILD_ROOT%{_libdir}
+%endif
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
