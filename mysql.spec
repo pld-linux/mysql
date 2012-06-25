@@ -1,8 +1,12 @@
 # TODO:
+# - unpackaged files:
+#   /usr/lib/mysql/plugin/auth_pam.so
+#   /usr/lib/mysql/plugin/auth_pam_compat.so
+#   /usr/lib/mysql/plugin/daemon_example.ini
+#   /usr/lib/mysql/plugin/dialog.so
+#   /usr/bin/mysqlaccess.conf
 # - make response_time_distribution.patch compatible with i386 alpha sparc ppc arches
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
-# - unpackaged:
-#   /usr/bin/mysqlaccess.conf
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
 # - missing have_archive, have_merge
