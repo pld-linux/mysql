@@ -1,10 +1,7 @@
 # TODO:
 # - unpackaged files:
-#   /usr/lib/mysql/plugin/auth_pam.so
-#   /usr/lib/mysql/plugin/auth_pam_compat.so
-#   /usr/lib/mysql/plugin/daemon_example.ini
-#   /usr/lib/mysql/plugin/dialog.so
 #   /usr/bin/mysqlaccess.conf
+#   /usr/lib/mysql/plugin/daemon_example.ini
 # - make response_time_distribution.patch compatible with i386 alpha sparc ppc arches
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 # - http://bugs.mysql.com/bug.php?id=16470
@@ -895,8 +892,11 @@ done
 %dir %{_libdir}/%{name}/plugin
 %attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/auth_pam.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/auth_pam_compat.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/dialog.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
