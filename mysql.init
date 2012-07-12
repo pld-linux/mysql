@@ -357,6 +357,58 @@ mysqlstop() {
 	fi
 }
 
+# report slave status
+# uses MYSQL_SOCKET - path to mysql socket
+slave_status() {
+	# see if slave status can be reported
+	local err=0 slave_status=$(mysql -S $MYSQL_SOCKET -e 'show slave status\G')
+	if [ -z "$slave_status" ]; then
+		# slave not setup
+		return
+	fi
+
+	printf "\tSlave Status:\n"
+
+	eval $(echo "$slave_status" | awk -F': ' '/^ *[A-Za-z_]+:/{
+		k = tolower($1);
+		v = substr($0, length($1) + 3);
+		gsub(/\\/, "\\\\\\", v);
+		gsub(/"/, "\\\"", v);
+		gsub(/`/, "\\`", v);
+		gsub(/\$/, "\\$", v);
+		printf("%s=\"%s\";\n", k, v);
+	}')
+
+	if [ "$slave_io_running" != "Yes" ]; then
+		printf "\tSlave IO not running\n"
+		err=1
+	fi
+	if [ "$slave_sql_running" != "Yes" ]; then
+		printf "\tSlave SQL not running\n"
+		err=1
+	fi
+
+	if [ "$err" = 1 -a "$last_errno" -gt 0 ]; then
+		printf "\tERROR $last_errno: $last_error\n"
+	fi
+
+	if [ "$master_log_file" != "$relay_master_log_file" ]; then
+		printf "\tERROR logfile mismatch ($relay_master_log_file)\n"
+		err=1
+	fi
+
+	if [ -z "$read_master_log_pos" -o -z "$exec_master_log_pos" ]; then
+		printf "\tERROR No info about master\n"
+		err=1
+		return
+	fi
+
+	diff=$(($read_master_log_pos - $exec_master_log_pos))
+	printf "\tread pos: $read_master_log_pos ($master_log_file) (host: $master_host:$master_port)\n"
+	printf "\texec pos: $exec_master_log_pos\n"
+	printf "\tdiff: $diff\n"
+}
+
 #
 # check for running mysql instances; if any instance is running then
 # create subsys lock file
@@ -615,6 +667,9 @@ case "$action" in
 			nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
 			[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
 			nls "\tunix:%s\n" "$socket"
+
+			MYSQL_SOCKET=$socket slave_status
+
 			pids="$pids/$MYSQL_PID/"
 			progress "$MYSQL_STATUS"
 		else
@@ -645,6 +700,9 @@ case "$action" in
 				nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
 				[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
 				nls "\tunix:%s\n" "$socket"
+
+				MYSQL_SOCKET=$socket slave_status
+
 				progress "$MYSQL_STATUS"
 			else
 				show "MySQL cluster %s" "$mysqldir"
