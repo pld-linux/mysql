@@ -64,6 +64,7 @@ Source14:	my.cnf
 Source15:	lib%{name}.version
 Patch2:		%{name}-c++.patch
 Patch3:		%{name}-info.patch
+Patch4:		bug-62472.patch
 # from fedora
 Patch5:		%{name}-versioning.patch
 Patch6:		%{name}-system-users.patch
@@ -498,6 +499,7 @@ mv sphinx-*/mysqlse storage/sphinx
 #%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
 # obsolete, no more docs?
 #%patch3 -p1
+%patch4 -p1
 %patch5 -p1
 %patch6 -p1
 # make sure mysqldump still works with 4.0
