@@ -38,7 +38,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 %define	percona_rel	28.1
 Version:	5.5.27
-Release:	0.1
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -62,13 +62,12 @@ Source13:	%{name}-client.conf
 Source14:	my.cnf
 # from fedora
 Source15:	lib%{name}.version
-Patch2:		%{name}-c++.patch
-Patch3:		%{name}-info.patch
+
 Patch4:		bug-62472.patch
 # from fedora
 Patch5:		%{name}-versioning.patch
 Patch6:		%{name}-system-users.patch
-Patch7:		%{name}-bug-34192.patch
+
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch11:	%{name}-upgrade.patch
@@ -496,14 +495,11 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
-#%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
-# obsolete, no more docs?
-#%patch3 -p1
+
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
-# make sure mysqldump still works with 4.0
-#%patch7 -p1
+
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
