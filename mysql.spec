@@ -36,15 +36,15 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-%define	percona_rel	26.0
-Version:	5.5.24
+%define	percona_rel	28.1
+Version:	5.5.27
 Release:	0.1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/Percona-Server-5.5.24-26.0/source/Percona-Server-5.5.24-rel26.0.tar.gz
-# Source0-md5:	76f835e98ad3c71fcaa33794ee187630
+Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/Percona-Server-5.5.27-28.1/source/Percona-Server-5.5.27-rel28.1.tar.gz
+# Source0-md5:	92fecef62446b5388ec2369d997506ed
 Source100:	http://sphinxsearch.com/files/sphinx-2.0.3-release.tar.gz
 # Source100-md5:	a1293aecd5034aa797811610beb7ba89
 Source1:	%{name}.init
@@ -586,11 +586,6 @@ cp -a %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
 cp -a %{SOURCE4} mysqld.conf
 cp -a %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
-
-%if "%{_lib}" != "lib"
-# percona broke something with lib64 handling
-mv $RPM_BUILD_ROOT%{_prefix}/lib/* $RPM_BUILD_ROOT%{_libdir}
-%endif
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
