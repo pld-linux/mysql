@@ -145,7 +145,6 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_localstatedir	/var/lib/mysql
 %define		_mysqlhome	/home/services/mysql
 
-%define		_noautoreqdep	'perl(DBD::mysql)'
 # CFLAGS for innodb are altered
 %unglobal	configure_cache
 
