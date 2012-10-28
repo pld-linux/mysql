@@ -126,8 +126,6 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_localstatedir	/var/lib/mysql
 %define		_mysqlhome	/home/services/mysql
 
-%define		_noautoreqdep	'perl(DBD::mysql)'
-
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
 Language) database server. SQL is the most popular database language
