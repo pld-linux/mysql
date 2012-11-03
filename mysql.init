@@ -664,7 +664,7 @@ case "$action" in
 			pid=$MYSQL_PID
 			nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
 			[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
-			nls "\tunix:%s\n" "$socket"
+			nls "\tunix: %s\n" "$socket"
 
 			MYSQL_SOCKET=$socket slave_status
 
@@ -697,7 +697,7 @@ case "$action" in
 				socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
 				nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
 				[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
-				nls "\tunix:%s\n" "$socket"
+				nls "\tunix: %s\n" "$socket"
 
 				MYSQL_SOCKET=$socket slave_status
 
