@@ -26,7 +26,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define	percona_rel	28.1
+%define	percona_rel	29.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -37,14 +37,14 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.27
+Version:	5.5.28
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/Percona-Server-5.5.27-28.1/source/Percona-Server-%{version}-rel28.1.tar.gz
-# Source0-md5:	92fecef62446b5388ec2369d997506ed
+Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/Percona-Server-5.5.28-29.1/source/Percona-Server-%{version}-rel29.1.tar.gz
+# Source0-md5:	8ac1798de3a14f0b912910ea63edb22d
 Source100:	http://sphinxsearch.com/files/sphinx-2.0.3-release.tar.gz
 # Source100-md5:	a1293aecd5034aa797811610beb7ba89
 Source1:	%{name}.init
@@ -64,7 +64,6 @@ Source14:	my.cnf
 Source15:	lib%{name}.version
 
 Patch3:		bug-67402.patch
-Patch4:		bug-62472.patch
 # from fedora
 Patch5:		%{name}-versioning.patch
 Patch6:		%{name}-system-users.patch
@@ -496,7 +495,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %endif
 
 %patch3 -p1
-%patch4 -p1
+
 %patch5 -p1
 %patch6 -p1
 
@@ -557,6 +556,8 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DINSTALL_MYSQLTESTDIR_RPM="" \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/%{name}-support \
+	-DINSTALL_PLUGINDIR=%{_libdir}/%{name}/plugin \
+	-DINSTALL_LIBDIR=%{_lib} \
 	..
 
 %{__make}
