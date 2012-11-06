@@ -149,6 +149,8 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 # CFLAGS for innodb are altered
 %undefine	configure_cache
 
+%define		filterout_c	-Werror=format-security
+
 %define		skip_post_check_so	libndbclient.so.2.0.0
 
 %description
