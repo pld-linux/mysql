@@ -147,7 +147,7 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_noautoreqdep	'perl(DBD::mysql)'
 # CFLAGS for innodb are altered
-%undefine	configure_cache
+%unglobal	configure_cache
 
 %define		filterout_c	-Werror=format-security
 
