@@ -21,6 +21,13 @@
 	missingok
 	create 640 mysql mysql
 	sharedscripts
+
+	# NOTE:
+	# if you run the rotation less often than "daily" then the
+	# "expire-logs-days" mysqld server parameter may no longer work as you
+	# expect
+	daily
+
 	postrotate
 		/sbin/service mysql flush-logs
 	endscript
