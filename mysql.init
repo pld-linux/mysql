@@ -365,7 +365,7 @@ slave_status() {
 		return
 	fi
 
-	printf "\tSlave Status:\n"
+	printf "Slave Status:\n"
 
 	eval $(echo "$slave_status" | awk -F': ' '/^ *[A-Za-z_]+:/{
 		k = tolower($1);
