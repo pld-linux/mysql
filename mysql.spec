@@ -1,7 +1,4 @@
 # TODO:
-# - unpackaged files:
-#   /usr/bin/mysqlaccess.conf
-#   /usr/lib/mysql/plugin/daemon_example.ini
 # - make response_time_distribution.patch compatible with i386 alpha sparc ppc arches
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 # - http://bugs.mysql.com/bug.php?id=16470
@@ -26,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define	percona_rel	29.1
+%define	percona_rel	29.2
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -38,15 +35,15 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.28
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/Percona-Server-5.5.28-29.1/source/Percona-Server-%{version}-rel29.1.tar.gz
-# Source0-md5:	8ac1798de3a14f0b912910ea63edb22d
-Source100:	http://sphinxsearch.com/files/sphinx-2.0.3-release.tar.gz
-# Source100-md5:	a1293aecd5034aa797811610beb7ba89
+Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/LATEST/source/Percona-Server-%{version}-rel29.2.tar.gz
+# Source0-md5:	b78987d18541d8ff22a2d523468162da
+Source100:	http://sphinxsearch.com/files/sphinx-2.0.6-release.tar.gz
+# Source100-md5:	de6be5ee20b1bfafa2a0cea7155a8331
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -622,6 +619,9 @@ sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
 
+# move to _sysconfdir
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sysconfdir}}/mysqlaccess.conf
+
 # not useful without -debug build
 %{!?debug:%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
 %{!?debug:%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_resolve_stack_dump.1}
@@ -666,7 +666,8 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
 
 # not needed
-%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.* \
+${__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/daemon_example.ini
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -1000,6 +1001,7 @@ done
 %attr(755,root,root) %{_bindir}/mysql_zap
 %attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysqldumpslow
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysqlaccess.conf
 %{_mandir}/man1/mysql_convert_table_format.1*
 %{_mandir}/man1/mysql_find_rows.1*
 %{_mandir}/man1/mysql_fix_extensions.1*
