@@ -367,6 +367,7 @@ slave_status() {
 
 	printf "Slave Status:\n"
 
+	set -f
 	eval $(echo "$slave_status" | awk -F': ' '/^ *[A-Za-z_]+:/{
 		k = tolower($1);
 		v = substr($0, length($1) + 3);
@@ -374,8 +375,10 @@ slave_status() {
 		gsub(/"/, "\\\"", v);
 		gsub(/`/, "\\`", v);
 		gsub(/\$/, "\\$", v);
+		gsub(/\$/, "\\$", v);
 		printf("%s=\"%s\";\n", k, v);
 	}')
+	set +f
 
 	if [ "$slave_io_running" != "Yes" ]; then
 		printf "\tSlave IO not running\n"
@@ -387,11 +390,11 @@ slave_status() {
 	fi
 
 	if [ "$err" = 1 -a "$last_errno" -gt 0 ]; then
-		printf "\tERROR $last_errno: $last_error\n"
+		printf "\tERROR %s: %s\n" "$last_errno" "$last_error"
 	fi
 
 	if [ "$master_log_file" != "$relay_master_log_file" ]; then
-		printf "\tERROR logfile mismatch ($relay_master_log_file)\n"
+		printf "\tERROR logfile mismatch (%s)\n" "$relay_master_log_file"
 		err=1
 	fi
 
@@ -402,9 +405,9 @@ slave_status() {
 	fi
 
 	diff=$(($read_master_log_pos - $exec_master_log_pos))
-	printf "\tread pos: $read_master_log_pos ($master_log_file) (host: $master_host:$master_port)\n"
-	printf "\texec pos: $exec_master_log_pos\n"
-	printf "\tdiff: $diff\n"
+	printf "\tread pos: %s (%s) (host: %s:%d)\n" "$read_master_log_pos" "$master_log_file" "$master_host" "$master_port"
+	printf "\texec pos: %s\n" "$exec_master_log_pos"
+	printf "\tdiff: %s\n" "$diff"
 }
 
 #
