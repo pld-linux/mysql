@@ -100,7 +100,7 @@ mysqlstatus() {
 	clusterdir="$1"
 	mode="$2"
 	
-	mysqlgetconfig "$clusterdir"
+	mysqlgetconfig "$clusterdir" status
 
 	MYSQL_STATUS="not running"
 	MYSQL_PID="unknown"
@@ -151,9 +151,11 @@ mysqlstatus() {
 #
 # arguments
 # $1 - db cluster
+# $2 - status | other
 
 mysqlgetconfig() {
 	local clusterdir="$1" config_file
+	local mode="$2"
 
 	# emulate old behaviour if only one cluster specified
 	if [ "$clusterdir" = "$MYSQL_DB_CLUSTERS" -a "$clusterdir" = "/var/lib/mysql" -a -f /etc/mysqld.conf ]; then
@@ -174,7 +176,11 @@ mysqlgetconfig() {
 
 	if [ -z "$config_file" ]; then
 		nls "Error: Can't find config file for %s cluster" "$clusterdir"
-		exit 6
+		if [ "$mode" = "status" ]; then 
+			exit 3
+		else
+			exit 6
+		fi
 	else
 		MYSQL_CONFIG="$config_file"
 	fi
@@ -182,7 +188,11 @@ mysqlgetconfig() {
 	if [ ! -f "$config_file" ]; then
 		nls "Error: config file %s not found" "$config_file"
 		nls "MySQL can't be run. Did you initialize DB by doing \`$0 init'?"
-		exit 6
+		if [ "$mode" = "status" ]; then 
+			exit 3
+		else
+			exit 6
+		fi
 	fi
 
 	# reset to initial state
@@ -194,8 +204,8 @@ mysqlgetconfig() {
 		gsub(/\r$/, "");
 
 		# trim spaces
-		gsub(/^[\t ]*|[\t ]*$/, "", $1);
-		gsub(/^[\t ]*|[\t ]*$/, "", $2);
+		gsub(/^[\t ]+|[\t ]+$/, "", $1);
+		gsub(/^[\t ]+|[\t ]+$/, "", $2);
 	}
 
 	# skip comments and empty lines
@@ -355,8 +365,9 @@ slave_status() {
 		return
 	fi
 
-	printf "\tSlave Status:\n"
+	printf "Slave Status:\n"
 
+	set -f
 	eval $(echo "$slave_status" | awk -F': ' '/^ *[A-Za-z_]+:/{
 		k = tolower($1);
 		v = substr($0, length($1) + 3);
@@ -364,8 +375,10 @@ slave_status() {
 		gsub(/"/, "\\\"", v);
 		gsub(/`/, "\\`", v);
 		gsub(/\$/, "\\$", v);
+		gsub(/\$/, "\\$", v);
 		printf("%s=\"%s\";\n", k, v);
 	}')
+	set +f
 
 	if [ "$slave_io_running" != "Yes" ]; then
 		printf "\tSlave IO not running\n"
@@ -377,11 +390,11 @@ slave_status() {
 	fi
 
 	if [ "$err" = 1 -a "$last_errno" -gt 0 ]; then
-		printf "\tERROR $last_errno: $last_error\n"
+		printf "\tERROR %s: %s\n" "$last_errno" "$last_error"
 	fi
 
 	if [ "$master_log_file" != "$relay_master_log_file" ]; then
-		printf "\tERROR logfile mismatch ($relay_master_log_file)\n"
+		printf "\tERROR logfile mismatch (%s)\n" "$relay_master_log_file"
 		err=1
 	fi
 
@@ -392,9 +405,9 @@ slave_status() {
 	fi
 
 	diff=$(($read_master_log_pos - $exec_master_log_pos))
-	printf "\tread pos: $read_master_log_pos ($master_log_file) (host: $master_host:$master_port)\n"
-	printf "\texec pos: $exec_master_log_pos\n"
-	printf "\tdiff: $diff\n"
+	printf "\tread pos: %s (%s) (host: %s:%d)\n" "$read_master_log_pos" "$master_log_file" "$master_host" "$master_port"
+	printf "\texec pos: %s\n" "$exec_master_log_pos"
+	printf "\tdiff: %s\n" "$diff"
 }
 
 #
@@ -435,7 +448,7 @@ mysqlinit() {
 		MYSQL_CONFIG="$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
 
-	show "Initializing cluster %s" "$clusterdir"; echo
+	show "Initializing cluster %s" "$clusterdir"; started
 
 	# Check if not exist init database
 	if [ -d "$MYSQL_DATA_DIR/mysql" ]; then
@@ -483,7 +496,9 @@ EOF
 		--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
 		--bootstrap \
 		--skip-grant-tables \
+		--skip-bdb \
 		--skip-innodb \
+		--skip-ndbcluster \
 		--datadir=$MYSQL_DATA_DIR \
 		--user=$MYSQL_USER \
 		--slave-load-tmpdir=$MYSQL_DATA_DIR \
@@ -519,7 +534,9 @@ END_OF_MSG
 			--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
 			--bootstrap \
 			--skip-grant-tables \
+			--skip-bdb \
 			--skip-innodb \
+			--skip-ndbcluster \
 			--datadir=$MYSQL_DATA_DIR \
 			--user=$MYSQL_USER \
 			--slave-load-tmpdir=$MYSQL_DATA_DIR \
@@ -645,16 +662,18 @@ case "$action" in
 	done
 	;;
   status)
+	RETVAL=3
 	for mysqldir in $DB_CLUSTERS; do
 		mysqlstatus "$mysqldir"
 		if [ "$MYSQL_STATUS" = "running" ]; then
+			RETVAL=0
 			addr=${MYSQL_BIND_ADDRESS:-0.0.0.0}
 			port=${MYSQL_PORT:-3306}
 			socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
 			pid=$MYSQL_PID
 			nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
 			[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
-			nls "\tunix:%s\n" "$socket"
+			nls "\tunix: %s\n" "$socket"
 
 			MYSQL_SOCKET=$socket slave_status
 
@@ -687,7 +706,7 @@ case "$action" in
 				socket=${MYSQL_SOCKET:-/var/lib/mysql/mysql.sock}
 				nls "MySQL cluster %s, pid %s\n" "$mysqldir" "$pid"
 				[ -z "$MYSQL_SKIP_NETWORKING" ] && nls "\ttcp:%s:%s\n" "$addr" "$port"
-				nls "\tunix:%s\n" "$socket"
+				nls "\tunix: %s\n" "$socket"
 
 				MYSQL_SOCKET=$socket slave_status
 
