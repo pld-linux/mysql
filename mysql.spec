@@ -573,6 +573,8 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch24 -p1
 %patch25 -p1
 
+%{__sed} -i -e 's/AM_CONFIG_HEADER/AC_CONFIG_HEADERS/' configure.in
+
 %build
 %{__libtoolize}
 %{__aclocal}
