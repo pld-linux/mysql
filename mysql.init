@@ -359,7 +359,7 @@ mysqlstop() {
 # uses MYSQL_SOCKET - path to mysql socket
 slave_status() {
 	# see if slave status can be reported
-	local err=0 slave_status=$(mysql -S $MYSQL_SOCKET -e 'show slave status\G')
+	local err=0 slave_status=$(mysql --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" -e 'show slave status\G')
 	if [ -z "$slave_status" ]; then
 		# slave not setup
 		return
