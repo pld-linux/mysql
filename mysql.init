@@ -629,6 +629,7 @@ condrestart() {
 }
 
 status() {
+	local mysqldir addr port socket pid pids running datadir 
 	RETVAL=3
 	for mysqldir in $DB_CLUSTERS; do
 		mysqlstatus "$mysqldir"
