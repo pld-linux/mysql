@@ -69,11 +69,12 @@ Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
 Patch16:	%{name}-errorlog-no-rename.patch
 Patch18:	%{name}-xtrabackup.patch
+Patch19:	%{name}hotcopy-5.0-5.5.patch
 Patch21:	%{name}-atomic.patch
 Patch22:	%{name}-fix-dummy-thread-race-condition.patch
 # ourdelta
-Patch23:	big_tables_fixlp284123_fixmysql35346.patch
-Patch24:	mysql.init.patch
+Patch23:	big_tables_fixlp284123_fix%{name}35346.patch
+Patch24:	%{name}.init.patch
 Patch25:	%{name}-sslchain.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-show_patches.patch
@@ -543,6 +544,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch15 -p1
 %patch16 -p1
 %{?with_xtrabackup:%patch18 -p1}
+%patch19 -p1
 
 # <percona %patches>
 %patch100 -p1
