@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.30
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -60,6 +60,7 @@ Source14:	my.cnf
 # from fedora
 Source15:	lib%{name}.version
 
+Patch2:		mysqlhotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
 # from fedora
 Patch5:		%{name}-versioning.patch
@@ -491,6 +492,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
 
+%patch2 -p1
 %patch3 -p1
 
 %patch5 -p1
