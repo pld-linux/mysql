@@ -3,17 +3,6 @@ from libmysqlclient because mysql-connector-odbc and/or PHP depend on them.
 This limits the intrusion on application namespace.
 
 
-diff -Naur mysql-5.5.8.orig/include/errmsg.h mysql-5.5.8/include/errmsg.h
---- mysql-5.5.8.orig/include/errmsg.h	2010-12-03 12:58:24.000000000 -0500
-+++ mysql-5.5.8/include/errmsg.h	2010-12-27 14:29:59.184552374 -0500
-@@ -24,6 +24,7 @@
- #endif
- void	init_client_errs(void);
- void	finish_client_errs(void);
-+#define client_errors mysql_client_errors		/* namespace sanity */
- extern const char *client_errors[];	/* Error messages */
- #ifdef	__cplusplus
- }
 diff -Naur mysql-5.5.8.orig/include/my_sys.h mysql-5.5.8/include/my_sys.h
 --- mysql-5.5.8.orig/include/my_sys.h	2010-12-03 12:58:24.000000000 -0500
 +++ mysql-5.5.8/include/my_sys.h	2010-12-27 14:27:23.956926896 -0500
