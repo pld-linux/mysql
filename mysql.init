@@ -550,7 +550,11 @@ END_OF_MSG
 	else
 		fail
 		cat << END_OF_MSG
-Installation of grant tables FAILED!
+ERROR:
+ERROR:
+ERROR: Installation of grant tables FAILED!
+ERROR:
+ERROR:
 
 The initialization SQL script was preserved at $MYSQL_DATA_DIR/mysql-init.sql
 
