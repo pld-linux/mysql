@@ -18,6 +18,7 @@
 %bcond_without	federated	# Federated storage engine support
 %bcond_without	raid		# RAID support
 %bcond_without	ssl		# OpenSSL support
+%bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_without	sphinx		# Sphinx storage engine support
 %bcond_with	tests		# FIXME: don't run correctly
@@ -59,7 +60,7 @@ Source13:	%{name}-client.conf
 Source14:	my.cnf
 # from fedora
 Source15:	lib%{name}.version
-
+Patch0:		%{name}-link.patch
 Patch2:		mysqlhotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
 # from fedora
@@ -93,6 +94,7 @@ BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.597
 BuildRequires:	sed >= 4.0
+%{?with_systemtap:BuildRequires:	systemtap-sdt-devel}
 BuildRequires:	zlib-devel
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/groupdel
@@ -490,7 +492,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
-
+%patch0 -p1
 %patch2 -p1
 %patch3 -p1
 
@@ -528,34 +530,35 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 
 %cmake \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
-	-DFEATURE_SET="community" \
 	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
-	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
-	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
+	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
+	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
+	%{!?with_systemtap:-DENABLE_DTRACE=OFF} \
+	-DFEATURE_SET="community" \
+	-DINSTALL_LAYOUT=RPM \
+	-DINSTALL_LIBDIR=%{_lib} \
+	-DINSTALL_MYSQLTESTDIR_RPM="" \
+	-DINSTALL_PLUGINDIR=%{_libdir}/%{name}/plugin \
+	-DINSTALL_SQLBENCHDIR=%{_datadir} \
+	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/%{name}-support \
+	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
+	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
 	-DWITH_FAST_MUTEXES=ON \
-	-DWITH_PIC=ON \
 	-DWITH_LIBEDIT=OFF \
+	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
+	-DWITH_PAM=ON \
+	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
+	-DWITH_PIC=ON \
 	-DWITH_READLINE=OFF \
 %if "%{pld_release}" == "ac"
 	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
 %else
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 %endif
-	-DWITH_ZLIB=system \
-	-DWITH_PAM=ON \
-	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
-	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
-	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
-	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
-	-DINSTALL_LAYOUT=RPM \
-	-DINSTALL_MYSQLTESTDIR_RPM="" \
-	-DINSTALL_SQLBENCHDIR=%{_datadir} \
-	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/%{name}-support \
-	-DINSTALL_PLUGINDIR=%{_libdir}/%{name}/plugin \
-	-DINSTALL_LIBDIR=%{_lib} \
+	-DWITH_ZLIB=system \
 	..
 
 %{__make}
