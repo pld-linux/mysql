@@ -1,5 +1,4 @@
 # TODO:
-# - make response_time_distribution.patch compatible with i386 alpha sparc ppc arches
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
