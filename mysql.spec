@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.32
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -65,7 +65,6 @@ Patch3:		bug-67402.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
 
-Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
@@ -497,7 +496,6 @@ mv sphinx-*/mysqlse storage/sphinx
 
 %patch6 -p1
 
-%patch8 -p1
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
@@ -596,6 +594,7 @@ awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.
 
 cp -a mysqld.conf $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.conf
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/mysql-client.conf
+ln -s mysql-client.conf $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/my.cnf
 cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf
 
 # NDB
@@ -1035,6 +1034,7 @@ done
 %defattr(644,root,root,755)
 %attr(751,root,root) %dir %{_sysconfdir}/mysql
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
+%{_sysconfdir}/%{name}/my.cnf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.18
 %attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*.*
