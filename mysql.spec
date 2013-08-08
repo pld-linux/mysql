@@ -669,8 +669,8 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
 
 # not needed
-%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.* \
-${__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/daemon_example.ini
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/daemon_example.ini
 
 %clean
 rm -rf $RPM_BUILD_ROOT
