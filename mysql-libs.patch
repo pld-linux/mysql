@@ -35,22 +35,6 @@
  
  noinst_HEADERS =	item.h item_func.h item_sum.h item_cmpfunc.h \
  			item_strfunc.h item_timefunc.h \
---- mysql-5.1.26-rc/config/ac-macros/ssl.m4.orig	2008-07-01 00:35:01.000000000 +0200
-+++ mysql-5.1.26-rc/config/ac-macros/ssl.m4	2008-08-25 19:53:00.258254465 +0200
-@@ -102,7 +102,12 @@
-   #
-   # Try to link with openSSL libs in <location>
-   #
--  openssl_libs="-L$location/lib/ -lssl -lcrypto"
-+  if test "$location" != "/usr"
-+  then
-+  openssl_libs="-L$location/lib -lssl -lcrypto"
-+  else
-+  openssl_libs="-lssl -lcrypto"
-+  fi
-   MYSQL_CHECK_SSL_DIR([$openssl_includes], [$openssl_libs])
- 
-   if test "$mysql_ssl_found" == "no"
 --- mysql-5.1.53/libmysql/Makefile.am~	2010-11-03 15:40:16.000000000 +0200
 +++ mysql-5.1.53/libmysql/Makefile.am	2010-12-17 11:24:29.593084149 +0200
 @@ -22,7 +22,7 @@

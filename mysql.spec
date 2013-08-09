@@ -8,6 +8,10 @@
 # - segfaults on select from non-mysql user (caused by builder environment):
 #     https://bugs.launchpad.net/pld-linux/+bug/381904
 #     (profiling disabled temporaily to workaround this)
+# - add avoid-version for:
+#        /usr/lib64/mysql/plugin/mypluglib.so
+#        /usr/lib64/mysql/plugin/mypluglib.so.0
+#        /usr/lib64/mysql/plugin/mypluglib.so.0.0.0
 #
 # Conditional build:
 %bcond_with	autodeps	# BR packages needed only for resolving deps
@@ -21,6 +25,8 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
+%define		rel	1
+%define		percona_rel	14.8
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -31,13 +37,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.63
-Release:	0.1
+Version:	5.1.70
+Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-#Source0Download: http://dev.mysql.com/downloads/mysql/5.1.html#source
-Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.1/%{name}-%{version}.tar.gz
-# Source0-md5:	672167c3f03f969febae66c43859d76d
+# Source0Download: http://www.percona.com/downloads/Percona-Server-5.1/LATEST/source/
+Source0:	http://www.percona.com/downloads/Percona-Server-5.1/LATEST/source/Percona-Server-%{version}-rel%{percona_rel}.tar.gz
+# Source0-md5:	164230ac7b449eb69f0918fc5b8b09f2
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -53,15 +59,12 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
-Source15:	percona.sh
 Patch0:		%{name}-libs.patch
 Patch1:		%{name}-libwrap.patch
 Patch2:		%{name}-c++.patch
-Patch3:		%{name}-info.patch
 Patch4:		%{name}-sql-cxx-pic.patch
 Patch5:		%{name}-noproc.patch
 Patch6:		%{name}-system-users.patch
-Patch7:		%{name}-bug-34192.patch
 Patch8:		%{name}-client-config.patch
 Patch9:		%{name}-build.patch
 Patch10:	%{name}-alpha.patch
@@ -72,75 +75,6 @@ Patch14:	%{name}-bug-43594.patch
 Patch15:	plugin-avoid-version.patch
 Patch16:	%{name}-fix-dummy-thread-race-condition.patch
 Patch18:	%{name}-sphinx.patch
-# <percona patches, http://www.percona.com/percona-lab.html>
-Patch100:	%{name}-innodb_swap_builtin_plugin.patch
-Patch101:	%{name}-show_patches.patch
-Patch102:	%{name}-slow_extended.patch
-Patch103:	%{name}-profiling_slow.patch
-Patch104:	%{name}-microsec_process.patch
-Patch105:	%{name}-userstat.patch
-Patch106:	%{name}-optimizer_fix.patch
-Patch107:	%{name}-show_temp_51.patch
-Patch108:	%{name}-suppress_log_warning_1592.patch
-Patch109:	%{name}-innodb_show_enhancements.patch
-Patch110:	%{name}-innodb_show_status.patch
-Patch111:	%{name}-innodb_io_patches.patch
-Patch112:	%{name}-innodb_opt_lru_count.patch
-Patch113:	%{name}-i_s_innodb_buffer_pool_pages.patch
-Patch114:	%{name}-innodb_expand_undo_slots.patch
-Patch115:	%{name}-innodb_extra_rseg.patch
-Patch116:	%{name}-innodb_overwrite_relay_log_info.patch
-Patch117:	%{name}-innodb_thread_concurrency_timer_based.patch
-Patch118:	%{name}-innodb_dict_size_limit.patch
-Patch119:	%{name}-innodb_split_buf_pool_mutex.patch
-Patch120:	%{name}-innodb_expand_import.patch
-Patch121:	%{name}-innodb_recovery_patches.patch
-Patch122:	%{name}-innodb_purge_thread.patch
-Patch123:	%{name}-innodb_admin_command_base.patch
-Patch124:	%{name}-innodb_show_lock_name.patch
-Patch125:	%{name}-innodb_extend_slow.patch
-Patch126:	%{name}-innodb_lru_dump_restore.patch
-Patch127:	%{name}-innodb_separate_doublewrite.patch
-Patch128:	%{name}-innodb_pass_corrupt_table.patch
-Patch129:	%{name}-innodb_stats.patch
-Patch130:	%{name}-innodb_fast_checksum.patch
-Patch131:	%{name}-innodb_files_extend.patch
-Patch132:	%{name}-innodb_show_sys_tables.patch
-Patch133:	%{name}-innodb_fix_misc.patch
-Patch134:	%{name}-innodb_adjust_defaults.patch
-Patch135:	innodb_kill_idle_transaction.patch
-Patch136:	innodb_fake_changes.patch
-Patch137:	%{name}-innodb_deadlock_count.patch
-Patch138:	%{name}-bug580324.patch
-Patch139:	%{name}-bugfix48929.patch
-Patch140:	%{name}-query_cache_enhance.patch
-Patch141:	%{name}-control_online_alter_index.patch
-Patch142:	%{name}-log_connection_error.patch
-Patch143:	%{name}-mysql-syslog.patch
-Patch144:	%{name}-innodb_buffer_pool_shm.patch
-Patch145:	%{name}-error_pad.patch
-Patch146:	response_time_distribution.patch
-Patch147:	%{name}-remove_fcntl_excessive_calls.patch
-Patch148:	%{name}-sql_no_fcache.patch
-Patch149:	%{name}-show_slave_status_nolock.patch
-Patch150:	%{name}-innodb_fast_shutdown.patch
-Patch151:	%{name}-bug677407.patch
-Patch152:	%{name}-fix-bug671764.patch
-Patch153:	%{name}-mysql_remove_eol_carret.patch
-Patch154:	%{name}-innodb_expand_fast_index_creation.patch
-Patch155:	%{name}-innodb_bug60788.patch
-Patch156:	slave_timeout_fix.patch
-Patch157:	utf8_general50_ci.patch
-Patch158:	bug813587.patch
-Patch159:	innodb_bug47167_test_fix.patch
-Patch160:	disable_query_cache_28249_test_sporadic_failure.patch
-Patch161:	bug53761.patch
-Patch162:	xtradb_bug317074.patch
-Patch163:	subunit.patch
-Patch164:	warning_fixes.patch
-Patch165:	bug860910.patch
-Patch166:	bug45702.patch
-# </percona>
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -556,7 +490,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q %{?with_sphinx:-a100}
+%setup -q -n Percona-Server-%{version}-rel%{percona_rel} %{?with_sphinx:-a100}
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
@@ -564,8 +498,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %endif
 %patch0 -p1
 #%{?with_tcpd:%patch1 -p1}  # WHATS PURPOSE OF THIS PATCH?
-#%patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
-%patch3 -p1
+#patch2 -p1 # NEEDS CHECK, which exact program needs -lc++
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
@@ -576,7 +509,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %endif
 %patch5 -p1
 %patch6 -p1
-%patch7 -p1
 %patch8 -p1
 %patch9 -p1
 %patch11 -p1
@@ -587,75 +519,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch15 -p1
 %patch16 -p1
-# <percona %patches>
-%patch100 -p1
-%patch101 -p1
-%patch102 -p1
-%patch103 -p1
-%patch104 -p1
-%patch105 -p1
-%patch106 -p1
-%patch107 -p1
-%patch108 -p1
-%patch109 -p1
-%patch110 -p1
-%patch111 -p1
-%patch112 -p1
-%patch113 -p1
-%patch114 -p1
-%patch115 -p1
-%patch116 -p1
-%patch117 -p1
-%patch118 -p1
-%patch119 -p1
-%patch120 -p1
-%patch121 -p1
-%patch122 -p1
-%patch123 -p1
-%patch124 -p1
-%patch125 -p1
-%patch126 -p1
-%patch127 -p1
-%patch128 -p1
-%patch129 -p1
-%patch130 -p1
-%patch131 -p1
-%patch132 -p1
-%patch133 -p1
-%patch134 -p1
-%patch135 -p1
-%patch136 -p1
-%patch137 -p1
-%patch138 -p1
-%patch139 -p1
-%patch140 -p1
-%patch141 -p1
-%patch142 -p1
-%patch143 -p1
-%patch144 -p1
-%patch145 -p1
-%patch146 -p1
-%patch147 -p1
-%patch148 -p1
-%patch149 -p1
-%patch150 -p1
-%patch151 -p1
-%patch152 -p1
-%patch153 -p1
-%patch154 -p1
-%patch155 -p1
-%patch156 -p1
-%patch157 -p1
-%patch158 -p1
-%patch159 -p1
-%patch160 -p1
-%patch161 -p1
-%patch162 -p1
-%patch163 -p1
-%patch164 -p1
-%patch165 -p1
-%patch166 -p1
-# </percona>
 
 %build
 %if "%{pld_release}" == "ac"
@@ -725,15 +588,13 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 %{__make} \
 	benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 
-%{__make} -C Docs mysql.info
-
 %{?with_tests:%{__make} test}
 
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
 	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
-	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}}
+	   $RPM_BUILD_ROOT%{_mysqlhome}
 
 # Make install
 %{__make} install \
@@ -741,8 +602,6 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
 	benchdir=%{_datadir}/sql-bench \
 	libsdir=/tmp
 # libsdir is to avoid installing innodb static libs in $RPM_BUILD_ROOT../libs
-
-install Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
 install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 install %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
@@ -827,7 +686,9 @@ rm $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 rm $RPM_BUILD_ROOT%{_bindir}/resolveip
 rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
 rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
-rm $RPM_BUILD_ROOT%{_datadir}/mysql/ChangeLog
+# not an .info file
+%{__rm} $RPM_BUILD_ROOT/usr/share/info/mysql.info
+
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
@@ -846,6 +707,8 @@ rm $RPM_BUILD_ROOT%{_datadir}/%{name}/*.{ini,cnf}
 rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_*.{a,la}
 rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/ha_example.*
 rm -f $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/sphinx.{a,la}
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/mypluglib.{a,la}
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -855,7 +718,6 @@ rm -rf $RPM_BUILD_ROOT
 %useradd -u 89 -d %{_mysqlhome} -s /bin/sh -g mysql -c "MySQL Server" mysql
 
 %post
-[ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/chkconfig --add mysql
 %service mysql restart
 
@@ -866,8 +728,6 @@ if [ "$1" = "0" ]; then
 fi
 
 %postun
-[ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
-
 if [ "$1" = "0" ]; then
 	%userremove mysql
 	%groupremove mysql
@@ -999,7 +859,7 @@ done
 
 %files
 %defattr(644,root,root,755)
-%doc support-files/*.cnf support-files/*.ini ChangeLog
+%doc support-files/*.cnf support-files/*.ini
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
 %attr(754,root,root) /etc/rc.d/init.d/mysql
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql
@@ -1017,6 +877,7 @@ done
 %dir %{_libdir}/mysql
 %dir %{_libdir}/mysql/plugin
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb.so
+%attr(755,root,root) %{_libdir}/mysql/plugin/mypluglib.*
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/mysql/plugin/sphinx.so
 %endif
@@ -1044,7 +905,6 @@ done
 %attr(750,mysql,mysql) %dir /var/log/archive/mysql
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
 
-%{_infodir}/mysql.info*
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/mysql/mysqld.conf
 %{_datadir}/mysql/mysql_system_tables.sql
