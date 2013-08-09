@@ -8,10 +8,6 @@
 # - segfaults on select from non-mysql user (caused by builder environment):
 #     https://bugs.launchpad.net/pld-linux/+bug/381904
 #     (profiling disabled temporaily to workaround this)
-# - add avoid-version for:
-#        /usr/lib64/mysql/plugin/mypluglib.so
-#        /usr/lib64/mysql/plugin/mypluglib.so.0
-#        /usr/lib64/mysql/plugin/mypluglib.so.0.0.0
 #
 # Conditional build:
 %bcond_with	autodeps	# BR packages needed only for resolving deps
@@ -877,7 +873,7 @@ done
 %dir %{_libdir}/mysql
 %dir %{_libdir}/mysql/plugin
 %attr(755,root,root) %{_libdir}/mysql/plugin/ha_innodb.so
-%attr(755,root,root) %{_libdir}/mysql/plugin/mypluglib.*
+%attr(755,root,root) %{_libdir}/mysql/plugin/mypluglib.so
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/mysql/plugin/sphinx.so
 %endif
