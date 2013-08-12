@@ -60,7 +60,7 @@ Source14:	my.cnf
 # from fedora
 Source15:	lib%{name}.version
 Patch0:		%{name}-link.patch
-Patch2:		mysqlhotcopy-5.0-5.5.patch
+Patch2:		%{name}hotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
@@ -566,13 +566,11 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
 	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
-	   $RPM_BUILD_ROOT{%{_infodir},%{_mysqlhome}} \
+	   $RPM_BUILD_ROOT%{_mysqlhome} \
 	   $RPM_BUILD_ROOT%{_libdir}
 
 %{__make} -C build install \
 	DESTDIR=$RPM_BUILD_ROOT
-
-cp -a Docs/mysql.info $RPM_BUILD_ROOT%{_infodir}
 
 install -p %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
 cp -a %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
@@ -672,6 +670,9 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/daemon_example.ini
 
+# not an .info file
+%{__rm} $RPM_BUILD_ROOT%{_infodir}/mysql.info
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -680,7 +681,6 @@ rm -rf $RPM_BUILD_ROOT
 %useradd -u 89 -d %{_mysqlhome} -s /bin/sh -g mysql -c "MySQL Server" mysql
 
 %post
-[ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/ldconfig
 /sbin/chkconfig --add mysql
 %service mysql restart
@@ -692,9 +692,7 @@ if [ "$1" = "0" ]; then
 fi
 
 %postun
-[ ! -x /usr/sbin/fix-info-dir ] || /usr/sbin/fix-info-dir -c %{_infodir} >/dev/null 2>&1
 /sbin/ldconfig
-
 if [ "$1" = "0" ]; then
 	%userremove mysql
 	%groupremove mysql
@@ -933,7 +931,6 @@ done
 %attr(750,mysql,mysql) %dir /var/log/archive/mysql
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
 
-%{_infodir}/mysql.info*
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/%{name}/mysqld.conf
 %{_datadir}/%{name}/mysql_system_tables.sql
