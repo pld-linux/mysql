@@ -73,8 +73,9 @@ Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
 # from fedora
 Patch20:	%{name}-dubious-exports.patch
+Patch21:	bison3.patch
 URL:		http://www.mysql.com/products/community/
-BuildRequires:	bison
+BuildRequires:	bison >= 1.875
 BuildRequires:	cmake >= 2.6
 BuildRequires:	groff
 %if "%{pld_release}" == "ac"
@@ -502,6 +503,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch19 -p1
 %patch20 -p1
+%patch21 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
