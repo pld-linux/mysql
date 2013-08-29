@@ -22,7 +22,7 @@
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
 %define		rel	1
-%define		percona_rel	14.8
+%define		percona_rel	14.9
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -33,13 +33,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.1.70
+Version:	5.1.71
 Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://www.percona.com/downloads/Percona-Server-5.1/LATEST/source/
 Source0:	http://www.percona.com/downloads/Percona-Server-5.1/LATEST/source/Percona-Server-%{version}-rel%{percona_rel}.tar.gz
-# Source0-md5:	164230ac7b449eb69f0918fc5b8b09f2
+# Source0-md5:	b6d67802d3dceb45a29b211be2226646
 Source100:	http://www.sphinxsearch.com/downloads/sphinx-0.9.9.tar.gz
 # Source100-md5:	7b9b618cb9b378f949bb1b91ddcc4f54
 Source1:	%{name}.init
@@ -70,6 +70,7 @@ Patch13:	gcc-ice.patch
 Patch14:	%{name}-bug-43594.patch
 Patch15:	plugin-avoid-version.patch
 Patch16:	%{name}-fix-dummy-thread-race-condition.patch
+Patch17:	bison3.patch
 Patch18:	%{name}-sphinx.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	autoconf
@@ -515,6 +516,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch15 -p1
 %patch16 -p1
+%patch17 -p1
 
 %build
 %if "%{pld_release}" == "ac"
