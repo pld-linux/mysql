@@ -74,8 +74,9 @@ Patch21:	%{name}-atomic.patch
 Patch22:	%{name}-fix-dummy-thread-race-condition.patch
 # ourdelta
 Patch23:	big_tables_fixlp284123_fix%{name}35346.patch
-
+Patch24:	bison3.patch
 Patch25:	%{name}-sslchain.patch
+Patch26:	%{name}-yacc.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
 Patch100:	%{name}-show_patches.patch
 Patch101:	%{name}-microslow_innodb.patch
@@ -572,8 +573,9 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch21 -p0
 %patch22 -p1
 %patch23 -p1
-
+%patch24 -p1
 %patch25 -p1
+%patch26 -p1
 
 %{__sed} -i -e 's/AM_CONFIG_HEADER/AC_CONFIG_HEADERS/' configure.in
 
