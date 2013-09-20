@@ -532,7 +532,7 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
 	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
-	%{!?with_systemtap:-DENABLE_DTRACE=OFF} \
+	%{?with_systemtap:-DENABLE_DTRACE=ON} \
 	-DFEATURE_SET="community" \
 	-DINSTALL_LAYOUT=RPM \
 	-DINSTALL_LIBDIR=%{_lib} \
