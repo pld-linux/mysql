@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.33
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -59,6 +59,7 @@ Source13:	%{name}-client.conf
 Source14:	my.cnf
 # from fedora
 Source15:	lib%{name}.version
+
 Patch2:		%{name}hotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
 # from fedora
@@ -73,6 +74,7 @@ Patch19:	%{name}-chain-certs.patch
 # from fedora
 Patch20:	%{name}-dubious-exports.patch
 Patch21:	bison3.patch
+Patch22:	bug-66589.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 BuildRequires:	cmake >= 2.6
@@ -503,6 +505,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch19 -p1
 %patch20 -p1
 %patch21 -p1
+%patch22 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
