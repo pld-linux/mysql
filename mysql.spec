@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.6.13
-Release:	0.1
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -511,6 +511,9 @@ mv sphinx-*/mysqlse storage/sphinx
 [ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
 [ -f sql/sql_yacc.h ] && rm sql/sql_yacc.h
 
+# upstream has fallen down badly on symbol versioning, do it ourselves
+install %{SOURCE15} libmysql/libmysql.ver.in
+
 %build
 install -d build
 cd build
@@ -524,10 +527,6 @@ cd build
 %{expand:%%define	__cxx	%(echo '%__cxx' | sed -e 's,-g++,-g++4,')}
 %{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
 %endif
-
-# upstream has fallen down badly on symbol versioning, do it ourselves
-install -d libmysql
-cp -a %{SOURCE15} libmysql/libmysql.version
 
 %cmake \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
