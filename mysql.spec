@@ -873,7 +873,7 @@ done
 
 %files
 %defattr(644,root,root,755)
-%doc build/support-files/*.cnf build/support-files/*.ini
+%doc build/support-files/*.cnf
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}
 %attr(754,root,root) /etc/rc.d/init.d/%{name}
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
@@ -897,9 +897,9 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/dialog.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
+#%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
+#%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
+#%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
