@@ -906,6 +906,7 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/validate_password.so
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
@@ -937,13 +938,17 @@ done
 
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/%{name}/mysqld.conf
-%{_datadir}/%{name}/mysql_system_tables.sql
+%{_datadir}/%{name}/mysql_security_commands.sql
 %{_datadir}/%{name}/mysql_system_tables_data.sql
+%{_datadir}/%{name}/mysql_system_tables.sql
 %{_datadir}/%{name}/mysql_test_data_timezone.sql
 
 %{_datadir}/%{name}/english
+%{_datadir}/%{name}/dictionary.txt
 %{_datadir}/%{name}/fill_help_tables.sql
+%{_datadir}/%{name}/innodb_memcached_config.sql
 #%{_datadir}/%{name}/mysql_fix_privilege_tables.sql
+%lang(bg) %{_datadir}/%{name}/bulgarian
 %lang(cs) %{_datadir}/%{name}/czech
 %lang(da) %{_datadir}/%{name}/danish
 %lang(de) %{_datadir}/%{name}/german
@@ -1021,6 +1026,7 @@ done
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbinlog
 %attr(755,root,root) %{_bindir}/mysqlbug
+%attr(755,root,root) %{_bindir}/mysql_config_editor
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
 %attr(755,root,root) %{_bindir}/mysqlshow
@@ -1028,6 +1034,7 @@ done
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqlbinlog.1*
 %{_mandir}/man1/mysqlbug.1*
+%{_mandir}/man1/mysql_config_editor.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
 %{_mandir}/man1/mysqlshow.1*
