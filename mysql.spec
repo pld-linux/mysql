@@ -668,6 +668,8 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
+# libmysqld examples
+%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql{_client_test_embedded,_embedded,test_embedded}
 
 # not needed
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
@@ -1060,6 +1062,8 @@ done
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so
 %endif
+# static-only so far
+%{_libdir}/libmysqld.a
 %{_includedir}/mysql
 %{_aclocaldir}/mysql.m4
 %{_mandir}/man1/mysql_config.1*
