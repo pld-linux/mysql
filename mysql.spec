@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.6.14
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -57,9 +57,7 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
-# from fedora
-Source15:	lib%{name}.version
-
+Patch1:		%{name}-versioning.patch
 Patch2:		%{name}hotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
 # from fedora
@@ -492,7 +490,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
-
+%patch1 -p1
 %patch2 -p1
 %patch3 -p1
 
@@ -510,9 +508,6 @@ mv sphinx-*/mysqlse storage/sphinx
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
 [ -f sql/sql_yacc.h ] && rm sql/sql_yacc.h
-
-# upstream has fallen down badly on symbol versioning, do it ourselves
-install %{SOURCE15} libmysql/libmysql.ver.in
 
 %build
 install -d build
