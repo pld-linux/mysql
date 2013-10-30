@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.6.14
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -508,6 +508,9 @@ mv sphinx-*/mysqlse storage/sphinx
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
 [ -f sql/sql_yacc.h ] && rm sql/sql_yacc.h
+
+# map has more sane versioning that default "global everything" in ver.in
+cp -p libmysql/libmysql.map libmysql/libmysql.ver.in
 
 %build
 install -d build
