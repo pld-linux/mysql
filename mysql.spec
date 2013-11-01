@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.6.14
-Release:	3
+Release:	4
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -605,10 +605,6 @@ cp -a %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
 install -p %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
 cp -a %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
 %endif
-
-# symlinks point to the .so file, fix it
-ln -sf libmysqlclient.so.18 $RPM_BUILD_ROOT%{_libdir}/libmysqlclient_r.so.18
-ln -sf libmysqlclient.so.18.0.0 $RPM_BUILD_ROOT%{_libdir}/libmysqlclient_r.so.18.0.0
 
 sed -i -e 's,/usr//usr,%{_prefix},g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
