@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.6.14
-Release:	6
+Release:	7
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -78,6 +78,7 @@ URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 BuildRequires:	cmake >= 2.6
 BuildRequires:	groff
+BuildRequires:	libedit-devel
 %if "%{pld_release}" == "ac"
 BuildRequires:	libstdc++4-devel >= 5:4.0
 %else
@@ -89,7 +90,6 @@ BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
 %{?with_autodeps:BuildRequires:	perl-DBI}
 BuildRequires:	perl-devel >= 1:5.6.1
-BuildRequires:	readline-devel >= 4.2
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.597
 BuildRequires:	sed >= 4.0
@@ -546,12 +546,11 @@ cd build
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
 	-DWITH_FAST_MUTEXES=ON \
-	-DWITH_LIBEDIT=OFF \
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
 	-DWITH_PAM=ON \
 	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
 	-DWITH_PIC=ON \
-	-DWITH_READLINE=OFF \
+	-DWITH_EDITLINE=system \
 %if "%{pld_release}" == "ac"
 	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
 %else
