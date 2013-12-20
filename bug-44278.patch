@@ -25,8 +25,8 @@ Content-Disposition: inline
     modified:
       scripts/mysqlhotcopy.sh
 === modified file 'scripts/mysqlhotcopy.sh'
---- a/scripts/mysqlhotcopy.sh	2009-04-28 16:16:17 +0000
-+++ b/scripts/mysqlhotcopy.sh	2009-08-04 18:57:34 +0000
+--- Percona-Server-5.6.14-rel62.0/scripts/mysqlhotcopy.sh~	2013-12-20 14:56:59.000000000 +0200
++++ Percona-Server-5.6.14-rel62.0/scripts/mysqlhotcopy.sh	2013-12-20 14:58:39.183005974 +0200
 @@ -222,7 +222,7 @@ my ($tgt_dirname, $to_other_database);
  $to_other_database=0;
  if (defined($tgt_name) && $tgt_name =~ m:^\w+$: && @db_desc <= 1)
@@ -75,16 +75,16 @@ Content-Disposition: inline
    }
  }
  
-@@ -414,7 +417,8 @@ foreach my $rdb ( @db_desc ) {
+@@ -464,7 +464,8 @@
+     else {
+         mkdir($tgt_dirpath, 0750) or die "Can't create '$tgt_dirpath': $!\n"
              unless -d $tgt_dirpath;
-         if ($^O !~ m/^(NetWare)$/)  
-         {
--            my @f_info= stat "$datadir/$rdb->{src}";
-+            my @f_info= stat "$datadir/" .
-+                             encode_identifier_as_filename($rdb->{src});
-             chown $f_info[4], $f_info[5], $tgt_dirpath;
-         }
+-        my @f_info= stat "$datadir/$rdb->{src}";
++        my @f_info= stat "$datadir/" .
++                         encode_identifier_as_filename($rdb->{src});
+         chown $f_info[4], $f_info[5], $tgt_dirpath;
      }
+ }
 @@ -471,7 +475,9 @@ my @failed = ();
  
  foreach my $rdb ( @db_desc )
