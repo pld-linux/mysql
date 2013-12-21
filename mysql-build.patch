@@ -30,17 +30,6 @@ diff -urNbB mysql-5.0.13-rc.org/sql/mysqld.cc mysql-5.0.13-rc/sql/mysqld.cc
  #endif /* FALLOC_FL_PUNCH_HOLE */
  
  		next_mrec = index->online_log->head.block;
---- Percona-Server-5.6.13-rel61.0/sql/mysqld.cc~	2013-10-15 18:33:37.000000000 +0200
-+++ Percona-Server-5.6.13-rel61.0/sql/mysqld.cc	2013-10-15 18:48:42.717336416 +0200
-@@ -6389,7 +6389,7 @@
- 
- #ifdef HAVE_LIBWRAP
-     {
--      if (mysql_socket_getfd(sock) == mysql_socket_getfd(ip_sock))
-+      if (mysql_socket_getfd(sock) == mysql_socket_getfd(base_ip_sock) || mysql_socket_getfd(sock) == mysql_socket_getfd(extra_ip_sock))
-       {
-         struct request_info req;
-         signal(SIGCHLD, SIG_DFL);
 --- Percona-Server-5.6.13-rel61.0/sql/CMakeLists.txt~	2013-10-07 12:25:25.000000000 +0200
 +++ Percona-Server-5.6.13-rel61.0/sql/CMakeLists.txt	2013-10-15 20:37:28.259765844 +0200
 @@ -237,20 +237,20 @@
