@@ -23,6 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
+%define		rel	1
 %define		percona_rel	63.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -35,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.6.15
-Release:	1
+Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
