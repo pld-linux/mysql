@@ -61,7 +61,7 @@ Source14:	my.cnf
 Patch1:		%{name}-versioning.patch
 Patch2:		%{name}hotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
-Patch4:		mysql-no-default-secure-auth.patch
+Patch4:		%{name}-no-default-secure-auth.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
 
@@ -78,19 +78,20 @@ Patch22:	bug-66589.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 BuildRequires:	cmake >= 2.6
-BuildRequires:	groff
 BuildRequires:	libedit-devel
 %if "%{pld_release}" == "ac"
 BuildRequires:	libstdc++4-devel >= 5:4.0
 %else
 BuildRequires:	libstdc++-devel >= 5:4.0
 %endif
-BuildRequires:	libtool
+BuildRequires:	automake
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
+BuildRequires:	pam-devel
 %{?with_autodeps:BuildRequires:	perl-DBI}
 BuildRequires:	perl-devel >= 1:5.6.1
+BuildRequires:	python-modules
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.597
 BuildRequires:	sed >= 4.0
