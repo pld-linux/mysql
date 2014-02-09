@@ -1,0 +1,59 @@
+--- Percona-Server-5.6.15-rel63.0/cmake/readline.cmake.orig	2013-12-18 10:52:13.000000000 +0100
++++ Percona-Server-5.6.15-rel63.0/cmake/readline.cmake	2014-02-09 06:17:56.079619159 +0100
+@@ -131,23 +131,23 @@
+ 
+ MACRO (FIND_SYSTEM_EDITLINE)
+   FIND_PATH(FOUND_EDITLINE_READLINE
+-    NAMES editline/readline.h
++    NAMES readline/readline.h
+   )
+   IF(FOUND_EDITLINE_READLINE)
+-    SET(EDITLINE_INCLUDE_DIR "${FOUND_EDITLINE_READLINE}/editline")
++    SET(EDITLINE_INCLUDE_DIR "${FOUND_EDITLINE_READLINE}/readline")
+   ELSE()
+     # Different path on FreeBSD
+     FIND_PATH(FOUND_EDIT_READLINE_READLINE
+       NAMES edit/readline/readline.h
+     )
+     IF(FOUND_EDIT_READLINE_READLINE)
+-      SET(EDITLINE_INCLUDE_DIR "${FOUND_EDIT_READLINE_READLINE}/edit/readline")
++      SET(EDITLINE_INCLUDE_DIR "${FOUND_EDIT_READLINE_READLINE}/readline")
+     ENDIF()
+   ENDIF()
+ 
+   FIND_LIBRARY(EDITLINE_LIBRARY
+     NAMES
+-    edit
++    readline
+   )
+   MARK_AS_ADVANCED(EDITLINE_INCLUDE_DIR EDITLINE_LIBRARY)
+ 
+@@ -160,7 +160,7 @@
+     SET(CMAKE_REQUIRED_LIBRARIES ${EDITLINE_LIBRARY})
+     CHECK_CXX_SOURCE_COMPILES("
+     #include <stdio.h>
+-    #include <readline.h>
++    #include <readline/history.h>
+     int main(int argc, char **argv)
+     {
+        HIST_ENTRY entry;
+@@ -170,14 +170,13 @@
+ 
+     CHECK_CXX_SOURCE_COMPILES("
+     #include <stdio.h>
+-    #include <readline.h>
++    #include <readline/readline.h>
+     int main(int argc, char **argv)
+     {
+-      typedef int MYFunction(const char*, int);
+-      MYFunction* myf= rl_completion_entry_function;
+-      int res= (myf)(NULL, 0);
+-      completion_matches(0,0);
+-      return res;
++      rl_compentry_func_t *myf= rl_completion_entry_function;
++      char *res= (myf)(NULL, 0);
++      rl_completion_matches(0,0);
++      return res ? 0 : 1;
+     }"
+     EDITLINE_HAVE_COMPLETION)
+ 

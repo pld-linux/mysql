@@ -23,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	2
+%define		rel	3
 %define		percona_rel	63.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -76,10 +76,12 @@ Patch20:	%{name}-dubious-exports.patch
 Patch21:	bison3.patch
 Patch22:	bug-66589.patch
 Patch23:	bug-44278.patch
+Patch24:	%{name}-cmake.patch
+Patch25:	%{name}-readline.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 BuildRequires:	cmake >= 2.6
-BuildRequires:	libedit-devel
+BuildRequires:	readline-devel >= 6.2
 %if "%{pld_release}" == "ac"
 BuildRequires:	libstdc++4-devel >= 5:4.0
 %else
@@ -305,6 +307,7 @@ Summary(uk.UTF-8):	MySQL клієнт
 Group:		Applications/Databases
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
+Requires:	readline >= 6.2
 Obsoletes:	MySQL-client
 
 %description client
@@ -510,6 +513,8 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch21 -p1
 %patch22 -p1
 %patch23 -p1
+%patch24 -p1
+%patch25 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
