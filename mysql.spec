@@ -23,8 +23,8 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	3
-%define		percona_rel	63.0
+%define		rel	1
+%define		percona_rel	64.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -35,14 +35,14 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.6.15
+Version:	5.6.16
 Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/Percona-Server-%{version}-rel%{percona_rel}.tar.gz
-# Source0-md5:	30298acd471405feb3b23389c130e76d
+Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
+# Source0-md5:	b79711dc43f16adedea1a37bf9eece3d
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.1.4-release.tar.gz
 # Source100-md5:	3d453b507834ec746237e2016d34f928
 Source1:	%{name}.init
@@ -491,7 +491,12 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n Percona-Server-%{version}-rel%{percona_rel} %{?with_sphinx:-a100}
+%setup -q -n percona-server-%{version}-%{percona_rel} %{?with_sphinx:-a100}
+
+# we want to use old, mysql compatible client library name
+find . -name CMakeLists.txt -exec sed -i -e 's#perconaserverclient#mysqlclient#g' "{}" ";"
+sed -i -e 's#perconaserverclient#mysqlclient#g' libmysql/libmysql.{ver.in,map}
+
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
