@@ -468,13 +468,13 @@ mysqlinit() {
 	chown mysql:mysql "$MYSQL_CLUSTER_DIR/mysqldb" "$MYSQL_DATA_DIR" > /dev/null 2>&1
 	chmod 751 "$MYSQL_CLUSTER_DIR" "$MYSQL_CLUSTER_DIR/mysqldb"
 
-	if [ -f /usr/share/mysql/mysqld.conf -a ! -f "$MYSQL_CLUSTER_DIR/mysqld.conf" ]; then
+	if [ -f /usr/share/percona-server/mysqld.conf -a ! -f "$MYSQL_CLUSTER_DIR/mysqld.conf" ]; then
 	    sed -e "
 		s#\(datadir.*\)=.*#\1= $MYSQL_DATA_DIR#g;
 		s#\(pid-file.*\)=.*#\1= $MYSQL_PIDFILE#g;
 		s#\(socket.*\)=.*#\1= $MYSQL_SOCKET#g;
 		s#@clusterdir@#$MYSQL_CLUSTER_DIR#g;
-		" /usr/share/mysql/mysqld.conf > "$MYSQL_CLUSTER_DIR/mysqld.conf"
+		" /usr/share/percona-server/mysqld.conf > "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	    chown root:root "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	    chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
@@ -487,8 +487,8 @@ mysqlinit() {
 	cat > $MYSQL_DATA_DIR/mysql-init.sql <<-EOF
 		CREATE DATABASE mysql;
 		use mysql;
-		$(cat /usr/share/mysql/mysql_system_tables.sql)
-		$(sed -e "/@current_hostname/d" /usr/share/mysql/mysql_system_tables_data.sql)
+		$(cat /usr/share/percona-server/mysql_system_tables.sql)
+		$(sed -e "/@current_hostname/d" /usr/share/percona-server/mysql_system_tables_data.sql)
 EOF
 
 	ok=0
@@ -526,7 +526,7 @@ mysqladmin section. See the manual for more instructions.
 END_OF_MSG
 		show "Filling help tables..."
 		ok=0
-		( echo "use mysql;"; cat /usr/share/mysql/fill_help_tables.sql ) | \
+		( echo "use mysql;"; cat /usr/share/percona-server/fill_help_tables.sql ) | \
 			/usr/sbin/mysqld \
 			--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
 			--bootstrap \
