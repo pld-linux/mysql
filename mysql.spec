@@ -23,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	1
+%define		rel	2
 %define		percona_rel	64.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -496,7 +496,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 # we want to use old, mysql compatible client library name
 find . -name CMakeLists.txt -exec sed -i -e 's#perconaserverclient#mysqlclient#g' "{}" ";"
-sed -i -e 's#perconaserverclient#mysqlclient#g' libmysql/libmysql.{ver.in,map}
+sed -i -e 's#perconaserverclient#mysqlclient#g' libmysql/libmysql.{ver.in,map} scripts/mysql_config.*
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
