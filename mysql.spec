@@ -23,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define	percona_rel	34.1
+%define	percona_rel	36.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -34,16 +34,16 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.36
+Version:	5.5.39
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	437513391095eafc7d4ef34d512a9e96
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.1.6-release.tar.gz
-# Source100-md5:	f416c743c0e0f4e337b4549928d8494f
+# Source0-md5:	04a29911a22b44b0c55f9f449110b83e
+Source100:	http://www.sphinxsearch.com/files/sphinx-2.1.9-release.tar.gz
+# Source100-md5:	3b987baa64b9c050c92412a72c4d3059
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -73,7 +73,7 @@ Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
 # from fedora
 Patch20:	%{name}-dubious-exports.patch
-Patch21:	bison3.patch
+
 Patch22:	bug-66589.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
@@ -510,7 +510,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch14 -p0
 %patch19 -p1
 %patch20 -p1
-%patch21 -p1
+
 %patch22 -p1
 
 # to get these files rebuild
@@ -549,6 +549,7 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DINSTALL_PLUGINDIR=%{_libdir}/%{name}/plugin \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/%{_orgname}-support \
+	-DINSTALL_MYSQLSHAREDIR=%{_datadir}/%{_orgname} \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
@@ -897,6 +898,7 @@ done
 %dir %{_libdir}/%{name}
 %dir %{_libdir}/%{name}/plugin
 %attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/audit_log.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_pam.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_pam_compat.so
@@ -906,10 +908,14 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv1a_udf.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv_udf.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/libmurmur_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/scalability_metrics.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
 %if %{with sphinx}
