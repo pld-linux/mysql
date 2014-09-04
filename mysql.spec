@@ -548,8 +548,8 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DINSTALL_MYSQLTESTDIR_RPM="" \
 	-DINSTALL_PLUGINDIR=%{_libdir}/%{name}/plugin \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
-	-DINSTALL_SUPPORTFILESDIR=%{_datadir}/%{_orgname}-support \
-	-DINSTALL_MYSQLSHAREDIR=%{_datadir}/%{_orgname} \
+	-DINSTALL_SUPPORTFILESDIR=share/%{_orgname}-support \
+	-DINSTALL_MYSQLSHAREDIR=share/%{_orgname} \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
