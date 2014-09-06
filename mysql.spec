@@ -546,7 +546,7 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DINSTALL_LAYOUT=RPM \
 	-DINSTALL_LIBDIR=%{_lib} \
 	-DINSTALL_MYSQLTESTDIR_RPM="" \
-	-DINSTALL_PLUGINDIR=%{_libdir}/%{name}/plugin \
+	-DINSTALL_PLUGINDIR=%{_lib}/%{name}/plugin \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=share/%{_orgname}-support \
 	-DINSTALL_MYSQLSHAREDIR=share/%{_orgname} \
