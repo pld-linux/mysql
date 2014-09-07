@@ -62,6 +62,7 @@ Patch1:		%{name}-versioning.patch
 Patch2:		%{name}hotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
 Patch4:		%{name}-no-default-secure-auth.patch
+Patch5:		%{name}-system-libhsclient.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
 
@@ -89,6 +90,7 @@ BuildRequires:	libstdc++4-devel >= 5:4.0
 BuildRequires:	libstdc++-devel >= 5:4.0
 %endif
 BuildRequires:	automake
+BuildRequires:	libhsclient-devel
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
@@ -508,7 +510,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-
+%patch5 -p1
 %patch6 -p1
 
 %patch9 -p1
@@ -525,8 +527,8 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch26 -p1
 
 # to get these files rebuild
-[ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
-[ -f sql/sql_yacc.h ] && rm sql/sql_yacc.h
+[ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
+[ -f sql/sql_yacc.h ] && %{__rm} sql/sql_yacc.h
 
 # map has more sane versioning that default "global everything" in ver.in
 cp -p libmysql/libmysql.map libmysql/libmysql.ver.in
@@ -545,7 +547,7 @@ cd build
 %{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
 %endif
 
-%cmake \
+%cmake .. \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
 	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
@@ -575,8 +577,7 @@ cd build
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 %endif
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
-	-DWITH_ZLIB=system \
-	..
+	-DWITH_ZLIB=system
 
 %{__make}
 
@@ -915,7 +916,7 @@ done
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
-#%attr(755,root,root) %{_libdir}/%{name}/plugin/handlersocket.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/handlersocket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv1a_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libmurmur_udf.so
