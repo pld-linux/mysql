@@ -23,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	2
+%define		rel	3
 %define		percona_rel	68.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
