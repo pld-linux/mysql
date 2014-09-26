@@ -1,0 +1,95 @@
+From feac5e02ab298a5c3329ab63ee6db7d9f52bf28d Mon Sep 17 00:00:00 2001
+From: Murthy Narkedimilli <murthy.narkedimilli@oracle.com>
+Date: Mon, 8 Sep 2014 11:33:55 +0200
+Subject: [PATCH] Adding patch for security bug 19471516
+
+---
+ mysql-test/suite/innodb/r/foreign-keys.result | 16 ++++++++++++++++
+ mysql-test/suite/innodb/t/foreign-keys.test   | 26 ++++++++++++++++++++++++++
+ storage/innobase/dict/dict0dict.c             | 10 ++++++++++
+ 3 files changed, 52 insertions(+)
+ create mode 100644 mysql-test/suite/innodb/r/foreign-keys.result
+ create mode 100644 mysql-test/suite/innodb/t/foreign-keys.test
+
+diff --git a/mysql-test/suite/innodb/r/foreign-keys.result b/mysql-test/suite/innodb/r/foreign-keys.result
+new file mode 100644
+index 0000000..be8d27b
+--- /dev/null
++++ b/mysql-test/suite/innodb/r/foreign-keys.result
+@@ -0,0 +1,16 @@
++#
++# Bug #19471516 SERVER CRASHES WHEN EXECUTING ALTER TABLE
++# ADD FOREIGN KEY
++#
++CREATE TABLE `department` (`department_id` INT, `department_people_fk` INT,
++PRIMARY KEY (`department_id`)) engine=innodb;
++CREATE TABLE `title` (`title_id` INT, `title_manager_fk` INT,
++`title_reporter_fk` INT, PRIMARY KEY (`title_id`));
++CREATE TABLE `people` (`people_id` INT, PRIMARY KEY (`people_id`));
++ALTER TABLE `department` ADD FOREIGN KEY (`department_people_fk`) REFERENCES
++`people` (`people_id`);
++ALTER TABLE `title` ADD FOREIGN KEY (`title_manager_fk`) REFERENCES `people`
++(`people_id`);
++ALTER TABLE `title` ADD FOREIGN KEY (`title_reporter_fk`) REFERENCES `people`
++(`people_id`);
++drop table title, department, people;
+diff --git a/mysql-test/suite/innodb/t/foreign-keys.test b/mysql-test/suite/innodb/t/foreign-keys.test
+new file mode 100644
+index 0000000..45642cf
+--- /dev/null
++++ b/mysql-test/suite/innodb/t/foreign-keys.test
+@@ -0,0 +1,26 @@
++--source include/have_innodb.inc
++--source include/have_debug.inc
++
++--echo #
++--echo # Bug #19471516 SERVER CRASHES WHEN EXECUTING ALTER TABLE
++--echo # ADD FOREIGN KEY
++--echo #
++
++CREATE TABLE `department` (`department_id` INT, `department_people_fk` INT,
++PRIMARY KEY (`department_id`)) engine=innodb;
++
++CREATE TABLE `title` (`title_id` INT, `title_manager_fk` INT,
++`title_reporter_fk` INT, PRIMARY KEY (`title_id`));
++
++CREATE TABLE `people` (`people_id` INT, PRIMARY KEY (`people_id`));
++
++ALTER TABLE `department` ADD FOREIGN KEY (`department_people_fk`) REFERENCES
++`people` (`people_id`);
++
++ALTER TABLE `title` ADD FOREIGN KEY (`title_manager_fk`) REFERENCES `people`
++(`people_id`);
++
++ALTER TABLE `title` ADD FOREIGN KEY (`title_reporter_fk`) REFERENCES `people`
++(`people_id`);
++
++drop table title, department, people;
+diff --git a/storage/innobase/dict/dict0dict.c b/storage/innobase/dict/dict0dict.c
+index e225966..0e46916 100644
+--- a/storage/innobase/dict/dict0dict.c
++++ b/storage/innobase/dict/dict0dict.c
+@@ -1123,6 +1123,11 @@ dict_table_rename_in_cache(
+ 		/* The id will be changed.  So remove old one */
+ 		rbt_delete(foreign->foreign_table->foreign_rbt, foreign->id);
+ 
++		if (foreign->referenced_table) {
++			rbt_delete(foreign->referenced_table->referenced_rbt,
++				   foreign->id);
++		}
++
+ 		if (ut_strlen(foreign->foreign_table_name)
+ 		    < ut_strlen(table->name)) {
+ 			/* Allocate a longer name buffer;
+@@ -1273,6 +1278,11 @@ dict_table_rename_in_cache(
+ 		rbt_insert(foreign->foreign_table->foreign_rbt,
+ 			   foreign->id, &foreign);
+ 
++		if (foreign->referenced_table) {
++			rbt_insert(foreign->referenced_table->referenced_rbt,
++				   foreign->id, &foreign);
++		}
++
+ 		foreign = UT_LIST_GET_NEXT(foreign_list, foreign);
+ 	}
+ 
