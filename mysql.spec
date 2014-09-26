@@ -23,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	3
+%define		rel	4
 %define		percona_rel	68.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -65,6 +65,7 @@ Patch4:		%{name}-no-default-secure-auth.patch
 Patch5:		%{name}-system-libhsclient.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
+Patch7:		bug-73834.patch
 
 Patch9:		%{name}-build.patch
 Patch11:	%{name}-upgrade.patch
@@ -512,6 +513,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
+%patch7 -p1
 
 %patch9 -p1
 %patch11 -p1
