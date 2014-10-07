@@ -23,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define	percona_rel	36.0
+%define	percona_rel	36.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -34,14 +34,14 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.39
-Release:	2
+Version:	5.5.40
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	04a29911a22b44b0c55f9f449110b83e
+# Source0-md5:	51d05cf50f02b29b022f54b8e2da0db5
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.1.9-release.tar.gz
 # Source100-md5:	3b987baa64b9c050c92412a72c4d3059
 Source1:	%{name}.init
@@ -62,7 +62,6 @@ Source15:	lib%{name}.version
 
 Patch2:		%{name}hotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
-Patch4:		bug-73834.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
 
@@ -502,7 +501,6 @@ mv sphinx-*/mysqlse storage/sphinx
 
 %patch2 -p1
 %patch3 -p1
-%patch4 -p1
 
 %patch6 -p1
 
