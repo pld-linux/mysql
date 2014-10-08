@@ -23,8 +23,8 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	4
-%define		percona_rel	68.0
+%define		rel	1
+%define		percona_rel	69.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -35,14 +35,14 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.6.20
+Version:	5.6.21
 Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	0a22d7a5455498fc5c66d545646f3c06
+# Source0-md5:	8b709c247b72aee4367904ec12b81f12
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.1.9-release.tar.gz
 # Source100-md5:	3b987baa64b9c050c92412a72c4d3059
 Source1:	%{name}.init
@@ -65,7 +65,6 @@ Patch4:		%{name}-no-default-secure-auth.patch
 Patch5:		%{name}-system-libhsclient.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
-Patch7:		bug-73834.patch
 
 Patch9:		%{name}-build.patch
 Patch11:	%{name}-upgrade.patch
@@ -513,7 +512,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
-%patch7 -p1
 
 %patch9 -p1
 %patch11 -p1
@@ -926,6 +924,7 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/query_response_time.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/scalability_metrics.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
