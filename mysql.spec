@@ -80,6 +80,7 @@ Patch23:	bug-44278.patch
 Patch24:	%{name}-cmake.patch
 Patch25:	%{name}-readline.patch
 Patch26:	mysqldumpslow-clusters.patch
+Patch27:	x32.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 BuildRequires:	cmake >= 2.6
@@ -525,6 +526,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch24 -p1
 %patch25 -p1
 %patch26 -p1
+%patch27 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
