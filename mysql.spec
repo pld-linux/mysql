@@ -24,7 +24,7 @@
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
 %define		rel	1
-%define		percona_rel	70.1
+%define		percona_rel	72.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -35,16 +35,16 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.6.21
+Version:	5.6.22
 Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	d43db2de80c0b2127a39ea1ca00eff91
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.5-release.tar.gz
-# Source100-md5:	ab0007c9b128b6fde17d936c131f7a17
+# Source0-md5:	18b4f3dbe152f8e4572c7a0804fb34c3
+Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.7-release.tar.gz
+# Source100-md5:	ac74f013665f473d7ea22623f4b72468
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -895,6 +895,7 @@ done
 %attr(754,root,root) /etc/rc.d/init.d/%{name}
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
+%attr(755,root,root) %{_bindir}/ps_tokudb_admin
 %attr(755,root,root) %{_sbindir}/innochecksum
 %attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
