@@ -24,7 +24,7 @@
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
 %define		rel	1
-%define		percona_rel	72.1
+%define		percona_rel	72.2
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -35,16 +35,16 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.6.23
+Version:	5.6.24
 Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	ac6a10ea8d000b86ff1dbe65ed3581e2
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.8-release.tar.gz
-# Source100-md5:	4eb54ad6bd9a03b8b39bc10f16e59a63
+# Source0-md5:	d4fcc3079c2c17efb2c3e3c66601880b
+Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.9-release.tar.gz
+# Source100-md5:	1fcc3d180c0559bdeb93602ef248caf4
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -78,7 +78,7 @@ Patch20:	%{name}-dubious-exports.patch
 Patch22:	bug-66589.patch
 Patch23:	bug-44278.patch
 Patch24:	%{name}-cmake.patch
-Patch25:	%{name}-readline.patch
+
 Patch26:	mysqldumpslow-clusters.patch
 Patch27:	x32.patch
 URL:		http://www.mysql.com/products/community/
@@ -524,7 +524,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch22 -p1
 %patch23 -p1
 %patch24 -p1
-%patch25 -p1
+
 %patch26 -p1
 %patch27 -p1
 
@@ -572,14 +572,14 @@ cd build
 	-DWITH_PAM=ON \
 	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
 	-DWITH_PIC=ON \
-	-DWITH_EDITLINE=system \
 %if "%{pld_release}" == "ac"
 	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
 %else
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 %endif
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
-	-DWITH_ZLIB=system
+	-DWITH_ZLIB=system \
+	-DWITH_READLINE=system
 
 %{__make}
 
