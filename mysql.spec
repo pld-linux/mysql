@@ -58,6 +58,7 @@ Source11:	%{name}-ndb-cpc.init
 Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
+Patch0:		%{name}-opt.patch
 Patch1:		%{name}-versioning.patch
 Patch2:		%{name}hotcopy-5.0-5.5.patch
 Patch3:		bug-67402.patch
@@ -502,6 +503,8 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 find . -name CMakeLists.txt -exec sed -i -e 's#perconaserverclient#mysqlclient#g' "{}" ";"
 sed -i -e 's#perconaserverclient#mysqlclient#g' libmysql/libmysql.{ver.in,map} scripts/mysql_config.*
 
+%patch0 -p1
+
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
@@ -549,10 +552,11 @@ cd build
 %{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
 %endif
 
+CPPFLAGS="%{rpmcppflags}" \
 %cmake .. \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
-	-DCMAKE_C_FLAGS_RELEASE="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
-	-DCMAKE_CXX_FLAGS_RELEASE="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
+	-DCMAKE_C_FLAGS_RELWITHDEBINFO="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
+	-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
 	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
 	%{?with_systemtap:-DENABLE_DTRACE=ON} \
@@ -924,6 +928,7 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libmurmur_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_no_login.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
