@@ -23,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	1
+%define		rel	2
 %define		percona_rel	72.2
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -79,7 +79,7 @@ Patch20:	%{name}-dubious-exports.patch
 Patch22:	bug-66589.patch
 Patch23:	bug-44278.patch
 Patch24:	%{name}-cmake.patch
-
+Patch25:	community-mysql-dh1024.patch
 Patch26:	mysqldumpslow-clusters.patch
 Patch27:	x32.patch
 URL:		http://www.mysql.com/products/community/
@@ -527,7 +527,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch22 -p1
 %patch23 -p1
 %patch24 -p1
-
+%patch25 -p1
 %patch26 -p1
 %patch27 -p1
 
