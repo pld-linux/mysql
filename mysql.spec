@@ -48,6 +48,8 @@ Patch9:		%{name}-bug-27198.patch
 Patch10:	%{name}-rename-table.patch
 Patch11:	%{name}-sslchain.patch
 Patch12:	community-mysql-dh1024.patch
+Patch13:	%{name}-m4.patch
+Patch14:	%{name}-format.patch
 URL:		http://www.mysql.com/
 BuildRequires:	/bin/ps
 #BuildRequires:	ORBit-devel
@@ -371,6 +373,8 @@ Podrêcznik MySQL-a w formacie HTML.
 %patch10 -p1
 %patch11 -p1
 %patch12 -p1
+%patch13 -p1
+%patch14 -p1
 
 %build
 %{__libtoolize}

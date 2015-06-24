@@ -1,0 +1,39 @@
+--- mysql-4.0.30/sql/log_event.cc~	2007-02-12 20:38:46.000000000 +0100
++++ mysql-4.0.30/sql/log_event.cc	2015-06-24 21:08:16.873356668 +0200
+@@ -1386,7 +1386,7 @@ void Load_log_event::print(FILE* file, b
+     {
+       if (i)
+ 	fputc(',', file);
+-      fprintf(file, field);
++      fprintf(file, "%s", field);
+ 	  
+       field += field_lens[i]  + 1;
+     }
+--- mysql-4.0.30/innobase/include/ut0dbg.h~	2007-02-12 20:38:39.000000000 +0100
++++ mysql-4.0.30/innobase/include/ut0dbg.h	2015-06-24 21:13:37.501397909 +0200
+@@ -46,9 +46,9 @@ extern ibool 	panic_shutdown;
+ } while (0)
+ #define ut_error do {\
+ 		ut_print_timestamp(stderr);\
+-		fprintf(stderr, ut_dbg_msg_assert_fail,\
++		fprintf(stderr, "%s", ut_dbg_msg_assert_fail,\
+ 		os_thread_pf(os_thread_get_curr_id()), __FILE__, (ulint)__LINE__);\
+-		fprintf(stderr, ut_dbg_msg_trap);\
++		fprintf(stderr, "%s", ut_dbg_msg_trap);\
+ 		ut_dbg_stop_threads = TRUE;\
+ 		if(!panic_shutdown){panic_shutdown = TRUE;\
+ 		innobase_shutdown_for_mysql();}\
+--- mysql-4.0.30/innobase/include/ut0dbg.h~	2015-06-24 21:13:55.000000000 +0200
++++ mysql-4.0.30/innobase/include/ut0dbg.h	2015-06-24 21:17:21.340368316 +0200
+@@ -74,9 +74,9 @@ extern ibool 	panic_shutdown;
+ 
+ #define ut_error do {\
+         ut_print_timestamp(stderr);\
+-	fprintf(stderr, ut_dbg_msg_assert_fail,\
++	fprintf(stderr, "%s", ut_dbg_msg_assert_fail,\
+ 	os_thread_pf(os_thread_get_curr_id()), __FILE__, (ulint)__LINE__);\
+-	fprintf(stderr, ut_dbg_msg_trap);\
++	fprintf(stderr, "%s", ut_dbg_msg_trap);\
+ 	ut_dbg_stop_threads = TRUE;\
+ 	if (*(ut_dbg_null_ptr)) ut_dbg_null_ptr = NULL;\
+ } while (0)

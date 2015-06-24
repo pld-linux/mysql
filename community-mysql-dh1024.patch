@@ -60,4 +60,13 @@ diff -Naur mysql-5.5.28.orig/vio/viosslfactories.c mysql-5.5.28/vio/viosslfactor
 +  dh=get_dh1024();
    SSL_CTX_set_tmp_dh(ptr->ssl_context,dh);
    DH_free(dh);
- 
+
+@@ -389,7 +389,7 @@
+     }
+   }
+   /* DH stuff */
+-  dh=get_dh512();
++  dh=get_dh1024();
+   SSL_CTX_set_tmp_dh(ptr->ssl_context,dh);
+   DH_free(dh);
+   DBUG_RETURN(ptr);
