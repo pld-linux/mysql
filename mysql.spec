@@ -50,6 +50,7 @@ Patch11:	%{name}-sslchain.patch
 Patch12:	community-mysql-dh1024.patch
 Patch13:	%{name}-m4.patch
 Patch14:	%{name}-format.patch
+Patch15:	%{name}-hash.patch
 URL:		http://www.mysql.com/
 BuildRequires:	/bin/ps
 #BuildRequires:	ORBit-devel
@@ -375,6 +376,7 @@ Podrêcznik MySQL-a w formacie HTML.
 %patch12 -p1
 %patch13 -p1
 %patch14 -p1
+%patch15 -p1
 
 %build
 %{__libtoolize}
@@ -422,7 +424,7 @@ echo -e "all:\ninstall:\nclean:\nlink_sources:\n" > libmysqld/examples/Makefile
 
 %{__make} benchdir=$RPM_BUILD_ROOT%{_datadir}/sql-bench
 # workaround for missing files
-(cd Docs; touch Images/cluster-components-1.txt Images/multi-comp-1.txt errmsg-table.texi cl-errmsg-table.texi)
+(cd Docs; touch errmsg-table.texi cl-errmsg-table.texi)
 %{__make} -C Docs mysql.info
 
 %install
