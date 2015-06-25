@@ -16,12 +16,12 @@
 #
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
-Summary(fr):	MySQL: un serveur SQL rapide et fiable
-Summary(pl):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
-Summary(pt_BR):	MySQL: Um servidor SQL rápido e confiável
-Summary(ru):	MySQL - ÂÙÓÔÒÙÊ SQL-ÓÅÒ×ÅÒ
-Summary(uk):	MySQL - Û×ÉÄËÉÊ SQL-ÓÅÒ×ÅÒ
-Summary(zh_CN):	MySQLÊı¾İ¿â·şÎñÆ÷
+Summary(fr.UTF-8):	MySQL: un serveur SQL rapide et fiable
+Summary(pl.UTF-8):	MySQL: bardzo szybka i niezawodna baza danych (SQL)
+Summary(pt_BR.UTF-8):	MySQL: Um servidor SQL rÃ¡pido e confiÃ¡vel
+Summary(ru.UTF-8):	MySQL - Ğ±Ñ‹ÑÑ‚Ñ€Ñ‹Ğ¹ SQL-ÑĞµÑ€Ğ²ĞµÑ€
+Summary(uk.UTF-8):	MySQL - ÑˆĞ²Ğ¸Ğ´ĞºĞ¸Ğ¹ SQL-ÑĞµÑ€Ğ²ĞµÑ€
+Summary(zh_CN.UTF-8):	MySQLæ•°æ®åº“æœåŠ¡å™¨
 Name:		mysql
 Version:	4.0.30
 Release:	5
@@ -114,7 +114,7 @@ used in a highly demanding production environment for many years.
 While MySQL is still in development, it already offers a rich and
 highly useful function set.
 
-%description -l fr
+%description -l fr.UTF-8
 MySQL est un serveur de bases de donnees SQL vraiment multi-usagers et
 multi-taches. Le langage SQL est le langage de bases de donnees le
 plus populaire au monde. MySQL est une implementation client/serveur
@@ -135,59 +135,59 @@ qui ont ete utilisees dans un environnement de production pendant
 plusieurs annees. Meme si MySQL est encore en developpement, il offre
 deja une riche et utile serie de fonctions.
 
-%description -l pl
-MySQL to prawdziwie wielou¿ytkownikowy, wielow±tkowy serwer baz danych
-SQL. SQL jest najpopularniejszym na ¶wiecie jêzykiem u¿ywanym do baz
-danych. MySQL to implementacja klient/serwer sk³adaj±ca siê z demona
-mysqld i wielu ró¿nych programów i bibliotek klienckich.
+%description -l pl.UTF-8
+MySQL to prawdziwie wielouÅ¼ytkownikowy, wielowÄ…tkowy serwer baz danych
+SQL. SQL jest najpopularniejszym na Å›wiecie jÄ™zykiem uÅ¼ywanym do baz
+danych. MySQL to implementacja klient/serwer skÅ‚adajÄ…ca siÄ™ z demona
+mysqld i wielu rÃ³Å¼nych programÃ³w i bibliotek klienckich.
 
-G³ównymi celami MySQL-a s± szybko¶æ, potêga i ³atwo¶æ u¿ytkowania.
-MySQL oryginalnie by³ tworzony, poniewa¿ autorzy w Tcx potrzebowali
-serwera SQL do obs³ugi bardzo du¿ych baz danych z szybko¶ci± o wiele
-wiêksz±, ni¿ mogli zaoferowaæ inni producenci baz danych. U¿ywaj± go
-od 1996 roku w ¶rodowisku z ponad 40 bazami danych, 10 000 tabel, z
-których ponad 500 zawiera ponad 7 milionów rekordów - w sumie oko³o
+GÅ‚Ã³wnymi celami MySQL-a sÄ… szybkoÅ›Ä‡, potÄ™ga i Å‚atwoÅ›Ä‡ uÅ¼ytkowania.
+MySQL oryginalnie byÅ‚ tworzony, poniewaÅ¼ autorzy w Tcx potrzebowali
+serwera SQL do obsÅ‚ugi bardzo duÅ¼ych baz danych z szybkoÅ›ciÄ… o wiele
+wiÄ™kszÄ…, niÅ¼ mogli zaoferowaÄ‡ inni producenci baz danych. UÅ¼ywajÄ… go
+od 1996 roku w Å›rodowisku z ponad 40 bazami danych, 10 000 tabel, z
+ktÃ³rych ponad 500 zawiera ponad 7 milionÃ³w rekordÃ³w - w sumie okoÅ‚o
 50GB krytycznych danych.
 
-Baza, na której oparty jest MySQL, sk³ada siê ze zbioru procedur,
-które by³y u¿ywane w bardzo wymagaj±cym ¶rodowisku produkcyjnym przez
-wiele lat. Pomimo, ¿e MySQL jest ci±gle rozwijany, ju¿ oferuje bogaty
-i u¿yteczny zbiór funkcji.
+Baza, na ktÃ³rej oparty jest MySQL, skÅ‚ada siÄ™ ze zbioru procedur,
+ktÃ³re byÅ‚y uÅ¼ywane w bardzo wymagajÄ…cym Å›rodowisku produkcyjnym przez
+wiele lat. Pomimo, Å¼e MySQL jest ciÄ…gle rozwijany, juÅ¼ oferuje bogaty
+i uÅ¼yteczny zbiÃ³r funkcji.
 
-%description -l pt_BR
-O MySQL é um servidor de banco de dados SQL realmente multiusuário e
-multi-tarefa. A linguagem SQL é a mais popular linguagem para banco de
-dados no mundo. O MySQL é uma implementação cliente/servidor que
+%description -l pt_BR.UTF-8
+O MySQL Ã© um servidor de banco de dados SQL realmente multiusuÃ¡rio e
+multi-tarefa. A linguagem SQL Ã© a mais popular linguagem para banco de
+dados no mundo. O MySQL Ã© uma implementaÃ§Ã£o cliente/servidor que
 consiste de um servidor chamado mysqld e diversos
-programas/bibliotecas clientes. Os principais objetivos do MySQL são:
+programas/bibliotecas clientes. Os principais objetivos do MySQL sÃ£o:
 velocidade, robustez e facilidade de uso. O MySQL foi originalmente
-desenvolvido porque nós na Tcx precisávamos de um servidor SQL que
+desenvolvido porque nÃ³s na Tcx precisÃ¡vamos de um servidor SQL que
 pudesse lidar com grandes bases de dados e com uma velocidade muito
 maior do que a que qualquer vendedor podia nos oferecer. Estamos
 usando o MySQL desde 1996 em um ambiente com mais de 40 bases de dados
-com 10.000 tabelas, das quais mais de 500 têm mais de 7 milhões de
-linhas. Isto é o equivalente a aproximadamente 50G de dados críticos.
-A base da construção do MySQL é uma série de rotinas que foram usadas
-em um ambiente de produção com alta demanda por muitos anos. Mesmo o
-MySQL estando ainda em desenvolvimento, ele já oferece um conjunto de
-funções muito ricas e úteis. Veja a documentação para maiores
-informações.
+com 10.000 tabelas, das quais mais de 500 tÃªm mais de 7 milhÃµes de
+linhas. Isto Ã© o equivalente a aproximadamente 50G de dados crÃ­ticos.
+A base da construÃ§Ã£o do MySQL Ã© uma sÃ©rie de rotinas que foram usadas
+em um ambiente de produÃ§Ã£o com alta demanda por muitos anos. Mesmo o
+MySQL estando ainda em desenvolvimento, ele jÃ¡ oferece um conjunto de
+funÃ§Ãµes muito ricas e Ãºteis. Veja a documentaÃ§Ã£o para maiores
+informaÃ§Ãµes.
 
-%description -l ru
-MySQL - ÜÔÏ SQL (Structured Query Language) ÓÅÒ×ÅÒ ÂÁÚÙ ÄÁÎÎÙÈ. MySQL
-ÂÙÌÁ ÎÁĞÉÓÁÎÁ Michael'ÏÍ (monty) Widenius'ÏÍ. óÍ. ÆÁÊÌ CREDITS ×
-ÄÉÓÔÒÉÂÕÔÉ×Å ÎÁ ĞÒÅÄÍÅÔ ÄÒÕÇÉÈ ÕŞÁÓÔÎÉËÏ× ĞÒÏÅËÔÁ É ĞÒÏŞÅÊ ÉÎÆÏÒÍÁÃÉÉ
-Ï MySQL.
+%description -l ru.UTF-8
+MySQL - ÑÑ‚Ğ¾ SQL (Structured Query Language) ÑĞµÑ€Ğ²ĞµÑ€ Ğ±Ğ°Ğ·Ñ‹ Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ…. MySQL
+Ğ±Ñ‹Ğ»Ğ° Ğ½Ğ°Ğ¿Ğ¸ÑĞ°Ğ½Ğ° Michael'Ğ¾Ğ¼ (monty) Widenius'Ğ¾Ğ¼. Ğ¡Ğ¼. Ñ„Ğ°Ğ¹Ğ» CREDITS Ğ²
+Ğ´Ğ¸ÑÑ‚Ñ€Ğ¸Ğ±ÑƒÑ‚Ğ¸Ğ²Ğµ Ğ½Ğ° Ğ¿Ñ€ĞµĞ´Ğ¼ĞµÑ‚ Ğ´Ñ€ÑƒĞ³Ğ¸Ñ… ÑƒÑ‡Ğ°ÑÑ‚Ğ½Ğ¸ĞºĞ¾Ğ² Ğ¿Ñ€Ğ¾ĞµĞºÑ‚Ğ° Ğ¸ Ğ¿Ñ€Ğ¾Ñ‡ĞµĞ¹ Ğ¸Ğ½Ñ„Ğ¾Ñ€Ğ¼Ğ°Ñ†Ğ¸Ğ¸
+Ğ¾ MySQL.
 
-%description -l uk
-MySQL - ÃÅ SQL (Structured Query Language) ÓÅÒ×ÅÒ ÂÁÚÉ ÄÁÎÉÈ. MySQL
-ÂÕÌÏ ÎÁĞÉÓÁÎÏ Michael'ÏÍ (monty) Widenius'ÏÍ. äÉ×. ÆÁÊÌ CREDITS ×
-ÄÉÓÔÒÉÂÕÔÉ×¦ ÄÌÑ ¦ÎÆÏÒÍÁÃ¦§ ĞÒÏ ¦ÎÛÉÈ ÕŞÁÓÎÉË¦× ĞÒÏÅËÔÕ ÔÁ ¦ÎÛÏ§
-¦ÎÆÏÒÍÁÃ¦§.
+%description -l uk.UTF-8
+MySQL - Ñ†Ğµ SQL (Structured Query Language) ÑĞµÑ€Ğ²ĞµÑ€ Ğ±Ğ°Ğ·Ğ¸ Ğ´Ğ°Ğ½Ğ¸Ñ…. MySQL
+Ğ±ÑƒĞ»Ğ¾ Ğ½Ğ°Ğ¿Ğ¸ÑĞ°Ğ½Ğ¾ Michael'Ğ¾Ğ¼ (monty) Widenius'Ğ¾Ğ¼. Ğ”Ğ¸Ğ². Ñ„Ğ°Ğ¹Ğ» CREDITS Ğ²
+Ğ´Ğ¸ÑÑ‚Ñ€Ğ¸Ğ±ÑƒÑ‚Ğ¸Ğ²Ñ– Ğ´Ğ»Ñ Ñ–Ğ½Ñ„Ğ¾Ñ€Ğ¼Ğ°Ñ†Ñ–Ñ— Ğ¿Ñ€Ğ¾ Ñ–Ğ½ÑˆĞ¸Ñ… ÑƒÑ‡Ğ°ÑĞ½Ğ¸ĞºÑ–Ğ² Ğ¿Ñ€Ğ¾ĞµĞºÑ‚Ñƒ Ñ‚Ğ° Ñ–Ğ½ÑˆĞ¾Ñ—
+Ñ–Ğ½Ñ„Ğ¾Ñ€Ğ¼Ğ°Ñ†Ñ–Ñ—.
 
 %package extras
 Summary:	MySQL additional utilities
-Summary(pl):	Dodatkowe narzêdzia do MySQL
+Summary(pl.UTF-8):	Dodatkowe narzÄ™dzia do MySQL
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 
@@ -195,13 +195,13 @@ Requires:	%{name}-libs = %{version}-%{release}
 MySQL additional utilities except Perl scripts (they may be found in
 %{name}-extras-perl package).
 
-%description extras -l pl
-Dodatkowe narzêdzia do MySQL - z wyj±tkiem skryptów Perla (które s± w
+%description extras -l pl.UTF-8
+Dodatkowe narzÄ™dzia do MySQL - z wyjÄ…tkiem skryptÃ³w Perla (ktÃ³re sÄ… w
 pakiecie %{name}-extras-perl).
 
 %package extras-perl
 Summary:	MySQL additional utilities written in Perl
-Summary(pl):	Dodatkowe narzêdzia do MySQL napisane w Perlu
+Summary(pl.UTF-8):	Dodatkowe narzÄ™dzia do MySQL napisane w Perlu
 Group:		Applications/Databases
 Requires:	%{name}-extras = %{version}-%{release}
 Requires:	perl(DBD::mysql)
@@ -209,15 +209,15 @@ Requires:	perl(DBD::mysql)
 %description extras-perl
 MySQL additional utilities written in Perl.
 
-%description extras-perl -l pl
-Dodatkowe narzêdzia do MySQL napisane w Perlu.
+%description extras-perl -l pl.UTF-8
+Dodatkowe narzÄ™dzia do MySQL napisane w Perlu.
 
 %package client
 Summary:	MySQL - Client
-Summary(pl):	MySQL - Klient
-Summary(pt):	MySQL - Cliente
-Summary(ru):	MySQL ËÌÉÅÎÔ
-Summary(uk):	MySQL ËÌ¦¤ÎÔ
+Summary(pl.UTF-8):	MySQL - Klient
+Summary(pt.UTF-8):	MySQL - Cliente
+Summary(ru.UTF-8):	MySQL ĞºĞ»Ğ¸ĞµĞ½Ñ‚
+Summary(uk.UTF-8):	MySQL ĞºĞ»Ñ–Ñ”Ğ½Ñ‚
 Group:		Applications/Databases
 Requires:	%{name}-libs = %{version}-%{release}
 Obsoletes:	MySQL-client
@@ -225,24 +225,24 @@ Obsoletes:	MySQL-client
 %description client
 This package contains the standard MySQL clients.
 
-%description client -l fr
+%description client -l fr.UTF-8
 Ce package contient les clients MySQL standards.
 
-%description client -l pl
+%description client -l pl.UTF-8
 Standardowe programy klienckie MySQL.
 
-%description client -l pt_BR
-Este pacote contém os clientes padrão para o MySQL.
+%description client -l pt_BR.UTF-8
+Este pacote contÃ©m os clientes padrÃ£o para o MySQL.
 
-%description client -l ru
-üÔÏÔ ĞÁËÅÔ ÓÏÄÅÒÖÉÔ ÔÏÌØËÏ ËÌÉÅÎÔ MySQL.
+%description client -l ru.UTF-8
+Ğ­Ñ‚Ğ¾Ñ‚ Ğ¿Ğ°ĞºĞµÑ‚ ÑĞ¾Ğ´ĞµÑ€Ğ¶Ğ¸Ñ‚ Ñ‚Ğ¾Ğ»ÑŒĞºĞ¾ ĞºĞ»Ğ¸ĞµĞ½Ñ‚ MySQL.
 
-%description client -l uk
-ãÅÊ ĞÁËÅÔ Í¦ÓÔÉÔØ Ô¦ÌØËÉ ËÌ¦¤ÎÔÁ MySQL.
+%description client -l uk.UTF-8
+Ğ¦ĞµĞ¹ Ğ¿Ğ°ĞºĞµÑ‚ Ğ¼Ñ–ÑÑ‚Ğ¸Ñ‚ÑŒ Ñ‚Ñ–Ğ»ÑŒĞºĞ¸ ĞºĞ»Ñ–Ñ”Ğ½Ñ‚Ğ° MySQL.
 
 %package libs
 Summary:	Shared libraries for MySQL
-Summary(pl):	Biblioteki dzielone MySQL
+Summary(pl.UTF-8):	Biblioteki dzielone MySQL
 Group:		Applications/Databases
 Obsoletes:	libmysql10
 Obsoletes:	mysql-doc < 4.0.25-1
@@ -250,15 +250,15 @@ Obsoletes:	mysql-doc < 4.0.25-1
 %description libs
 Shared libraries for MySQL.
 
-%description libs -l pl
+%description libs -l pl.UTF-8
 Biblioteki dzielone MySQL.
 
 %package devel
 Summary:	MySQL - Development header files and libraries
-Summary(pl):	MySQL - Pliki nag³ówkowe i biblioteki dla programistów
-Summary(pt):	MySQL - Medições de desempenho
-Summary(ru):	MySQL - ÈÅÄÅÒÙ É ÂÉÂÌÉÏÔÅËÉ ÒÁÚÒÁÂÏÔŞÉËÁ
-Summary(uk):	MySQL - ÈÅÄÅÒÉ ÔÁ Â¦ÂÌ¦ÏÔÅËÉ ĞÒÏÇÒÁÍ¦ÓÔÁ
+Summary(pl.UTF-8):	MySQL - Pliki nagÅ‚Ã³wkowe i biblioteki dla programistÃ³w
+Summary(pt.UTF-8):	MySQL - MediÃ§Ãµes de desempenho
+Summary(ru.UTF-8):	MySQL - Ñ…ĞµĞ´ĞµÑ€Ñ‹ Ğ¸ Ğ±Ğ¸Ğ±Ğ»Ğ¸Ğ¾Ñ‚ĞµĞºĞ¸ Ñ€Ğ°Ğ·Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‡Ğ¸ĞºĞ°
+Summary(uk.UTF-8):	MySQL - Ñ…ĞµĞ´ĞµÑ€Ğ¸ Ñ‚Ğ° Ğ±Ñ–Ğ±Ğ»Ñ–Ğ¾Ñ‚ĞµĞºĞ¸ Ğ¿Ñ€Ğ¾Ğ³Ñ€Ğ°Ğ¼Ñ–ÑÑ‚Ğ°
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
 %{?with_ssl:Requires:	openssl-devel}
@@ -270,32 +270,32 @@ Obsoletes:	libmysql10-devel
 This package contains the development header files and libraries
 necessary to develop MySQL client applications.
 
-%description devel -l fr
+%description devel -l fr.UTF-8
 Ce package contient les fichiers entetes et les librairies de
 developpement necessaires pour developper des applications clientes
 MySQL.
 
-%description devel -l pl
-Pliki nag³ówkowe i biblioteki konieczne do kompilacji aplikacji
+%description devel -l pl.UTF-8
+Pliki nagÅ‚Ã³wkowe i biblioteki konieczne do kompilacji aplikacji
 klienckich MySQL.
 
-%description devel -l pt_BR
-Este pacote contém os arquivos de cabeçalho (header files) e
-bibliotecas necessárias para desenvolver aplicações clientes do MySQL.
+%description devel -l pt_BR.UTF-8
+Este pacote contÃ©m os arquivos de cabeÃ§alho (header files) e
+bibliotecas necessÃ¡rias para desenvolver aplicaÃ§Ãµes clientes do MySQL.
 
-%description devel -l ru
-üÔÏÔ ĞÁËÅÔ ÓÏÄÅÒÖÉÔ ÈÅÄÅÒÙ É ÂÉÂÌÉÏÔÅËÉ ÒÁÚÒÁÂÏÔŞÉËÁ, ÎÅÏÂÈÏÄÉÍÙÅ ÄÌÑ
-ÒÁÚÒÁÂÏÔËÉ ËÌÉÅÎÔÓËÉÈ ĞÒÉÌÏÖÅÎÉÊ.
+%description devel -l ru.UTF-8
+Ğ­Ñ‚Ğ¾Ñ‚ Ğ¿Ğ°ĞºĞµÑ‚ ÑĞ¾Ğ´ĞµÑ€Ğ¶Ğ¸Ñ‚ Ñ…ĞµĞ´ĞµÑ€Ñ‹ Ğ¸ Ğ±Ğ¸Ğ±Ğ»Ğ¸Ğ¾Ñ‚ĞµĞºĞ¸ Ñ€Ğ°Ğ·Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‡Ğ¸ĞºĞ°, Ğ½ĞµĞ¾Ğ±Ñ…Ğ¾Ğ´Ğ¸Ğ¼Ñ‹Ğµ Ğ´Ğ»Ñ
+Ñ€Ğ°Ğ·Ñ€Ğ°Ğ±Ğ¾Ñ‚ĞºĞ¸ ĞºĞ»Ğ¸ĞµĞ½Ñ‚ÑĞºĞ¸Ñ… Ğ¿Ñ€Ğ¸Ğ»Ğ¾Ğ¶ĞµĞ½Ğ¸Ğ¹.
 
-%description devel -l uk
-ãÅÊ ĞÁËÅÔ Í¦ÓÔÉÔØ ÈÅÄÅÒÉ ÔÁ Â¦ÂÌ¦ÏÔÅËÉ ĞÒÏÇÒÁÍ¦ÓÔÁ, ÎÅÏÂÈ¦ÄÎ¦ ÄÌÑ
-ÒÏÚÒÏÂËÉ ĞÒÏÇÒÁÍ-ËÌ¦¤ÎÔ¦×.
+%description devel -l uk.UTF-8
+Ğ¦ĞµĞ¹ Ğ¿Ğ°ĞºĞµÑ‚ Ğ¼Ñ–ÑÑ‚Ğ¸Ñ‚ÑŒ Ñ…ĞµĞ´ĞµÑ€Ğ¸ Ñ‚Ğ° Ğ±Ñ–Ğ±Ğ»Ñ–Ğ¾Ñ‚ĞµĞºĞ¸ Ğ¿Ñ€Ğ¾Ğ³Ñ€Ğ°Ğ¼Ñ–ÑÑ‚Ğ°, Ğ½ĞµĞ¾Ğ±Ñ…Ñ–Ğ´Ğ½Ñ– Ğ´Ğ»Ñ
+Ñ€Ğ¾Ğ·Ñ€Ğ¾Ğ±ĞºĞ¸ Ğ¿Ñ€Ğ¾Ğ³Ñ€Ğ°Ğ¼-ĞºĞ»Ñ–Ñ”Ğ½Ñ‚Ñ–Ğ².
 
 %package static
 Summary:	MySQL static libraries
-Summary(pl):	Biblioteki statyczne MySQL
-Summary(ru):	MySQL - ÓÔÁÔÉŞÅÓËÉÅ ÂÉÂÌÉÏÔÅËÉ
-Summary(uk):	MySQL - ÓÔÁÔÉŞÎ¦ Â¦ÂÌ¦ÏÔÅËÉ
+Summary(pl.UTF-8):	Biblioteki statyczne MySQL
+Summary(ru.UTF-8):	MySQL - ÑÑ‚Ğ°Ñ‚Ğ¸Ñ‡ĞµÑĞºĞ¸Ğµ Ğ±Ğ¸Ğ±Ğ»Ğ¸Ğ¾Ñ‚ĞµĞºĞ¸
+Summary(uk.UTF-8):	MySQL - ÑÑ‚Ğ°Ñ‚Ğ¸Ñ‡Ğ½Ñ– Ğ±Ñ–Ğ±Ğ»Ñ–Ğ¾Ñ‚ĞµĞºĞ¸
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}-%{release}
 Obsoletes:	MySQL-static
@@ -303,23 +303,23 @@ Obsoletes:	MySQL-static
 %description static
 MySQL static libraries.
 
-%description static -l pl
+%description static -l pl.UTF-8
 Biblioteki statyczne MySQL.
 
-%description static -l ru
-üÔÏÔ ĞÁËÅÔ ÓÏÄÅÒÖÉÔ ÓÔÁÔÉŞÅÓËÉÅ ÂÉÂÌÉÏÔÅËÉ ÒÁÚÒÁÂÏÔŞÉËÁ, ÎÅÏÂÈÏÄÉÍÙÅ
-ÄÌÑ ÒÁÚÒÁÂÏÔËÉ ËÌÉÅÎÔÓËÉÈ ĞÒÉÌÏÖÅÎÉÊ.
+%description static -l ru.UTF-8
+Ğ­Ñ‚Ğ¾Ñ‚ Ğ¿Ğ°ĞºĞµÑ‚ ÑĞ¾Ğ´ĞµÑ€Ğ¶Ğ¸Ñ‚ ÑÑ‚Ğ°Ñ‚Ğ¸Ñ‡ĞµÑĞºĞ¸Ğµ Ğ±Ğ¸Ğ±Ğ»Ğ¸Ğ¾Ñ‚ĞµĞºĞ¸ Ñ€Ğ°Ğ·Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‡Ğ¸ĞºĞ°, Ğ½ĞµĞ¾Ğ±Ñ…Ğ¾Ğ´Ğ¸Ğ¼Ñ‹Ğµ
+Ğ´Ğ»Ñ Ñ€Ğ°Ğ·Ñ€Ğ°Ğ±Ğ¾Ñ‚ĞºĞ¸ ĞºĞ»Ğ¸ĞµĞ½Ñ‚ÑĞºĞ¸Ñ… Ğ¿Ñ€Ğ¸Ğ»Ğ¾Ğ¶ĞµĞ½Ğ¸Ğ¹.
 
-%description static -l uk
-ãÅÊ ĞÁËÅÔ Í¦ÓÔÉÔØ ÓÔÁÔÉŞÎ¦ Â¦ÂÌ¦ÏÔÅËÉ ĞÒÏÇÒÁÍ¦ÓÔÁ, ÎÅÏÂÈ¦ÄÎ¦ ÄÌÑ
-ÒÏÚÒÏÂËÉ ĞÒÏÇÒÁÍ-ËÌ¦¤ÎÔ¦×.
+%description static -l uk.UTF-8
+Ğ¦ĞµĞ¹ Ğ¿Ğ°ĞºĞµÑ‚ Ğ¼Ñ–ÑÑ‚Ğ¸Ñ‚ÑŒ ÑÑ‚Ğ°Ñ‚Ğ¸Ñ‡Ğ½Ñ– Ğ±Ñ–Ğ±Ğ»Ñ–Ğ¾Ñ‚ĞµĞºĞ¸ Ğ¿Ñ€Ğ¾Ğ³Ñ€Ğ°Ğ¼Ñ–ÑÑ‚Ğ°, Ğ½ĞµĞ¾Ğ±Ñ…Ñ–Ğ´Ğ½Ñ– Ğ´Ğ»Ñ
+Ñ€Ğ¾Ğ·Ñ€Ğ¾Ğ±ĞºĞ¸ Ğ¿Ñ€Ğ¾Ğ³Ñ€Ğ°Ğ¼-ĞºĞ»Ñ–Ñ”Ğ½Ñ‚Ñ–Ğ².
 
 %package bench
 Summary:	MySQL - Benchmarks
-Summary(pl):	MySQL - Programy testuj±ce szybko¶æ dzia³ania bazy
-Summary(pt):	MySQL - Medições de desempenho
-Summary(ru):	MySQL - ÂÅÎŞÍÁÒËÉ
-Summary(uk):	MySQL - ÂÅÎŞÍÁÒËÉ
+Summary(pl.UTF-8):	MySQL - Programy testujÄ…ce szybkoÅ›Ä‡ dziaÅ‚ania bazy
+Summary(pt.UTF-8):	MySQL - MediÃ§Ãµes de desempenho
+Summary(ru.UTF-8):	MySQL - Ğ±ĞµĞ½Ñ‡Ğ¼Ğ°Ñ€ĞºĞ¸
+Summary(uk.UTF-8):	MySQL - Ğ±ĞµĞ½Ñ‡Ğ¼Ğ°Ñ€ĞºĞ¸
 Group:		Applications/Databases
 Requires:	%{name} = %{version}-%{release}
 Requires:	%{name}-client
@@ -329,29 +329,29 @@ Obsoletes:	MySQL-bench
 %description bench
 This package contains MySQL benchmark scripts and data.
 
-%description bench -l pl
-Programy testuj±ce szybko¶æ serwera MySQL.
+%description bench -l pl.UTF-8
+Programy testujÄ…ce szybkoÅ›Ä‡ serwera MySQL.
 
-%description bench -l pt_BR
-Este pacote contém medições de desempenho de scripts e dados do MySQL.
+%description bench -l pt_BR.UTF-8
+Este pacote contÃ©m mediÃ§Ãµes de desempenho de scripts e dados do MySQL.
 
-%description bench -l ru
-üÔÏÔ ĞÁËÅÔ ÓÏÄÅÒÖÉÔ ÓËÒÉĞÔÙ É ÄÁÎÎÙÅ ÄÌÑ ÏÃÅÎËÉ ĞÒÏÉÚ×ÏÄÉÔÅÌØÎÏÓÔÉ
+%description bench -l ru.UTF-8
+Ğ­Ñ‚Ğ¾Ñ‚ Ğ¿Ğ°ĞºĞµÑ‚ ÑĞ¾Ğ´ĞµÑ€Ğ¶Ğ¸Ñ‚ ÑĞºÑ€Ğ¸Ğ¿Ñ‚Ñ‹ Ğ¸ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ Ğ´Ğ»Ñ Ğ¾Ñ†ĞµĞ½ĞºĞ¸ Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾ÑÑ‚Ğ¸
 MySQL.
 
-%description bench -l uk
-ãÅÊ ĞÁËÅÔ Í¦ÓÔÉÔØ ÓËÒÉĞÔÉ ÔÁ ÄÁÎ¦ ÄÌÑ ÏÃ¦ÎËÉ ĞÒÏÄÕËÔÉ×ÎÏÓÔ¦ MySQL.
+%description bench -l uk.UTF-8
+Ğ¦ĞµĞ¹ Ğ¿Ğ°ĞºĞµÑ‚ Ğ¼Ñ–ÑÑ‚Ğ¸Ñ‚ÑŒ ÑĞºÑ€Ğ¸Ğ¿Ñ‚Ğ¸ Ñ‚Ğ° Ğ´Ğ°Ğ½Ñ– Ğ´Ğ»Ñ Ğ¾Ñ†Ñ–Ğ½ĞºĞ¸ Ğ¿Ñ€Ğ¾Ğ´ÑƒĞºÑ‚Ğ¸Ğ²Ğ½Ğ¾ÑÑ‚Ñ– MySQL.
 
 %package doc
 Summary:	MySQL manual
-Summary(pl):	Podrêcznik u¿ytkownika MySQL
+Summary(pl.UTF-8):	PodrÄ™cznik uÅ¼ytkownika MySQL
 Group:		Applications/Databases
 
 %description doc
 This package contains manual in HTML format.
 
-%description doc -l pl
-Podrêcznik MySQL-a w formacie HTML.
+%description doc -l pl.UTF-8
+PodrÄ™cznik MySQL-a w formacie HTML.
 
 %prep
 %setup -q
