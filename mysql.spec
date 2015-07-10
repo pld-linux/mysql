@@ -24,7 +24,7 @@
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
 %define		rel	1
-%define		percona_rel	73.0
+%define		percona_rel	73.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -42,7 +42,7 @@ Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	a135239f2f62a1f7ec8a44402b91389c
+# Source0-md5:	3a60a01f046139e1b2f680d2df4917a6
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.9-release.tar.gz
 # Source100-md5:	1fcc3d180c0559bdeb93602ef248caf4
 Source1:	%{name}.init
