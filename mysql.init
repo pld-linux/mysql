@@ -597,6 +597,10 @@ END_OF_MSG
 		sock=${MYSQL_SOCKET#/var/lib/mysql/} # make it relative if possible
 	    ln -s "$sock" /var/lib/mysql/mysql.sock
 	fi
+	# same for config, move to /etc
+	if [ ! -e /etc/mysql/mysqld.conf ]; then
+		mv "$MYSQL_CLUSTER_DIR/mysqld.conf" /etc/mysql/mysqld.conf
+	fi
 }
 
 #
