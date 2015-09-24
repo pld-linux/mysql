@@ -484,11 +484,6 @@ mysqlinit() {
 	    chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
 
-	if [ ! -e /var/lib/mysql/mysql.sock ] || [ -L /var/lib/mysql/mysql.sock ] && [ -z "$(readlink /var/lib/mysql/mysql.sock)" ]; then
-		sock=${MYSQL_SOCKET#/var/lib/mysql/} # make it relative if possible
-	    ln -s "$sock" /var/lib/mysql/mysql.sock
-	fi
-
 	cat > $MYSQL_DATA_DIR/mysql-init.sql <<-EOF
 		CREATE DATABASE mysql;
 		use mysql;
@@ -587,6 +582,12 @@ your OS.  Another information source is the MySQL email archive.
 
 END_OF_MSG
 		exit 1
+	fi
+
+	# if it's first server, register as default
+	if [ ! -e /var/lib/mysql/mysql.sock ] || [ -L /var/lib/mysql/mysql.sock ] && [ -z "$(readlink /var/lib/mysql/mysql.sock)" ]; then
+		sock=${MYSQL_SOCKET#/var/lib/mysql/} # make it relative if possible
+	    ln -s "$sock" /var/lib/mysql/mysql.sock
 	fi
 }
 
