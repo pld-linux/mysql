@@ -360,6 +360,11 @@ mysqlstop() {
 # report slave status
 # uses MYSQL_SOCKET - path to mysql socket
 slave_status() {
+	if [ ! -x /usr/bin/mysql ]; then
+		echo >&2 "Slave status not available: 'mysql' program not installed."
+		return
+	fi
+
 	# see if slave status can be reported
 	local err=0 slave_status=$(mysql --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" -e 'show slave status\G')
 	if [ -z "$slave_status" ]; then
