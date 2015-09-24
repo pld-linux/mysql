@@ -27,13 +27,13 @@ fi
 
 if [ -f /etc/mysql/clusters.conf ]; then
 	MYSQL_DB_CLUSTERS=$(awk -F= '!/^#/ && /=/{print $2}' /etc/mysql/clusters.conf)
-	if [ -z "$MYSQL_DB_CLUSTERS"  ]; then
+	if [ -z "$MYSQL_DB_CLUSTERS" ]; then
 		nls "Warning: there are no configured clusters."
 	fi
 
 else
 	nls "Warning: Missing clusters config file %s" /etc/mysql/clusters.conf
-	if [ -z "$MYSQL_DB_CLUSTERS"  ]; then
+	if [ -z "$MYSQL_DB_CLUSTERS" ]; then
 		nls "Warning: there are no configured clusters."
 		nls "Using default cluster /var/lib/mysql (compatibility mode)"
 		MYSQL_DB_CLUSTERS=/var/lib/mysql
@@ -476,14 +476,14 @@ mysqlinit() {
 	chmod 751 "$MYSQL_CLUSTER_DIR" "$MYSQL_CLUSTER_DIR/mysqldb"
 
 	if [ -f $sharedir/mysqld.conf -a ! -f "$MYSQL_CLUSTER_DIR/mysqld.conf" ]; then
-	    sed -e "
-		s#\(datadir.*\)=.*#\1= $MYSQL_DATA_DIR#g;
-		s#\(pid-file.*\)=.*#\1= $MYSQL_PIDFILE#g;
-		s#\(socket.*\)=.*#\1= $MYSQL_SOCKET#g;
-		s#@clusterdir@#$MYSQL_CLUSTER_DIR#g;
+		sed -e "
+			s#\(datadir.*\)=.*#\1= $MYSQL_DATA_DIR#g;
+			s#\(pid-file.*\)=.*#\1= $MYSQL_PIDFILE#g;
+			s#\(socket.*\)=.*#\1= $MYSQL_SOCKET#g;
+			s#@clusterdir@#$MYSQL_CLUSTER_DIR#g;
 		" $sharedir/mysqld.conf > "$MYSQL_CLUSTER_DIR/mysqld.conf"
-	    chown root:root "$MYSQL_CLUSTER_DIR/mysqld.conf"
-	    chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
+		chown root:root "$MYSQL_CLUSTER_DIR/mysqld.conf"
+		chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
 
 	cat > $MYSQL_DATA_DIR/mysql-init.sql <<-EOF
@@ -566,7 +566,7 @@ ERROR:
 
 The initialization SQL script was preserved at $MYSQL_DATA_DIR/mysql-init.sql
 
-Examine the logs in /var/log/mysql for more information.  You can
+Examine the logs in /var/log/mysql for more information. You can
 also try to start the mysqld daemon with:
 
 /usr/sbin/mysqld --skip-grant &
@@ -586,7 +586,7 @@ Please check PLD Linux ftp site for newer versions of this package.
 
 Please consult the MySQL manual section: 'Problems running
 mysql_install_db', and the manual section that describes problems on
-your OS.  Another information source is the MySQL email archive.
+your OS. Another information source is the MySQL email archive.
 
 END_OF_MSG
 		exit 1
@@ -595,7 +595,7 @@ END_OF_MSG
 	# if it's first server, register as default
 	if [ ! -e /var/lib/mysql/mysql.sock ] || [ -L /var/lib/mysql/mysql.sock ] && [ -z "$(readlink /var/lib/mysql/mysql.sock)" ]; then
 		sock=${MYSQL_SOCKET#/var/lib/mysql/} # make it relative if possible
-	    ln -s "$sock" /var/lib/mysql/mysql.sock
+		ln -s "$sock" /var/lib/mysql/mysql.sock
 	fi
 	# same for config, move to /etc
 	if [ ! -e /etc/mysql/mysqld.conf ]; then
@@ -730,7 +730,7 @@ case "$action" in
 	;;
   flush-logs)
 	for mysqldir in $DB_CLUSTERS; do
-	    mysqlgetconfig "$mysqldir"
+		mysqlgetconfig "$mysqldir"
 		# just if mysqld is really running
 		if /usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" ping >/dev/null 2>&1; then
 			/usr/bin/mysqladmin --defaults-file="$MYSQL_CONFIG" --socket="$MYSQL_SOCKET" flush-logs
