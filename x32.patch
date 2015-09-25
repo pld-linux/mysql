@@ -1,3 +1,14 @@
+--- mysql-5.0.96/sql/stacktrace.c~	2012-03-02 16:04:08.000000000 +0200
++++ mysql-5.0.96/sql/stacktrace.c	2015-09-25 11:00:15.206636982 +0300
+@@ -129,7 +129,7 @@
+ 		      :"=r"(fp)
+ 		      :"r"(fp));
+ #endif
+-#ifdef __x86_64__
++#if defined(__x86_64__) && !defined(__ILP32__)
+   __asm __volatile__ ("movq %%rbp,%0"
+ 		      :"=r"(fp)
+ 		      :"r"(fp));
 --- mysql-5.0.96/config/ac-macros/openssl.m4~	2012-03-02 16:04:12.000000000 +0200
 +++ mysql-5.0.96/config/ac-macros/openssl.m4	2015-09-25 10:47:31.053563769 +0300
 @@ -13,7 +13,7 @@
