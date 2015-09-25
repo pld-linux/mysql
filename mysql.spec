@@ -2,7 +2,7 @@
 # - C(XX)FLAGS for innodb subdirs are overriden by ./configure!
 # - http://bugs.mysql.com/bug.php?id=16470
 # NOTE:
-# - 5.0 Changes: http://dev.mysql.com/doc/refman/5.0/en/news-5-0-x.html
+# - 5.0 Changes: http://dev.mysql.com/doc/relnotes/mysql/5.0/en/
 #
 # Conditional build:
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
@@ -70,6 +70,7 @@ Patch15:	%{name}-system-users.patch
 Patch16:	%{name}-errorlog-no-rename.patch
 Patch18:	%{name}-xtrabackup.patch
 Patch19:	%{name}hotcopy-5.0-5.5.patch
+Patch20:	x32.patch
 Patch21:	%{name}-atomic.patch
 Patch22:	%{name}-fix-dummy-thread-race-condition.patch
 # ourdelta
@@ -547,6 +548,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch16 -p1
 %{?with_xtrabackup:%patch18 -p1}
 %patch19 -p1
+%patch20 -p1
 
 # <percona %patches>
 %patch100 -p1

@@ -1,0 +1,11 @@
+--- mysql-5.0.96/config/ac-macros/openssl.m4~	2012-03-02 16:04:12.000000000 +0200
++++ mysql-5.0.96/config/ac-macros/openssl.m4	2015-09-25 10:47:31.053563769 +0300
+@@ -13,7 +13,7 @@
+       done
+ 
+       for d in /usr/ssl/lib /usr/local/ssl/lib /usr/lib/openssl \
+-/usr/lib /usr/lib64 /opt/ssl/lib /opt/openssl/lib \
++/usr/lib /usr/lib64 /usr/libx32 /opt/ssl/lib /opt/openssl/lib \
+ /usr/freeware/lib32 /usr/local/lib/ ; do
+       # Test for libssl using all known library file endings
+       if test -f $d/libssl.a || test -f $d/libssl.so || \
