@@ -23,8 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	1
-%define		percona_rel	74.0
+%define		rel	0.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -35,14 +34,12 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.6.26
-Release:	%{percona_rel}.%{rel}
+Version:	5.7.9
+Release:	%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
-# Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
-# Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	172f420ec779e8902b6a92048088d528
+Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
+# Source0-md5:	6d782dda9046acb81e694934fd513993
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.10-release.tar.gz
 # Source100-md5:	dda52b24d8348fc09e26d8a649a231d2
 Source1:	%{name}.init
@@ -84,6 +81,7 @@ Patch26:	mysqldumpslow-clusters.patch
 Patch27:	x32.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
+BuildRequires:	boost-devel >= 1.59.0
 BuildRequires:	cmake >= 2.6
 BuildRequires:	readline-devel >= 6.2
 %if "%{pld_release}" == "ac"
@@ -129,7 +127,6 @@ Obsoletes:	mysql-server
 Conflicts:	logrotate < 3.8.0
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
-%define		_orgname	percona-server
 %define		_libexecdir	%{_sbindir}
 %define		_localstatedir	/var/lib/mysql
 %define		_mysqlhome	/home/services/mysql
@@ -296,7 +293,7 @@ Group:		Applications/Databases
 Requires:	%{name}-extras = %{version}-%{release}
 # this is just for the sake of smooth upgrade, not to break systems
 Requires:	mysqlhotcopy = %{version}-%{release}
-Requires:	perl(DBD::mysql)
+Requires:	perl-DBD-mysql
 
 %description extras-perl
 MySQL additional utilities written in Perl.
@@ -355,7 +352,7 @@ Summary(ru.UTF-8):	MySQL - хедеры и библиотеки разработ
 Summary(uk.UTF-8):	MySQL - хедери та бібліотеки програміста
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
-%{?with_ssl:Requires:	openssl-devel}
+%{?with_ssl:Requires: openssl-devel}
 Requires:	zlib-devel
 Obsoletes:	MySQL-devel
 Obsoletes:	libmysql10-devel
@@ -498,11 +495,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n percona-server-%{version}-%{percona_rel} %{?with_sphinx:-a100}
-
-# we want to use old, mysql compatible client library name
-find . -name CMakeLists.txt -exec sed -i -e 's#perconaserverclient#mysqlclient#g' "{}" ";"
-sed -i -e 's#perconaserverclient#mysqlclient#g' libmysql/libmysql.{ver.in,map} scripts/mysql_config.*
+%setup -q %{?with_sphinx:-a100}
 
 %patch0 -p1
 
@@ -511,33 +504,37 @@ sed -i -e 's#perconaserverclient#mysqlclient#g' libmysql/libmysql.{ver.in,map} s
 mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
+#%patch1 -p1
+#%patch2 -p1 DROP
+#%patch3 -p1 DROP
+#%patch4 -p1 FIXME?
+#%patch5 -p1
+#%patch6 -p1 PROBABLY OBSOLETE
 
-%patch9 -p1
-%patch11 -p1
-%patch12 -p1
-%patch14 -p0
+#%patch9 -p1
+#%patch11 -p1
+#%patch12 -p1
+#%patch14 -p0 DROP
+
+# really not fixed? verify
 %patch19 -p1
-%patch20 -p1
 
-%patch22 -p1
-%patch23 -p1
+#%patch20 -p1
+
+#%patch22 -p1 DROP
+#%patch23 -p1 DROP
 %patch24 -p1
 
 %patch26 -p1
-%patch27 -p1
+#%patch27 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
 [ -f sql/sql_yacc.h ] && %{__rm} sql/sql_yacc.h
 
+# FIXME/CHECK
 # map has more sane versioning that default "global everything" in ver.in
-cp -p libmysql/libmysql.map libmysql/libmysql.ver.in
+#cp -p libmysql/libmysql.map libmysql/libmysql.ver.in
 
 %build
 install -d build
@@ -567,8 +564,8 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DINSTALL_MYSQLTESTDIR_RPM="" \
 	-DINSTALL_PLUGINDIR=%{_lib}/%{name}/plugin \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
-	-DINSTALL_SUPPORTFILESDIR=share/%{_orgname}-support \
-	-DINSTALL_MYSQLSHAREDIR=share/%{_orgname} \
+	-DINSTALL_SUPPORTFILESDIR=share/%{name}-support \
+	-DINSTALL_MYSQLSHAREDIR=share/%{name} \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
@@ -618,7 +615,7 @@ touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
 cp mysqld.conf mysqld.tmp
 awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
 
-cp -a mysqld.conf $RPM_BUILD_ROOT%{_datadir}/%{_orgname}/mysqld.conf
+cp -a mysqld.conf $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.conf
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/mysql-client.conf
 ln -s mysql-client.conf $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/my.cnf
 cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf
@@ -638,7 +635,7 @@ sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # remove known unpackaged files
-%{__rm} -r $RPM_BUILD_ROOT%{_datadir}/%{_orgname}-support
+%{__rm} -r $RPM_BUILD_ROOT%{_datadir}/%{name}-support
 
 # rename not to be so generic name
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
@@ -651,9 +648,9 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sysconfdir}}/mysqlaccess.conf
 %{!?debug:%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
 %{!?debug:%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_resolve_stack_dump.1}
 # generate symbols file, so one can generate backtrace using it
-# mysql_resolve_stack_dump -s %{_datadir}/%{_orgname}/mysqld.sym -n mysqld.stack.
+# mysql_resolve_stack_dump -s %{_datadir}/%{name}/mysqld.sym -n mysqld.stack.
 # http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
-%{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/%{_orgname}/mysqld.sym}
+%{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.sym}
 
 # do not clobber users $PATH
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_plugin
@@ -672,10 +669,10 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
-#rm $RPM_BUILD_ROOT%{_datadir}/%{_orgname}/mysql-log-rotate
-#rm $RPM_BUILD_ROOT%{_datadir}/%{_orgname}/mysql.server
-#rm $RPM_BUILD_ROOT%{_datadir}/%{_orgname}/binary-configure
-%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{_orgname}/errmsg-utf8.txt
+#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
+#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
+#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
+%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg-utf8.txt
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
@@ -807,7 +804,7 @@ done
 
 %banner -e %{name}-4.1.x <<-EOF
 	If you want to use new help tables in MySQL 4.1.x then You'll need to import the help data:
-	mysql -u mysql mysql < %{_datadir}/%{_orgname}/fill_help_tables.sql
+	mysql -u mysql mysql < %{_datadir}/%{name}/fill_help_tables.sql
 EOF
 #'
 
@@ -956,7 +953,7 @@ done
 
 %if %{?debug:1}0
 %attr(755,root,root) %{_bindir}/*resolve_stack_dump
-%{_datadir}/%{_orgname}/mysqld.sym
+%{_datadir}/%{name}/mysqld.sym
 %{_mandir}/man1/*resolve_stack_dump.1*
 %endif
 
@@ -968,45 +965,45 @@ done
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
 
 # This is template for configuration file which is created after 'service mysql init'
-%{_datadir}/%{_orgname}/mysqld.conf
-%{_datadir}/%{_orgname}/mysql_security_commands.sql
-%{_datadir}/%{_orgname}/mysql_system_tables_data.sql
-%{_datadir}/%{_orgname}/mysql_system_tables.sql
-%{_datadir}/%{_orgname}/mysql_test_data_timezone.sql
+%{_datadir}/%{name}/mysqld.conf
+%{_datadir}/%{name}/mysql_security_commands.sql
+%{_datadir}/%{name}/mysql_system_tables_data.sql
+%{_datadir}/%{name}/mysql_system_tables.sql
+%{_datadir}/%{name}/mysql_test_data_timezone.sql
 
-%{_datadir}/%{_orgname}/english
-%{_datadir}/%{_orgname}/dictionary.txt
-%{_datadir}/%{_orgname}/fill_help_tables.sql
-%{_datadir}/%{_orgname}/innodb_memcached_config.sql
-#%{_datadir}/%{_orgname}/mysql_fix_privilege_tables.sql
-%lang(bg) %{_datadir}/%{_orgname}/bulgarian
-%lang(cs) %{_datadir}/%{_orgname}/czech
-%lang(da) %{_datadir}/%{_orgname}/danish
-%lang(de) %{_datadir}/%{_orgname}/german
-%lang(el) %{_datadir}/%{_orgname}/greek
-%lang(es) %{_datadir}/%{_orgname}/spanish
-%lang(et) %{_datadir}/%{_orgname}/estonian
-%lang(fr) %{_datadir}/%{_orgname}/french
-%lang(hu) %{_datadir}/%{_orgname}/hungarian
-%lang(it) %{_datadir}/%{_orgname}/italian
-%lang(ja) %{_datadir}/%{_orgname}/japanese
-%lang(ko) %{_datadir}/%{_orgname}/korean
-%lang(nl) %{_datadir}/%{_orgname}/dutch
-%lang(nb) %{_datadir}/%{_orgname}/norwegian
-%lang(nn) %{_datadir}/%{_orgname}/norwegian-ny
-%lang(pl) %{_datadir}/%{_orgname}/polish
-%lang(pt) %{_datadir}/%{_orgname}/portuguese
-%lang(ro) %{_datadir}/%{_orgname}/romanian
-%lang(ru) %{_datadir}/%{_orgname}/russian
-%lang(sr) %{_datadir}/%{_orgname}/serbian
-%lang(sk) %{_datadir}/%{_orgname}/slovak
-%lang(sv) %{_datadir}/%{_orgname}/swedish
-%lang(uk) %{_datadir}/%{_orgname}/ukrainian
+%{_datadir}/%{name}/english
+%{_datadir}/%{name}/dictionary.txt
+%{_datadir}/%{name}/fill_help_tables.sql
+%{_datadir}/%{name}/innodb_memcached_config.sql
+#%{_datadir}/%{name}/mysql_fix_privilege_tables.sql
+%lang(bg) %{_datadir}/%{name}/bulgarian
+%lang(cs) %{_datadir}/%{name}/czech
+%lang(da) %{_datadir}/%{name}/danish
+%lang(de) %{_datadir}/%{name}/german
+%lang(el) %{_datadir}/%{name}/greek
+%lang(es) %{_datadir}/%{name}/spanish
+%lang(et) %{_datadir}/%{name}/estonian
+%lang(fr) %{_datadir}/%{name}/french
+%lang(hu) %{_datadir}/%{name}/hungarian
+%lang(it) %{_datadir}/%{name}/italian
+%lang(ja) %{_datadir}/%{name}/japanese
+%lang(ko) %{_datadir}/%{name}/korean
+%lang(nl) %{_datadir}/%{name}/dutch
+%lang(nb) %{_datadir}/%{name}/norwegian
+%lang(nn) %{_datadir}/%{name}/norwegian-ny
+%lang(pl) %{_datadir}/%{name}/polish
+%lang(pt) %{_datadir}/%{name}/portuguese
+%lang(ro) %{_datadir}/%{name}/romanian
+%lang(ru) %{_datadir}/%{name}/russian
+%lang(sr) %{_datadir}/%{name}/serbian
+%lang(sk) %{_datadir}/%{name}/slovak
+%lang(sv) %{_datadir}/%{name}/swedish
+%lang(uk) %{_datadir}/%{name}/ukrainian
 
 %files charsets
 %defattr(644,root,root,755)
-%dir %{_datadir}/%{_orgname}
-%{_datadir}/%{_orgname}/charsets
+%dir %{_datadir}/%{name}
+%{_datadir}/%{name}/charsets
 
 %files extras
 %defattr(644,root,root,755)
