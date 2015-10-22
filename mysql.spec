@@ -57,8 +57,6 @@ Source13:	%{name}-client.conf
 Source14:	my.cnf
 Patch0:		%{name}-opt.patch
 Patch1:		%{name}-versioning.patch
-Patch2:		%{name}hotcopy-5.0-5.5.patch
-Patch3:		bug-67402.patch
 Patch4:		%{name}-no-default-secure-auth.patch
 Patch5:		%{name}-system-libhsclient.patch
 # from fedora
@@ -67,14 +65,12 @@ Patch6:		%{name}-system-users.patch
 Patch9:		%{name}-build.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
-Patch14:	%{name}-bug-43594.patch
+
 Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
 # from fedora
 Patch20:	%{name}-dubious-exports.patch
 
-Patch22:	bug-66589.patch
-Patch23:	bug-44278.patch
 Patch24:	%{name}-cmake.patch
 
 Patch26:	mysqldumpslow-clusters.patch
@@ -83,6 +79,7 @@ URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 BuildRequires:	boost-devel >= 1.59.0
 BuildRequires:	cmake >= 2.6
+BuildRequires:	libaio-devel
 BuildRequires:	readline-devel >= 6.2
 %if "%{pld_release}" == "ac"
 BuildRequires:	libstdc++4-devel >= 5:4.0
@@ -245,32 +242,6 @@ and server.
 Ten pakiet zawiera definicje kodowań znaków potrzebne dla serwera i
 klienta.
 
-%package -n mysqlhotcopy
-Summary:	mysqlhotcopy - A MySQL database backup program
-Summary(pl.UTF-8):	mysqlhotcopy - program do tworzenia kopii zapasowych baz MySQL
-Group:		Applications/Databases
-Requires:	perl-DBD-mysql
-
-%description -n mysqlhotcopy
-mysqlhotcopy uses LOCK TABLES, FLUSH TABLES, and cp or scp to make a
-database backup quickly. It is the fastest way to make a backup of the
-database or single tables, but it can be run only on the same machine
-where the database directories are located. mysqlhotcopy works only
-for backing up MyISAM and ARCHIVE tables.
-
-See innobackup package to backup InnoDB tables.
-
-%description -n mysqlhotcopy -l pl.UTF-8
-mysqlhotcopy wykorzystuje LOCK TABLES, FLUSH TABLES oraz cp i scp do
-szybkiego tworzenia kopii zapasowych baz danych. Jest to najszybszy
-sposób wykonania kopii zapasowej bazy danych lub pojedynczych tabel,
-ale może działać tylko na maszynie, na której znajdują się katalogi z
-bazą danych. mysqlhotcopy działa tylko dla tabel typu MyISAM i
-ARCHIVE.
-
-Narzędzie do tworzenia kopii tabel InnoDB znajduje się w pakiecie
-innobackup.
-
 %package extras
 Summary:	MySQL additional utilities
 Summary(pl.UTF-8):	Dodatkowe narzędzia do MySQL
@@ -415,7 +386,7 @@ Summary(uk.UTF-8):	MySQL - бенчмарки
 Group:		Applications/Databases
 Requires:	%{name} = %{version}-%{release}
 Requires:	%{name}-client
-Requires:	perl(DBD::mysql)
+Requires:	perl-DBD-mysql
 Obsoletes:	MySQL-bench
 
 %description bench
@@ -505,8 +476,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch18 -p1
 %endif
 #%patch1 -p1
-#%patch2 -p1 DROP
-#%patch3 -p1 DROP
 #%patch4 -p1 FIXME?
 #%patch5 -p1
 #%patch6 -p1 PROBABLY OBSOLETE
@@ -514,15 +483,12 @@ mv sphinx-*/mysqlse storage/sphinx
 #%patch9 -p1
 #%patch11 -p1
 #%patch12 -p1
-#%patch14 -p0 DROP
 
 # really not fixed? verify
 %patch19 -p1
 
 #%patch20 -p1
 
-#%patch22 -p1 DROP
-#%patch23 -p1 DROP
 %patch24 -p1
 
 %patch26 -p1
@@ -641,9 +607,6 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
 mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
 
-# move to _sysconfdir
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sysconfdir}}/mysqlaccess.conf
-
 # not useful without -debug build
 %{!?debug:%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
 %{!?debug:%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_resolve_stack_dump.1}
@@ -673,8 +636,6 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 #rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 #rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 %{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg-utf8.txt
-%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_waitpid
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
@@ -693,8 +654,10 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/daemon_example.ini
 
-# not an .info file
-%{__rm} $RPM_BUILD_ROOT%{_infodir}/mysql.info
+# test plugins
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libtest*.so
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/rewrite_example.so
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/test_security_context.so
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -897,7 +860,6 @@ done
 %attr(754,root,root) /etc/rc.d/init.d/%{name}
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
-%attr(755,root,root) %{_bindir}/ps_tokudb_admin
 %attr(755,root,root) %{_sbindir}/innochecksum
 %attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
@@ -911,30 +873,21 @@ done
 %dir %{_libdir}/%{name}
 %dir %{_libdir}/%{name}/plugin
 %attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/audit_log.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/auth_pam.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/auth_pam_compat.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/dialog.so
-#%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
-#%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
-#%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/handlersocket.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv1a_udf.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv_udf.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/libmurmur_udf.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/locking_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_no_login.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/query_response_time.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/scalability_metrics.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/replication_observers_example_plugin.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/rewriter.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/validate_password.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/version_token.so
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
@@ -967,6 +920,7 @@ done
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/%{name}/mysqld.conf
 %{_datadir}/%{name}/mysql_security_commands.sql
+%{_datadir}/%{name}/mysql_sys_schema.sql
 %{_datadir}/%{name}/mysql_system_tables_data.sql
 %{_datadir}/%{name}/mysql_system_tables.sql
 %{_datadir}/%{name}/mysql_test_data_timezone.sql
@@ -975,7 +929,8 @@ done
 %{_datadir}/%{name}/dictionary.txt
 %{_datadir}/%{name}/fill_help_tables.sql
 %{_datadir}/%{name}/innodb_memcached_config.sql
-#%{_datadir}/%{name}/mysql_fix_privilege_tables.sql
+%{_datadir}/%{name}/install_rewriter.sql
+%{_datadir}/%{name}/uninstall_rewriter.sql
 %lang(bg) %{_datadir}/%{name}/bulgarian
 %lang(cs) %{_datadir}/%{name}/czech
 %lang(da) %{_datadir}/%{name}/danish
@@ -1007,44 +962,26 @@ done
 
 %files extras
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/msql2mysql
 %attr(755,root,root) %{_bindir}/myisam_ftdump
 %attr(755,root,root) %{_bindir}/mysql_install_db
+%attr(755,root,root) %{_bindir}/mysql_ssl_rsa_setup
 %attr(755,root,root) %{_bindir}/mysql_secure_installation
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
 %attr(755,root,root) %{_bindir}/perror
 %attr(755,root,root) %{_bindir}/replace
 %attr(755,root,root) %{_bindir}/resolveip
-%{_mandir}/man1/msql2mysql.1*
 %{_mandir}/man1/myisam_ftdump.1*
 %{_mandir}/man1/mysql_install_db.1*
+%{_mandir}/man1/mysql_ssl_rsa_setup.1*
 %{_mandir}/man1/mysql_secure_installation.1*
 %{_mandir}/man1/mysql_tzinfo_to_sql.1*
 %{_mandir}/man1/perror.1*
 %{_mandir}/man1/replace.1*
 %{_mandir}/man1/resolveip.1*
 
-%files -n mysqlhotcopy
-%defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/mysqlhotcopy
-%{_mandir}/man1/mysqlhotcopy.1*
-
 %files extras-perl
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/mysql_convert_table_format
-%attr(755,root,root) %{_bindir}/mysql_find_rows
-%attr(755,root,root) %{_bindir}/mysql_fix_extensions
-%attr(755,root,root) %{_bindir}/mysql_setpermission
-%attr(755,root,root) %{_bindir}/mysql_zap
-%attr(755,root,root) %{_bindir}/mysqlaccess
 %attr(755,root,root) %{_bindir}/mysqldumpslow
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/mysqlaccess.conf
-%{_mandir}/man1/mysql_convert_table_format.1*
-%{_mandir}/man1/mysql_find_rows.1*
-%{_mandir}/man1/mysql_fix_extensions.1*
-%{_mandir}/man1/mysql_setpermission.1*
-%{_mandir}/man1/mysql_zap.1*
-%{_mandir}/man1/mysqlaccess.1*
 %{_mandir}/man1/mysqldumpslow.1*
 
 %files client
@@ -1053,18 +990,18 @@ done
 %attr(755,root,root) %{_bindir}/mysql
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbinlog
-%attr(755,root,root) %{_bindir}/mysqlbug
 %attr(755,root,root) %{_bindir}/mysql_config_editor
 %attr(755,root,root) %{_bindir}/mysqldump
 %attr(755,root,root) %{_bindir}/mysqlimport
+%attr(755,root,root) %{_bindir}/mysqlpump
 %attr(755,root,root) %{_bindir}/mysqlshow
 %{_mandir}/man1/mysql.1*
 %{_mandir}/man1/mysqladmin.1*
 %{_mandir}/man1/mysqlbinlog.1*
-%{_mandir}/man1/mysqlbug.1*
 %{_mandir}/man1/mysql_config_editor.1*
 %{_mandir}/man1/mysqldump.1*
 %{_mandir}/man1/mysqlimport.1*
+%{_mandir}/man1/mysqlpump.1*
 %{_mandir}/man1/mysqlshow.1*
 
 %files libs
@@ -1073,9 +1010,7 @@ done
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
 %{_sysconfdir}/%{name}/my.cnf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.18
-%attr(755,root,root) %{_libdir}/libmysqlclient_r.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient_r.so.18
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.20
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
@@ -1085,10 +1020,10 @@ done
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_libdir}/libmysqlclient.so
-%attr(755,root,root) %{_libdir}/libmysqlclient_r.so
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so
 %endif
+%{_pkgconfigdir}/mysqlclient.pc
 # static-only so far
 %{_libdir}/libmysqld.a
 %{_includedir}/mysql
@@ -1098,7 +1033,6 @@ done
 %files static
 %defattr(644,root,root,755)
 %{_libdir}/libmysqlclient.a
-%{_libdir}/libmysqlclient_r.a
 %if %{with ndb}
 %{_libdir}/libndbclient.a
 %endif
@@ -1107,9 +1041,9 @@ done
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysqlslap
 %attr(755,root,root) %{_bindir}/mysqltest
-%dir %{_datadir}/sql-bench
-%{_datadir}/sql-bench/[CDRl]*
-%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
+#%dir %{_datadir}/sql-bench
+#%{_datadir}/sql-bench/[CDRl]*
+#%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
 %{_mandir}/man1/mysqlslap.1*
 %{_mandir}/man1/mysqltest.1*
 %{_mandir}/man1/mysqltest_embedded.1*
