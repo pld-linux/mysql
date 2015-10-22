@@ -486,7 +486,7 @@ mv sphinx-*/mysqlse storage/sphinx
 #%patch5 -p1
 #%patch6 -p1 PROBABLY OBSOLETE
 
-#%patch9 -p1
+%patch9 -p1
 #%patch11 -p1
 #%patch12 -p1
 
