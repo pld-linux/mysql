@@ -20,6 +20,8 @@
 %bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_without	sphinx		# Sphinx storage engine support
+# drop system_boost functionality after we start using boost 1.59 in PLD
+%bcond_with	system_boost
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
@@ -42,6 +44,10 @@ Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
 # Source0-md5:	6d782dda9046acb81e694934fd513993
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.10-release.tar.gz
 # Source100-md5:	dda52b24d8348fc09e26d8a649a231d2
+%if %{without system_boost}
+Source101:	http://downloads.sourceforge.net/project/boost/boost/1.59.0/boost_1_59_0.tar.bz2
+# Source101-md5:	6aa9a5c6a4ca1016edd0ed1178e3cb87
+%endif
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -77,7 +83,7 @@ Patch26:	mysqldumpslow-clusters.patch
 Patch27:	x32.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
-BuildRequires:	boost-devel >= 1.59.0
+%{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
 BuildRequires:	cmake >= 2.6
 BuildRequires:	libaio-devel
 BuildRequires:	readline-devel >= 6.2
@@ -466,7 +472,7 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q %{?with_sphinx:-a100}
+%setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101}
 
 %patch0 -p1
 
@@ -546,6 +552,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 %endif
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
+	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
 	-DWITH_ZLIB=system \
 	-DWITH_READLINE=system
 
