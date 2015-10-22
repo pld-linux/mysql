@@ -51,7 +51,7 @@ else
 	exit 0
 fi
 
-sharedir=/usr/share/percona-server
+sharedir=/usr/share/mysql
 
 action="$1"
 
@@ -465,7 +465,7 @@ mysqlinit() {
 		exit 6
 	fi
 
-	show "Installing MySQL system tables for $MYSQL_DATA_DIR"
+	show "Initializing MySQL database for $MYSQL_DATA_DIR"
 	busy
 	TMP=/tmp TMPDIR=/tmp
 
@@ -486,81 +486,59 @@ mysqlinit() {
 		chmod 640 "$MYSQL_CLUSTER_DIR/mysqld.conf"
 	fi
 
-	cat > $MYSQL_DATA_DIR/mysql-init.sql <<-EOF
-		CREATE DATABASE mysql;
-		use mysql;
-		$(cat $sharedir/mysql_system_tables.sql)
-		$(sed -e "/@current_hostname/d" $sharedir/mysql_system_tables_data.sql)
-EOF
-
 	ok=0
 	/usr/sbin/mysqld \
 		--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
-		--bootstrap \
+		--initialize \
 		--skip-grant-tables \
 		--datadir=$MYSQL_DATA_DIR \
 		--user=$MYSQL_USER \
 		--slave-load-tmpdir=$MYSQL_DATA_DIR \
 		--tmpdir=$MYSQL_DATA_DIR \
 		--log-error=$MYSQL_ERRLOG \
-		< $MYSQL_DATA_DIR/mysql-init.sql && ok=1
+		&& ok=1
 	[ -f $MYSQL_DATA_DIR/mysql/user.frm ] || ok=0
 
 	if [ "$ok" = 1 ]; then
-		rm -f $MYSQL_DATA_DIR/mysql-init.sql
 		ok
 		cat << END_OF_MSG
 
 PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL USERS!
-This is done, after starting database, in the order shown,
-with:
 
-For 'mysql_sysadmin' (RELOAD and SHUTDOWN privileges):
+CURRENT TEMPORARY ROOT PASSWORD CAN BE FOUND IN LOG
+(grep for "A temporary password is generated" string):
+$MYSQL_ERRLOG
+
+
+Start database:
+$ service mysql start
+
+and set passwords:
+
+FIXME FIXME: For 'mysql_sysadmin' (RELOAD and SHUTDOWN privileges):
 echo "update mysql.user set password=password('newpassword') where user='mysql_sysadmin'; FLUSH PRIVILEGES;" | mysql -u mysql -S $MYSQL_SOCKET
 
-For 'mysql' user (ALL privileges, DB admin):
-echo "update mysql.user set password=password('newpassword') where user='mysql'; FLUSH PRIVILEGES;" | mysql -u mysql -S $MYSQL_SOCKET
+For 'root' user (ALL privileges, DB admin), paste command with new password:
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword'; FLUSH PRIVILEGES;
+
+into command:
+$ mysql -u root -p -S $MYSQL_SOCKET
 
 NOTE: mysql_sysadmin password should be placed to $MYSQL_CONFIG in
 mysqladmin section. See the manual for more instructions.
 (This user is used at logs rotation and server shutdown)
 
 END_OF_MSG
-		show "Filling help tables..."
-		ok=0
-		( echo "use mysql;"; cat $sharedir/fill_help_tables.sql ) | \
-			/usr/sbin/mysqld \
-			--defaults-file=$MYSQL_CLUSTER_DIR/mysqld.conf \
-			--bootstrap \
-			--skip-grant-tables \
-			--datadir=$MYSQL_DATA_DIR \
-			--user=$MYSQL_USER \
-			--slave-load-tmpdir=$MYSQL_DATA_DIR \
-			--tmpdir=$MYSQL_DATA_DIR \
-			--log-error=$MYSQL_ERRLOG \
-			&& ok=1
-		if [ "$ok" = 1 ]; then
-			ok
-		else
-			cat << END_OF_MSG
-
-WARNING: HELP FILES ARE NOT COMPLETELY INSTALLED!
-The "HELP" command might not work properly.
-
-END_OF_MSG
-		fi
 	else
 		fail
 		cat << END_OF_MSG
 ERROR:
 ERROR:
-ERROR: Installation of grant tables FAILED!
+ERROR: Installation FAILED!
 ERROR:
 ERROR:
 
-The initialization SQL script was preserved at $MYSQL_DATA_DIR/mysql-init.sql
-
-Examine the logs in /var/log/mysql for more information. You can
+Examine the logs in $MYSQL_ERRLOG for more information. You can
 also try to start the mysqld daemon with:
 
 /usr/sbin/mysqld --skip-grant &

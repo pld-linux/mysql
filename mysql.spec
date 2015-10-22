@@ -563,7 +563,7 @@ CPPFLAGS="%{rpmcppflags}" \
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
-	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/mysql} \
+	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/{mysql,mysql-files}} \
 	   $RPM_BUILD_ROOT%{_mysqlhome} \
 	   $RPM_BUILD_ROOT%{_libdir}
 
@@ -860,6 +860,45 @@ for config in $configs; do
 done
 ) | %banner -e %{name}-5.5
 
+%triggerpostun -- mysql < 5.7.0
+configs=""
+for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
+	if echo "$config" | grep -q '^/'; then
+		config_file="$config"
+	elif [ -f "/etc/%{name}/$config" ]; then
+		config_file=/etc/%{name}/$config
+	else
+		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
+		if [ -z "$clusterdir" ]; then
+			echo >&2 "Can't find cluster dir for $config!"
+			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
+			exit 1
+		fi
+		config_file="$clusterdir/mysqld.conf"
+	fi
+
+	if [ ! -f "$config_file" ]; then
+		echo >&2 "ERROR: Can't find real config file for $config! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
+		continue
+	fi
+	configs="$configs $config_file"
+done
+
+(
+echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
+echo 'Thus, you should invoke:'
+for config in $configs; do
+	sed -i -e '
+		s/^log-warnings *=/log-error-verbosity =/
+		s/^myisam-recover$/myisam-recover-options/
+		s/^innodb_mirrored_log_groups.*//
+	' $config
+
+	socket=$(awk -F= '!/^#/ && $1 ~ /socket/{print $2}' $config | xargs)
+	echo "# mysql_upgrade ${socket:+--socket=$socket}"
+done
+) | %banner -e %{name}-5.7
+
 %files
 %defattr(644,root,root,755)
 %doc build/support-files/*.cnf
@@ -872,7 +911,6 @@ done
 %attr(755,root,root) %{_sbindir}/myisamchk
 %attr(755,root,root) %{_sbindir}/myisamlog
 %attr(755,root,root) %{_sbindir}/myisampack
-#%attr(755,root,root) %{_sbindir}/mysql_fix_privilege_tables
 %attr(755,root,root) %{_sbindir}/mysql_plugin
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqlcheck
@@ -905,7 +943,6 @@ done
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
-#%{_mandir}/man1/mysql_fix_privilege_tables.1*
 %{_mandir}/man1/mysql_plugin.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
@@ -920,6 +957,8 @@ done
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for mysql.rpm while mysql:mysql is potential security hole
 %attr(751,root,root) /var/lib/mysql
+# https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_secure-file-priv
+%attr(770,mysql,mysql) /var/lib/mysql-files
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archive/mysql
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
