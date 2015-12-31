@@ -1032,7 +1032,7 @@ done
 
 %files client
 %defattr(644,root,root,755)
-%attr(644,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf
+%attr(600,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf
 %attr(755,root,root) %{_bindir}/mysql
 %attr(755,root,root) %{_bindir}/mysqladmin
 %attr(755,root,root) %{_bindir}/mysqlbinlog
