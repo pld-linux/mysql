@@ -610,6 +610,7 @@ CPPFLAGS="%{rpmcppflags}"
 	--enable-shared \
 	--enable-static \
 	--enable-thread-safe-client \
+	--enable-community-features \
 	--with%{!?with_bdb:out}-berkeley-db \
 	--with%{!?with_innodb:out}-innodb \
 	--with%{!?with_raid:out}-raid \
