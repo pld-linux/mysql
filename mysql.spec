@@ -13,6 +13,7 @@
 %bcond_without	tcpd		# Without libwrap (tcp_wrappers) support
 %bcond_without	autodeps	# BR packages needed only for resolving deps
 %bcond_with	bdb		# Berkeley DB support
+%bcond_with	profiling		# Add query-profiling code.
 %bcond_without	sphinx		# Sphinx storage engine support
 %bcond_with	xtrabackup		# XtraBackup
 
@@ -618,6 +619,7 @@ CPPFLAGS="%{rpmcppflags}"
 	--with-comment="PLD Linux Distribution MySQL RPM" \
 	--with%{!?debug:out}-debug \
 	--with%{!?debug:out}-ndb-debug \
+	%{?with_profiling:--enable-profiling} \
 	--with-embedded-server \
 	--with-extra-charsets=all \
 	--with-low-memory \
