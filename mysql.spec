@@ -26,7 +26,7 @@
 
 # tokudb is only supported on x86_64
 %ifnarch %{x8664}
-%undefine	tokudb
+%undefine	with_tokudb
 %endif
 
 %define		rel	2
