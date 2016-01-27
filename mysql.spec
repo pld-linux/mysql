@@ -24,7 +24,7 @@
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
 %define		rel	1
-%define		percona_rel	74.0
+%define		percona_rel	76.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -35,14 +35,14 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.6.26
+Version:	5.6.28
 Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	172f420ec779e8902b6a92048088d528
+# Source0-md5:	f779df3d75a4a019fe9f17e0a2e0e176
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.10-release.tar.gz
 # Source100-md5:	dda52b24d8348fc09e26d8a649a231d2
 Source1:	%{name}.init
@@ -901,6 +901,8 @@ done
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
 %attr(755,root,root) %{_bindir}/ps_tokudb_admin
+%attr(755,root,root) %{_bindir}/tokuft_logprint
+%attr(755,root,root) %{_bindir}/tokuftdump
 %attr(755,root,root) %{_sbindir}/innochecksum
 %attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
@@ -924,6 +926,7 @@ done
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_tokudb.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/handlersocket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv1a_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv_udf.so
@@ -937,10 +940,12 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/scalability_metrics.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/tokudb_backup.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/validate_password.so
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
+%{_libdir}/libHotBackup.so
 # for plugins
 %attr(755,root,root) %{_libdir}/libmysqlservices.so
 %{_mandir}/man1/innochecksum.1*
