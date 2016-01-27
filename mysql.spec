@@ -945,7 +945,7 @@ done
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
-%{_libdir}/libHotBackup.so
+%attr(755,root,root) %{_libdir}/libHotBackup.so
 # for plugins
 %attr(755,root,root) %{_libdir}/libmysqlservices.so
 %{_mandir}/man1/innochecksum.1*
