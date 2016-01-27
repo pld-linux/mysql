@@ -20,10 +20,16 @@
 %bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_without	sphinx		# Sphinx storage engine support
+%bcond_without	tokudb		# TokuDB
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	1
+# tokudb is only supported on x86_64
+%ifnarch %{x8664}
+%undefine	tokudb
+%endif
+
+%define		rel	2
 %define		percona_rel	76.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -901,8 +907,6 @@ done
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
 %attr(755,root,root) %{_bindir}/ps_tokudb_admin
-%attr(755,root,root) %{_bindir}/tokuft_logprint
-%attr(755,root,root) %{_bindir}/tokuftdump
 %attr(755,root,root) %{_sbindir}/innochecksum
 %attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
@@ -926,7 +930,6 @@ done
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_archive.so
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_blackhole.so
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_federated.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_tokudb.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/handlersocket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv1a_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libfnv_udf.so
@@ -940,10 +943,15 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/scalability_metrics.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/tokudb_backup.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/validate_password.so
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
+%endif
+%if %{with tokudb}
+%attr(755,root,root) %{_bindir}/tokuft_logprint
+%attr(755,root,root) %{_bindir}/tokuftdump
+%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_tokudb.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/tokudb_backup.so
 %endif
 %attr(755,root,root) %{_libdir}/libHotBackup.so
 # for plugins
