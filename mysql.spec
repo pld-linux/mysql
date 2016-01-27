@@ -952,8 +952,8 @@ done
 %attr(755,root,root) %{_bindir}/tokuftdump
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_tokudb.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/tokudb_backup.so
-%endif
 %attr(755,root,root) %{_libdir}/libHotBackup.so
+%endif
 # for plugins
 %attr(755,root,root) %{_libdir}/libmysqlservices.so
 %{_mandir}/man1/innochecksum.1*
