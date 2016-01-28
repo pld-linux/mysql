@@ -57,3 +57,13 @@ diff -urNbB mysql-5.0.13-rc.org/sql/mysqld.cc mysql-5.0.13-rc/sql/mysqld.cc
  ADD_DEPENDENCIES(slave GenError)
  ADD_LIBRARY(sqlgunitlib
    filesort_utils.cc mdl.cc sql_list.cc sql_string.cc thr_malloc.cc
+--- percona-server-5.6.28-76.1/storage/tokudb/CMakeLists.txt~	2016-01-27 21:17:38.000000000 +0100
++++ percona-server-5.6.28-76.1/storage/tokudb/CMakeLists.txt	2016-01-28 07:23:41.844001444 +0100
+@@ -1,6 +1,7 @@
+ SET(TOKUDB_VERSION 5.6.28-76.1)
+ # PerconaFT only supports x86-64 and cmake-2.8.9+
+ IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" AND
++    "${CMAKE_SIZEOF_VOID_P}" EQUAL "8" AND
+     NOT CMAKE_VERSION VERSION_LESS "2.8.9")
+ CHECK_CXX_SOURCE_COMPILES(
+ "
