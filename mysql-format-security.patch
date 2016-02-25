@@ -1,0 +1,61 @@
+--- mysql-4.1.25/innobase/include/ut0dbg.h~	2008-12-30 12:18:35.000000000 +0100
++++ mysql-4.1.25/innobase/include/ut0dbg.h	2016-02-25 10:20:40.562413492 +0100
+@@ -28,14 +28,14 @@ extern ibool 	panic_shutdown;
+ #define ut_a(EXPR) do {\
+ 	if (!((ulint)(EXPR) + ut_dbg_zero)) {\
+                 ut_print_timestamp(stderr);\
+-	   	fprintf(stderr, ut_dbg_msg_assert_fail,\
++	   	fprintf(stderr, "%s", ut_dbg_msg_assert_fail,\
+ 		os_thread_pf(os_thread_get_curr_id()), __FILE__,\
+                 (ulint)__LINE__);\
+ 		fputs("InnoDB: Failing assertion: " #EXPR "\n", stderr);\
+ 		fputs(ut_dbg_msg_trap, stderr);\
+ 		ut_dbg_stop_threads = TRUE;\
+ 		if (ut_dbg_stop_threads) {\
+-        		fprintf(stderr, ut_dbg_msg_stop,\
++        		fprintf(stderr, "%s", ut_dbg_msg_stop,\
+ 	    os_thread_pf(os_thread_get_curr_id()), __FILE__, (ulint)__LINE__);\
+ 	    	}\
+ 		if(!panic_shutdown){\
+@@ -46,9 +46,9 @@ extern ibool 	panic_shutdown;
+ } while (0)
+ #define ut_error do {\
+ 		ut_print_timestamp(stderr);\
+-		fprintf(stderr, ut_dbg_msg_assert_fail,\
++		fprintf(stderr, "%s", ut_dbg_msg_assert_fail,\
+ 		os_thread_pf(os_thread_get_curr_id()), __FILE__, (ulint)__LINE__);\
+-		fprintf(stderr, ut_dbg_msg_trap);\
++		fprintf(stderr, "%s", ut_dbg_msg_trap);\
+ 		ut_dbg_stop_threads = TRUE;\
+ 		if(!panic_shutdown){panic_shutdown = TRUE;\
+ 		innobase_shutdown_for_mysql();}\
+@@ -57,7 +57,7 @@ extern ibool 	panic_shutdown;
+ #define ut_a(EXPR) do {\
+ 	if (!((ulint)(EXPR) + ut_dbg_zero)) {\
+                 ut_print_timestamp(stderr);\
+-	   	fprintf(stderr, ut_dbg_msg_assert_fail,\
++	   	fprintf(stderr, "%s", ut_dbg_msg_assert_fail,\
+ 		os_thread_pf(os_thread_get_curr_id()), __FILE__,\
+                 (ulint)__LINE__);\
+ 		fputs("InnoDB: Failing assertion: " #EXPR "\n", stderr);\
+@@ -66,7 +66,7 @@ extern ibool 	panic_shutdown;
+ 		if (*(ut_dbg_null_ptr)) ut_dbg_null_ptr = NULL;\
+ 	}\
+ 	if (ut_dbg_stop_threads) {\
+-	        fprintf(stderr, ut_dbg_msg_stop,\
++	        fprintf(stderr, "%s", ut_dbg_msg_stop,\
+      os_thread_pf(os_thread_get_curr_id()), __FILE__, (ulint)__LINE__);\
+ 		os_thread_sleep(1000000000);\
+ 	}\
+@@ -74,9 +74,9 @@ extern ibool 	panic_shutdown;
+ 
+ #define ut_error do {\
+         ut_print_timestamp(stderr);\
+-	fprintf(stderr, ut_dbg_msg_assert_fail,\
++	fprintf(stderr, "%s", ut_dbg_msg_assert_fail,\
+ 	os_thread_pf(os_thread_get_curr_id()), __FILE__, (ulint)__LINE__);\
+-	fprintf(stderr, ut_dbg_msg_trap);\
++	fprintf(stderr, "%s", ut_dbg_msg_trap);\
+ 	ut_dbg_stop_threads = TRUE;\
+ 	if (*(ut_dbg_null_ptr)) ut_dbg_null_ptr = NULL;\
+ } while (0)
