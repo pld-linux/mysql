@@ -977,29 +977,31 @@ done
 %{_datadir}/%{name}/innodb_memcached_config.sql
 %{_datadir}/%{name}/install_rewriter.sql
 %{_datadir}/%{name}/uninstall_rewriter.sql
-%lang(bg) %{_datadir}/%{name}/bulgarian
-%lang(cs) %{_datadir}/%{name}/czech
-%lang(da) %{_datadir}/%{name}/danish
-%lang(de) %{_datadir}/%{name}/german
-%lang(el) %{_datadir}/%{name}/greek
-%lang(es) %{_datadir}/%{name}/spanish
-%lang(et) %{_datadir}/%{name}/estonian
-%lang(fr) %{_datadir}/%{name}/french
-%lang(hu) %{_datadir}/%{name}/hungarian
-%lang(it) %{_datadir}/%{name}/italian
-%lang(ja) %{_datadir}/%{name}/japanese
-%lang(ko) %{_datadir}/%{name}/korean
-%lang(nl) %{_datadir}/%{name}/dutch
-%lang(nb) %{_datadir}/%{name}/norwegian
-%lang(nn) %{_datadir}/%{name}/norwegian-ny
-%lang(pl) %{_datadir}/%{name}/polish
-%lang(pt) %{_datadir}/%{name}/portuguese
-%lang(ro) %{_datadir}/%{name}/romanian
-%lang(ru) %{_datadir}/%{name}/russian
-%lang(sr) %{_datadir}/%{name}/serbian
-%lang(sk) %{_datadir}/%{name}/slovak
-%lang(sv) %{_datadir}/%{name}/swedish
-%lang(uk) %{_datadir}/%{name}/ukrainian
+# Don't mark these with %%lang. These are used depending
+# on database client settings.
+%{_datadir}/%{name}/bulgarian
+%{_datadir}/%{name}/czech
+%{_datadir}/%{name}/danish
+%{_datadir}/%{name}/german
+%{_datadir}/%{name}/greek
+%{_datadir}/%{name}/spanish
+%{_datadir}/%{name}/estonian
+%{_datadir}/%{name}/french
+%{_datadir}/%{name}/hungarian
+%{_datadir}/%{name}/italian
+%{_datadir}/%{name}/japanese
+%{_datadir}/%{name}/korean
+%{_datadir}/%{name}/dutch
+%{_datadir}/%{name}/norwegian
+%{_datadir}/%{name}/norwegian-ny
+%{_datadir}/%{name}/polish
+%{_datadir}/%{name}/portuguese
+%{_datadir}/%{name}/romanian
+%{_datadir}/%{name}/russian
+%{_datadir}/%{name}/serbian
+%{_datadir}/%{name}/slovak
+%{_datadir}/%{name}/swedish
+%{_datadir}/%{name}/ukrainian
 
 %files charsets
 %defattr(644,root,root,755)
