@@ -29,7 +29,7 @@
 %undefine	with_tokudb
 %endif
 
-%define		rel	1
+%define		rel	2
 %define		percona_rel	76.3
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -994,29 +994,31 @@ done
 %{_datadir}/%{_orgname}/fill_help_tables.sql
 %{_datadir}/%{_orgname}/innodb_memcached_config.sql
 #%{_datadir}/%{_orgname}/mysql_fix_privilege_tables.sql
-%lang(bg) %{_datadir}/%{_orgname}/bulgarian
-%lang(cs) %{_datadir}/%{_orgname}/czech
-%lang(da) %{_datadir}/%{_orgname}/danish
-%lang(de) %{_datadir}/%{_orgname}/german
-%lang(el) %{_datadir}/%{_orgname}/greek
-%lang(es) %{_datadir}/%{_orgname}/spanish
-%lang(et) %{_datadir}/%{_orgname}/estonian
-%lang(fr) %{_datadir}/%{_orgname}/french
-%lang(hu) %{_datadir}/%{_orgname}/hungarian
-%lang(it) %{_datadir}/%{_orgname}/italian
-%lang(ja) %{_datadir}/%{_orgname}/japanese
-%lang(ko) %{_datadir}/%{_orgname}/korean
-%lang(nl) %{_datadir}/%{_orgname}/dutch
-%lang(nb) %{_datadir}/%{_orgname}/norwegian
-%lang(nn) %{_datadir}/%{_orgname}/norwegian-ny
-%lang(pl) %{_datadir}/%{_orgname}/polish
-%lang(pt) %{_datadir}/%{_orgname}/portuguese
-%lang(ro) %{_datadir}/%{_orgname}/romanian
-%lang(ru) %{_datadir}/%{_orgname}/russian
-%lang(sr) %{_datadir}/%{_orgname}/serbian
-%lang(sk) %{_datadir}/%{_orgname}/slovak
-%lang(sv) %{_datadir}/%{_orgname}/swedish
-%lang(uk) %{_datadir}/%{_orgname}/ukrainian
+# Don't mark these with %%lang. These are used depending
+# on database client settings.
+%{_datadir}/%{_orgname}/bulgarian
+%{_datadir}/%{_orgname}/czech
+%{_datadir}/%{_orgname}/danish
+%{_datadir}/%{_orgname}/german
+%{_datadir}/%{_orgname}/greek
+%{_datadir}/%{_orgname}/spanish
+%{_datadir}/%{_orgname}/estonian
+%{_datadir}/%{_orgname}/french
+%{_datadir}/%{_orgname}/hungarian
+%{_datadir}/%{_orgname}/italian
+%{_datadir}/%{_orgname}/japanese
+%{_datadir}/%{_orgname}/korean
+%{_datadir}/%{_orgname}/dutch
+%{_datadir}/%{_orgname}/norwegian
+%{_datadir}/%{_orgname}/norwegian-ny
+%{_datadir}/%{_orgname}/polish
+%{_datadir}/%{_orgname}/portuguese
+%{_datadir}/%{_orgname}/romanian
+%{_datadir}/%{_orgname}/russian
+%{_datadir}/%{_orgname}/serbian
+%{_datadir}/%{_orgname}/slovak
+%{_datadir}/%{_orgname}/swedish
+%{_datadir}/%{_orgname}/ukrainian
 
 %files charsets
 %defattr(644,root,root,755)
