@@ -30,7 +30,7 @@
 %endif
 
 %define		rel	1
-%define		percona_rel	77.0
+%define		percona_rel	78.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -41,16 +41,16 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.6.31
+Version:	5.6.32
 Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	9c9951c3d94a94b056262b96dd9ccb4a
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.10-release.tar.gz
-# Source100-md5:	dda52b24d8348fc09e26d8a649a231d2
+# Source0-md5:	37a0c26fcccad41452a2664610b504af
+Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
+# Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -72,7 +72,6 @@ Patch4:		%{name}-no-default-secure-auth.patch
 Patch5:		%{name}-system-libhsclient.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
-Patch7:		%{name}-ssl.patch
 
 Patch9:		%{name}-build.patch
 Patch11:	%{name}-upgrade.patch
@@ -524,7 +523,6 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
-%patch7 -p1
 
 %patch9 -p1
 %patch11 -p1
