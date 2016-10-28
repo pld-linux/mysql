@@ -20,7 +20,7 @@
 %bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_without	sphinx		# Sphinx storage engine support
-# drop system_boost functionality after we start using boost 1.59 in PLD
+# mysql needs boost 1.59.0 and doesn't support newer/older boost versions
 %bcond_with	system_boost
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
@@ -36,17 +36,17 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.7.9
+Version:	5.7.16
 Release:	%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
-# Source0-md5:	6d782dda9046acb81e694934fd513993
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.10-release.tar.gz
-# Source100-md5:	dda52b24d8348fc09e26d8a649a231d2
+# Source0-md5:	dbd5b1b19c2d285f87258ca446d4a7fe
+Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
+# Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
 Source101:	http://downloads.sourceforge.net/project/boost/boost/1.59.0/boost_1_59_0.tar.bz2
-# Source101-md5:	6aa9a5c6a4ca1016edd0ed1178e3cb87
+# Source101-md5:       6aa9a5c6a4ca1016edd0ed1178e3cb87
 %endif
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -62,25 +62,14 @@ Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
 Patch0:		%{name}-opt.patch
-Patch1:		%{name}-versioning.patch
-Patch4:		%{name}-no-default-secure-auth.patch
-Patch5:		%{name}-system-libhsclient.patch
-# from fedora
-Patch6:		%{name}-system-users.patch
 
-Patch9:		%{name}-build.patch
-Patch11:	%{name}-upgrade.patch
-Patch12:	%{name}-config.patch
-
+Patch17:	%{name}-5.7-sphinx.patch
 Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
-# from fedora
-Patch20:	%{name}-dubious-exports.patch
 
 Patch24:	%{name}-cmake.patch
 
 Patch26:	mysqldumpslow-clusters.patch
-Patch27:	x32.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
@@ -479,34 +468,20 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
+%patch17 -p1
 %patch18 -p1
 %endif
-#%patch1 -p1
-#%patch4 -p1 FIXME?
-#%patch5 -p1
-#%patch6 -p1 PROBABLY OBSOLETE
-
-%patch9 -p1
-#%patch11 -p1
-#%patch12 -p1
 
 # really not fixed? verify
 %patch19 -p1
 
-#%patch20 -p1
-
 %patch24 -p1
 
 %patch26 -p1
-#%patch27 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
 [ -f sql/sql_yacc.h ] && %{__rm} sql/sql_yacc.h
-
-# FIXME/CHECK
-# map has more sane versioning that default "global everything" in ver.in
-#cp -p libmysql/libmysql.map libmysql/libmysql.ver.in
 
 %build
 install -d build
@@ -921,9 +896,12 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_file.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/locking_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_no_login.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/mysqlx.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
@@ -936,8 +914,6 @@ done
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
-# for plugins
-%attr(755,root,root) %{_libdir}/libmysqlservices.so
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*

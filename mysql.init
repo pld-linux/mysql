@@ -445,7 +445,7 @@ mysqlinit() {
 	if [ -f "$clusterdir/mysqld.conf" ]; then
 		mysqlgetconfig "$clusterdir"
 	else
-		MYSQL_USER="mysql"
+		MYSQL_USER="root"
 		MYSQL_CLUSTER_DIR="$clusterdir"
 		MYSQL_DATA_DIR="$clusterdir/mysqldb/db"
 		MYSQL_PIDFILE="$clusterdir/mysqldb/mysql.pid"
@@ -505,26 +505,32 @@ mysqlinit() {
 
 PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL USERS!
 
-CURRENT TEMPORARY ROOT PASSWORD CAN BE FOUND IN LOG
-(grep for "A temporary password is generated" string):
-$MYSQL_ERRLOG
-
-
 Start database:
 $ service mysql start
 
 and set passwords:
 
-FIXME FIXME: For 'mysql_sysadmin' (RELOAD and SHUTDOWN privileges):
-echo "update mysql.user set password=password('newpassword') where user='mysql_sysadmin'; FLUSH PRIVILEGES;" | mysql -u mysql -S $MYSQL_SOCKET
-
 For 'root' user (ALL privileges, DB admin), paste command with new password:
-ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword'; FLUSH PRIVILEGES;
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword';
+FLUSH PRIVILEGES;
 
-into command:
-$ mysql -u root -p -S $MYSQL_SOCKET
+For 'mysql_sysadmin' (RELOAD and SHUTDOWN privileges):
+CREATE USER 'mysql_sysadmin'@'localhost' IDENTIFIED BY 'sysnewpassword' PASSWORD EXPIRE NEVER;
+GRANT RELOAD, SHUTDOWN ON *.* TO 'mysql_sysadmin'@'localhost';
+FLUSH PRIVILEGES;
 
-NOTE: mysql_sysadmin password should be placed to $MYSQL_CONFIG in
+
+Both into command:
+$ mysql -u root -p --ssl-mode=disabled -S $MYSQL_SOCKET
+
+NOTE 1:
+CURRENT TEMPORARY ROOT PASSWORD CAN BE FOUND IN LOG
+(grep for "A temporary password is generated" string):
+$MYSQL_ERRLOG
+
+
+NOTE 2:
+mysql_sysadmin password should be placed to $MYSQL_CONFIG in
 mysqladmin section. See the manual for more instructions.
 (This user is used at logs rotation and server shutdown)
 
