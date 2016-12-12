@@ -25,7 +25,6 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define		rel	0.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -37,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.16
-Release:	%{rel}
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
@@ -45,7 +44,7 @@ Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
-Source101:	http://downloads.sourceforge.net/project/boost/boost/1.59.0/boost_1_59_0.tar.bz2
+Source101:	http://downloads.sourceforge.net/boost/boost_1_59_0.tar.bz2
 # Source101-md5:       6aa9a5c6a4ca1016edd0ed1178e3cb87
 %endif
 Source1:	%{name}.init
@@ -62,6 +61,7 @@ Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
 Patch0:		%{name}-opt.patch
+Patch1:		lz4.patch
 
 Patch17:	%{name}-5.7-sphinx.patch
 Patch18:	%{name}-sphinx.patch
@@ -84,6 +84,7 @@ BuildRequires:	libstdc++-devel >= 5:4.0
 BuildRequires:	automake
 BuildRequires:	libhsclient-devel
 %{?with_tcpd:BuildRequires:	libwrap-devel}
+BuildRequires:	lz4-devel
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
 BuildRequires:	pam-devel
@@ -464,6 +465,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101}
 
 %patch0 -p1
+%patch1 -p1
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
@@ -482,6 +484,10 @@ mv sphinx-*/mysqlse storage/sphinx
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
 [ -f sql/sql_yacc.h ] && %{__rm} sql/sql_yacc.h
+
+# ensure sytstem lib
+# need to keep xxhash.[ch]
+%{__rm} -rv extra/lz4/lz4**
 
 %build
 install -d build
@@ -521,6 +527,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_PAM=ON \
 	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
 	-DWITH_PIC=ON \
+	-DWITH_LZ4=system \
 %if "%{pld_release}" == "ac"
 	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
 %else

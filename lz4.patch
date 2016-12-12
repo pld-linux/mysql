@@ -1,0 +1,15 @@
+this sucks, in .c files they use "lz4" prefix, but in cmake no prefix
+
+and should really just use pkgconfig
+
+--- mysql-5.7.16/cmake/lz4.cmake~	2016-09-28 20:02:44.000000000 +0300
++++ mysql-5.7.16/cmake/lz4.cmake	2016-12-12 11:37:18.923456466 +0200
+@@ -17,7 +17,7 @@
+ # bundled is the default
+ 
+ MACRO (FIND_SYSTEM_LZ4)
+-  FIND_PATH(PATH_TO_LZ4 NAMES lz4frame.h)
++  FIND_PATH(PATH_TO_LZ4 NAMES lz4/lz4frame.h)
+   FIND_LIBRARY(LZ4_SYSTEM_LIBRARY NAMES lz4)
+   IF (PATH_TO_LZ4 AND LZ4_SYSTEM_LIBRARY)
+     SET(SYSTEM_LZ4_FOUND 1)
