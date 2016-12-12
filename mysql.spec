@@ -612,6 +612,8 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
 #mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/lz4_decompress
+mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/zlib_decompress
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
 sed -i -e 's#/usr/bin/my_print_defaults#%{_sbindir}/my_print_defaults#g' $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
@@ -889,6 +891,7 @@ done
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
 %attr(755,root,root) %{_sbindir}/innochecksum
+%attr(755,root,root) %{_sbindir}/lz4_decompress
 %attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
 %attr(755,root,root) %{_sbindir}/myisamlog
@@ -897,6 +900,8 @@ done
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
+%attr(755,root,root) %{_sbindir}/zlib_decompress
+
 %dir %{_libdir}/%{name}
 %dir %{_libdir}/%{name}/plugin
 %attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
@@ -922,6 +927,7 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
 %{_mandir}/man1/innochecksum.1*
+%{_mandir}/man1/lz4_decompress.1*
 %{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
@@ -929,6 +935,7 @@ done
 %{_mandir}/man1/mysql_plugin.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
+%{_mandir}/man1/zlib_decompress.1*
 %{_mandir}/man8/mysqld.8*
 
 %if %{?debug:1}0
