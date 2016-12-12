@@ -934,7 +934,7 @@ done
 # root:root is proper here for mysql.rpm while mysql:mysql is potential security hole
 %attr(751,root,root) /var/lib/mysql
 # https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_secure-file-priv
-%attr(770,mysql,mysql) /var/lib/mysql-files
+%attr(770,mysql,mysql) %dir /var/lib/mysql-files
 %attr(750,mysql,mysql) %dir /var/log/mysql
 %attr(750,mysql,mysql) %dir /var/log/archive/mysql
 %attr(640,mysql,mysql) %ghost /var/log/mysql/*
