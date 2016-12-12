@@ -2,6 +2,8 @@ this sucks, in .c files they use "lz4" prefix, but in cmake no prefix
 
 and should really just use pkgconfig
 
+and it's iconsistent as well!
+
 --- mysql-5.7.16/cmake/lz4.cmake~	2016-09-28 20:02:44.000000000 +0300
 +++ mysql-5.7.16/cmake/lz4.cmake	2016-12-12 11:37:18.923456466 +0200
 @@ -17,7 +17,7 @@
@@ -13,3 +15,34 @@ and should really just use pkgconfig
    FIND_LIBRARY(LZ4_SYSTEM_LIBRARY NAMES lz4)
    IF (PATH_TO_LZ4 AND LZ4_SYSTEM_LIBRARY)
      SET(SYSTEM_LZ4_FOUND 1)
+--- mysql-5.7.16/storage/innobase/os/os0file.cc~	2016-09-28 20:02:44.000000000 +0300
++++ mysql-5.7.16/storage/innobase/os/os0file.cc	2016-12-12 12:12:43.810635067 +0200
+@@ -70,7 +70,7 @@
+ # include <linux/falloc.h>
+ #endif /* HAVE_FALLOC_PUNCH_HOLE_AND_KEEP_SIZE */
+ 
+-#include <lz4.h>
++#include <lz4/lz4.h>
+ #include <zlib.h>
+ 
+ #ifdef UNIV_DEBUG
+@@ -8435,7 +8435,7 @@
+ #include "fil0fil.h"
+ #include "os0file.h"
+ 
+-#include <lz4.h>
++#include <lz4/lz4.h>
+ #include <zlib.h>
+ 
+ #include <my_aes.h>
+--- mysql-5.7.16/client/dump/compression_lz4_writer.h~	2016-09-28 20:02:44.000000000 +0300
++++ mysql-5.7.16/client/dump/compression_lz4_writer.h	2016-12-12 12:17:53.912464632 +0200
+@@ -21,7 +21,7 @@
+ #include "i_output_writer.h"
+ #include "abstract_output_writer_wrapper.h"
+ #include "i_callable.h"
+-#include <lz4frame.h>
++#include <lz4/lz4frame.h>
+ #include "base/mutex.h"
+ #include <string.h>
+ 
