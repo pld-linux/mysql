@@ -46,3 +46,14 @@ and it's iconsistent as well!
  #include "base/mutex.h"
  #include <string.h>
  
+--- mysql-5.7.17/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_message_stage_lz4.cc~	2016-11-28 15:32:52.000000000 +0200
++++ mysql-5.7.17/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_message_stage_lz4.cc	2016-12-14 16:39:53.124878289 +0200
+@@ -15,7 +15,7 @@
+ 
+ #include "gcs_internal_message.h"
+ #include "gcs_message_stage_lz4.h"
+-#include <lz4.h>
++#include <lz4/lz4.h>
+ #include <mysql/gcs/xplatform/byteorder.h>
+ #include "gcs_logging.h"
+ #include <string.h>
