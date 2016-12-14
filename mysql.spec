@@ -9,6 +9,12 @@
 # - segfaults on select from non-mysql user (caused by builder environment):
 #     https://bugs.launchpad.net/pld-linux/+bug/381904
 #     (profiling disabled temporaily to workaround this)
+# - unpackaged files:
+#        /usr/bin/mysqlxtest
+#        /usr/lib64/libmysqlservices.a
+#        /usr/lib64/mysql/plugin/connection_control.so
+#        /usr/lib64/mysql/plugin/group_replication.so
+#        /usr/lib64/mysql/plugin/test_udf_services.so
 #
 # Conditional build:
 %bcond_with	autodeps	# BR packages needed only for resolving deps
