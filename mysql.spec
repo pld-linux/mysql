@@ -14,6 +14,7 @@
 #        /usr/lib64/libmysqlservices.a
 #        /usr/lib64/mysql/plugin/connection_control.so
 #        /usr/lib64/mysql/plugin/group_replication.so
+#        /usr/lib64/mysql/plugin/libpluginmecab.so
 #        /usr/lib64/mysql/plugin/test_udf_services.so
 #
 # Conditional build:
@@ -42,7 +43,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.17
-Release:	0.2
+Release:	0.3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
@@ -87,6 +88,7 @@ BuildRequires:	libhsclient-devel
 BuildRequires:	libstdc++-devel >= 5:4.0
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	lz4-devel
+BuildRequires:	mecab-devel
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
 BuildRequires:	pam-devel
@@ -530,6 +532,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
 	-DWITH_ZLIB=system \
 	-DWITH_READLINE=system \
+	-DWITH_MECAB=system \
 	-DTMPDIR=/var/tmp
 
 %{__make}
