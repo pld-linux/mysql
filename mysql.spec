@@ -42,7 +42,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.17
-Release:	0.1
+Release:	0.2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
@@ -88,6 +88,7 @@ BuildRequires:	libstdc++4-devel >= 5:4.0
 BuildRequires:	libstdc++-devel >= 5:4.0
 %endif
 BuildRequires:	automake
+BuildRequires:	libevent-devel
 BuildRequires:	libhsclient-devel
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	lz4-devel
@@ -534,6 +535,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
 	-DWITH_PIC=ON \
 	-DWITH_LZ4=system \
+	-DWITH_LIBEVENT="system" \
 %if "%{pld_release}" == "ac"
 	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
 %else
