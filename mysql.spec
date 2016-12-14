@@ -529,7 +529,8 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
 	-DWITH_ZLIB=system \
-	-DWITH_READLINE=system
+	-DWITH_READLINE=system \
+	-DTMPDIR=/var/tmp
 
 %{__make}
 
