@@ -75,21 +75,16 @@ Patch19:	%{name}-chain-certs.patch
 
 Patch24:	%{name}-cmake.patch
 
-Patch26:	mysqldumpslow-clusters.patch
+Patch26:	%{name}dumpslow-clusters.patch
 URL:		http://www.mysql.com/products/community/
+BuildRequires:	automake
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
 BuildRequires:	cmake >= 2.6
 BuildRequires:	libaio-devel
-BuildRequires:	readline-devel >= 6.2
-%if "%{pld_release}" == "ac"
-BuildRequires:	libstdc++4-devel >= 5:4.0
-%else
-BuildRequires:	libstdc++-devel >= 5:4.0
-%endif
-BuildRequires:	automake
 BuildRequires:	libevent-devel
 BuildRequires:	libhsclient-devel
+BuildRequires:	libstdc++-devel >= 5:4.0
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	lz4-devel
 BuildRequires:	ncurses-devel >= 4.2
@@ -98,6 +93,7 @@ BuildRequires:	pam-devel
 %{?with_autodeps:BuildRequires:	perl-DBI}
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	python-modules
+BuildRequires:	readline-devel >= 6.2
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.597
 BuildRequires:	sed >= 4.0
@@ -503,13 +499,6 @@ cd build
 # (it defaults to first cluster but user may change it to whatever
 # cluster it wants)
 
-%if "%{pld_release}" == "ac"
-# add suffix, but allow ccache, etc in ~/.rpmmacros
-%{expand:%%define	__cc	%(echo '%__cc' | sed -e 's,-gcc,-gcc4,')}
-%{expand:%%define	__cxx	%(echo '%__cxx' | sed -e 's,-g++,-g++4,')}
-%{expand:%%define	__cpp	%(echo '%__cpp' | sed -e 's,-gcc,-gcc4,')}
-%endif
-
 CPPFLAGS="%{rpmcppflags}" \
 %cmake .. \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
@@ -536,11 +525,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_PIC=ON \
 	-DWITH_LZ4=system \
 	-DWITH_LIBEVENT="system" \
-%if "%{pld_release}" == "ac"
-	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
-%else
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
-%endif
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
 	-DWITH_ZLIB=system \
