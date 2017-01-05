@@ -29,7 +29,7 @@
 %undefine	with_tokudb
 %endif
 
-%define		rel	1
+%define		rel	0.1
 %define		percona_rel	79.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
