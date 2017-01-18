@@ -23,7 +23,7 @@
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
-%define	percona_rel	38.1
+%define	percona_rel	38.5
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -34,16 +34,16 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.5.51
+Version:	5.5.53
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	e2dc02335feb8565b420e7b691afccf8
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.10-release.tar.gz
-# Source100-md5:	dda52b24d8348fc09e26d8a649a231d2
+# Source0-md5:	702ea32c4946e81542f4654c5ff5b4b5
+Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
+# Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.logrotate
@@ -560,6 +560,7 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
 	-DWITH_PIC=ON \
 	-DWITH_READLINE=OFF \
+	-DWITH_SCALABILITY_METRICS=ON \
 %if "%{pld_release}" == "ac"
 	-DWITH_SSL=%{?with_ssl:bundled}%{!?with_ssl:no} \
 %else
