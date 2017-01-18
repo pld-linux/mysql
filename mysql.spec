@@ -23,13 +23,14 @@
 %bcond_without	tokudb		# TokuDB
 %bcond_with	tests		# FIXME: don't run correctly
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
+%bcond_with	system_hsclient # breaks builds with percona >= 5.6.33
 
 # tokudb is only supported on x86_64
 %ifnarch %{x8664}
 %undefine	with_tokudb
 %endif
 
-%define		rel	0.1
+%define		rel	1
 %define		percona_rel	79.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -98,7 +99,7 @@ BuildRequires:	libstdc++4-devel >= 5:4.0
 BuildRequires:	libstdc++-devel >= 5:4.0
 %endif
 BuildRequires:	automake
-BuildRequires:	libhsclient-devel
+%{?with_system_hsclient:BuildRequires:	libhsclient-devel}
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
@@ -524,7 +525,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
+%{?with_system_hsclient:%patch5 -p1}
 %patch6 -p1
 
 %patch9 -p1
@@ -945,7 +946,7 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/query_response_time.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/scalability_metrics.so
+#%attr(755,root,root) %{_libdir}/%{name}/plugin/scalability_metrics.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/validate_password.so
