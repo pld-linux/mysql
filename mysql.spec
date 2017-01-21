@@ -9,16 +9,8 @@
 # - segfaults on select from non-mysql user (caused by builder environment):
 #     https://bugs.launchpad.net/pld-linux/+bug/381904
 #     (profiling disabled temporaily to workaround this)
-# - unpackaged files:
-#        /usr/bin/mysqlxtest
-#        /usr/lib64/libmysqlservices.a
-#        /usr/lib64/mysql/plugin/connection_control.so
-#        /usr/lib64/mysql/plugin/group_replication.so
-#        /usr/lib64/mysql/plugin/libpluginmecab.so
-#        /usr/lib64/mysql/plugin/test_udf_services.so
 #
 # Conditional build:
-%bcond_with	autodeps	# BR packages needed only for resolving deps
 %bcond_without	innodb		# InnoDB storage engine support
 %bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
 %bcond_without	federated	# Federated storage engine support
@@ -92,7 +84,6 @@ BuildRequires:	mecab-devel
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
 BuildRequires:	pam-devel
-%{?with_autodeps:BuildRequires:	perl-DBI}
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	python-modules
 BuildRequires:	readline-devel >= 6.2
@@ -632,7 +623,8 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
-%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
+%{__rm} $RPM_BUILD_ROOT%{_bindir}/{mysql_client_test,mysqlxtest}
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/test_udf_services.so
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test.1*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
@@ -908,8 +900,11 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/connection_control.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/group_replication.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_file.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_udf.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/libpluginmecab.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/locking_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_no_login.so
@@ -1064,6 +1059,7 @@ done
 %{_pkgconfigdir}/mysqlclient.pc
 # static-only so far
 %{_libdir}/libmysqld.a
+%{_libdir}/libmysqlservices.a
 %{_includedir}/mysql
 %{_aclocaldir}/mysql.m4
 %{_mandir}/man1/mysql_config.1*
