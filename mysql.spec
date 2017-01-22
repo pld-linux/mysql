@@ -30,7 +30,7 @@
 %undefine	with_tokudb
 %endif
 
-%define		rel	2
+%define		rel	3
 %define		percona_rel	79.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -583,6 +583,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=share/%{_orgname}-support \
 	-DINSTALL_MYSQLSHAREDIR=share/%{_orgname} \
+	-DINSTALL_SECURE_FILE_PRIVDIR="" \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
