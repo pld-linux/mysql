@@ -70,10 +70,9 @@ Patch24:	%{name}-cmake.patch
 
 Patch26:	%{name}dumpslow-clusters.patch
 URL:		http://www.mysql.com/products/community/
-BuildRequires:	automake
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
-BuildRequires:	cmake >= 2.6
+BuildRequires:	cmake >= 2.8.2
 BuildRequires:	libaio-devel
 BuildRequires:	libevent-devel
 BuildRequires:	libhsclient-devel
@@ -85,6 +84,7 @@ BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
 BuildRequires:	pam-devel
 BuildRequires:	perl-devel >= 1:5.6.1
+BuildRequires:	protobuf-devel >= 2.5
 BuildRequires:	python-modules
 BuildRequires:	readline-devel >= 6.2
 BuildRequires:	rpm-perlprov >= 4.1-13
@@ -520,7 +520,8 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
 	-DWITH_PIC=ON \
 	-DWITH_LZ4=system \
-	-DWITH_LIBEVENT="system" \
+	-DWITH_LIBEVENT=system \
+	-DWITH_PROTOBUF=system \
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
