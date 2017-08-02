@@ -31,7 +31,7 @@
 %endif
 
 %define		rel	1
-%define		percona_rel	82.0
+%define		percona_rel	82.1
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -49,7 +49,7 @@ Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	4d4932076b133d5e9f45b850694f3408
+# Source0-md5:	c8482b3e2a192b881a592ece49d7e4c2
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 Source1:	%{name}.init
