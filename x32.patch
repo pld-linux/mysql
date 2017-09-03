@@ -1,0 +1,11 @@
+--- percona-server-5.5.57-38.9/include/m_string.h~	2017-09-03 14:08:34.000000000 +0200
++++ percona-server-5.5.57-38.9/include/m_string.h	2017-09-03 14:10:58.545427673 +0200
+@@ -273,7 +273,7 @@
+    @return          the last non-space character
+ */
+ 
+-#ifdef __x86_64__
++#if defined(__x86_64__) && !defined(__ILP32__)
+ 
+ #if SIZEOF_LONG != 8
+ # error "SIZEOF_LONG != 8"
