@@ -28,7 +28,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.96
-Release:	7
+Release:	8
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.0.html#source
@@ -747,7 +747,6 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
 mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 
 # functionality in initscript / rpm
-rm $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 rm $RPM_BUILD_ROOT%{_bindir}/mysql_upgrade_shell
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 rm $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
@@ -764,7 +763,6 @@ rm $RPM_BUILD_ROOT%{_bindir}/resolveip
 rm $RPM_BUILD_ROOT%{_mandir}/man1/resolveip.1*
 rm $RPM_BUILD_ROOT%{_bindir}/comp_err
 rm $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1
-rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_install_db.1
 rm $RPM_BUILD_ROOT%{_mandir}/man1/mysql_waitpid.1
 rm $RPM_BUILD_ROOT%{_datadir}/mysql/mysqld_multi.server
 
@@ -998,6 +996,7 @@ EOF
 %attr(755,root,root) %{_bindir}/mysql_explain_log
 %attr(755,root,root) %{_bindir}/mysql_find_rows
 %attr(755,root,root) %{_bindir}/mysql_fix_extensions
+%attr(755,root,root) %{_bindir}/mysql_install_db
 %attr(755,root,root) %{_bindir}/mysql_setpermission
 %attr(755,root,root) %{_bindir}/mysql_tableinfo
 %attr(755,root,root) %{_bindir}/mysql_zap
@@ -1007,6 +1006,7 @@ EOF
 %{_mandir}/man1/mysql_explain_log.1*
 %{_mandir}/man1/mysql_find_rows.1*
 %{_mandir}/man1/mysql_fix_extensions.1*
+%{_mandir}/man1/mysql_install_db.1*
 %{_mandir}/man1/mysql_setpermission.1*
 %{_mandir}/man1/mysql_tableinfo.1*
 %{_mandir}/man1/mysql_zap.1*
