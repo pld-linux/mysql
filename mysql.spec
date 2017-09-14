@@ -69,6 +69,7 @@ Patch13:	%{name}-bug-34192.patch
 Patch14:	%{name}-bug-16470.patch
 Patch15:	%{name}-system-users.patch
 Patch16:	%{name}-errorlog-no-rename.patch
+Patch17:	gcc7.patch
 Patch18:	%{name}-xtrabackup.patch
 Patch19:	%{name}hotcopy-5.0-5.5.patch
 Patch20:	x32.patch
@@ -547,6 +548,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
+%patch17 -p1
 %{?with_xtrabackup:%patch18 -p1}
 %patch19 -p1
 %patch20 -p1
@@ -592,7 +594,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %{__autoconf}
 
 # The compiler flags are as per their "official" spec ;)
-CXXFLAGS="%{rpmcflags} -fno-implicit-templates -fno-exceptions -fno-rtti -fpermissive"
+CXXFLAGS="%{rpmcflags} -fno-implicit-templates -fno-exceptions -fno-rtti"
 CFLAGS="%{rpmcflags}"
 CPPFLAGS="%{rpmcppflags} -Wno-narrowing"
 
