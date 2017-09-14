@@ -592,9 +592,9 @@ mv sphinx-*/mysqlse sql/sphinx
 %{__autoconf}
 
 # The compiler flags are as per their "official" spec ;)
-CXXFLAGS="%{rpmcflags} -fno-implicit-templates -fno-exceptions -fno-rtti"
+CXXFLAGS="%{rpmcflags} -fno-implicit-templates -fno-exceptions -fno-rtti -fpermissive"
 CFLAGS="%{rpmcflags}"
-CPPFLAGS="%{rpmcppflags}"
+CPPFLAGS="%{rpmcppflags} -Wno-narrowing"
 
 # NOTE: the PS, FIND_PROC, KILL, CHECK_PID are not used by PLD Linux
 # and therefore do not add BR on these. These are here just to satisfy
