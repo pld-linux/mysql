@@ -67,3 +67,27 @@ diff -urNbB mysql-5.0.13-rc.org/sql/mysqld.cc mysql-5.0.13-rc/sql/mysqld.cc
      NOT CMAKE_VERSION VERSION_LESS "2.8.9")
  CHECK_CXX_SOURCE_COMPILES(
  "
+--- percona-server-5.6.37-82.2/storage/tokudb/PerconaFT/cmake_modules/TokuSetupCompiler.cmake~	2017-08-24 13:36:46.000000000 +0200
++++ percona-server-5.6.37-82.2/storage/tokudb/PerconaFT/cmake_modules/TokuSetupCompiler.cmake	2017-10-09 20:12:03.039109021 +0200
+@@ -197,8 +197,8 @@ if (NOT CMAKE_CXX_COMPILER_ID STREQUAL C
+ endif ()
+ 
+ ## always want these
+-set(CMAKE_C_FLAGS "-Wall -Werror ${CMAKE_C_FLAGS}")
+-set(CMAKE_CXX_FLAGS "-Wall -Werror ${CMAKE_CXX_FLAGS}")
++set(CMAKE_C_FLAGS "-Wall ${CMAKE_C_FLAGS}")
++set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
+ 
+ # pick language dialect
+ set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
+--- percona-server-5.6.37-82.2/plugin/tokudb-backup-plugin/Percona-TokuBackup/backup/CMakeLists.txt~	2017-10-09 20:37:05.000000000 +0200
++++ percona-server-5.6.37-82.2/plugin/tokudb-backup-plugin/Percona-TokuBackup/backup/CMakeLists.txt	2017-10-09 20:42:02.664375729 +0200
+@@ -18,7 +18,7 @@ set_property(DIRECTORY APPEND PROPERTY C
+   _FILE_OFFSET_BITS=64 
+   _LARGEFILE64_SOURCE)
+ 
+-set(CMAKE_CXX_FLAGS "-Werror -W -Wall -Wshadow ${CMAKE_CXX_FLAGS}")
++set(CMAKE_CXX_FLAGS "-W -Wall -Wshadow ${CMAKE_CXX_FLAGS}")
+ 
+ set(USE_VALGRIND OFF CACHE BOOL "whether to use valgrind headers")
+ if (USE_VALGRIND)
