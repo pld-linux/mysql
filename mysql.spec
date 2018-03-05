@@ -34,12 +34,12 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.7.17
+Version:	5.7.21
 Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
-# Source0-md5:	db2a87ede6132b226f8d43d3ac349284
+# Source0-md5:	e26523b174bdc3fd0fde6f36791ce17e
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -878,7 +878,6 @@ done
 
 %files
 %defattr(644,root,root,755)
-%doc build/support-files/*.cnf
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}
 %attr(754,root,root) /etc/rc.d/init.d/%{name}
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
@@ -901,6 +900,7 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/connection_control.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/group_replication.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_file.so
