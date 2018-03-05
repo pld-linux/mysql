@@ -21,7 +21,7 @@
 %bcond_without	sphinx		# Sphinx storage engine support
 # mysql needs boost 1.59.0 and doesn't support newer/older boost versions
 %bcond_with	system_boost
-%bcond_with	tests		# FIXME: don't run correctly
+%bcond_without	tests		# run test suite
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
 %include	/usr/lib/rpm/macros.perl
@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.17
-Release:	0.3
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
