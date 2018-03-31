@@ -1,6 +1,7 @@
---- Percona-Server-5.6.15-rel63.0/cmake/readline.cmake.orig	2013-12-18 10:52:13.000000000 +0100
-+++ Percona-Server-5.6.15-rel63.0/cmake/readline.cmake	2014-02-09 06:17:56.079619159 +0100
-@@ -131,23 +131,23 @@
+diff -ruN mysql-5.7.21.orig/cmake/readline.cmake mysql-5.7.21/cmake/readline.cmake
+--- mysql-5.7.21.orig/cmake/readline.cmake	2017-12-28 04:46:26.000000000 +0100
++++ mysql-5.7.21/cmake/readline.cmake	2018-03-31 21:17:28.373826351 +0200
+@@ -110,23 +110,23 @@ ENDMACRO()
  
  MACRO (FIND_SYSTEM_EDITLINE)
    FIND_PATH(FOUND_EDITLINE_READLINE
@@ -28,7 +29,7 @@
    )
    MARK_AS_ADVANCED(EDITLINE_INCLUDE_DIR EDITLINE_LIBRARY)
  
-@@ -160,7 +160,7 @@
+@@ -139,7 +139,7 @@ MACRO (FIND_SYSTEM_EDITLINE)
      SET(CMAKE_REQUIRED_LIBRARIES ${EDITLINE_LIBRARY})
      CHECK_CXX_SOURCE_COMPILES("
      #include <stdio.h>
@@ -37,7 +38,7 @@
      int main(int argc, char **argv)
      {
         HIST_ENTRY entry;
-@@ -170,14 +170,13 @@
+@@ -149,14 +149,13 @@ MACRO (FIND_SYSTEM_EDITLINE)
  
      CHECK_CXX_SOURCE_COMPILES("
      #include <stdio.h>
@@ -55,5 +56,14 @@
 +      rl_completion_matches(0,0);
 +      return res ? 0 : 1;
      }"
-     EDITLINE_HAVE_COMPLETION)
+     EDITLINE_HAVE_COMPLETION_INT)
  
+@@ -168,7 +167,7 @@ MACRO (FIND_SYSTEM_EDITLINE)
+       typedef char* MYFunction(const char*, int);
+       MYFunction* myf= rl_completion_entry_function;
+       char *res= (myf)(NULL, 0);
+-      completion_matches(0,0);
++      rl_completion_matches(0,0);
+       return res != NULL;
+     }"
+     EDITLINE_HAVE_COMPLETION_CHAR)

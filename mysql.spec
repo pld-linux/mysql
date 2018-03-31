@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.21
-Release:	2
+Release:	3
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
@@ -67,6 +67,7 @@ Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
 
 Patch24:	%{name}-cmake.patch
+Patch25:	%{name}-readline.patch
 
 Patch26:	%{name}dumpslow-clusters.patch
 URL:		http://www.mysql.com/products/community/
@@ -475,6 +476,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch19 -p1
 
 %patch24 -p1
+%patch25 -p1
 
 %patch26 -p1
 
@@ -524,7 +526,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
 	-DWITH_ZLIB=system \
-	-DWITH_READLINE=system \
+	-DWITH_EDITLINE=system \
 	-DWITH_MECAB=system \
 	-DTMPDIR=/var/tmp
 
