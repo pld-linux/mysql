@@ -34,12 +34,12 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.7.21
-Release:	3
+Version:	5.7.22
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
-# Source0-md5:	e26523b174bdc3fd0fde6f36791ce17e
+# Source0-md5:	269935a8b72dcba2c774d8d63a8bd1dd
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -624,10 +624,6 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/{mysql_client_test,mysqlxtest}
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/test_udf_services.so
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test.1*
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1*
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
 # libmysqld examples
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql{_client_test_embedded,_embedded,test_embedded}
@@ -1078,8 +1074,6 @@ done
 #%{_datadir}/sql-bench/[CDRl]*
 #%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
 %{_mandir}/man1/mysqlslap.1*
-%{_mandir}/man1/mysqltest.1*
-%{_mandir}/man1/mysqltest_embedded.1*
 
 #%files doc
 #%defattr(644,root,root,755)

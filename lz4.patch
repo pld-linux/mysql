@@ -1,59 +1,11 @@
-this sucks, in .c files they use "lz4" prefix, but in cmake no prefix
-
-and should really just use pkgconfig
-
-and it's iconsistent as well!
-
---- mysql-5.7.16/cmake/lz4.cmake~	2016-09-28 20:02:44.000000000 +0300
-+++ mysql-5.7.16/cmake/lz4.cmake	2016-12-12 11:37:18.923456466 +0200
-@@ -17,7 +17,7 @@
- # bundled is the default
+--- mysql-5.7.22/extra/lz4_decompress.cc~	2018-03-04 14:40:40.000000000 +0100
++++ mysql-5.7.22/extra/lz4_decompress.cc	2018-06-02 00:47:44.437818669 +0200
+@@ -18,7 +18,7 @@
+ #include <my_global.h>
+ #include <welcome_copyright_notice.h>
  
- MACRO (FIND_SYSTEM_LZ4)
--  FIND_PATH(PATH_TO_LZ4 NAMES lz4frame.h)
-+  FIND_PATH(PATH_TO_LZ4 NAMES lz4/lz4frame.h)
-   FIND_LIBRARY(LZ4_SYSTEM_LIBRARY NAMES lz4)
-   IF (PATH_TO_LZ4 AND LZ4_SYSTEM_LIBRARY)
-     SET(SYSTEM_LZ4_FOUND 1)
---- mysql-5.7.16/storage/innobase/os/os0file.cc~	2016-09-28 20:02:44.000000000 +0300
-+++ mysql-5.7.16/storage/innobase/os/os0file.cc	2016-12-12 12:12:43.810635067 +0200
-@@ -70,7 +70,7 @@
- # include <linux/falloc.h>
- #endif /* HAVE_FALLOC_PUNCH_HOLE_AND_KEEP_SIZE */
- 
--#include <lz4.h>
-+#include <lz4/lz4.h>
- #include <zlib.h>
- 
- #ifdef UNIV_DEBUG
-@@ -8435,7 +8435,7 @@
- #include "fil0fil.h"
- #include "os0file.h"
- 
--#include <lz4.h>
-+#include <lz4/lz4.h>
- #include <zlib.h>
- 
- #include <my_aes.h>
---- mysql-5.7.16/client/dump/compression_lz4_writer.h~	2016-09-28 20:02:44.000000000 +0300
-+++ mysql-5.7.16/client/dump/compression_lz4_writer.h	2016-12-12 12:17:53.912464632 +0200
-@@ -21,7 +21,7 @@
- #include "i_output_writer.h"
- #include "abstract_output_writer_wrapper.h"
- #include "i_callable.h"
--#include <lz4frame.h>
-+#include <lz4/lz4frame.h>
- #include "base/mutex.h"
+-#include "lz4/lz4frame.h"
++#include <lz4frame.h>
  #include <string.h>
  
---- mysql-5.7.17/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_message_stage_lz4.cc~	2016-11-28 15:32:52.000000000 +0200
-+++ mysql-5.7.17/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_message_stage_lz4.cc	2016-12-14 16:39:53.124878289 +0200
-@@ -15,7 +15,7 @@
- 
- #include "gcs_internal_message.h"
- #include "gcs_message_stage_lz4.h"
--#include <lz4.h>
-+#include <lz4/lz4.h>
- #include <mysql/gcs/xplatform/byteorder.h>
- #include "gcs_logging.h"
- #include <string.h>
+ static void usage()
