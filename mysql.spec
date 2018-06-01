@@ -31,7 +31,7 @@
 %endif
 
 %define		rel	1
-%define		percona_rel	83.1
+%define		percona_rel	84.0
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -42,14 +42,14 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.6.39
+Version:	5.6.40
 Release:	%{percona_rel}.%{rel}
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
 Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
-# Source0-md5:	cc16e77d1504fdadb808c500cc8b23d5
+# Source0-md5:	7db485d98e7f350fe84b6b966c70475a
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 Source1:	%{name}.init
@@ -702,10 +702,6 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_client_test
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test.1*
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_client_test_embedded.1*
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-stress-test.pl.1*
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql-test-run.pl.1*
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
 # libmysqld examples
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql{_client_test_embedded,_embedded,test_embedded}
@@ -1142,8 +1138,6 @@ done
 %{_datadir}/sql-bench/[CDRl]*
 %attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
 %{_mandir}/man1/mysqlslap.1*
-%{_mandir}/man1/mysqltest.1*
-%{_mandir}/man1/mysqltest_embedded.1*
 
 #%files doc
 #%defattr(644,root,root,755)
