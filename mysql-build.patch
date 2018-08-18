@@ -10,17 +10,4 @@ diff -urNbB mysql-5.0.13-rc.org/sql/mysqld.cc mysql-5.0.13-rc/sql/mysqld.cc
    openlog(libwrapName, LOG_PID, LOG_AUTH);
  #endif
  
-diff --git a/sql/sql_partition.cc b/sql/sql_partition.cc
-index 201f64522a6..e23fe70ec86 100644
---- a/sql/sql_partition.cc
-+++ b/sql/sql_partition.cc
-@@ -284,7 +284,7 @@ bool partition_default_handling(TABLE *table, partition_info *part_info,
-     }
-   }
-   part_info->set_up_defaults_for_partitioning(table->file,
--                                              (ulonglong)0, (uint)0);
-+                                              NULL, 0U);
-   DBUG_RETURN(FALSE);
- }
- 
 
