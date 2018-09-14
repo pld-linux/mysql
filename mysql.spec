@@ -34,12 +34,12 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.7.22
-Release:	2
+Version:	5.7.23
+Release:	1
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
-# Source0-md5:	269935a8b72dcba2c774d8d63a8bd1dd
+# Source0-md5:	3398bb99df0ca926f161d56e9cefa73d
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -62,6 +62,7 @@ Source14:	my.cnf
 Patch0:		%{name}-opt.patch
 Patch1:		lz4.patch
 
+Patch16:	mysql-bug-91914.patch
 Patch17:	%{name}-5.7-sphinx.patch
 Patch18:	%{name}-sphinx.patch
 Patch19:	%{name}-chain-certs.patch
@@ -465,6 +466,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch0 -p1
 %patch1 -p1
 
+%patch16 -p1
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
