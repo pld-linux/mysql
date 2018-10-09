@@ -23,6 +23,7 @@
 %bcond_with	system_boost
 %bcond_without	tests		# run test suite
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
+%bcond_without	ldap		# LDAP auth support
 
 %include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -84,6 +85,7 @@ BuildRequires:	lz4-devel
 BuildRequires:	mecab-devel
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
+%{?with_ldap:BuildRequires:	openldap-devel}
 BuildRequires:	pam-devel
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	protobuf-devel >= 2.5
@@ -896,7 +898,7 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
+%{?with_ldap:%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/connection_control.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/group_replication.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_file.so
