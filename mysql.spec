@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.23
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
@@ -587,8 +587,8 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/%{name}-support
 
 # rename not to be so generic name
-mv $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
-mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
+%{__mv} $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
+%{__mv} $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
 
 # not useful without -debug build
 %{!?debug:%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
@@ -599,27 +599,27 @@ mv $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.sym}
 
 # do not clobber users $PATH
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_plugin
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_upgrade
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/innochecksum
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
-#mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/lz4_decompress
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/zlib_decompress
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
-sed -i -e 's#/usr/bin/my_print_defaults#%{_sbindir}/my_print_defaults#g' $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
-mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_plugin
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_upgrade
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/innochecksum
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
+#%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/lz4_decompress
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/zlib_decompress
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
+%{__sed} -i -e 's#/usr/bin/my_print_defaults#%{_sbindir}/my_print_defaults#g' $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
+%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 
 # delete - functionality in initscript / rpm
 # note: mysql_install_db (and thus resolveip) are needed by digikam
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
-#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
-#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
-#rm $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
+#%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
+#%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
+#%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 %{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg-utf8.txt
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
