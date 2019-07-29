@@ -1,8 +1,8 @@
---- percona-server-5.6.24-72.2/cmake/build_configurations/compiler_options.cmake.orig	2015-05-06 12:38:47.000000000 +0200
-+++ percona-server-5.6.24-72.2/cmake/build_configurations/compiler_options.cmake	2015-06-09 19:54:42.577790251 +0200
-@@ -30,8 +30,8 @@
-     IF(WITH_VALGRIND)
-       SET(COMMON_C_FLAGS             "-fno-inline ${COMMON_C_FLAGS}")
+--- mysql-5.7.27/cmake/build_configurations/compiler_options.cmake.orig	2019-06-10 16:43:20.000000000 +0200
++++ mysql-5.7.27/cmake/build_configurations/compiler_options.cmake	2019-07-29 05:55:55.892824445 +0200
+@@ -50,8 +50,8 @@
+     IF(C_NO_EXPENSIVE_OPTIMIZATIONS)
+       SET(COMMON_C_FLAGS "${COMMON_C_FLAGS} -fno-expensive-optimizations")
      ENDIF()
 -    SET(CMAKE_C_FLAGS_DEBUG          "${COMMON_C_FLAGS}")
 -    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${COMMON_C_FLAGS}")
@@ -11,9 +11,18 @@
    ENDIF()
    IF(CMAKE_COMPILER_IS_GNUCXX)
      SET(COMMON_CXX_FLAGS               "-g -fabi-version=2 -fno-omit-frame-pointer -fno-strict-aliasing")
-@@ -39,20 +39,20 @@
+@@ -59,7 +59,7 @@
+     EXECUTE_PROCESS(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
+                     OUTPUT_VARIABLE GXX_VERSION)
+     IF(GXX_VERSION VERSION_EQUAL 6.0 OR GXX_VERSION VERSION_GREATER 6.0)
+-      SET(COMMON_CXX_FLAGS             "${COMMON_CXX_FLAGS} -std=gnu++03")
++      SET(COMMON_CXX_FLAGS             "${COMMON_CXX_FLAGS} -std=gnu++11")
+     ENDIF()
+     # Disable inline optimizations for valgrind testing to avoid false positives
      IF(WITH_VALGRIND)
-       SET(COMMON_CXX_FLAGS             "-fno-inline ${COMMON_CXX_FLAGS}")
+@@ -80,15 +80,15 @@
+     IF(CXX_NO_EXPENSIVE_OPTIMIZATIONS)
+       SET(COMMON_CXX_FLAGS "${COMMON_CXX_FLAGS} -fno-expensive-optimizations")
      ENDIF()
 -    SET(CMAKE_CXX_FLAGS_DEBUG          "${COMMON_CXX_FLAGS}")
 -    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 ${COMMON_CXX_FLAGS}")
@@ -27,10 +36,18 @@
 -    SET(CMAKE_C_FLAGS_DEBUG          "${COMMON_C_FLAGS}")
 -    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${COMMON_C_FLAGS}")
 +    SET(CMAKE_C_FLAGS_DEBUG          "${CMAKE_C_FLAGS_DEBUG} ${COMMON_C_FLAGS}")
-+    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMMON_C_FLAGS}")
++    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${CMAKE_C_FLAGS_RELWITHDEBINFO} ${COMMON_C_FLAGS}")
    ENDIF()
    IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
      SET(COMMON_CXX_FLAGS               "-g -fno-omit-frame-pointer -fno-strict-aliasing")
+@@ -95,11 +95,11 @@
+     IF(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 6.0 OR
+         CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 6.0)
+       IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+-        SET(COMMON_CXX_FLAGS           "${COMMON_CXX_FLAGS} -std=gnu++03")
++        SET(COMMON_CXX_FLAGS           "${COMMON_CXX_FLAGS} -std=gnu++11")
+       ENDIF()
+     ENDIF()
 -    SET(CMAKE_CXX_FLAGS_DEBUG          "${COMMON_CXX_FLAGS}")
 -    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 ${COMMON_CXX_FLAGS}")
 +    SET(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} ${COMMON_CXX_FLAGS}")
@@ -38,14 +55,3 @@
    ENDIF()
  
    # Solaris flags
---- mysql-5.7.23/cmake/build_configurations/compiler_options.cmake.orig	2018-10-13 21:39:26.928696351 +0200
-+++ mysql-5.7.23/cmake/build_configurations/compiler_options.cmake	2018-10-13 22:14:21.388672435 +0200
-@@ -59,7 +59,7 @@
-     EXECUTE_PROCESS(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
-                     OUTPUT_VARIABLE GXX_VERSION)
-     IF(GXX_VERSION VERSION_EQUAL 6.0 OR GXX_VERSION VERSION_GREATER 6.0)
--      SET(COMMON_CXX_FLAGS             "${COMMON_CXX_FLAGS} -std=gnu++03")
-+      SET(COMMON_CXX_FLAGS             "${COMMON_CXX_FLAGS} -std=gnu++11")
-     ENDIF()
-     # Disable inline optimizations for valgrind testing to avoid false positives
-     IF(WITH_VALGRIND)
