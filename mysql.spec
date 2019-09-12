@@ -35,7 +35,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.62
-Release:	1
+Release:	2
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
@@ -552,6 +552,7 @@ cp -a %{SOURCE15} libmysql/libmysql.version
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=share/%{_orgname}-support \
 	-DINSTALL_MYSQLSHAREDIR=share/%{_orgname} \
+	-DINSTALL_SECURE_FILE_PRIVDIR="" \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
