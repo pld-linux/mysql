@@ -1,0 +1,24 @@
+--- mysql-5.0.96/vio/viosslfactories.c~	2019-09-17 11:52:59.000000000 +0200
++++ mysql-5.0.96/vio/viosslfactories.c	2019-09-17 12:14:48.223177024 +0200
+@@ -48,12 +48,18 @@
+   DH *dh;
+   if ((dh=DH_new()))
+   {
+-    dh->p=BN_bin2bn(dh1024_p,sizeof(dh1024_p),NULL);
+-    dh->g=BN_bin2bn(dh1024_g,sizeof(dh1024_g),NULL);
++    BIGNUM* p= BN_bin2bn(dh1024_p,sizeof(dh1024_p),NULL);
++    BIGNUM* g= BN_bin2bn(dh1024_g,sizeof(dh1024_g),NULL);
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
++    dh->p= p;
++    dh->g= g;
+     if (! dh->p || ! dh->g)
++#else
++      if (!DH_set0_pqg(dh, p, NULL, g))
++#endif
+     {
+       DH_free(dh);
+-      dh=0;
++      dh=NULL;
+     }
+   }
+   return(dh);
