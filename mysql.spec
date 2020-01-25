@@ -25,7 +25,6 @@
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 %bcond_without	ldap		# LDAP auth support
 
-%include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
 Summary(fr.UTF-8):	MySQL: un serveur SQL rapide et fiable
