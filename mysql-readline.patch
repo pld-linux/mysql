@@ -1,16 +1,15 @@
-diff -ruNp mysql-5.7.21.orig/client/mysql.cc mysql-5.7.21/client/mysql.cc
---- mysql-5.7.21.orig/client/mysql.cc	2017-12-28 04:46:26.000000000 +0100
-+++ mysql-5.7.21/client/mysql.cc	2018-03-31 21:37:27.879569060 +0200
-@@ -67,6 +67,7 @@
+--- mysql-8.0.20/client/mysql.cc~	2020-05-12 19:39:17.000000000 +0200
++++ mysql-8.0.20/client/mysql.cc	2020-05-12 19:49:31.903300850 +0200
+@@ -79,6 +79,7 @@
+ #define LOG_USER 0
  #else
- #include <syslog.h>
  #include <readline.h>
 +#include <history.h>
+ #include <syslog.h>
+ 
  #define HAVE_READLINE
- #define USE_POPEN
- #endif
-@@ -1126,22 +1127,6 @@ static const char *embedded_server_group
- { "server", "embedded", "mysql_SERVER", 0 };
+@@ -1134,22 +1134,6 @@ static COMMANDS commands[] = {
+ static const char *load_default_groups[] = {"mysql", "client", nullptr};
  
  #ifdef HAVE_READLINE
 -/*
@@ -19,9 +18,9 @@ diff -ruNp mysql-5.7.21.orig/client/mysql.cc mysql-5.7.21/client/mysql.cc
 -*/
 -#if !defined(HAVE_HIST_ENTRY)
 -typedef struct _hist_entry {
--  const char      *line;
--  const char      *data;
--} HIST_ENTRY; 
+-  const char *line;
+-  const char *data;
+-} HIST_ENTRY;
 -#endif
 -
 -extern "C" int add_history(const char *command); /* From readline directory */
@@ -30,5 +29,5 @@ diff -ruNp mysql-5.7.21.orig/client/mysql.cc mysql-5.7.21/client/mysql.cc
 -extern "C" HIST_ENTRY *history_get(int num);
 -extern "C" int history_length;
  static int not_in_history(const char *line);
- static void initialize_readline (char *name);
- #endif                                          /* HAVE_READLINE */
+ static void initialize_readline(char *name);
+ #endif /* HAVE_READLINE */

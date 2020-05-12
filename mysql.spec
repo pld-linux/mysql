@@ -18,8 +18,8 @@
 %bcond_without	ssl		# OpenSSL support
 %bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
-%bcond_without	sphinx		# Sphinx storage engine support
-# mysql needs boost 1.59.0 and doesn't support newer/older boost versions
+%bcond_with	sphinx		# Sphinx storage engine support
+# mysql needs boost 1.70.0 and doesn't support newer/older boost versions
 %bcond_with	system_boost
 %bcond_without	tests		# run test suite
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
@@ -34,18 +34,18 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.7.30
-Release:	1
+Version:	8.0.20
+Release:	0.1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
-#Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
-Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
-# Source0-md5:	d0b73805a99c867f7cda0b9cec6ad720
+#Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
+Source0:	http://cdn.mysql.com/Downloads/MySQL-8.0/%{name}-%{version}.tar.gz
+# Source0-md5:	e01fe942e0fc800ad1eb5d21307c1681
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
-Source101:	http://downloads.sourceforge.net/boost/boost_1_59_0.tar.bz2
-# Source101-md5:	6aa9a5c6a4ca1016edd0ed1178e3cb87
+Source101:	http://downloads.sourceforge.net/boost/boost_1_70_0.tar.bz2
+# Source101-md5:	242ecc63507711d6706b9b0c0d0c7d4f
 %endif
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -465,9 +465,9 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %prep
 %setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101}
 
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
+#%patch0 -p1
+#%patch1 -p1
+#%patch2 -p1
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
@@ -482,7 +482,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch24 -p1
 %patch25 -p1
 
-%patch26 -p1
+#%patch26 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
@@ -587,29 +587,21 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/%{name}-support
 
 # rename not to be so generic name
-%{__mv} $RPM_BUILD_ROOT%{_bindir}/{,mysql_}resolve_stack_dump
-%{__mv} $RPM_BUILD_ROOT%{_mandir}/man1/{,mysql_}resolve_stack_dump.1
 
 # not useful without -debug build
-%{!?debug:%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql_resolve_stack_dump}
-%{!?debug:%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql_resolve_stack_dump.1}
 # generate symbols file, so one can generate backtrace using it
 # mysql_resolve_stack_dump -s %{_datadir}/%{name}/mysqld.sym -n mysqld.stack.
 # http://dev.mysql.com/doc/refman/5.0/en/using-stack-trace.html
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.sym}
 
 # do not clobber users $PATH
-%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_plugin
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_upgrade
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/innochecksum
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
 #%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
-%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/lz4_decompress
-%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/zlib_decompress
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
-%{__sed} -i -e 's#/usr/bin/my_print_defaults#%{_sbindir}/my_print_defaults#g' $RPM_BUILD_ROOT%{_bindir}/mysql_install_db
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 
 # delete - functionality in initscript / rpm
@@ -620,7 +612,6 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 #%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
 #%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
 #%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
-%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/errmsg-utf8.txt
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
@@ -629,8 +620,6 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/{mysql_client_test,mysqlxtest}
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/test_udf_services.so
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
-# libmysqld examples
-%{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql{_client_test_embedded,_embedded,test_embedded}
 
 # not needed
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
@@ -881,16 +870,13 @@ done
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
 %attr(755,root,root) %{_sbindir}/innochecksum
-%attr(755,root,root) %{_sbindir}/lz4_decompress
 %attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
 %attr(755,root,root) %{_sbindir}/myisamlog
 %attr(755,root,root) %{_sbindir}/myisampack
-%attr(755,root,root) %{_sbindir}/mysql_plugin
 %attr(755,root,root) %{_sbindir}/mysql_upgrade
 %attr(755,root,root) %{_sbindir}/mysqlcheck
 %attr(755,root,root) %{_sbindir}/mysqld
-%attr(755,root,root) %{_sbindir}/zlib_decompress
 
 %dir %{_libdir}/%{name}
 %dir %{_libdir}/%{name}/plugin
@@ -907,7 +893,6 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/locking_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_no_login.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/mysqlx.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
@@ -921,15 +906,12 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
 %{_mandir}/man1/innochecksum.1*
-%{_mandir}/man1/lz4_decompress.1*
 %{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
 %{_mandir}/man1/myisamlog.1*
 %{_mandir}/man1/myisampack.1*
-%{_mandir}/man1/mysql_plugin.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
-%{_mandir}/man1/zlib_decompress.1*
 %{_mandir}/man8/mysqld.8*
 
 %if %{?debug:1}0
@@ -949,15 +931,9 @@ done
 
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/%{name}/mysqld.conf
-%{_datadir}/%{name}/mysql_security_commands.sql
-%{_datadir}/%{name}/mysql_sys_schema.sql
-%{_datadir}/%{name}/mysql_system_tables_data.sql
-%{_datadir}/%{name}/mysql_system_tables.sql
-%{_datadir}/%{name}/mysql_test_data_timezone.sql
 
 %{_datadir}/%{name}/english
 %{_datadir}/%{name}/dictionary.txt
-%{_datadir}/%{name}/fill_help_tables.sql
 %{_datadir}/%{name}/innodb_memcached_config.sql
 %{_datadir}/%{name}/install_rewriter.sql
 %{_datadir}/%{name}/uninstall_rewriter.sql
@@ -995,21 +971,15 @@ done
 %files extras
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/myisam_ftdump
-%attr(755,root,root) %{_bindir}/mysql_install_db
 %attr(755,root,root) %{_bindir}/mysql_ssl_rsa_setup
 %attr(755,root,root) %{_bindir}/mysql_secure_installation
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
 %attr(755,root,root) %{_bindir}/perror
-%attr(755,root,root) %{_bindir}/replace
-%attr(755,root,root) %{_bindir}/resolveip
 %{_mandir}/man1/myisam_ftdump.1*
-%{_mandir}/man1/mysql_install_db.1*
 %{_mandir}/man1/mysql_ssl_rsa_setup.1*
 %{_mandir}/man1/mysql_secure_installation.1*
 %{_mandir}/man1/mysql_tzinfo_to_sql.1*
 %{_mandir}/man1/perror.1*
-%{_mandir}/man1/replace.1*
-%{_mandir}/man1/resolveip.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
@@ -1042,7 +1012,7 @@ done
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
 %{_sysconfdir}/%{name}/my.cnf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.20
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.21
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
@@ -1056,8 +1026,6 @@ done
 %attr(755,root,root) %{_libdir}/libndbclient.so
 %endif
 %{_pkgconfigdir}/mysqlclient.pc
-# static-only so far
-%{_libdir}/libmysqld.a
 %{_libdir}/libmysqlservices.a
 %{_includedir}/mysql
 %{_aclocaldir}/mysql.m4
