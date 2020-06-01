@@ -21,6 +21,7 @@
 %bcond_without	sphinx		# Sphinx storage engine support
 # mysql needs boost 1.59.0 and doesn't support newer/older boost versions
 %bcond_with	system_boost
+%bcond_with	system_protobuf	# mysql doesn't build with newer (3.12+) protobuf
 %bcond_without	tests		# run test suite
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 %bcond_without	ldap		# LDAP auth support
@@ -35,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.30
-Release:	2
+Release:	3
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
@@ -88,7 +89,7 @@ BuildRequires:	ncurses-devel >= 4.2
 %{?with_ldap:BuildRequires:	openldap-devel}
 BuildRequires:	pam-devel
 BuildRequires:	perl-devel >= 1:5.6.1
-BuildRequires:	protobuf-devel >= 2.5
+%{?with_system_protobuf:BuildRequires:	protobuf-devel >= 2.5}
 BuildRequires:	python-modules
 BuildRequires:	readline-devel >= 6.2
 BuildRequires:	rpm-perlprov >= 4.1-13
@@ -523,7 +524,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_PIC=ON \
 	-DWITH_LZ4=system \
 	-DWITH_LIBEVENT=system \
-	-DWITH_PROTOBUF=system \
+	%{?with_system_protobuf:-DWITH_PROTOBUF=system} \
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
