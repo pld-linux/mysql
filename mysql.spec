@@ -19,7 +19,7 @@
 %bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_with	sphinx		# Sphinx storage engine support
-# mysql needs boost 1.70.0 and doesn't support newer/older boost versions
+# mysql needs boost 1.72.0 and doesn't support newer/older boost versions
 %bcond_with	system_boost
 %bcond_without	tests		# run test suite
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
@@ -34,18 +34,18 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	8.0.20
+Version:	8.0.21
 Release:	0.1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-8.0/%{name}-%{version}.tar.gz
-# Source0-md5:	e01fe942e0fc800ad1eb5d21307c1681
+# Source0-md5:	7a63ac9044f9a87adc2644fea310a513
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
-Source101:	http://downloads.sourceforge.net/boost/boost_1_70_0.tar.bz2
-# Source101-md5:	242ecc63507711d6706b9b0c0d0c7d4f
+Source101:	http://downloads.sourceforge.net/boost/boost_1_72_0.tar.bz2
+# Source101-md5:	cb40943d2a2cb8ce08d42bc48b0f84f0
 %endif
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -74,7 +74,7 @@ Patch25:	%{name}-readline.patch
 Patch26:	%{name}dumpslow-clusters.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
-%{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
+%{?with_system_boost:BuildRequires:	boost-devel >= 1.72.0}
 BuildRequires:	cmake >= 2.8.2
 BuildRequires:	libaio-devel
 BuildRequires:	libevent-devel
