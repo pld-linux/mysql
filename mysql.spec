@@ -229,9 +229,7 @@ MySQL - це SQL (Structured Query Language) сервер бази даних. M
 Summary:	MySQL - character sets definitions
 Summary(pl.UTF-8):	MySQL - definicje kodowań znaków
 Group:		Applications/Databases
-%if "%{_rpmversion}" >= "5"
 BuildArch:	noarch
-%endif
 
 %description charsets
 This package contains character sets definitions needed by both client
