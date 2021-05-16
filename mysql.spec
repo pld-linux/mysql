@@ -61,8 +61,6 @@ Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
 Patch0:		%{name}-opt.patch
-Patch1:		lz4.patch
-Patch2:		%{name}-protobuf.patch
 
 Patch17:	%{name}-5.7-sphinx.patch
 Patch18:	%{name}-sphinx.patch
@@ -464,8 +462,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101}
 
 #%patch0 -p1
-#%patch1 -p1
-#%patch2 -p1
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
