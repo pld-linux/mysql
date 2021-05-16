@@ -30,7 +30,7 @@ diff -ruN mysql-5.7.21.orig/cmake/readline.cmake mysql-5.7.21/cmake/readline.cma
    MARK_AS_ADVANCED(EDITLINE_INCLUDE_DIR EDITLINE_LIBRARY)
  
 @@ -139,7 +139,7 @@ MACRO (FIND_SYSTEM_EDITLINE)
-     SET(CMAKE_REQUIRED_LIBRARIES ${EDITLINE_LIBRARY})
+     LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${EDITLINE_LIBRARY})
      CHECK_CXX_SOURCE_COMPILES("
      #include <stdio.h>
 -    #include <readline.h>
