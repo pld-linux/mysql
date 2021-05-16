@@ -89,6 +89,7 @@ BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	protobuf-devel >= 2.5
 BuildRequires:	python-modules
 BuildRequires:	readline-devel >= 6.2
+BuildRequires:	rpcsvc-proto
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.597
 BuildRequires:	sed >= 4.0
