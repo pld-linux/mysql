@@ -37,7 +37,7 @@ Content-Disposition: inline
  }
  elsif (defined($tgt_name) && ($tgt_name =~ m:/: || $tgt_name eq '.')) {
 @@ -285,7 +285,7 @@ foreach my $rdb ( @db_desc ) {
-     }
+     my @dbh_tables = (@dbh_base_tables, @dbh_views);
  
      ## get list of files to copy
 -    my $db_dir = "$datadir/$db";

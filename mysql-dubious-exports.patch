@@ -23,7 +23,7 @@ diff -Naur mysql-5.5.8.orig/include/my_sys.h mysql-5.5.8/include/my_sys.h
 +
  extern CHARSET_INFO *get_charset(uint cs_number, myf flags);
  extern CHARSET_INFO *get_charset_by_name(const char *cs_name, myf flags);
- extern CHARSET_INFO *get_charset_by_csname(const char *cs_name,
+ extern CHARSET_INFO *my_collation_get_by_name(MY_CHARSET_LOADER *loader,
 diff -Naur mysql-5.5.8.orig/include/mysql.h.pp mysql-5.5.8/include/mysql.h.pp
 --- mysql-5.5.8.orig/include/mysql.h.pp	2010-12-03 12:58:24.000000000 -0500
 +++ mysql-5.5.8/include/mysql.h.pp	2010-12-27 14:27:23.956926896 -0500

@@ -37,7 +37,7 @@
      int main(int argc, char **argv)
      {
         HIST_ENTRY entry;
-@@ -170,14 +170,13 @@
+@@ -179,7 +179,7 @@
  
      CHECK_CXX_SOURCE_COMPILES("
      #include <stdio.h>
@@ -45,15 +45,14 @@
 +    #include <readline/readline.h>
      int main(int argc, char **argv)
      {
--      typedef int MYFunction(const char*, int);
--      MYFunction* myf= rl_completion_entry_function;
--      int res= (myf)(NULL, 0);
--      completion_matches(0,0);
--      return res;
-+      rl_compentry_func_t *myf= rl_completion_entry_function;
-+      char *res= (myf)(NULL, 0);
-+      rl_completion_matches(0,0);
-+      return res ? 0 : 1;
-     }"
-     EDITLINE_HAVE_COMPLETION)
+       typedef int MYFunction(const char*, int);
+@@ -192,7 +192,7 @@
  
+     CHECK_CXX_SOURCE_COMPILES("
+     #include <stdio.h>
+-    #include <readline.h>
++    #include <readline/readline.h>
+     int main(int argc, char **argv)
+     {
+       typedef char* MYFunction(const char*, int);
+

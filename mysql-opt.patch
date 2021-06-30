@@ -1,6 +1,6 @@
 --- percona-server-5.6.24-72.2/cmake/build_configurations/compiler_options.cmake.orig	2015-05-06 12:38:47.000000000 +0200
 +++ percona-server-5.6.24-72.2/cmake/build_configurations/compiler_options.cmake	2015-06-09 19:54:42.577790251 +0200
-@@ -30,8 +30,8 @@
+@@ -37,8 +37,8 @@
      IF(WITH_VALGRIND)
        SET(COMMON_C_FLAGS             "-fno-inline ${COMMON_C_FLAGS}")
      ENDIF()
@@ -10,7 +10,7 @@
 +    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${CMAKE_C_FLAGS_RELWITHDEBINFO} ${COMMON_C_FLAGS}")
    ENDIF()
    IF(CMAKE_COMPILER_IS_GNUCXX)
-     SET(COMMON_CXX_FLAGS               "-g -fabi-version=2 -fno-omit-frame-pointer -fno-strict-aliasing")
+     # GCC 6 has C++14 as default, set it explicitly to the old default.
 @@ -52,26 +52,26 @@ IF(UNIX)
      IF(WITH_VALGRIND)
        SET(COMMON_CXX_FLAGS             "-fno-inline ${COMMON_CXX_FLAGS}")
