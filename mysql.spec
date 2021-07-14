@@ -570,9 +570,9 @@ CPPFLAGS="%{rpmcppflags}" \
 %cmake .. \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
 	-DCMAKE_C_FLAGS_DEBUG="-fno-omit-frame-pointer -fno-strict-aliasing -Wimplicit-fallthrough=0" \
-	-DCMAKE_CXX_FLAGS_DEBUG="-fno-omit-frame-pointer -fno-strict-aliasing -Wimplicit-fallthrough=0" \
+	-DCMAKE_CXX_FLAGS_DEBUG="-fno-omit-frame-pointer -fno-strict-aliasing -Wimplicit-fallthrough=0 -std=c++14" \
 	-DCMAKE_C_FLAGS_RELWITHDEBINFO="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -Wimplicit-fallthrough=0" \
-	-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -Wimplicit-fallthrough=0" \
+	-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -Wimplicit-fallthrough=0 -std=c++14" \
 	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
 	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
 	%{?with_systemtap:-DENABLE_DTRACE=ON} \
