@@ -104,11 +104,11 @@ Requires(pre):	/bin/id
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
-Requires(triggerpostun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Requires:	rc-scripts >= 0.2.0
+Requires:	sed >= 4.0
 Suggests:	mysql-client
 %{?with_tcpd:Suggests:	tcp_wrappers}
 Suggests:	vim-syntax-mycnf
