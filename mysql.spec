@@ -93,6 +93,7 @@ BuildRequires:	perl-devel >= 1:5.6.1
 %{?with_system_protobuf:BuildRequires:	protobuf-devel >= 2.5}
 BuildRequires:	python-modules
 BuildRequires:	readline-devel >= 6.2
+BuildRequires:	rpm-build >= 4.6
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.597
 BuildRequires:	sed >= 4.0
@@ -231,9 +232,7 @@ MySQL - це SQL (Structured Query Language) сервер бази даних. M
 Summary:	MySQL - character sets definitions
 Summary(pl.UTF-8):	MySQL - definicje kodowań znaków
 Group:		Applications/Databases
-%if "%{_rpmversion}" >= "5"
 BuildArch:	noarch
-%endif
 
 %description charsets
 This package contains character sets definitions needed by both client
