@@ -78,6 +78,7 @@ BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
 BuildRequires:	cmake >= 2.8.2
 BuildRequires:	libaio-devel
+BuildRequires:	libatomic-devel
 BuildRequires:	libevent-devel
 BuildRequires:	libhsclient-devel
 BuildRequires:	libstdc++-devel >= 5:4.0
@@ -321,6 +322,7 @@ Summary(ru.UTF-8):	MySQL - хедеры и библиотеки разработ
 Summary(uk.UTF-8):	MySQL - хедери та бібліотеки програміста
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
+Requires:	libatomic-devel
 %{?with_ssl:Requires: openssl-devel}
 Requires:	zlib-devel
 Obsoletes:	MySQL-devel
