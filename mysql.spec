@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.31
-Release:	1
+Release:	2
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
@@ -64,15 +64,13 @@ Source14:	my.cnf
 Patch0:		%{name}-opt.patch
 Patch1:		lz4.patch
 Patch2:		%{name}-protobuf.patch
-
-Patch17:	%{name}-5.7-sphinx.patch
-Patch18:	%{name}-sphinx.patch
-Patch19:	%{name}-chain-certs.patch
-
-Patch24:	%{name}-cmake.patch
-Patch25:	%{name}-readline.patch
-
-Patch26:	%{name}dumpslow-clusters.patch
+Patch3:		%{name}-5.7-sphinx.patch
+Patch4:		%{name}-sphinx.patch
+Patch5:		%{name}-chain-certs.patch
+Patch6:		%{name}-cmake.patch
+Patch7:		%{name}-readline.patch
+Patch8:		%{name}dumpslow-clusters.patch
+Patch9:		openssl-3.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
@@ -93,6 +91,7 @@ BuildRequires:	perl-devel >= 1:5.6.1
 %{?with_system_protobuf:BuildRequires:	protobuf-devel >= 2.5}
 BuildRequires:	python-modules
 BuildRequires:	readline-devel >= 6.2
+BuildRequires:	rpcsvc-proto
 BuildRequires:	rpm-build >= 4.6
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.605
@@ -470,21 +469,18 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 %{__mv} sphinx-*/mysqlse storage/sphinx
-%patch17 -p1
-%patch18 -p1
+%patch3 -p1
+%patch4 -p1
 %endif
-
 # really not fixed? verify
-%patch19 -p1
-
-%patch24 -p1
-%patch25 -p1
-
-%patch26 -p1
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
+%patch9 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
@@ -701,7 +697,8 @@ fi
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
-%triggerpostun -- mysql < 4.0.20-2.4
+%triggerpostun -- mysql < 5.7.0
+# mysql < 4.0.20-2.4
 # For clusters in /etc/%{name}/clusters.conf
 if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
@@ -716,7 +713,7 @@ if [ -f /etc/sysconfig/mysql ]; then
 	fi
 fi
 
-%triggerpostun -- mysql < 4.1.1
+# mysql < 4.1.1
 # For better compatibility with prevoius versions:
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -755,7 +752,7 @@ done
 EOF
 #'
 
-%triggerpostun -- mysql < 5.1.0
+# mysql < 5.1.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -794,7 +791,7 @@ for config in $configs; do
 done
 ) | %banner -e %{name}-5.1
 
-%triggerpostun -- mysql < 5.5.0
+# mysql < 5.5.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -837,7 +834,7 @@ for config in $configs; do
 done
 ) | %banner -e %{name}-5.5
 
-%triggerpostun -- mysql < 5.7.0
+# mysql < 5.7.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
