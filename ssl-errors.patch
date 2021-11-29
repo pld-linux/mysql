@@ -1,0 +1,45 @@
+diff -urp mysql-5.7.36.org/vio/viossl.c mysql-5.7.36/vio/viossl.c
+--- mysql-5.7.36.org/vio/viossl.c	2021-09-07 07:26:47.000000000 +0200
++++ mysql-5.7.36/vio/viossl.c	2021-11-29 10:34:20.106597290 +0100
+@@ -137,7 +137,7 @@ static my_bool ssl_should_retry(Vio *vio
+                                 enum enum_vio_io_event *event,
+                                 unsigned long *ssl_errno_holder)
+ {
+-  int ssl_error;
++  int ssl_error, err_error;
+   SSL *ssl= vio->ssl_arg;
+   my_bool should_retry= TRUE;
+ 
+@@ -148,12 +148,23 @@ static my_bool ssl_should_retry(Vio *vio
+   switch (ssl_error)
+   {
+   case SSL_ERROR_WANT_READ:
++    err_error = ssl_error;  // for backward compatibility.
+     *event= VIO_IO_EVENT_READ;
+     break;
+   case SSL_ERROR_WANT_WRITE:
++    err_error = ssl_error;  // for backward compatibility.
+     *event= VIO_IO_EVENT_WRITE;
+     break;
+   default:
++    /* first save the top ERR error */
++#ifdef HAVE_WOLFSSL
++    /* TODO: when wolfSSL issue 4240 is fixed (see bug 27855668) remove the
++     * "if" branch */
++    err_error = ssl_error;
++#else
++    err_error = ERR_get_error();
++#endif
++    /* now report all remaining errors on and/or clear the error stack */
+ #ifndef NDEBUG  /* Debug build */
+     /* Note: the OpenSSL error queue gets cleared in report_errors(). */
+     report_errors(ssl);
+@@ -166,7 +177,7 @@ static my_bool ssl_should_retry(Vio *vio
+     break;
+   }
+ 
+-  *ssl_errno_holder= ssl_error;
++  *ssl_errno_holder= err_error;
+ 
+   return should_retry;
+ }
