@@ -35,13 +35,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.7.31
-Release:	2
+Version:	5.7.36
+Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
-# Source0-md5:	2b0039d0fe510c9d768a3eb1ae923fbf
+# Source0-md5:	b5884df310dad829b4c565e12d2c2092
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -62,7 +62,7 @@ Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
 Patch0:		%{name}-opt.patch
-Patch1:		lz4.patch
+
 Patch2:		%{name}-protobuf.patch
 Patch3:		%{name}-5.7-sphinx.patch
 Patch4:		%{name}-sphinx.patch
@@ -467,7 +467,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101}
 
 %patch0 -p1
-%patch1 -p1
+
 %patch2 -p1
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
@@ -488,7 +488,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 # ensure sytstem lib
 # need to keep xxhash.[ch]
-%{__rm} -rv extra/lz4/lz4**
+%{__rm} -rv extra/lz4/lz4*/lz4*
 
 %build
 install -d build

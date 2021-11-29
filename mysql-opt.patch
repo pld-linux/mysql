@@ -1,57 +1,11 @@
---- mysql-5.7.27/cmake/build_configurations/compiler_options.cmake.orig	2019-06-10 16:43:20.000000000 +0200
-+++ mysql-5.7.27/cmake/build_configurations/compiler_options.cmake	2019-07-29 05:55:55.892824445 +0200
-@@ -50,8 +50,8 @@
-     IF(C_NO_EXPENSIVE_OPTIMIZATIONS)
-       SET(COMMON_C_FLAGS "${COMMON_C_FLAGS} -fno-expensive-optimizations")
-     ENDIF()
--    SET(CMAKE_C_FLAGS_DEBUG          "${COMMON_C_FLAGS}")
--    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${COMMON_C_FLAGS}")
-+    SET(CMAKE_C_FLAGS_DEBUG          "${CMAKE_C_FLAGS_DEBUG} ${COMMON_C_FLAGS}")
-+    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${CMAKE_C_FLAGS_RELWITHDEBINFO} ${COMMON_C_FLAGS}")
-   ENDIF()
-   IF(CMAKE_COMPILER_IS_GNUCXX)
-     SET(COMMON_CXX_FLAGS               "-g -fabi-version=2 -fno-omit-frame-pointer -fno-strict-aliasing")
-@@ -59,7 +59,7 @@
+--- mysql-5.7.36/cmake/build_configurations/compiler_options.cmake~	2021-09-07 07:26:47.000000000 +0200
++++ mysql-5.7.36/cmake/build_configurations/compiler_options.cmake	2021-11-29 07:46:49.013266334 +0100
+@@ -73,7 +73,7 @@ IF(UNIX)
      EXECUTE_PROCESS(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion
                      OUTPUT_VARIABLE GXX_VERSION)
      IF(GXX_VERSION VERSION_EQUAL 6.0 OR GXX_VERSION VERSION_GREATER 6.0)
--      SET(COMMON_CXX_FLAGS             "${COMMON_CXX_FLAGS} -std=gnu++03")
-+      SET(COMMON_CXX_FLAGS             "${COMMON_CXX_FLAGS} -std=gnu++11")
+-      STRING_PREPEND(COMMON_CXX_FLAGS "-std=gnu++03 ")
++      STRING_PREPEND(COMMON_CXX_FLAGS "-std=gnu++11 ")
      ENDIF()
      # Disable inline optimizations for valgrind testing to avoid false positives
      IF(WITH_VALGRIND)
-@@ -80,15 +80,15 @@
-     IF(CXX_NO_EXPENSIVE_OPTIMIZATIONS)
-       SET(COMMON_CXX_FLAGS "${COMMON_CXX_FLAGS} -fno-expensive-optimizations")
-     ENDIF()
--    SET(CMAKE_CXX_FLAGS_DEBUG          "${COMMON_CXX_FLAGS}")
--    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 ${COMMON_CXX_FLAGS}")
-+    SET(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} ${COMMON_CXX_FLAGS}")
-+    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMMON_CXX_FLAGS}")
-   ENDIF()
- 
-   # Default Clang flags
-   IF(CMAKE_C_COMPILER_ID MATCHES "Clang")
-     SET(COMMON_C_FLAGS               "-g -fno-omit-frame-pointer -fno-strict-aliasing")
--    SET(CMAKE_C_FLAGS_DEBUG          "${COMMON_C_FLAGS}")
--    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${COMMON_C_FLAGS}")
-+    SET(CMAKE_C_FLAGS_DEBUG          "${CMAKE_C_FLAGS_DEBUG} ${COMMON_C_FLAGS}")
-+    SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 ${CMAKE_C_FLAGS_RELWITHDEBINFO} ${COMMON_C_FLAGS}")
-   ENDIF()
-   IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-     SET(COMMON_CXX_FLAGS               "-g -fno-omit-frame-pointer -fno-strict-aliasing")
-@@ -95,11 +95,11 @@
-     IF(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 6.0 OR
-         CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 6.0)
-       IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
--        SET(COMMON_CXX_FLAGS           "${COMMON_CXX_FLAGS} -std=gnu++03")
-+        SET(COMMON_CXX_FLAGS           "${COMMON_CXX_FLAGS} -std=gnu++11")
-       ENDIF()
-     ENDIF()
--    SET(CMAKE_CXX_FLAGS_DEBUG          "${COMMON_CXX_FLAGS}")
--    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 ${COMMON_CXX_FLAGS}")
-+    SET(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} ${COMMON_CXX_FLAGS}")
-+    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${COMMON_CXX_FLAGS}")
-   ENDIF()
- 
-   # Solaris flags
