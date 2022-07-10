@@ -90,8 +90,9 @@ BuildRequires:	protobuf-devel >= 2.5
 BuildRequires:	python-modules
 BuildRequires:	readline-devel >= 6.2
 BuildRequires:	rpcsvc-proto
+BuildRequires:	rpm-build >= 4.6
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.597
+BuildRequires:	rpmbuild(macros) >= 1.605
 BuildRequires:	sed >= 4.0
 %{?with_systemtap:BuildRequires:	systemtap-sdt-devel}
 BuildRequires:	zlib-devel
@@ -114,8 +115,8 @@ Provides:	MySQL-server
 Provides:	group(mysql)
 Provides:	msqlormysql
 Provides:	user(mysql)
-Obsoletes:	MySQL
-Obsoletes:	mysql-server
+Obsoletes:	MySQL < 3.22.27
+Obsoletes:	mysql-server < 4
 Conflicts:	logrotate < 3.8.0
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -276,7 +277,7 @@ Group:		Applications/Databases
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	readline >= 6.2
-Obsoletes:	MySQL-client
+Obsoletes:	MySQL-client < 3.22.27
 
 %description client
 This package contains the standard MySQL clients.
@@ -300,7 +301,7 @@ Este pacote contém os clientes padrão para o MySQL.
 Summary:	Shared libraries for MySQL
 Summary(pl.UTF-8):	Biblioteki współdzielone MySQL
 Group:		Libraries
-Obsoletes:	libmysql10
+Obsoletes:	libmysql10 < 4
 Obsoletes:	mysql-doc < 4.1.12
 
 %description libs
@@ -319,8 +320,8 @@ Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
 %{?with_ssl:Requires: openssl-devel}
 Requires:	zlib-devel
-Obsoletes:	MySQL-devel
-Obsoletes:	libmysql10-devel
+Obsoletes:	MySQL-devel < 3.22.27
+Obsoletes:	libmysql10-devel < 4
 Obsoletes:	webscalesql-devel
 
 %description devel
@@ -355,7 +356,7 @@ Summary(ru.UTF-8):	MySQL - статические библиотеки
 Summary(uk.UTF-8):	MySQL - статичні бібліотеки
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}-%{release}
-Obsoletes:	MySQL-static
+Obsoletes:	MySQL-static < 3.22.27
 
 %description static
 MySQL static libraries.
@@ -381,7 +382,7 @@ Group:		Applications/Databases
 Requires:	%{name} = %{version}-%{release}
 Requires:	%{name}-client
 Requires:	perl-DBD-mysql
-Obsoletes:	MySQL-bench
+Obsoletes:	MySQL-bench < 3.22.27
 
 %description bench
 This package contains MySQL benchmark scripts and data.
@@ -680,8 +681,8 @@ if [ "$1" = "0" ]; then
 	/sbin/chkconfig --del mysql-ndb-cpc
 fi
 
-%post   libs -p /sbin/ldconfig
-%postun libs -p /sbin/ldconfig
+%post	libs -p /sbin/ldconfig
+%postun	libs -p /sbin/ldconfig
 
 %triggerpostun -- mysql < 4.0.20-2.4
 # For clusters in /etc/%{name}/clusters.conf
