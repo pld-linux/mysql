@@ -73,7 +73,7 @@ Patch5:		%{name}-system-libhsclient.patch
 # from fedora
 Patch6:		%{name}-system-users.patch
 Patch7:		mysql-nosystem-libhsclient.patch
-
+Patch8:         openssl-3.patch
 Patch9:		%{name}-build.patch
 Patch11:	%{name}-upgrade.patch
 Patch12:	%{name}-config.patch
@@ -528,7 +528,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %{?with_system_hsclient:%patch5 -p1}
 %patch6 -p1
 %patch7 -p1
-
+%patch8 -p1
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
