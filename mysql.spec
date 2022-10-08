@@ -35,13 +35,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.7.36
+Version:	5.7.39
 Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
-# Source0-md5:	b5884df310dad829b4c565e12d2c2092
+# Source0-md5:	db1b672fc257bd46356c7af26dd22801
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -74,7 +74,7 @@ Patch9:		openssl-3.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
-BuildRequires:	cmake >= 2.8.2
+BuildRequires:	cmake >= 2.8.9
 BuildRequires:	libaio-devel
 BuildRequires:	libatomic-devel
 BuildRequires:	libevent-devel
@@ -97,7 +97,7 @@ BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.605
 BuildRequires:	sed >= 4.0
 %{?with_systemtap:BuildRequires:	systemtap-sdt-devel}
-BuildRequires:	zlib-devel
+BuildRequires:	zlib-devel >= 1.2.12
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/groupdel
 Requires(postun):	/usr/sbin/userdel
@@ -303,7 +303,8 @@ Este pacote contém os clientes padrão para o MySQL.
 Summary:	Shared libraries for MySQL
 Summary(pl.UTF-8):	Biblioteki współdzielone MySQL
 Group:		Libraries
-Obsoletes:	libmysql10
+Requires:	zlib >= 1.2.12
+Obsoletes:	libmysql10 < 4
 Obsoletes:	mysql-doc < 4.1.12
 
 %description libs
@@ -322,9 +323,9 @@ Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	libatomic-devel
 %{?with_ssl:Requires: openssl-devel}
-Requires:	zlib-devel
+Requires:	zlib-devel >= 1.2.12
 Obsoletes:	MySQL-devel
-Obsoletes:	libmysql10-devel
+Obsoletes:	libmysql10-devel < 4
 Obsoletes:	webscalesql-devel
 
 %description devel
