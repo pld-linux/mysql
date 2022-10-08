@@ -684,7 +684,8 @@ fi
 %post	libs -p /sbin/ldconfig
 %postun	libs -p /sbin/ldconfig
 
-%triggerpostun -- mysql < 4.0.20-2.4
+%triggerpostun -- mysql < 5.7.0
+# mysql < 4.0.20-2.4
 # For clusters in /etc/%{name}/clusters.conf
 if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
@@ -699,7 +700,7 @@ if [ -f /etc/sysconfig/mysql ]; then
 	fi
 fi
 
-%triggerpostun -- mysql < 4.1.1
+# mysql < 4.1.1
 # For better compatibility with prevoius versions:
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -738,7 +739,7 @@ done
 EOF
 #'
 
-%triggerpostun -- mysql < 5.1.0
+# mysql < 5.1.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -777,7 +778,7 @@ for config in $configs; do
 done
 ) | %banner -e %{name}-5.1
 
-%triggerpostun -- mysql < 5.5.0
+# mysql < 5.5.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -820,7 +821,7 @@ for config in $configs; do
 done
 ) | %banner -e %{name}-5.5
 
-%triggerpostun -- mysql < 5.7.0
+# mysql < 5.7.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
