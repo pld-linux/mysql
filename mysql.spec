@@ -1,4 +1,6 @@
 # TODO:
+# - -DWITH_AUTHENTICATION_KERBEROS=ON (BR: MIT krb5)
+# - -DWITH_AUTHENTICATION_FIDO=ON (using system libfido?)
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
@@ -19,11 +21,11 @@
 %bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_with	sphinx		# Sphinx storage engine support
-# mysql needs boost 1.73.0 and doesn't support newer/older boost versions
+# mysql needs boost 1.77.0 and doesn't support newer/older boost versions
 %bcond_with	system_boost
 %bcond_without	tests		# run test suite
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
-%bcond_without	ldap		# LDAP auth support
+%bcond_without	ldap		# LDAP auth support (requires MIT Kerberos)
 
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -34,18 +36,18 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	8.0.25
+Version:	8.0.30
 Release:	0.1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-8.0/%{name}-%{version}.tar.gz
-# Source0-md5:	001a17602310317d17524b2e36113c53
+# Source0-md5:	cb88420e449603b82ba8ed84302922e1
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
-Source101:	http://downloads.sourceforge.net/boost/boost_1_73_0.tar.bz2
-# Source101-md5:	9273c8c4576423562bbe84574b07b2bd
+Source101:	http://downloads.sourceforge.net/boost/boost_1_77_0.tar.bz2
+# Source101-md5:	09dc857466718f27237144c6f2432d86
 %endif
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -61,10 +63,10 @@ Source12:	%{name}-ndb-cpc.sysconfig
 Source13:	%{name}-client.conf
 Source14:	my.cnf
 Patch0:		%{name}-opt.patch
+Patch1:		%{name}-system-xxhash.patch
 
 Patch17:	%{name}-5.7-sphinx.patch
 Patch18:	%{name}-sphinx.patch
-Patch19:	%{name}-chain-certs.patch
 
 Patch24:	%{name}-cmake.patch
 Patch25:	%{name}-readline.patch
@@ -72,17 +74,21 @@ Patch25:	%{name}-readline.patch
 Patch26:	%{name}dumpslow-clusters.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
-%{?with_system_boost:BuildRequires:	boost-devel >= 1.72.0}
+%{?with_system_boost:BuildRequires:	boost-devel >= 1.77.0}
 BuildRequires:	cmake >= 2.8.2
+%{?with_ldap:BuildRequires:	cyrus-sasl-devel}
+# for configure and tests
+%{?with_ldap:BuildRequires:	cyrus-sasl-scram}
+#%{?with_ldap:BuildRequires:	krb5-devel}
 BuildRequires:	libaio-devel
 BuildRequires:	libevent-devel
 BuildRequires:	libhsclient-devel
-BuildRequires:	libstdc++-devel >= 5:4.0
+BuildRequires:	libstdc++-devel >= 5:7.1
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	lz4-devel
 BuildRequires:	mecab-devel
 BuildRequires:	ncurses-devel >= 4.2
-%{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
+%{?with_ssl:BuildRequires:	openssl-devel >= 1.1.1}
 %{?with_ldap:BuildRequires:	openldap-devel}
 BuildRequires:	pam-devel
 BuildRequires:	perl-devel >= 1:5.6.1
@@ -95,7 +101,9 @@ BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.605
 BuildRequires:	sed >= 4.0
 %{?with_systemtap:BuildRequires:	systemtap-sdt-devel}
-BuildRequires:	zlib-devel
+BuildRequires:	xxHash-devel
+BuildRequires:	zlib-devel >= 1.2.12
+BuildRequires:	zstd-devel
 Requires(post):	sed >= 4.0
 Requires(post,preun):	/sbin/chkconfig
 Requires(postun):	/usr/sbin/groupdel
@@ -301,6 +309,7 @@ Este pacote contém os clientes padrão para o MySQL.
 Summary:	Shared libraries for MySQL
 Summary(pl.UTF-8):	Biblioteki współdzielone MySQL
 Group:		Libraries
+Requires:	zlib >= 1.2.12
 Obsoletes:	libmysql10 < 4
 Obsoletes:	mysql-doc < 4.1.12
 
@@ -318,8 +327,8 @@ Summary(ru.UTF-8):	MySQL - хедеры и библиотеки разработ
 Summary(uk.UTF-8):	MySQL - хедери та бібліотеки програміста
 Group:		Development/Libraries
 Requires:	%{name}-libs = %{version}-%{release}
-%{?with_ssl:Requires: openssl-devel}
-Requires:	zlib-devel
+%{?with_ssl:Requires:	openssl-devel >= 1.1.1}
+Requires:	zlib-devel >= 1.2.12
 Obsoletes:	MySQL-devel < 3.22.27
 Obsoletes:	libmysql10-devel < 4
 Obsoletes:	webscalesql-devel
@@ -464,6 +473,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101}
 
 #%patch0 -p1
+%patch1 -p1
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
@@ -471,9 +481,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch17 -p1
 %patch18 -p1
 %endif
-
-# really not fixed? verify
-%patch19 -p1
 
 %patch24 -p1
 %patch25 -p1
@@ -514,12 +521,16 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
+	%{!?with_ldap:-DWITH_AUTHENTICATION_LDAP=OFF} \
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
 	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
 	-DWITH_PIC=ON \
-	-DWITH_LZ4=system \
+	%{?with_ldap:-DWITH_LDAP=system} \
+	-DWITH_KERBEROS=system \
 	-DWITH_LIBEVENT=system \
+	-DWITH_LZ4=system \
 	-DWITH_PROTOBUF=system \
+	-DWITH_SASL=system \
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
@@ -862,10 +873,17 @@ done
 
 %files
 %defattr(644,root,root,755)
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysqlrouter
 %attr(754,root,root) /etc/rc.d/init.d/%{name}
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
+%attr(755,root,root) %{_bindir}/ibd2sdi
+%attr(755,root,root) %{_bindir}/mysql_migrate_keyring
+%attr(755,root,root) %{_bindir}/mysqlrouter
+%attr(755,root,root) %{_bindir}/mysqlrouter_keyring
+%attr(755,root,root) %{_bindir}/mysqlrouter_passwd
+%attr(755,root,root) %{_bindir}/mysqlrouter_plugin_info
 %attr(755,root,root) %{_sbindir}/innochecksum
 %attr(755,root,root) %{_sbindir}/my_print_defaults
 %attr(755,root,root) %{_sbindir}/myisamchk
@@ -881,14 +899,33 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
+#%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_fido_client.so
 %{?with_ldap:%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so}
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_audit_api_message_emit.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_keyring_file.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_filter_dragnet.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_sink_json.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_sink_syseventlog.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_mysqlbackup.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_mysqlx_global_reset.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_pfs_example.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_pfs_example_component_population.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_query_attributes.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_reference_cache.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_udf_*_func.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_validate_password.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/conflicting_variables.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/connection_control.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/ddl_rewriter.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/group_replication.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_mock.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_file.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libpluginmecab.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/locking_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_clone.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_no_login.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
@@ -896,12 +933,36 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/replication_observers_example_plugin.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/rewriter.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_replica.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_source.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/validate_password.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/version_token.so
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
+%dir %{_libdir}/%{name}/private
+%{_libdir}/%{name}/private/icudt69l
+%dir %{_libdir}/mysqlrouter
+%attr(755,root,root) %{_libdir}/mysqlrouter/connection_pool.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/http_auth_backend.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/http_auth_realm.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/http_server.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/io.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/keepalive.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/metadata_cache.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/rest_api.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/rest_connection_pool.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/rest_metadata_cache.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/rest_router.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/rest_routing.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/router_openssl.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/router_protobuf.so
+%attr(755,root,root) %{_libdir}/mysqlrouter/routing.so
+%dir %{_libdir}/mysqlrouter/private
+%attr(755,root,root) %{_libdir}/mysqlrouter/private/libmysqlharness*.so*
+%attr(755,root,root) %{_libdir}/mysqlrouter/private/libmysqlrouter*.so*
+%{_mandir}/man1/ibd2sdi.1*
 %{_mandir}/man1/innochecksum.1*
 %{_mandir}/man1/my_print_defaults.1*
 %{_mandir}/man1/myisamchk.1*
@@ -909,6 +970,9 @@ done
 %{_mandir}/man1/myisampack.1*
 %{_mandir}/man1/mysql_upgrade.1*
 %{_mandir}/man1/mysqlcheck.1*
+%{_mandir}/man1/mysqlrouter.1*
+%{_mandir}/man1/mysqlrouter_passwd.1*
+%{_mandir}/man1/mysqlrouter_plugin_info.1*
 %{_mandir}/man8/mysqld.8*
 
 %if %{?debug:1}0
@@ -931,7 +995,8 @@ done
 
 %{_datadir}/%{name}/english
 %{_datadir}/%{name}/dictionary.txt
-%{_datadir}/%{name}/innodb_memcached_config.sql
+%{_datadir}/%{name}/messages_to_clients.txt
+%{_datadir}/%{name}/messages_to_error_log.txt
 %{_datadir}/%{name}/install_rewriter.sql
 %{_datadir}/%{name}/uninstall_rewriter.sql
 # Don't mark these with %%lang. These are used depending
@@ -968,8 +1033,8 @@ done
 %files extras
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/myisam_ftdump
-%attr(755,root,root) %{_bindir}/mysql_ssl_rsa_setup
 %attr(755,root,root) %{_bindir}/mysql_secure_installation
+%attr(755,root,root) %{_bindir}/mysql_ssl_rsa_setup
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
 %attr(755,root,root) %{_bindir}/perror
 %{_mandir}/man1/myisam_ftdump.1*
@@ -1035,14 +1100,55 @@ done
 %{_libdir}/libndbclient.a
 %endif
 
+# rename to test or split?
 %files bench
 %defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/comp_err
+%attr(755,root,root) %{_bindir}/mysql_keyring_encryption_test
 %attr(755,root,root) %{_bindir}/mysqlslap
 %attr(755,root,root) %{_bindir}/mysqltest
+%attr(755,root,root) %{_bindir}/mysqltest_safe_process
+%attr(755,root,root) %{_bindir}/zlib_decompress
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component1.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component2.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component3.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_sink_test.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_audit_api_message.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_backup_lock_service.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_component_deinit.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_host_application_signal.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_current_thread_reader.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_runtime_error.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_system_variable_set.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_pfs_notification.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_pfs_resource_group.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_sensitive_system_variables.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service_int.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service_reg_only.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service_str.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service_unreg_only.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_string_service.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_string_service_charset.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_string_service_long.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_sys_var_service.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_sys_var_service_int.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_sys_var_service_same.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_sys_var_service_str.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_system_variable_source.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_table_access.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_udf_registration.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_udf_services.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/pfs_example_plugin_employee.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/test_services_host_application_signal.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/test_services_plugin_registry.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/udf_example.so
 #%dir %{_datadir}/sql-bench
 #%{_datadir}/sql-bench/[CDRl]*
 #%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
+%{_mandir}/man1/lz4_decompress.1*
 %{_mandir}/man1/mysqlslap.1*
+%{_mandir}/man1/zlib_decompress.1*
 
 #%files doc
 #%defattr(644,root,root,755)

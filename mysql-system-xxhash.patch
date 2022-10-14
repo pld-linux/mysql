@@ -1,0 +1,168 @@
+--- mysql-8.0.30/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_message_stage_split.cc.orig	2022-07-06 23:36:34.000000000 +0200
++++ mysql-8.0.30/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_message_stage_split.cc	2022-10-09 14:33:34.598098038 +0200
+@@ -126,7 +126,7 @@ Gcs_sender_id calculate_sender_id(const
+   std::string info(node.get_member_id().get_member_id());
+   info.append(node.get_member_uuid().actual_value);
+ 
+-  return GCS_XXH64(info.c_str(), info.size(), 0);
++  return XXH64(info.c_str(), info.size(), 0);
+ }
+ 
+ bool Gcs_message_stage_split_v2::update_members_information(
+--- mysql-8.0.30/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xxhash.h.orig	2022-07-06 23:36:34.000000000 +0200
++++ mysql-8.0.30/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xxhash.h	2022-10-09 08:41:35.109178797 +0200
+@@ -25,10 +25,6 @@
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+ */
+ 
+-// Define a namespace prefix to all xxhash functions. This is done to
+-// avoid conflict with xxhash symbols in liblz4.
+-#define XXH_NAMESPACE GCS_
+-
+-#include "xxhash.h"
++#include <xxhash.h>
+ 
+ #endif  // GCS_XXHASH_H_INCLUDED
+--- mysql-8.0.30/plugin/group_replication/libmysqlgcs/CMakeLists.txt.orig	2022-07-06 23:36:34.000000000 +0200
++++ mysql-8.0.30/plugin/group_replication/libmysqlgcs/CMakeLists.txt	2022-10-09 08:42:55.768741827 +0200
+@@ -140,7 +140,6 @@ SET(GCS_SOURCES
+   src/bindings/xcom/gcs_xcom_statistics_interface.cc
+   src/bindings/xcom/gcs_xcom_proxy.cc
+   src/bindings/xcom/gcs_xcom_communication_protocol_changer.cc
+-  ${BUNDLED_LZ4_PATH}/xxhash.c # required by gcs_message_stage_split
+   src/bindings/xcom/gcs_message_stage_split.cc
+   src/bindings/xcom/gcs_xcom_synode.cc
+   src/bindings/xcom/gcs_xcom_expels_in_progress.cc)
+@@ -219,6 +218,7 @@ ADD_LIBRARY(mysqlgcs STATIC ${XCOM_SOURC
+ # Dependency on mysys from gcs_logging_system.cc
+ # but pick up symbols from the server:
+ # TARGET_LINK_LIBRARIES(mysqlgcs mysys)
++TARGET_LINK_LIBRARIES(mysqlgcs xxhash)
+ 
+ IF(CMAKE_VERSION VERSION_GREATER "3.19" AND NOT APPLE_XCODE)
+   # New in version 3.19:
+--- mysql-8.0.30/sql/CMakeLists.txt.orig	2022-07-06 23:36:34.000000000 +0200
++++ mysql-8.0.30/sql/CMakeLists.txt	2022-10-09 08:53:20.935355008 +0200
+@@ -755,7 +755,6 @@ SET(SQL_SOURCE
+   ${CONF_SOURCES}
+   ${SQL_SHARED_SOURCES}
+   ${SQL_HEADERS}
+-  ${BUNDLED_LZ4_PATH}/xxhash.c
+   ../libmysql/errmsg.cc
+   ../sql-common/client.cc
+   ../sql-common/client_plugin.cc
+@@ -813,11 +812,6 @@ IF(WIN32)
+       )
+ ENDIF()
+ 
+-MY_ADD_COMPILE_DEFINITIONS(
+-  ${BUNDLED_LZ4_PATH}/xxhash.c
+-  COMPILE_DEFINITIONS XXH_NAMESPACE=MY_
+-  )
+-
+ # Workaround for Apple Clang bug on ARM.
+ # When linking mysqld (and executables using server_unittest_library)
+ # we get linker warnings about
+@@ -842,13 +836,6 @@ IF(APPLE_ARM)
+     )
+ ENDIF()
+ 
+-ADD_COMPILE_FLAGS(
+-  ${BUNDLED_LZ4_PATH}/xxhash.c
+-  iterators/hash_join_iterator.cc
+-  rpl_write_set_handler.cc
+-  COMPILE_FLAGS -I${CMAKE_SOURCE_DIR}/extra/lz4 -I${BUNDLED_LZ4_PATH}
+-  )
+-
+ # Fixes "C1128: number of sections exceeded object file format limit" in MSVC
+ IF(WIN32)
+   ADD_COMPILE_FLAGS(
+@@ -924,7 +911,7 @@ ADD_DEPENDENCIES(sql_main GenBootstrapPr
+ ADD_DEPENDENCIES(sql_main GenSysSchema)
+ TARGET_LINK_LIBRARIES(sql_main ${MYSQLD_STATIC_PLUGIN_LIBS}
+   mysql_server_component_services mysys strings vio
+-  binlogevents_static ${LIBWRAP} ${LIBDL} ${SSL_LIBRARIES})
++  binlogevents_static xxhash ${LIBWRAP} ${LIBDL} ${SSL_LIBRARIES})
+ 
+ # sql/immutable_string.h uses
+ # google::protobuf::io::CodedOutputStream::WriteVarint64ToArray
+--- mysql-8.0.30/sql/iterators/hash_join_iterator.cc.orig	2022-07-06 23:36:34.000000000 +0200
++++ mysql-8.0.30/sql/iterators/hash_join_iterator.cc	2022-10-09 17:45:57.618897459 +0200
+@@ -32,7 +32,7 @@
+ #include "field_types.h"
+ #include "my_alloc.h"
+ #include "my_bit.h"
+-#include "my_xxhash.h"
++#include <xxhash.h>
+ 
+ #include "my_inttypes.h"
+ #include "my_sys.h"
+@@ -307,7 +307,7 @@ static bool WriteRowToChunk(
+   const uint64_t join_key_hash =
+       join_key_and_row_buffer->length() == 0
+           ? kZeroKeyLengthHash
+-          : MY_XXH64(join_key_and_row_buffer->ptr(),
++          : XXH64(join_key_and_row_buffer->ptr(),
+                      join_key_and_row_buffer->length(), xxhash_seed);
+ 
+   assert((chunks->size() & (chunks->size() - 1)) == 0);
+--- mysql-8.0.30/sql/rpl_write_set_handler.cc.orig	2022-07-06 23:36:34.000000000 +0200
++++ mysql-8.0.30/sql/rpl_write_set_handler.cc	2022-10-09 20:07:41.099496817 +0200
+@@ -37,7 +37,7 @@
+ #include "my_dbug.h"
+ #include "my_inttypes.h"
+ #include "my_murmur3.h"  // murmur3_32
+-#include "my_xxhash.h"   // IWYU pragma: keep
++#include <xxhash.h>
+ #include "mysql_com.h"
+ #include "sql-common/json_binary.h"
+ #include "sql-common/json_dom.h"
+@@ -75,7 +75,7 @@ uint64 calc_hash(ulong algorithm, type T
+   if (algorithm == HASH_ALGORITHM_MURMUR32)
+     return (murmur3_32((const uchar *)T, len, 0));
+   else
+-    return (MY_XXH64((const uchar *)T, len, 0));
++    return (XXH64((const uchar *)T, len, 0));
+ }
+ 
+ #ifndef NDEBUG
+--- mysql-8.0.30/unittest/gunit/hash_join-t.cc.orig	2022-07-06 23:36:34.000000000 +0200
++++ mysql-8.0.30/unittest/gunit/hash_join-t.cc	2022-10-09 20:36:43.693389709 +0200
+@@ -28,7 +28,7 @@
+ 
+ #include "include/my_murmur3.h"
+ #include "my_alloc.h"
+-#include "my_xxhash.h"
++#include <xxhash.h>
+ #include "sql/item_cmpfunc.h"
+ #include "sql/iterators/hash_join_buffer.h"
+ #include "sql/iterators/hash_join_iterator.h"
+@@ -204,7 +204,7 @@ static void BM_XXHash64ShortData(size_t
+ 
+   size_t sum = 0;
+   for (size_t i = 0; i < num_iterations; ++i) {
+-    sum += MY_XXH64(&data[0], data.size(), 0);
++    sum += XXH64(&data[0], data.size(), 0);
+   }
+   StopBenchmarkTiming();
+ 
+@@ -223,7 +223,7 @@ static void BM_XXHash64LongData(size_t n
+ 
+   size_t sum = 0;
+   for (size_t i = 0; i < num_iterations; ++i) {
+-    sum += MY_XXH64(&data[0], data.size(), 0);
++    sum += XXH64(&data[0], data.size(), 0);
+   }
+   StopBenchmarkTiming();
+ 
+--- mysql-8.0.30/unittest/gunit/innodb/ut0rnd-t.cc.orig	2022-07-06 23:36:34.000000000 +0200
++++ mysql-8.0.30/unittest/gunit/innodb/ut0rnd-t.cc	2022-10-09 20:46:00.157041753 +0200
+@@ -33,7 +33,7 @@
+ #include "storage/innobase/include/ut0crc32.h"
+ #include "storage/innobase/include/ut0rnd.h"
+ 
+-#include "my_xxhash.h"
++#include <xxhash.h>
+ 
+ namespace innodb_ut0rnd_unittest {
+ 
