@@ -17,7 +17,6 @@
 %bcond_without	sphinx		# Sphinx storage engine support
 %bcond_with	xtrabackup		# XtraBackup
 
-%include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
 Summary(fr.UTF-8):	MySQL: un serveur SQL rapide et fiable
@@ -131,7 +130,7 @@ Requires(pre):	/bin/id
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
-Requires(triggerpostun):	sed >= 4.0
+Requires(postun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
@@ -154,7 +153,7 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %define		_mysqlhome	/home/services/mysql
 
 # CFLAGS for innodb are altered
-%unglobal	configure_cache
+%undefine	configure_cache
 
 %define		filterout_c	-Werror=format-security
 
@@ -578,7 +577,7 @@ mv sphinx-*/mysqlse sql/sphinx
 %patch119 -p1
 # </percona>
 
-%patch21 -p0
+%patch21 -p1
 %patch22 -p1
 %patch23 -p1
 %patch24 -p1
@@ -840,7 +839,8 @@ fi
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
-%triggerpostun -- mysql < 4.0.20-2.4
+%triggerpostun -- mysql < 4.1.1
+# mysql < 4.0.20-2.4
 # For clusters in /etc/%{name}/clusters.conf
 if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
@@ -855,7 +855,7 @@ if [ -f /etc/sysconfig/mysql ]; then
 	fi
 fi
 
-%triggerpostun -- mysql < 4.1.1
+# mysql < 4.1.1
 # For better compatibility with prevoius versions:
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then

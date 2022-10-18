@@ -1,7 +1,7 @@
-diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_schema.result
---- a/mysql-test/r/information_schema.result	Mon May 18 18:44:04 2009 -0700
-+++ b/mysql-test/r/information_schema.result	Mon May 18 18:48:11 2009 -0700
-@@ -44,6 +44,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/mysql-test/r/information_schema.result mysql-5.0.96/mysql-test/r/information_schema.result
+--- mysql-5.0.96.org/mysql-test/r/information_schema.result	2022-10-18 08:28:42.889398102 +0200
++++ mysql-5.0.96/mysql-test/r/information_schema.result	2022-10-18 08:28:43.982731435 +0200
+@@ -44,6 +44,7 @@ COLUMNS
  COLUMN_PRIVILEGES
  INDEX_STATISTICS
  KEY_COLUMN_USAGE
@@ -9,7 +9,7 @@ diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_sc
  PROFILING
  ROUTINES
  SCHEMATA
-@@ -740,7 +741,7 @@
+@@ -740,7 +741,7 @@ CREATE TABLE t_crashme ( f1 BIGINT);
  CREATE VIEW a1 (t_CRASHME) AS SELECT f1 FROM t_crashme GROUP BY f1;
  CREATE VIEW a2 AS SELECT t_CRASHME FROM a1;
  count(*)
@@ -18,7 +18,7 @@ diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_sc
  drop view a2, a1;
  drop table t_crashme;
  select table_schema,table_name, column_name from
-@@ -749,6 +750,7 @@
+@@ -749,6 +750,7 @@ where data_type = 'longtext';
  table_schema	table_name	column_name
  information_schema	COLUMNS	COLUMN_DEFAULT
  information_schema	COLUMNS	COLUMN_TYPE
@@ -26,7 +26,7 @@ diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_sc
  information_schema	ROUTINES	ROUTINE_DEFINITION
  information_schema	ROUTINES	SQL_MODE
  information_schema	TRIGGERS	ACTION_CONDITION
-@@ -813,7 +815,7 @@
+@@ -813,7 +815,7 @@ delete from mysql.db where user='mysqlte
  flush privileges;
  SELECT table_schema, count(*) FROM information_schema.TABLES GROUP BY TABLE_SCHEMA;
  table_schema	count(*)
@@ -35,7 +35,7 @@ diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_sc
  mysql	17
  create table t1 (i int, j int);
  create trigger trg1 before insert on t1 for each row
-@@ -1206,6 +1208,7 @@
+@@ -1208,6 +1210,7 @@ COLUMNS	TABLE_SCHEMA
  COLUMN_PRIVILEGES	TABLE_SCHEMA
  INDEX_STATISTICS	TABLE_SCHEMA
  KEY_COLUMN_USAGE	CONSTRAINT_SCHEMA
@@ -43,7 +43,7 @@ diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_sc
  PROFILING	QUERY_ID
  ROUTINES	ROUTINE_SCHEMA
  SCHEMATA	SCHEMA_NAME
-@@ -1242,6 +1245,7 @@
+@@ -1244,6 +1247,7 @@ COLUMNS	TABLE_SCHEMA
  COLUMN_PRIVILEGES	TABLE_SCHEMA
  INDEX_STATISTICS	TABLE_SCHEMA
  KEY_COLUMN_USAGE	CONSTRAINT_SCHEMA
@@ -51,7 +51,7 @@ diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_sc
  PROFILING	QUERY_ID
  ROUTINES	ROUTINE_SCHEMA
  SCHEMATA	SCHEMA_NAME
-@@ -1329,6 +1333,7 @@
+@@ -1331,6 +1335,7 @@ COLUMNS	information_schema.COLUMNS	1
  COLUMN_PRIVILEGES	information_schema.COLUMN_PRIVILEGES	1
  INDEX_STATISTICS	information_schema.INDEX_STATISTICS	1
  KEY_COLUMN_USAGE	information_schema.KEY_COLUMN_USAGE	1
@@ -59,10 +59,10 @@ diff -ruN a/mysql-test/r/information_schema.result b/mysql-test/r/information_sc
  PROFILING	information_schema.PROFILING	1
  ROUTINES	information_schema.ROUTINES	1
  SCHEMATA	information_schema.SCHEMATA	1
-diff -ruN a/mysql-test/r/information_schema_db.result b/mysql-test/r/information_schema_db.result
---- a/mysql-test/r/information_schema_db.result	Mon May 18 18:44:04 2009 -0700
-+++ b/mysql-test/r/information_schema_db.result	Mon May 18 18:48:11 2009 -0700
-@@ -13,6 +13,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/mysql-test/r/information_schema_db.result mysql-5.0.96/mysql-test/r/information_schema_db.result
+--- mysql-5.0.96.org/mysql-test/r/information_schema_db.result	2022-10-18 08:28:42.889398102 +0200
++++ mysql-5.0.96/mysql-test/r/information_schema_db.result	2022-10-18 08:28:43.982731435 +0200
+@@ -13,6 +13,7 @@ COLUMNS
  COLUMN_PRIVILEGES
  INDEX_STATISTICS
  KEY_COLUMN_USAGE
@@ -70,10 +70,10 @@ diff -ruN a/mysql-test/r/information_schema_db.result b/mysql-test/r/information
  PROFILING
  ROUTINES
  SCHEMATA
-diff -ruN a/mysql-test/r/mysqlshow.result b/mysql-test/r/mysqlshow.result
---- a/mysql-test/r/mysqlshow.result	Mon May 18 18:44:04 2009 -0700
-+++ b/mysql-test/r/mysqlshow.result	Mon May 18 18:48:11 2009 -0700
-@@ -87,6 +87,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/mysql-test/r/mysqlshow.result mysql-5.0.96/mysql-test/r/mysqlshow.result
+--- mysql-5.0.96.org/mysql-test/r/mysqlshow.result	2022-10-18 08:28:42.889398102 +0200
++++ mysql-5.0.96/mysql-test/r/mysqlshow.result	2022-10-18 08:28:43.982731435 +0200
+@@ -87,6 +87,7 @@ Database: information_schema
  | COLUMN_PRIVILEGES                     |
  | INDEX_STATISTICS                      |
  | KEY_COLUMN_USAGE                      |
@@ -81,7 +81,7 @@ diff -ruN a/mysql-test/r/mysqlshow.result b/mysql-test/r/mysqlshow.result
  | PROFILING                             |
  | ROUTINES                              |
  | SCHEMATA                              |
-@@ -113,6 +114,7 @@
+@@ -113,6 +114,7 @@ Database: INFORMATION_SCHEMA
  | COLUMN_PRIVILEGES                     |
  | INDEX_STATISTICS                      |
  | KEY_COLUMN_USAGE                      |
@@ -89,9 +89,9 @@ diff -ruN a/mysql-test/r/mysqlshow.result b/mysql-test/r/mysqlshow.result
  | PROFILING                             |
  | ROUTINES                              |
  | SCHEMATA                              |
-diff -ruN /dev/null b/patch_info/microsec_process.info
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/microsec_process.info	Mon May 18 18:48:11 2009 -0700
+diff -urNp -x '*.orig' mysql-5.0.96.org/patch_info/microsec_process.info mysql-5.0.96/patch_info/microsec_process.info
+--- mysql-5.0.96.org/patch_info/microsec_process.info	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/patch_info/microsec_process.info	2022-10-18 08:28:43.982731435 +0200
 @@ -0,0 +1,6 @@
 +File=microsec_process.patch
 +Name=Adds INFOMATION_SCHEMA.PROCESSLIST with TIME_MS column
@@ -99,10 +99,10 @@ diff -ruN /dev/null b/patch_info/microsec_process.info
 +Author=Percona <info@percona.com>
 +License=GPL
 +Comment=
-diff -ruN a/sql/mysql_priv.h b/sql/mysql_priv.h
---- a/sql/mysql_priv.h	Mon May 18 18:44:04 2009 -0700
-+++ b/sql/mysql_priv.h	Mon May 18 18:48:11 2009 -0700
-@@ -249,6 +249,8 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/mysql_priv.h mysql-5.0.96/sql/mysql_priv.h
+--- mysql-5.0.96.org/sql/mysql_priv.h	2022-10-18 08:28:42.906064768 +0200
++++ mysql-5.0.96/sql/mysql_priv.h	2022-10-18 08:28:43.982731435 +0200
+@@ -249,6 +249,8 @@ MY_LOCALE *my_locale_by_number(uint numb
  
  /* Characters shown for the command in 'show processlist' */
  #define PROCESS_LIST_WIDTH 100
@@ -111,10 +111,10 @@ diff -ruN a/sql/mysql_priv.h b/sql/mysql_priv.h
  
  #define PRECISION_FOR_DOUBLE 53
  #define PRECISION_FOR_FLOAT  24
-diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
---- a/sql/sql_show.cc	Mon May 18 18:44:04 2009 -0700
-+++ b/sql/sql_show.cc	Mon May 18 18:48:11 2009 -0700
-@@ -1493,6 +1493,122 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/sql_show.cc mysql-5.0.96/sql/sql_show.cc
+--- mysql-5.0.96.org/sql/sql_show.cc	2022-10-18 08:28:42.916064769 +0200
++++ mysql-5.0.96/sql/sql_show.cc	2022-10-18 08:28:43.986064769 +0200
+@@ -1493,6 +1493,122 @@ void mysqld_list_processes(THD *thd,cons
    DBUG_VOID_RETURN;
  }
  
@@ -237,7 +237,7 @@ diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
  /*****************************************************************************
    Status functions
  *****************************************************************************/
-@@ -4862,6 +4978,22 @@
+@@ -4898,6 +5014,22 @@ ST_FIELD_INFO index_stats_fields_info[]=
    {0, 0, MYSQL_TYPE_STRING, 0, 0, 0}
  };
  
@@ -260,19 +260,19 @@ diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
  /*
    Description of ST_FIELD_INFO in table.h
  */
-@@ -4886,6 +5018,8 @@
+@@ -4922,6 +5054,8 @@ ST_SCHEMA_TABLE schema_tables[]=
      get_all_tables, 0, get_schema_key_column_usage_record, 4, 5, 0},
    {"OPEN_TABLES", open_tables_fields_info, create_schema_table,
     fill_open_tables, make_old_format, 0, -1, -1, 1},
 +  {"PROCESSLIST", processlist_fields_info, create_schema_table,
 +   fill_schema_processlist, make_old_format, 0, -1, -1, 0},
    {"PROFILING", query_profile_statistics_info, create_schema_table,
-    fill_query_profile_statistics_info, make_profile_table_for_show, 
+    fill_query_profile_statistics_info, make_profile_table_for_show,
     NULL, -1, -1, false},
-diff -ruN a/sql/table.h b/sql/table.h
---- a/sql/table.h	Mon May 18 18:44:04 2009 -0700
-+++ b/sql/table.h	Mon May 18 18:48:11 2009 -0700
-@@ -379,6 +379,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/table.h mysql-5.0.96/sql/table.h
+--- mysql-5.0.96.org/sql/table.h	2022-10-18 08:28:42.919398102 +0200
++++ mysql-5.0.96/sql/table.h	2022-10-18 08:28:43.986064769 +0200
+@@ -378,6 +378,7 @@ enum enum_schema_tables
    SCH_INDEX_STATS,
    SCH_KEY_COLUMN_USAGE,
    SCH_OPEN_TABLES,

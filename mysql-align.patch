@@ -1,6 +1,7 @@
---- mysql-4.1.10/mysys/my_getopt.c.orig	2005-02-12 21:37:32.000000000 +0100
-+++ mysql-4.1.10/mysys/my_getopt.c	2005-03-04 10:52:33.000000000 +0100
-@@ -34,7 +34,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/mysys/my_getopt.c mysql-5.0.96/mysys/my_getopt.c
+--- mysql-5.0.96.org/mysys/my_getopt.c	2012-03-02 15:04:08.000000000 +0100
++++ mysql-5.0.96/mysys/my_getopt.c	2022-10-18 08:27:24.192731450 +0200
+@@ -36,7 +36,7 @@ static longlong getopt_ll_limit_value(lo
  static ulonglong getopt_ull(char *arg, const struct my_option *optp,
  			    int *err);
  static void init_variables(const struct my_option *options);
@@ -9,8 +10,8 @@
  		  my_bool set_maximum_value);
  static char *check_struct_option(char *cur_arg, char *key_name);
  
-@@ -96,7 +96,7 @@
-   char **pos, **pos_end, *optend, *prev_found,
+@@ -104,7 +104,7 @@ int handle_options(int *argc, char ***ar
+   char **pos, **pos_end, *optend, *UNINIT_VAR(prev_found),
         *opt_str, key_name[FN_REFLEN];
    const struct my_option *optp;
 -  gptr *value;
@@ -18,7 +19,7 @@
    int error;
  
    LINT_INIT(opt_found);
-@@ -537,14 +537,14 @@
+@@ -560,14 +560,14 @@ static char *check_struct_option(char *c
    Will set the option value to given value
  */
  
@@ -35,7 +36,7 @@
  		       opts->u_max_value : value);
  
      if (!result_pos)
-@@ -864,7 +864,7 @@
+@@ -865,7 +865,7 @@ ulonglong getopt_ull_limit_value(ulonglo
      value              Pointer to variable
  */
  
@@ -44,7 +45,7 @@
  			   longlong value)
  {
    DBUG_ENTER("init_one_value");
-@@ -793,12 +793,12 @@
+@@ -927,12 +927,12 @@ static void init_variables(const struct
        set the value to default value.
      */
      if (options->u_max_value)
@@ -58,9 +59,9 @@
 -      init_one_value(options, variable, options->def_value);
 +      init_one_value(options, (gptr)variable, options->def_value);
    }
+   DBUG_VOID_RETURN;
  }
- 
-@@ -898,7 +898,7 @@
+@@ -1033,7 +1033,7 @@ void my_print_variables(const struct my_
    printf("--------------------------------- -----------------------------\n");
    for (optp= options; optp->id; optp++)
    {

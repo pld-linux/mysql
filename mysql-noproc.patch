@@ -1,15 +1,16 @@
---- mysql-4.0.13/configure.in.orig	Fri Jul 11 11:59:51 2003
-+++ mysql-4.0.13/configure.in	Fri Jul 11 14:06:50 2003
-@@ -431,6 +431,7 @@
- # Lock for PS
+diff -urNp -x '*.orig' mysql-5.0.96.org/configure.in mysql-5.0.96/configure.in
+--- mysql-5.0.96.org/configure.in	2022-10-18 08:26:19.179398132 +0200
++++ mysql-5.0.96/configure.in	2022-10-18 08:26:20.232731465 +0200
+@@ -517,6 +517,7 @@ AC_SUBST(ICHECK)
+ # no unprotected single quotes should appear in the expression.
  AC_PATH_PROG(PS, ps, ps)
  AC_MSG_CHECKING("how to check if pid exists")
 +if test -z "$FIND_PROC"; then
  PS=$ac_cv_path_PS
  # Linux style
- if $PS p $$ 2> /dev/null | grep $0 > /dev/null
-@@ -467,12 +468,14 @@
-       AC_MSG_ERROR([Could not find the right ps switches. Which OS is this ?. See the Installation chapter in the Reference Manual.])
+ if $PS wwwp $$ 2> /dev/null | grep -- "$0" > /dev/null
+@@ -556,12 +557,14 @@ else
+       AC_MSG_ERROR([Could not find the right ps and/or grep switches. Which OS is this?  See the Installation chapter in the Reference Manual.])
    esac
  fi
 +fi
@@ -23,7 +24,7 @@
  if $ac_cv_path_KILL -0 $$
  then
    CHECK_PID="$ac_cv_path_KILL -0 \$\$PID > /dev/null 2> /dev/null"
-@@ -483,6 +486,7 @@
+@@ -572,6 +575,7 @@ else
    AC_MSG_WARN([kill -0 to check for pid seems to fail])
      CHECK_PID="$ac_cv_path_KILL -s SIGCONT \$\$PID > /dev/null 2> /dev/null"
  fi

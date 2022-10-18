@@ -1,6 +1,7 @@
---- Percona-Server-5.5.32-rel31.0/sql/sql_yacc.yy.orig	2013-07-01 05:16:34.000000000 +0200
-+++ Percona-Server-5.5.32-rel31.0/sql/sql_yacc.yy	2013-08-18 21:33:19.181583895 +0200
-@@ -26,8 +26,6 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/sql_yacc.yy mysql-5.0.96/sql/sql_yacc.yy
+--- mysql-5.0.96.org/sql/sql_yacc.yy	2022-10-18 08:35:15.302731318 +0200
++++ mysql-5.0.96/sql/sql_yacc.yy	2022-10-18 08:35:16.586064652 +0200
+@@ -21,8 +21,6 @@
  ** The type will be void*, so it must be  cast to (THD*) when used.
  ** Use the YYTHD macro for this.
  */
@@ -8,8 +9,8 @@
 -#define YYLEX_PARAM yythd
  #define YYTHD ((THD *)yythd)
  #define YYLIP (& YYTHD->m_parser_state->m_lip)
- #define YYPS (& YYTHD->m_parser_state->m_yacc)
-@@ -50,7 +50,7 @@
+ 
+@@ -52,7 +50,7 @@ int yylex(void *yylval, void *yythd);
  
  const LEX_STRING null_lex_str={0,0};
  
@@ -18,7 +19,7 @@
  
  #undef 	WARN_DEPRECATED			/* this macro is also defined in mysql_priv.h */
  #define WARN_DEPRECATED(A,B)                                        \
-@@ -174,7 +172,7 @@
+@@ -123,7 +121,7 @@ void my_parse_error(const char *s)
    to abort from the parser.
  */
  
@@ -27,7 +28,7 @@
  {
    THD *thd= current_thd;
  
-@@ -490,7 +490,9 @@
+@@ -492,7 +490,9 @@ static bool add_create_index (LEX *lex,
  bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
  %}
  

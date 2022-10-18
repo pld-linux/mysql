@@ -1,7 +1,8 @@
---- mysql-4.1.12/Docs/mysql.info~	2005-05-16 08:05:46.000000000 +0300
-+++ mysql-4.1.12/Docs/mysql.info	2005-05-16 08:06:36.000000000 +0300
+diff -urNp -x '*.orig' mysql-5.0.96.org/Docs/mysql.info mysql-5.0.96/Docs/mysql.info
+--- mysql-5.0.96.org/Docs/mysql.info	2012-03-02 15:04:57.000000000 +0100
++++ mysql-5.0.96/Docs/mysql.info	2022-10-18 08:25:51.826064806 +0200
 @@ -1,8 +1,9 @@
- This is mysql.info, produced by makeinfo version 4.7 from manual.texi.
+ This is manual.info, produced by makeinfo version 4.8 from manual.texi.
  
 -START-INFO-DIR-ENTRY
 -* mysql: (mysql).               MySQL documentation.
@@ -12,4 +13,4 @@
 +@end direntry
  
  
- File: mysql.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
+ File: manual.info,  Node: Top,  Next: preface,  Prev: (dir),  Up: (dir)

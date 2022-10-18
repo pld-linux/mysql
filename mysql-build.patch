@@ -1,8 +1,8 @@
-diff -urNbB mysql-5.0.13-rc.org/sql/mysqld.cc mysql-5.0.13-rc/sql/mysqld.cc
---- mysql-5.0.13-rc.org/sql/mysqld.cc	2005-09-22 21:39:56.000000000 +0200
-+++ mysql-5.0.13-rc/sql/mysqld.cc	2005-09-29 19:29:59.991454000 +0200
-@@ -3183,7 +3183,7 @@
-   init_ssl();
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/mysqld.cc mysql-5.0.96/sql/mysqld.cc
+--- mysql-5.0.96.org/sql/mysqld.cc	2022-10-18 08:27:46.716064781 +0200
++++ mysql-5.0.96/sql/mysqld.cc	2022-10-18 08:27:47.712731447 +0200
+@@ -3766,7 +3766,7 @@ int main(int argc, char **argv)
+   select_thread_in_use=1;
  
  #ifdef HAVE_LIBWRAP
 -  libwrapName= my_progname+dirname_length(my_progname);

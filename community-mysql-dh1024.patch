@@ -5,12 +5,12 @@ mode is on, but it doesn't seem worth the trouble.)
 The new parameter value was generated using "openssl dhparam -C 1024".
 
 
-diff -Naur mysql-5.5.28.orig/vio/viosslfactories.c mysql-5.5.28/vio/viosslfactories.c
---- mysql-5.5.28.orig/vio/viosslfactories.c	2012-08-29 04:50:46.000000000 -0400
-+++ mysql-5.5.28/vio/viosslfactories.c	2012-11-15 11:19:38.575701435 -0500
-@@ -20,27 +20,32 @@
- static my_bool     ssl_algorithms_added    = FALSE;
- static my_bool     ssl_error_strings_loaded= FALSE;
+diff -urNp -x '*.orig' mysql-5.0.96.org/vio/viosslfactories.c mysql-5.0.96/vio/viosslfactories.c
+--- mysql-5.0.96.org/vio/viosslfactories.c	2022-10-18 08:35:47.736064643 +0200
++++ mysql-5.0.96/vio/viosslfactories.c	2022-10-18 08:35:48.949397977 +0200
+@@ -24,27 +24,32 @@ static bool     ssl_algorithms_added
+ static bool     ssl_error_strings_loaded= FALSE;
+ static int      verify_depth = 0;
  
 -static unsigned char dh512_p[]=
 +static unsigned char dh1024_p[]=
@@ -52,7 +52,7 @@ diff -Naur mysql-5.5.28.orig/vio/viosslfactories.c mysql-5.5.28/vio/viosslfactor
      if (! dh->p || ! dh->g)
      {
        DH_free(dh);
-@@ -255,7 +260,7 @@
+@@ -265,7 +270,7 @@ new_VioSSLFd(const char *key_file, const
    }
  
    /* DH stuff */

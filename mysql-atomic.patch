@@ -5,9 +5,10 @@ timestamp: Wed 2006-05-31 18:44:09 +0200
 message:
   WL#2595 - atomic operations
 === modified file 'configure.in'
---- configure.in	2006-05-26 11:17:09 +0000
-+++ configure.in	2006-05-31 16:44:09 +0000
-@@ -778,48 +778,6 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/configure.in mysql-5.0.96/configure.in
+--- mysql-5.0.96.org/configure.in	2022-10-18 08:34:20.032731324 +0200
++++ mysql-5.0.96/configure.in	2022-10-18 08:34:21.369397991 +0200
+@@ -972,48 +972,6 @@ struct request_info *req;
  AC_SUBST(WRAPLIBS)
  
  if test "$TARGET_LINUX" = "true"; then
@@ -56,8 +57,8 @@ message:
    AC_ARG_WITH(pstack,
      [  --with-pstack           Use the pstack backtrace library],
      [ USE_PSTACK=$withval ],
-@@ -1631,6 +1589,20 @@
-   fi
+@@ -1849,6 +1807,44 @@ else
+   CXXFLAGS="$OPTIMIZE_CXXFLAGS -DDBUG_OFF $CXXFLAGS"
  fi
  
 +AC_ARG_WITH([atomic-ops],
@@ -74,15 +75,74 @@ message:
 +   *) AC_MSG_ERROR(["$with_atomic_ops" is not a valid value for --with-atomic-ops]) ;;
 +esac
 +
++AC_CACHE_CHECK([whether the compiler provides atomic builtins],
++               [mysql_cv_gcc_atomic_builtins], [AC_TRY_RUN([
++  int main()
++  {
++    int foo= -10; int bar= 10;
++    if (!__sync_fetch_and_add(&foo, bar) || foo)
++      return -1;
++    bar= __sync_lock_test_and_set(&foo, bar);
++    if (bar || foo != 10)
++      return -1;
++    bar= __sync_val_compare_and_swap(&bar, foo, 15);
++    if (bar)
++      return -1;
++    return 0;
++  }
++], [mysql_cv_gcc_atomic_builtins=yes],
++   [mysql_cv_gcc_atomic_builtins=no],
++   [mysql_cv_gcc_atomic_builtins=no])])
++
++if test "x$mysql_cv_gcc_atomic_builtins" = xyes; then
++  AC_DEFINE(HAVE_ATOMIC_BUILTINS, 1,
++            [Define to 1 if compiler provides atomic builtins.])
++fi
++
  # Force static compilation to avoid linking problems/get more speed
  AC_ARG_WITH(mysqld-ldflags,
      [  --with-mysqld-ldflags   Extra linking arguments for mysqld],
-
-=== added directory 'include/atomic'
-=== added file 'include/atomic/nolock.h'
---- include/atomic/nolock.h	1970-01-01 00:00:00 +0000
-+++ include/atomic/nolock.h	2006-05-31 16:44:09 +0000
-@@ -0,0 +1,169 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/include/atomic/gcc_builtins.h mysql-5.0.96/include/atomic/gcc_builtins.h
+--- mysql-5.0.96.org/include/atomic/gcc_builtins.h	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/include/atomic/gcc_builtins.h	2022-10-18 08:34:21.369397991 +0200
+@@ -0,0 +1,33 @@
++/* Copyright (C) 2008 MySQL AB
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; version 2 of the License.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
++
++#define make_atomic_add_body(S)                     \
++  v= __sync_fetch_and_add(a, v);
++#define make_atomic_swap_body(S)                    \
++  v= __sync_lock_test_and_set(a, v);
++#define make_atomic_cas_body(S)                     \
++  int ## S sav;                                     \
++  sav= __sync_val_compare_and_swap(a, *cmp, set);   \
++  if (!(ret= (sav == *cmp))) *cmp= sav;
++
++#ifdef MY_ATOMIC_MODE_DUMMY
++#define make_atomic_load_body(S)   ret= *a
++#define make_atomic_store_body(S)  *a= v
++#else
++#define make_atomic_load_body(S)                    \
++  ret= __sync_fetch_and_or(a, 0);
++#define make_atomic_store_body(S)                   \
++  (void) __sync_lock_test_and_set(a, v);
++#endif
+diff -urNp -x '*.orig' mysql-5.0.96.org/include/atomic/nolock.h mysql-5.0.96/include/atomic/nolock.h
+--- mysql-5.0.96.org/include/atomic/nolock.h	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/include/atomic/nolock.h	2022-10-18 08:34:21.369397991 +0200
+@@ -0,0 +1,171 @@
 +/* Copyright (C) 2006 MySQL AB
 +
 +   This program is free software; you can redistribute it and/or modify
@@ -99,13 +159,15 @@ message:
 +   along with this program; if not, write to the Free Software
 +   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 +
-+#if defined(__i386__) || defined(_M_IX86)
++#if defined(__i386__) || defined(_M_IX86) || defined(HAVE_ATOMIC_BUILTINS)
 +#ifdef MY_ATOMIC_MODE_DUMMY
 +#  define LOCK ""
 +#else
 +#  define LOCK "lock "
 +#endif
-+#ifdef __GNUC__
++#ifdef HAVE_ATOMIC_BUILTINS
++#include "gcc_builtins.h"
++#elif __GNUC__
 +#include "x86-gcc.h"
 +#elif defined(_MSC_VER)
 +#include "x86-msvc.h"
@@ -252,10 +314,9 @@ message:
 +
 +#endif
 +
-
-=== added file 'include/atomic/rwlock.h'
---- include/atomic/rwlock.h	1970-01-01 00:00:00 +0000
-+++ include/atomic/rwlock.h	2006-05-31 16:44:09 +0000
+diff -urNp -x '*.orig' mysql-5.0.96.org/include/atomic/rwlock.h mysql-5.0.96/include/atomic/rwlock.h
+--- mysql-5.0.96.org/include/atomic/rwlock.h	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/include/atomic/rwlock.h	2022-10-18 08:34:21.369397991 +0200
 @@ -0,0 +1,161 @@
 +/* Copyright (C) 2006 MySQL AB
 +
@@ -418,10 +479,9 @@ message:
 +#undef CHECK_RW
 +
 +
-
-=== added file 'include/atomic/x86-gcc.h'
---- include/atomic/x86-gcc.h	1970-01-01 00:00:00 +0000
-+++ include/atomic/x86-gcc.h	2006-05-31 16:44:09 +0000
+diff -urNp -x '*.orig' mysql-5.0.96.org/include/atomic/x86-gcc.h mysql-5.0.96/include/atomic/x86-gcc.h
+--- mysql-5.0.96.org/include/atomic/x86-gcc.h	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/include/atomic/x86-gcc.h	2022-10-18 08:34:21.369397991 +0200
 @@ -0,0 +1,56 @@
 +/* Copyright (C) 2006 MySQL AB
 +
@@ -479,10 +539,9 @@ message:
 +#define make_atomic_swap_body16  make_atomic_swap_body8
 +#define make_atomic_swap_body32  make_atomic_swap_body8
 +
-
-=== added file 'include/atomic/x86-msvc.h'
---- include/atomic/x86-msvc.h	1970-01-01 00:00:00 +0000
-+++ include/atomic/x86-msvc.h	2006-05-31 16:44:09 +0000
+diff -urNp -x '*.orig' mysql-5.0.96.org/include/atomic/x86-msvc.h mysql-5.0.96/include/atomic/x86-msvc.h
+--- mysql-5.0.96.org/include/atomic/x86-msvc.h	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/include/atomic/x86-msvc.h	2022-10-18 08:34:21.369397991 +0200
 @@ -0,0 +1,85 @@
 +/* Copyright (C) 2006 MySQL AB
 +
@@ -569,10 +628,9 @@ message:
 +#define make_atomic_swap_body16  make_atomic_swap_body(ax)
 +#define make_atomic_swap_body32  make_atomic_swap_body(eax)
 +
-
-=== added file 'include/my_atomic.h'
---- include/my_atomic.h	1970-01-01 00:00:00 +0000
-+++ include/my_atomic.h	2006-05-31 16:44:09 +0000
+diff -urNp -x '*.orig' mysql-5.0.96.org/include/my_atomic.h mysql-5.0.96/include/my_atomic.h
+--- mysql-5.0.96.org/include/my_atomic.h	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/include/my_atomic.h	2022-10-18 08:34:21.369397991 +0200
 @@ -0,0 +1,46 @@
 +/* Copyright (C) 2006 MySQL AB
 +
@@ -620,13 +678,12 @@ message:
 +
 +#endif
 +
-
-=== modified file 'include/my_global.h'
---- include/my_global.h	2006-05-02 09:36:05 +0000
-+++ include/my_global.h	2006-05-31 16:44:09 +0000
-@@ -181,6 +181,17 @@
- #define HOT_DATA
- #endif
+diff -urNp -x '*.orig' mysql-5.0.96.org/include/my_global.h mysql-5.0.96/include/my_global.h
+--- mysql-5.0.96.org/include/my_global.h	2012-03-02 15:04:08.000000000 +0100
++++ mysql-5.0.96/include/my_global.h	2022-10-18 08:34:21.369397991 +0200
+@@ -152,6 +152,17 @@
+ #define likely(x)	__builtin_expect((x),1)
+ #define unlikely(x)	__builtin_expect((x),0)
  
 +/*
 +  now let's figure out if inline functions are supported
@@ -640,9 +697,9 @@ message:
 +#undef inline_test_2
 +#undef inline_test_1
  
- /*
-   The following macros are used to control inlining a bit more than
-@@ -889,6 +900,8 @@
+ /* Fix problem with S_ISLNK() on Linux */
+ #if defined(TARGET_OS_LINUX) || defined(__GLIBC__)
+@@ -931,6 +942,8 @@ typedef unsigned long	ulonglong;	  /* ul
  typedef long		longlong;
  #endif
  #endif
@@ -651,20 +708,19 @@ message:
  
  #if defined(NO_CLIENT_LONG_LONG)
  typedef unsigned long my_ulonglong;
-
-=== modified file 'mysys/Makefile.am'
---- mysys/Makefile.am	2006-05-12 08:51:07 +0000
-+++ mysys/Makefile.am	2006-05-31 16:44:09 +0000
-@@ -19,7 +19,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/mysys/Makefile.am mysql-5.0.96/mysys/Makefile.am
+--- mysql-5.0.96.org/mysys/Makefile.am	2012-03-02 15:04:08.000000000 +0100
++++ mysql-5.0.96/mysys/Makefile.am	2022-10-18 08:34:21.369397991 +0200
+@@ -19,7 +19,7 @@ MYSQLBASEdir=		$(prefix)
  INCLUDES =		@ZLIB_INCLUDES@ -I$(top_builddir)/include \
  			-I$(top_srcdir)/include -I$(srcdir)
  pkglib_LIBRARIES =	libmysys.a
 -LDADD =			libmysys.a ../dbug/libdbug.a \
 +LDADD =			libmysys.a \
  			../strings/libmystrings.a
- noinst_HEADERS =	mysys_priv.h my_static.h \
- 			my_os2cond.c my_os2dirsrch.c my_os2dirsrch.h \
-@@ -33,7 +33,7 @@
+ noinst_HEADERS =	mysys_priv.h my_static.h
+ libmysys_a_SOURCES =    my_init.c my_getwd.c mf_getdate.c my_mmap.c \
+@@ -30,7 +30,7 @@ libmysys_a_SOURCES =    my_init.c my_get
  			mf_iocache.c mf_iocache2.c mf_cache.c mf_tempfile.c \
  			mf_tempdir.c my_lock.c mf_brkhant.c my_alarm.c \
  			my_malloc.c my_realloc.c my_once.c mulalloc.c \
@@ -673,19 +729,18 @@ message:
  			my_fopen.c my_fstream.c my_getsystime.c \
  			my_error.c errors.c my_div.c my_messnc.c \
  			mf_format.c mf_same.c mf_dirname.c mf_fn_ext.c \
-@@ -64,7 +63,7 @@
+@@ -61,7 +61,7 @@ libmysys_a_LIBADD =	@THREAD_LOBJECTS@
  # testhash_DEPENDENCIES=	$(LIBRARIES)
  # test_charset_DEPENDENCIES=	$(LIBRARIES)
  # charset2html_DEPENDENCIES=	$(LIBRARIES)
 -EXTRA_PROGRAMS =	
 +noinst_PROGRAMS=	test_atomic$(EXEEXT)
  DEFS =			-DDEFAULT_BASEDIR=\"$(prefix)\" \
- 			-DDATADIR="\"$(MYSQLDATAdir)\"" \
+ 			-DMYSQL_DATADIR="\"$(MYSQLDATAdir)\"" \
  			-DDEFAULT_CHARSET_HOME="\"$(MYSQLBASEdir)\"" \
-
-=== added file 'mysys/my_atomic.c'
---- mysys/my_atomic.c	1970-01-01 00:00:00 +0000
-+++ mysys/my_atomic.c	2006-05-31 16:44:09 +0000
+diff -urNp -x '*.orig' mysql-5.0.96.org/mysys/my_atomic.c mysql-5.0.96/mysys/my_atomic.c
+--- mysql-5.0.96.org/mysys/my_atomic.c	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/mysys/my_atomic.c	2022-10-18 08:34:21.369397991 +0200
 @@ -0,0 +1,46 @@
 +/* Copyright (C) 2006 MySQL AB
 +
@@ -733,10 +788,9 @@ message:
 +#endif
 +}
 +
-
-=== added file 'mysys/my_getncpus.c'
---- mysys/my_getncpus.c	1970-01-01 00:00:00 +0000
-+++ mysys/my_getncpus.c	2006-05-31 16:44:09 +0000
+diff -urNp -x '*.orig' mysql-5.0.96.org/mysys/my_getncpus.c mysql-5.0.96/mysys/my_getncpus.c
+--- mysql-5.0.96.org/mysys/my_getncpus.c	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/mysys/my_getncpus.c	2022-10-18 08:34:21.369397991 +0200
 @@ -0,0 +1,40 @@
 +/* Copyright (C) 2006 MySQL AB
 +
@@ -778,10 +832,9 @@ message:
 +
 +#endif
 +
-
-=== added file 'mysys/test_atomic.c'
---- mysys/test_atomic.c	1970-01-01 00:00:00 +0000
-+++ mysys/test_atomic.c	2006-05-31 16:44:09 +0000
+diff -urNp -x '*.orig' mysql-5.0.96.org/mysys/test_atomic.c mysql-5.0.96/mysys/test_atomic.c
+--- mysql-5.0.96.org/mysys/test_atomic.c	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/mysys/test_atomic.c	2022-10-18 08:34:21.369397991 +0200
 @@ -0,0 +1,133 @@
 +#include <my_global.h>
 +#include <my_sys.h>
@@ -916,108 +969,3 @@ message:
 +  return 0;
 +}
 +
-------------------------------------------------------------
-revno: 2476.749.1
-committer: davi@mysql.com/endora.local
-timestamp: Fri 2008-01-11 20:34:36 -0200
-message:
-  Bug#33728 Atomic builtins
-  
-  Use compiler provided atomic builtins as a 'backend' for
-  MySQL's atomic primitives. The builtins are available on
-  a handful of platforms and compilers.
-diff:
-=== modified file 'configure.in'
---- configure.in	2007-12-14 17:03:44 +0000
-+++ configure.in	2008-01-11 22:34:36 +0000
-@@ -1688,6 +1688,30 @@
-    *) AC_MSG_ERROR(["$with_atomic_ops" is not a valid value for --with-atomic-ops]) ;;
- esac
- 
-+AC_CACHE_CHECK([whether the compiler provides atomic builtins],
-+               [mysql_cv_gcc_atomic_builtins], [AC_TRY_RUN([
-+  int main()
-+  {
-+    int foo= -10; int bar= 10;
-+    if (!__sync_fetch_and_add(&foo, bar) || foo)
-+      return -1;
-+    bar= __sync_lock_test_and_set(&foo, bar);
-+    if (bar || foo != 10)
-+      return -1;
-+    bar= __sync_val_compare_and_swap(&bar, foo, 15);
-+    if (bar)
-+      return -1;
-+    return 0;
-+  }
-+], [mysql_cv_gcc_atomic_builtins=yes],
-+   [mysql_cv_gcc_atomic_builtins=no],
-+   [mysql_cv_gcc_atomic_builtins=no])])
-+
-+if test "x$mysql_cv_gcc_atomic_builtins" = xyes; then
-+  AC_DEFINE(HAVE_ATOMIC_BUILTINS, 1,
-+            [Define to 1 if compiler provides atomic builtins.])
-+fi
-+
- # Force static compilation to avoid linking problems/get more speed
- AC_ARG_WITH(mysqld-ldflags,
-     [  --with-mysqld-ldflags   Extra linking arguments for mysqld],
-
-=== added file 'include/atomic/gcc_builtins.h'
---- include/atomic/gcc_builtins.h	1970-01-01 00:00:00 +0000
-+++ include/atomic/gcc_builtins.h	2008-01-11 22:34:36 +0000
-@@ -0,0 +1,33 @@
-+/* Copyright (C) 2008 MySQL AB
-+
-+   This program is free software; you can redistribute it and/or modify
-+   it under the terms of the GNU General Public License as published by
-+   the Free Software Foundation; version 2 of the License.
-+
-+   This program is distributed in the hope that it will be useful,
-+   but WITHOUT ANY WARRANTY; without even the implied warranty of
-+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+   GNU General Public License for more details.
-+
-+   You should have received a copy of the GNU General Public License
-+   along with this program; if not, write to the Free Software
-+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
-+
-+#define make_atomic_add_body(S)                     \
-+  v= __sync_fetch_and_add(a, v);
-+#define make_atomic_swap_body(S)                    \
-+  v= __sync_lock_test_and_set(a, v);
-+#define make_atomic_cas_body(S)                     \
-+  int ## S sav;                                     \
-+  sav= __sync_val_compare_and_swap(a, *cmp, set);   \
-+  if (!(ret= (sav == *cmp))) *cmp= sav;
-+
-+#ifdef MY_ATOMIC_MODE_DUMMY
-+#define make_atomic_load_body(S)   ret= *a
-+#define make_atomic_store_body(S)  *a= v
-+#else
-+#define make_atomic_load_body(S)                    \
-+  ret= __sync_fetch_and_or(a, 0);
-+#define make_atomic_store_body(S)                   \
-+  (void) __sync_lock_test_and_set(a, v);
-+#endif
-
-=== modified file 'include/atomic/nolock.h'
---- include/atomic/nolock.h	2006-12-27 01:23:51 +0000
-+++ include/atomic/nolock.h	2008-01-11 22:34:36 +0000
-@@ -14,13 +14,15 @@
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA */
- 
--#if defined(__i386__) || defined(_M_IX86)
-+#if defined(__i386__) || defined(_M_IX86) || defined(HAVE_ATOMIC_BUILTINS)
- #ifdef MY_ATOMIC_MODE_DUMMY
- #  define LOCK ""
- #else
- #  define LOCK "lock "
- #endif
--#ifdef __GNUC__
-+#ifdef HAVE_ATOMIC_BUILTINS
-+#include "gcc_builtins.h"
-+#elif __GNUC__
- #include "x86-gcc.h"
- #elif defined(_MSC_VER)
- #include "x86-msvc.h"

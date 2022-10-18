@@ -1,12 +1,12 @@
-diff -urN mysql-4.1.7.org/scripts/mysql_fix_privilege_tables.sh mysql-4.1.7/scripts/mysql_fix_privilege_tables.sh
---- mysql-4.1.7.org/scripts/mysql_fix_privilege_tables.sh	2004-10-27 01:35:56.000000000 +0200
-+++ mysql-4.1.7/scripts/mysql_fix_privilege_tables.sh	2004-10-27 12:13:42.159439392 +0200
-@@ -5,7 +5,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/scripts/mysql_fix_privilege_tables.sh mysql-5.0.96/scripts/mysql_fix_privilege_tables.sh
+--- mysql-5.0.96.org/scripts/mysql_fix_privilege_tables.sh	2012-03-02 15:04:12.000000000 +0100
++++ mysql-5.0.96/scripts/mysql_fix_privilege_tables.sh	2022-10-18 08:26:46.659398128 +0200
+@@ -20,7 +20,7 @@
  # Default values (Can be changed in my.cnf)
  password=""
  host="localhost"
 -user="root"
 +user="mysql"
  sql_only=0
- basedir=""
+ basedir="@prefix@"
  verbose=0

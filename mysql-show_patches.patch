@@ -1,6 +1,6 @@
-diff -ruN /dev/null b/patch_info/show_patches.info
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/patch_info/show_patches.info	Mon Dec 22 00:25:06 2008 -0800
+diff -urNp -x '*.orig' mysql-5.0.96.org/patch_info/show_patches.info mysql-5.0.96/patch_info/show_patches.info
+--- mysql-5.0.96.org/patch_info/show_patches.info	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/patch_info/show_patches.info	2022-10-18 08:28:16.729398106 +0200
 @@ -0,0 +1,6 @@
 +File=show_patches.patch
 +Name=SHOW PATCHES
@@ -8,10 +8,10 @@ diff -ruN /dev/null b/patch_info/show_patches.info
 +Author=Jeremy Cole
 +License=N/A
 +Comment
-diff -ruN a/sql/Makefile.am b/sql/Makefile.am
---- a/sql/Makefile.am	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/Makefile.am	Mon Dec 22 00:25:06 2008 -0800
-@@ -118,7 +118,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/Makefile.am mysql-5.0.96/sql/Makefile.am
+--- mysql-5.0.96.org/sql/Makefile.am	2022-10-18 08:28:15.669398106 +0200
++++ mysql-5.0.96/sql/Makefile.am	2022-10-18 08:28:16.729398106 +0200
+@@ -121,7 +121,7 @@ DEFS =			-DMYSQL_SERVER \
  			-DSHAREDIR="\"$(MYSQLSHAREdir)\"" \
  			@DEFS@
  
@@ -20,19 +20,19 @@ diff -ruN a/sql/Makefile.am b/sql/Makefile.am
  EXTRA_DIST =		$(BUILT_SOURCES) nt_servc.cc nt_servc.h \
  			message.mc message.h message.rc MSG00001.bin \
  			examples/CMakeLists.txt CMakeLists.txt \
-@@ -175,6 +175,8 @@
- udf_example_la_SOURCES= udf_example.c
- udf_example_la_LDFLAGS= -module -rpath $(pkglibdir)
+@@ -182,6 +182,8 @@ pkglib_LTLIBRARIES = sphinx/sphinx.la
+ sphinx_sphinx_la_SOURCES = sphinx/snippets_udf.cc
+ sphinx_sphinx_la_LDFLAGS = -module
  
 +patch_info.h: patch_info.h.pl
 +	$(PERL) $< > $@
  
  # Don't update the files from bitkeeper
  %::SCCS/s.%
-diff -ruN a/sql/Makefile.in b/sql/Makefile.in
---- a/sql/Makefile.in	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/Makefile.in	Mon Dec 22 00:25:06 2008 -0800
-@@ -566,7 +566,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/Makefile.in mysql-5.0.96/sql/Makefile.in
+--- mysql-5.0.96.org/sql/Makefile.in	2012-03-02 15:05:22.000000000 +0100
++++ mysql-5.0.96/sql/Makefile.in	2022-10-18 08:28:16.732731440 +0200
+@@ -568,7 +568,7 @@ gen_lex_hash_SOURCES = gen_lex_hash.cc
  gen_lex_hash_LDADD = $(LDADD) $(CXXLDFLAGS)
  mysql_tzinfo_to_sql_SOURCES = mysql_tzinfo_to_sql.cc
  mysql_tzinfo_to_sql_LDADD = @MYSQLD_EXTRA_LDFLAGS@ $(LDADD) $(CXXLDFLAGS)
@@ -41,7 +41,7 @@ diff -ruN a/sql/Makefile.in b/sql/Makefile.in
  EXTRA_DIST = $(BUILT_SOURCES) nt_servc.cc nt_servc.h \
  			message.mc message.h message.rc MSG00001.bin \
  			examples/CMakeLists.txt CMakeLists.txt \
-@@ -1227,6 +1227,9 @@
+@@ -1229,6 +1229,9 @@ lex_hash.h:	gen_lex_hash.cc lex.h
  		./gen_lex_hash$(EXEEXT) > $@-t
  		$(MV) $@-t $@
  
@@ -51,10 +51,10 @@ diff -ruN a/sql/Makefile.in b/sql/Makefile.in
  # Don't update the files from bitkeeper
  %::SCCS/s.%
  # Tell versions [3.59,3.63) of GNU make to not export all variables.
-diff -ruN a/sql/lex.h b/sql/lex.h
---- a/sql/lex.h	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/lex.h	Mon Dec 22 00:25:06 2008 -0800
-@@ -367,6 +367,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/lex.h mysql-5.0.96/sql/lex.h
+--- mysql-5.0.96.org/sql/lex.h	2012-03-02 15:04:12.000000000 +0100
++++ mysql-5.0.96/sql/lex.h	2022-10-18 08:28:16.732731440 +0200
+@@ -367,6 +367,7 @@ static SYMBOL symbols[] = {
    { "PACK_KEYS",	SYM(PACK_KEYS_SYM)},
    { "PARTIAL",		SYM(PARTIAL)},
    { "PASSWORD",		SYM(PASSWORD)},
@@ -62,10 +62,10 @@ diff -ruN a/sql/lex.h b/sql/lex.h
    { "PHASE",            SYM(PHASE_SYM)},
    { "POINT",		SYM(POINT_SYM)},
    { "POLYGON",		SYM(POLYGON)},
-diff -ruN a/sql/mysql_priv.h b/sql/mysql_priv.h
---- a/sql/mysql_priv.h	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/mysql_priv.h	Mon Dec 22 00:25:06 2008 -0800
-@@ -987,6 +987,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/mysql_priv.h mysql-5.0.96/sql/mysql_priv.h
+--- mysql-5.0.96.org/sql/mysql_priv.h	2022-10-18 08:28:15.672731440 +0200
++++ mysql-5.0.96/sql/mysql_priv.h	2022-10-18 08:28:16.732731440 +0200
+@@ -987,6 +987,7 @@ void mysqld_list_processes(THD *thd,cons
  int mysqld_show_status(THD *thd);
  int mysqld_show_variables(THD *thd,const char *wild);
  bool mysqld_show_storage_engines(THD *thd);
@@ -73,9 +73,9 @@ diff -ruN a/sql/mysql_priv.h b/sql/mysql_priv.h
  bool mysqld_show_privileges(THD *thd);
  bool mysqld_show_column_types(THD *thd);
  bool mysqld_help (THD *thd, const char *text);
-diff -ruN /dev/null b/sql/patch_info.h.pl
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/sql/patch_info.h.pl	Mon Dec 22 00:25:06 2008 -0800
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/patch_info.h.pl mysql-5.0.96/sql/patch_info.h.pl
+--- mysql-5.0.96.org/sql/patch_info.h.pl	1970-01-01 01:00:00.000000000 +0100
++++ mysql-5.0.96/sql/patch_info.h.pl	2022-10-18 08:28:16.732731440 +0200
 @@ -0,0 +1,65 @@
 +use strict;
 +
@@ -142,10 +142,10 @@ diff -ruN /dev/null b/sql/patch_info.h.pl
 +};	
 +
 +HEADER
-diff -ruN a/sql/sp_head.cc b/sql/sp_head.cc
---- a/sql/sp_head.cc	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/sp_head.cc	Mon Dec 22 00:25:06 2008 -0800
-@@ -191,6 +191,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/sp_head.cc mysql-5.0.96/sql/sp_head.cc
+--- mysql-5.0.96.org/sql/sp_head.cc	2012-03-02 15:04:07.000000000 +0100
++++ mysql-5.0.96/sql/sp_head.cc	2022-10-18 08:28:16.732731440 +0200
+@@ -191,6 +191,7 @@ sp_get_flags_for_command(LEX *lex)
    case SQLCOM_SHOW_MUTEX_STATUS:
    case SQLCOM_SHOW_NEW_MASTER:
    case SQLCOM_SHOW_OPEN_TABLES:
@@ -153,10 +153,10 @@ diff -ruN a/sql/sp_head.cc b/sql/sp_head.cc
    case SQLCOM_SHOW_PRIVILEGES:
    case SQLCOM_SHOW_PROCESSLIST:
    case SQLCOM_SHOW_SLAVE_HOSTS:
-diff -ruN a/sql/sql_lex.h b/sql/sql_lex.h
---- a/sql/sql_lex.h	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/sql_lex.h	Mon Dec 22 00:25:06 2008 -0800
-@@ -95,6 +95,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/sql_lex.h mysql-5.0.96/sql/sql_lex.h
+--- mysql-5.0.96.org/sql/sql_lex.h	2022-10-18 08:28:15.672731440 +0200
++++ mysql-5.0.96/sql/sql_lex.h	2022-10-18 08:28:16.732731440 +0200
+@@ -96,6 +96,7 @@ enum enum_sql_command {
    SQLCOM_XA_COMMIT, SQLCOM_XA_ROLLBACK, SQLCOM_XA_RECOVER,
    SQLCOM_SHOW_PROC_CODE, SQLCOM_SHOW_FUNC_CODE,
    SQLCOM_SHOW_PROFILE, SQLCOM_SHOW_PROFILES,
@@ -164,10 +164,10 @@ diff -ruN a/sql/sql_lex.h b/sql/sql_lex.h
  
    /*
      When a command is added here, be sure it's also added in mysqld.cc
-diff -ruN a/sql/sql_parse.cc b/sql/sql_parse.cc
---- a/sql/sql_parse.cc	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/sql_parse.cc	Mon Dec 22 00:25:06 2008 -0800
-@@ -4081,6 +4081,9 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/sql_parse.cc mysql-5.0.96/sql/sql_parse.cc
+--- mysql-5.0.96.org/sql/sql_parse.cc	2022-10-18 08:28:15.676064773 +0200
++++ mysql-5.0.96/sql/sql_parse.cc	2022-10-18 08:28:16.732731440 +0200
+@@ -4120,6 +4120,9 @@ end_with_restore_list:
    case SQLCOM_SHOW_STORAGE_ENGINES:
      res= mysqld_show_storage_engines(thd);
      break;
@@ -177,10 +177,10 @@ diff -ruN a/sql/sql_parse.cc b/sql/sql_parse.cc
    case SQLCOM_SHOW_PRIVILEGES:
      res= mysqld_show_privileges(thd);
      break;
-diff -ruN a/sql/sql_prepare.cc b/sql/sql_prepare.cc
---- a/sql/sql_prepare.cc	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/sql_prepare.cc	Mon Dec 22 00:25:06 2008 -0800
-@@ -1790,6 +1790,7 @@
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/sql_prepare.cc mysql-5.0.96/sql/sql_prepare.cc
+--- mysql-5.0.96.org/sql/sql_prepare.cc	2012-03-02 15:04:08.000000000 +0100
++++ mysql-5.0.96/sql/sql_prepare.cc	2022-10-18 08:28:16.736064773 +0200
+@@ -1818,6 +1818,7 @@ static bool check_prepared_statement(Pre
    case SQLCOM_SHOW_DATABASES:
    case SQLCOM_SHOW_PROCESSLIST:
    case SQLCOM_SHOW_STORAGE_ENGINES:
@@ -188,9 +188,9 @@ diff -ruN a/sql/sql_prepare.cc b/sql/sql_prepare.cc
    case SQLCOM_SHOW_PRIVILEGES:
    case SQLCOM_SHOW_COLUMN_TYPES:
    case SQLCOM_SHOW_STATUS:
-diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
---- a/sql/sql_show.cc	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/sql_show.cc	Mon Dec 22 00:25:06 2008 -0800
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/sql_show.cc mysql-5.0.96/sql/sql_show.cc
+--- mysql-5.0.96.org/sql/sql_show.cc	2022-10-18 08:28:15.676064773 +0200
++++ mysql-5.0.96/sql/sql_show.cc	2022-10-18 08:28:16.736064773 +0200
 @@ -22,6 +22,7 @@
  #include "sp.h"
  #include "sp_head.h"
@@ -199,7 +199,7 @@ diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
  #include <my_dir.h>
  
  #ifdef HAVE_BERKELEY_DB
-@@ -46,6 +47,47 @@
+@@ -46,6 +47,47 @@ static int
  view_store_create_info(THD *thd, TABLE_LIST *table, String *buff);
  bool schema_table_store_record(THD *thd, TABLE *table);
  
@@ -246,11 +246,11 @@ diff -ruN a/sql/sql_show.cc b/sql/sql_show.cc
 +
  
  /***************************************************************************
- ** List all table types supported 
-diff -ruN a/sql/sql_yacc.yy b/sql/sql_yacc.yy
---- a/sql/sql_yacc.yy	Mon Dec 22 00:20:06 2008 -0800
-+++ b/sql/sql_yacc.yy	Mon Dec 22 00:25:06 2008 -0800
-@@ -858,6 +858,7 @@
+ ** List all table types supported
+diff -urNp -x '*.orig' mysql-5.0.96.org/sql/sql_yacc.yy mysql-5.0.96/sql/sql_yacc.yy
+--- mysql-5.0.96.org/sql/sql_yacc.yy	2022-10-18 08:28:15.679398106 +0200
++++ mysql-5.0.96/sql/sql_yacc.yy	2022-10-18 08:28:16.736064773 +0200
+@@ -859,6 +859,7 @@ bool my_yyoverflow(short **a, YYSTYPE **
  %token  PAGE_SYM
  %token  PARTIAL
  %token  PASSWORD
@@ -258,7 +258,7 @@ diff -ruN a/sql/sql_yacc.yy b/sql/sql_yacc.yy
  %token  PARAM_MARKER
  %token  PHASE_SYM
  %token  POINTFROMTEXT
-@@ -8060,7 +8061,7 @@
+@@ -8061,7 +8062,7 @@ show:	SHOW
  	;
  
  show_param:
@@ -267,7 +267,7 @@ diff -ruN a/sql/sql_yacc.yy b/sql/sql_yacc.yy
           {
             LEX *lex= Lex;
             lex->sql_command= SQLCOM_SELECT;
-@@ -8161,6 +8162,10 @@
+@@ -8162,6 +8163,10 @@ show_param:
  	    lex->sql_command= SQLCOM_SHOW_STORAGE_ENGINES;
  	    WARN_DEPRECATED("SHOW TABLE TYPES", "SHOW [STORAGE] ENGINES");
  	  }
@@ -278,7 +278,7 @@ diff -ruN a/sql/sql_yacc.yy b/sql/sql_yacc.yy
  	| opt_storage ENGINES_SYM
  	  {
  	    LEX *lex=Lex;
-@@ -9592,6 +9597,7 @@
+@@ -9596,6 +9601,7 @@ keyword_sp:
  	| PAGE_SYM              {}
  	| PARTIAL		{}
  	| PASSWORD		{}
