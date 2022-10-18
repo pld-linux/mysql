@@ -10,3 +10,29 @@ diff -urNp -x '*.orig' mysql-5.0.96.org/sql/mysqld.cc mysql-5.0.96/sql/mysqld.cc
    openlog(libwrapName, LOG_PID, LOG_AUTH);
  #endif
  
+commit 77fb9608a975ada6ec44d7dfb875967ecdac06a6
+Author: Christoffer Hall <hall@mysql.com>
+Date:   Mon Jun 22 14:43:19 2009 +0200
+
+    BUG#42721 configure.in invokes 'nm' directly
+    
+    A hardcoded use of nm and libc was put into configure.in. This broke
+    cross-compiling and is bad practice. Fitting variables now used.
+
+diff --git a/configure.in b/configure.in
+index bd26e584bfe..33ac021ec76 100644
+--- a/configure.in
++++ b/configure.in
+@@ -603,10 +603,11 @@ AC_SUBST(NOINST_LDFLAGS)
+ # Check if we are using Linux and a glibc compiled with static nss
+ # (this is true on the MySQL build machines to avoid NSS problems)
+ #
++AC_CHECK_TOOL([NM], [nm]) 
+ 
+ if test "$TARGET_LINUX" = "true" -a "$static_nss" = ""
+ then
+-  tmp=`nm /usr/lib*/libc.a  | grep _nss_files_getaliasent_r`
++  tmp=`$NM ${other_libc_lib:-/usr/lib*}/libc.a | grep _nss_files_getaliasent_r1`
+   if test -n "$tmp"
+   then
+      STATIC_NSS_FLAGS="-lc -lnss_files -lnss_dns -lresolv"
