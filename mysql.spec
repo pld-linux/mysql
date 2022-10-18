@@ -590,7 +590,6 @@ mv sphinx-*/mysqlse sql/sphinx
 %{__sed} -i -e 's/AM_CONFIG_HEADER/AC_CONFIG_HEADERS/' configure.in
 
 %build
-:> config/ac-macros/alloca.m4
 %{__libtoolize}
 %{__aclocal} -I config/ac-macros
 %{__automake}
