@@ -79,7 +79,7 @@ Patch23:	big_tables_fixlp284123_fix%{name}35346.patch
 Patch24:	bison3.patch
 Patch25:	%{name}-sslchain.patch
 Patch26:	%{name}-yacc.patch
-Patch27:	community-mysql-dh1024.patch
+Patch27:	community-mysql-dh.patch
 Patch28:	openssl.patch
 Patch29:	mysqldump-compat.patch
 # <percona patches, http://www.percona.com/percona-lab.html>
@@ -590,8 +590,9 @@ mv sphinx-*/mysqlse sql/sphinx
 %{__sed} -i -e 's/AM_CONFIG_HEADER/AC_CONFIG_HEADERS/' configure.in
 
 %build
+:> config/ac-macros/alloca.m4
 %{__libtoolize}
-%{__aclocal}
+%{__aclocal} -I config/ac-macros
 %{__automake}
 %{__autoheader}
 %{__autoconf}
