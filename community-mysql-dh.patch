@@ -110,7 +110,7 @@ diff -ur mysql-5.0.96.org/vio/viosslfactories.c mysql-5.0.96/vio/viosslfactories
 +    report_errors();
 +    DH_free(dh);
 +    SSL_CTX_free(ssl_fd->ssl_context);
-+    my_free(ssl_fd);
++    my_free(ssl_fd, MYF(0));
 +    DBUG_RETURN(0);
 +  }
    DH_free(dh);
