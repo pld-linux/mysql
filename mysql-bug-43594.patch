@@ -1,7 +1,8 @@
 === modified file 'scripts/mysqlhotcopy.sh'
---- scripts/mysqlhotcopy.sh	2008-03-07 20:45:40 +0000
-+++ scripts/mysqlhotcopy.sh	2009-03-12 13:06:42 +0000
-@@ -777,7 +777,24 @@ sub get_list_of_tables {
+diff -urNp -x '*.orig' percona-server-5.5.62-38.14.org/scripts/mysqlhotcopy.sh percona-server-5.5.62-38.14/scripts/mysqlhotcopy.sh
+--- percona-server-5.5.62-38.14.org/scripts/mysqlhotcopy.sh	2022-11-21 13:29:10.407977210 +0100
++++ percona-server-5.5.62-38.14/scripts/mysqlhotcopy.sh	2022-11-21 13:29:11.728046170 +0100
+@@ -843,7 +843,24 @@ sub get_list_of_tables {
          } || [];
      warn "Unable to retrieve list of tables in $db: $@" if $@;
  
@@ -26,5 +27,4 @@
 +    return @res;
  }
  
- sub quote_names {
-
+ sub get_list_of_views {

@@ -1,8 +1,8 @@
-diff -urNbB mysql-5.0.13-rc.org/sql/mysqld.cc mysql-5.0.13-rc/sql/mysqld.cc
---- mysql-5.0.13-rc.org/sql/mysqld.cc	2005-09-22 21:39:56.000000000 +0200
-+++ mysql-5.0.13-rc/sql/mysqld.cc	2005-09-29 19:29:59.991454000 +0200
-@@ -3183,7 +3183,7 @@
-   init_ssl();
+diff -urNp -x '*.orig' percona-server-5.5.62-38.14.org/sql/mysqld.cc percona-server-5.5.62-38.14/sql/mysqld.cc
+--- percona-server-5.5.62-38.14.org/sql/mysqld.cc	2018-11-15 14:19:23.000000000 +0100
++++ percona-server-5.5.62-38.14/sql/mysqld.cc	2022-11-21 13:28:23.178843274 +0100
+@@ -4758,7 +4758,7 @@ int mysqld_main(int argc, char **argv)
+   select_thread_in_use=1;
  
  #ifdef HAVE_LIBWRAP
 -  libwrapName= my_progname+dirname_length(my_progname);
@@ -10,4 +10,3 @@ diff -urNbB mysql-5.0.13-rc.org/sql/mysqld.cc mysql-5.0.13-rc/sql/mysqld.cc
    openlog(libwrapName, LOG_PID, LOG_AUTH);
  #endif
  
-
