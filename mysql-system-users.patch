@@ -1,8 +1,9 @@
---- mysql-5.5.8/scripts/mysql_system_tables_data.sql.org	2010-12-16 00:09:23.662631925 +0100
-+++ mysql-5.5.8/scripts/mysql_system_tables_data.sql	2010-12-16 00:10:17.763454969 +0100
-@@ -27,23 +27,17 @@
- SET @get_hostname= @@hostname;
- SELECT REPLACE((SELECT REPLACE(@get_hostname,'_','\_')),'%','\%') INTO @current_hostname;
+diff -urNp -x '*.orig' percona-server-5.5.62-38.14.org/scripts/mysql_system_tables_data.sql percona-server-5.5.62-38.14/scripts/mysql_system_tables_data.sql
+--- percona-server-5.5.62-38.14.org/scripts/mysql_system_tables_data.sql	2018-11-15 14:19:23.000000000 +0100
++++ percona-server-5.5.62-38.14/scripts/mysql_system_tables_data.sql	2022-11-21 13:27:06.244824210 +0100
+@@ -26,23 +26,17 @@
+ -- a plain character
+ SELECT LOWER( REPLACE((SELECT REPLACE(@@hostname,'_','\_')),'%','\%') )INTO @current_hostname;
  
 -
 --- Fill "db" table with default grants for anyone to
