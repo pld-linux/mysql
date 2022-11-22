@@ -24,7 +24,6 @@
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 
 %define	percona_rel	38.14
-%include	/usr/lib/rpm/macros.perl
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
 Summary(fr.UTF-8):	MySQL: un serveur SQL rapide et fiable
@@ -103,7 +102,7 @@ Requires(pre):	/bin/id
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
-Requires(triggerpostun):	sed >= 4.0
+Requires(postun):	sed >= 4.0
 Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
@@ -509,7 +508,7 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch9 -p1
 %patch11 -p1
 %patch12 -p1
-%patch14 -p0
+%patch14 -p1
 %patch19 -p1
 %patch20 -p1
 
@@ -742,7 +741,8 @@ fi
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
-%triggerpostun -- mysql < 4.0.20-2.4
+%triggerpostun -- mysql < 5.5.0
+# < 4.0.20-2.4
 # For clusters in /etc/%{name}/clusters.conf
 if [ -f /etc/sysconfig/mysql ]; then
 	. /etc/sysconfig/mysql
@@ -757,7 +757,7 @@ if [ -f /etc/sysconfig/mysql ]; then
 	fi
 fi
 
-%triggerpostun -- mysql < 4.1.1
+# mysql < 4.1.1
 # For better compatibility with prevoius versions:
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -796,7 +796,7 @@ done
 EOF
 #'
 
-%triggerpostun -- mysql < 5.1.0
+# < 5.1.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
@@ -835,7 +835,7 @@ for config in $configs; do
 done
 ) | %banner -e %{name}-5.1
 
-%triggerpostun -- mysql < 5.5.0
+# < 5.5.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
