@@ -80,6 +80,7 @@ BuildRequires:	libatomic-devel
 BuildRequires:	libevent-devel
 BuildRequires:	libhsclient-devel
 BuildRequires:	libstdc++-devel >= 5:4.0
+BuildRequires:	libtirpc-devel >= 1.0.0
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	lz4-devel
 BuildRequires:	mecab-devel
