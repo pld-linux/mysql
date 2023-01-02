@@ -72,6 +72,7 @@ Patch7:		%{name}-readline.patch
 Patch8:		%{name}dumpslow-clusters.patch
 Patch9:		openssl-3.patch
 URL:		http://www.mysql.com/products/community/
+BuildRequires:	automake
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
 BuildRequires:	cmake >= 2.8.9
