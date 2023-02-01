@@ -37,7 +37,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	8.0.30
-Release:	0.1
+Release:	
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
