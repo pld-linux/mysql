@@ -642,7 +642,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %pre
 %groupadd -g 89 mysql
-%useradd -u 89 -d %{_mysqlhome} -s /bin/sh -g mysql -c "MySQL Server" mysql
+%useradd -u 89 -d %{_mysqlhome} -s /bin/false -g mysql -c "MySQL Server" mysql
 
 %post
 /sbin/ldconfig
