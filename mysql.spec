@@ -35,13 +35,13 @@ Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
-Version:	5.7.39
-Release:	2
+Version:	5.7.43
+Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
-# Source0-md5:	db1b672fc257bd46356c7af26dd22801
+# Source0-md5:	a06d002cebf649082f0f3aaad4b6b797
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -70,7 +70,6 @@ Patch5:		%{name}-chain-certs.patch
 Patch6:		%{name}-cmake.patch
 Patch7:		%{name}-readline.patch
 Patch8:		%{name}dumpslow-clusters.patch
-Patch9:		openssl-3.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	automake
 BuildRequires:	bison >= 1.875
@@ -483,7 +482,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
-%patch9 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
@@ -491,7 +489,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 # ensure sytstem lib
 # need to keep xxhash.[ch]
-%{__rm} -rv extra/lz4/lz4*/lz4*
+%{__rm} -rv extra/lz4/lz4*/lib/lz4*
 
 %build
 install -d build
