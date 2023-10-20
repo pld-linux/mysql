@@ -67,3 +67,14 @@ diff -ruN mysql-5.7.21.orig/cmake/readline.cmake mysql-5.7.21/cmake/readline.cma
        return res != NULL;
      }"
      EDITLINE_HAVE_COMPLETION_CHAR)
+--- mysql-8.1.0/CMakeLists.txt~	2023-06-21 09:52:10.000000000 +0200
++++ mysql-8.1.0/CMakeLists.txt	2023-10-20 10:08:46.673284042 +0200
+@@ -20,6 +20,8 @@
+ # along with this program; if not, write to the Free Software
+ # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+ 
++variable_watch(CMAKE_EXECUTABLE_SUFFIX)
++
+ MESSAGE(STATUS "Running cmake version ${CMAKE_VERSION}")
+ 
+ IF(WIN32)

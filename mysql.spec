@@ -35,43 +35,45 @@ Summary(pt_BR.UTF-8):	MySQL: Um servidor SQL rápido e confiável
 Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
-Name:		mysql
-Version:	8.0.30
-Release:	
+%define majorver        81
+Name:		mysql%{majorver}
+Version:	8.1.0
+Release:        0.1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
-#Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
-Source0:	http://cdn.mysql.com/Downloads/MySQL-8.0/%{name}-%{version}.tar.gz
-# Source0-md5:	cb88420e449603b82ba8ed84302922e1
+#Source0Download: https://dev.mysql.com/downloads/mysql/8.1.html#downloads
+Source0:	http://cdn.mysql.com/Downloads/MySQL-8.1/mysql-%{version}.tar.gz
+# Source0-md5:	13fe8f9f463b2f462763cd21459590a0
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
 Source101:	http://downloads.sourceforge.net/boost/boost_1_77_0.tar.bz2
 # Source101-md5:	09dc857466718f27237144c6f2432d86
 %endif
-Source1:	%{name}.init
-Source2:	%{name}.sysconfig
-Source3:	%{name}.logrotate
-Source4:	%{name}d.conf
-Source5:	%{name}-clusters.conf
-Source7:	%{name}-ndb.init
-Source8:	%{name}-ndb.sysconfig
-Source9:	%{name}-ndb-mgm.init
-Source10:	%{name}-ndb-mgm.sysconfig
-Source11:	%{name}-ndb-cpc.init
-Source12:	%{name}-ndb-cpc.sysconfig
-Source13:	%{name}-client.conf
+Source1:	mysql.init
+Source2:	mysql.sysconfig
+Source3:	mysql.logrotate
+Source4:	mysqld.conf
+Source5:	mysql-clusters.conf
+Source7:	mysql-ndb.init
+Source8:	mysql-ndb.sysconfig
+Source9:	mysql-ndb-mgm.init
+Source10:	mysql-ndb-mgm.sysconfig
+Source11:	mysql-ndb-cpc.init
+Source12:	mysql-ndb-cpc.sysconfig
+Source13:	mysql-client.conf
 Source14:	my.cnf
-Patch0:		%{name}-opt.patch
-Patch1:		%{name}-system-xxhash.patch
+Patch0:		mysql-opt.patch
+Patch1:		mysql-system-xxhash.patch
+Patch2:         notests-workaround.patch
 
-Patch17:	%{name}-5.7-sphinx.patch
-Patch18:	%{name}-sphinx.patch
+Patch17:	mysql-5.7-sphinx.patch
+Patch18:	mysql-sphinx.patch
 
-Patch24:	%{name}-cmake.patch
-Patch25:	%{name}-readline.patch
+Patch24:	mysql-cmake.patch
+Patch25:	mysql-readline.patch
 
-Patch26:	%{name}dumpslow-clusters.patch
+Patch26:	mysqldumpslow-clusters.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.77.0}
@@ -116,7 +118,7 @@ Requires:	%{name}-charsets = %{version}-%{release}
 Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Requires:	rc-scripts >= 0.2.0
-Suggests:	mysql-client
+Suggests:	%{name}-client
 %{?with_tcpd:Suggests:	tcp_wrappers}
 Suggests:	vim-syntax-mycnf
 Provides:	MySQL-server
@@ -126,11 +128,11 @@ Provides:	user(mysql)
 Obsoletes:	MySQL < 3.22.27
 Obsoletes:	mysql-server < 4
 Conflicts:	logrotate < 3.8.0
-BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+BuildRoot:	%{tmpdir}/mysql-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
-%define		_localstatedir	/var/lib/mysql
-%define		_mysqlhome	/home/services/mysql
+%define		_localstatedir	/var/lib/%{name}
+%define		_mysqlhome	/home/services/%{name}
 
 %description
 MySQL is a true multi-user, multi-threaded SQL (Structured Query
@@ -470,10 +472,14 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101}
+%setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101} -n mysql-%{version}
 
 #%patch0 -p1
-%patch1 -p1
+# FIXME
+#%patch1 -p1
+
+# when tests are not built there is no cstrbuf-t target
+%{!?with_tests:%patch2 -p1}
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
@@ -493,7 +499,8 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 # ensure sytstem lib
 # need to keep xxhash.[ch]
-%{__rm} -rv extra/lz4/lz4**
+# FIXME
+#%{__rm} -rv extra/lz4/lz4**
 
 %build
 install -d build
@@ -504,6 +511,7 @@ cd build
 
 CPPFLAGS="%{rpmcppflags}" \
 %cmake .. \
+        -DCMAKE_EXECUTABLE_SUFFIX=string:%{majorver} \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
 	-DCMAKE_C_FLAGS_RELWITHDEBINFO="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
@@ -513,12 +521,15 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DFEATURE_SET="community" \
 	-DINSTALL_LAYOUT=RPM \
 	-DINSTALL_LIBDIR=%{_lib} \
+        -DINSTALL_PRIV_LIBDIR=%{_libdir}/%{name}/private \
 	-DINSTALL_MYSQLTESTDIR_RPM="" \
 	-DINSTALL_PLUGINDIR=%{_lib}/%{name}/plugin \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=share/%{name}-support \
 	-DINSTALL_MYSQLSHAREDIR=share/%{name} \
-	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/%{name}.sock \
+        -DROUTER_INSTALL_LIBDIR=%{_libdir}/%{name}router/private \
+        -DROUTER_INSTALL_PLUGINDIR=%{_libdir}/%{name}router \
+	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/mysql.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
 	%{!?with_ldap:-DWITH_AUTHENTICATION_LDAP=OFF} \
@@ -531,8 +542,8 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_LZ4=system \
 	-DWITH_PROTOBUF=system \
 	-DWITH_SASL=system \
+        -DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
-	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
 	-DWITH_ZLIB=system \
 	-DWITH_EDITLINE=system \
@@ -545,21 +556,23 @@ CPPFLAGS="%{rpmcppflags}" \
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,mysql,skel} \
-	   $RPM_BUILD_ROOT/var/{log/{archive,}/mysql,lib/{mysql,mysql-files}} \
+install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,%{name},skel} \
+	   $RPM_BUILD_ROOT/var/{log/{archive,}/%{name},lib/{mysql,%{name}-files}} \
 	   $RPM_BUILD_ROOT%{_mysqlhome} \
 	   $RPM_BUILD_ROOT%{_libdir}
 
 %{__make} -C build install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-install -p %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql
-cp -a %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/mysql
-cp -a %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/mysql
+install -p %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}
+cp -a %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/%{name}
+cp -a %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/%{name}
 # This is template for configuration file which is created after 'service mysql init'
 cp -a %{SOURCE4} mysqld.conf
 cp -a %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
+
+mv $RPM_BUILD_ROOT/etc/logrotate.d/{mysqlrouter,%{name}router}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
@@ -578,12 +591,12 @@ cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf
 
 # NDB
 %if %{with ndb}
-install -p %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb
-cp -a %{SOURCE8} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb
-install -p %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-mgm
-cp -a %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-mgm
-install -p %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/mysql-ndb-cpc
-cp -a %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/mysql-ndb-cpc
+install -p %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}-ndb
+cp -a %{SOURCE8} $RPM_BUILD_ROOT/etc/sysconfig/%{name}-ndb
+install -p %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}-ndb-mgm
+cp -a %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/%{name}-ndb-mgm
+install -p %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}-ndb-cpc
+cp -a %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/%{name}-ndb-cpc
 %endif
 
 sed -i -e 's,/usr//usr,%{_prefix},g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
@@ -625,7 +638,8 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/{mysql_client_test,mysqlxtest}
-%{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/test_udf_services.so
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/test_udf_services.so
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/component_test_udf_services.so
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
 
 # not needed
@@ -637,22 +651,34 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/rewrite_example.so
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/test_security_context.so
 
+# fix names for parallel coinstallation
+for f in $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/* ; do
+    fb=$(basename "$f")
+    mv "${f}" "${f}%{majorver}"
+    for m in $RPM_BUILD_ROOT%{_mandir}/man*; do
+        mnr=$(echo -n $m | tail -c 1)
+        if [ -f "${m}/${fb}.${mnr}" ]; then
+            mv "${m}/${fb}.${mnr}" "$m/${fb}%{majorver}.${mnr}"
+        fi
+    done
+done
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %pre
 %groupadd -g 89 mysql
-%useradd -u 89 -d %{_mysqlhome} -s /bin/false -g mysql -c "MySQL Server" mysql
+%useradd -u 89 -d %{_mysqlhome} -s /bin/false -g mysql -c "%{name} Server" mysql
 
 %post
 /sbin/ldconfig
-/sbin/chkconfig --add mysql
-%service mysql restart
+/sbin/chkconfig --add %{name}
+%service %{name} restart
 
 %preun
 if [ "$1" = "0" ]; then
-	%service -q mysql stop
-	/sbin/chkconfig --del mysql
+	%service -q %{name} stop
+	/sbin/chkconfig --del %{name}
 fi
 
 %postun
@@ -663,235 +689,59 @@ if [ "$1" = "0" ]; then
 fi
 
 %post ndb
-/sbin/chkconfig --add mysql-ndb
-%service mysql-ndb restart "mysql NDB engine"
+/sbin/chkconfig --add %{name}-ndb
+%service %{name}-ndb restart "%{name} NDB engine"
 
 %preun ndb
 if [ "$1" = "0" ]; then
-	%service mysql-ndb stop
-	/sbin/chkconfig --del mysql-ndb
+	%service %{name}-ndb stop
+	/sbin/chkconfig --del %{name}-ndb
 fi
 
 %post ndb-mgm
-/sbin/chkconfig --add mysql-ndb-mgm
-%service mysql-ndb-mgm restart "mysql NDB management node"
+/sbin/chkconfig --add %{name}-ndb-mgm
+%service %{name}-ndb-mgm restart "%{name} NDB management node"
 
 %preun ndb-mgm
 if [ "$1" = "0" ]; then
-	%service mysql-ndb-mgm stop
-	/sbin/chkconfig --del mysql-ndb-mgm
+	%service %{name}-ndb-mgm stop
+	/sbin/chkconfig --del %{name}-ndb-mgm
 fi
 
 %post ndb-cpc
-/sbin/chkconfig --add mysql-ndb-cpc
-%service mysql-ndb-cpc restart "mysql NDB CPC"
+/sbin/chkconfig --add %{name}-ndb-cpc
+%service %{name}-ndb-cpc restart "%{name} NDB CPC"
 
 %preun ndb-cpc
 if [ "$1" = "0" ]; then
-	%service mysql-ndb-cpc stop
-	/sbin/chkconfig --del mysql-ndb-cpc
+	%service %{name}-ndb-cpc stop
+	/sbin/chkconfig --del %{name}-ndb-cpc
 fi
 
 %post	libs -p /sbin/ldconfig
 %postun	libs -p /sbin/ldconfig
 
-%triggerpostun -- mysql < 5.7.0
-# mysql < 4.0.20-2.4
-# For clusters in /etc/%{name}/clusters.conf
-if [ -f /etc/sysconfig/mysql ]; then
-	. /etc/sysconfig/mysql
-	if [ -n "$MYSQL_DB_CLUSTERS" ]; then
-		for i in "$MYSQL_DB_CLUSTERS"; do
-			echo "$i/mysqld.conf=$i" >> /etc/%{name}/clusters.conf
-		done
-		echo "# Do not use **obsolete** option MYSQL_DB_CLUSTERS" >> /etc/sysconfig/mysql
-		echo "# USE /etc/%{name}/clusters.conf instead" >> /etc/sysconfig/mysql
-		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/%{name}/clusters.conf."
-		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/%{name}/clusters.conf."
-	fi
-fi
-
-# mysql < 4.1.1
-# For better compatibility with prevoius versions:
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
-	if echo "$config" | grep -q '^/'; then
-		config_file="$config"
-	elif [ -f "/etc/%{name}/$config" ]; then
-		config_file=/etc/%{name}/$config
-	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
-		if [ -z "$clusterdir" ]; then
-			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
-			exit 1
-		fi
-		config_file="$clusterdir/mysqld.conf"
-	fi
-
-	if [ ! -f "$config_file" ]; then
-			echo >&2 "Lost myself! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
-			exit 1
-	fi
-	echo "Adding option old-passwords to config: $config_file"
-	echo "If you want to use new, better passwords - remove it"
-
-	# sed magic to add 'old-passwords' to [mysqld] section
-	sed -i -e '/./{H;$!d;};x;/\[mysqld\]/{
-		a
-		a; Compatibility options:
-		aold-passwords
-	}
-	' $config_file
-done
-
-%banner -e %{name}-4.1.x <<-EOF
-	If you want to use new help tables in MySQL 4.1.x then You'll need to import the help data:
-	mysql -u mysql mysql < %{_datadir}/%{name}/fill_help_tables.sql
-EOF
-#'
-
-# mysql < 5.1.0
-configs=""
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
-	if echo "$config" | grep -q '^/'; then
-		config_file="$config"
-	elif [ -f "/etc/%{name}/$config" ]; then
-		config_file=/etc/%{name}/$config
-	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
-		if [ -z "$clusterdir" ]; then
-			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
-			exit 1
-		fi
-		config_file="$clusterdir/mysqld.conf"
-	fi
-
-	if [ ! -f "$config_file" ]; then
-		echo >&2 "ERROR: Can't find real config file for $config! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
-		continue
-	fi
-	configs="$configs $config_file"
-done
-
-(
-echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
-echo 'Thus, you should invoke:'
-for config in $configs; do
-	sed -i -e '
-		s/set-variable\s*=\s* //
-		# use # as comment in config
-		s/^;/#/
-	' $config
-
-	datadir=$(awk -F= '!/^#/ && $1 ~ /datadir/{print $2}' $config | xargs)
-	echo "# mysql_upgrade --datadir=$datadir"
-done
-) | %banner -e %{name}-5.1
-
-# mysql < 5.5.0
-configs=""
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
-	if echo "$config" | grep -q '^/'; then
-		config_file="$config"
-	elif [ -f "/etc/%{name}/$config" ]; then
-		config_file=/etc/%{name}/$config
-	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
-		if [ -z "$clusterdir" ]; then
-			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
-			exit 1
-		fi
-		config_file="$clusterdir/mysqld.conf"
-	fi
-
-	if [ ! -f "$config_file" ]; then
-		echo >&2 "ERROR: Can't find real config file for $config! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
-		continue
-	fi
-	configs="$configs $config_file"
-done
-
-(
-echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
-echo 'Thus, you should invoke:'
-for config in $configs; do
-	sed -i -e '
-		s/^language *= *polish/lc-messages = pl_PL/i
-		s/set-variable\s*=\s* //
-		s/^skip-locking/skip-external-locking/
-		# this is not valid for server. it is client option
-		s/^default-character-set/# client-config: &/
-		# use # as comment in config
-		s/^;/#/
-	' $config
-
-	socket=$(awk -F= '!/^#/ && $1 ~ /socket/{print $2}' $config | xargs)
-	echo "# mysql_upgrade ${socket:+--socket=$socket}"
-done
-) | %banner -e %{name}-5.5
-
-# mysql < 5.7.0
-configs=""
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
-	if echo "$config" | grep -q '^/'; then
-		config_file="$config"
-	elif [ -f "/etc/%{name}/$config" ]; then
-		config_file=/etc/%{name}/$config
-	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
-		if [ -z "$clusterdir" ]; then
-			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
-			exit 1
-		fi
-		config_file="$clusterdir/mysqld.conf"
-	fi
-
-	if [ ! -f "$config_file" ]; then
-		echo >&2 "ERROR: Can't find real config file for $config! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
-		continue
-	fi
-	configs="$configs $config_file"
-done
-
-(
-echo 'You should run MySQL upgrade script *after* restarting MySQL server for all MySQL clusters.'
-echo 'Thus, you should invoke:'
-for config in $configs; do
-	sed -i -e '
-		s/^log-warnings *=/log-error-verbosity =/
-		s/^myisam-recover$/myisam-recover-options/
-		s/^innodb_mirrored_log_groups.*//
-	' $config
-
-	socket=$(awk -F= '!/^#/ && $1 ~ /socket/{print $2}' $config | xargs)
-	echo "# mysql_upgrade ${socket:+--socket=$socket}"
-done
-) | %banner -e %{name}-5.7
-
 %files
 %defattr(644,root,root,755)
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysql
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/mysqlrouter
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}router
 %attr(754,root,root) /etc/rc.d/init.d/%{name}
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
-%attr(755,root,root) %{_bindir}/ibd2sdi
-%attr(755,root,root) %{_bindir}/mysql_migrate_keyring
-%attr(755,root,root) %{_bindir}/mysqlrouter
-%attr(755,root,root) %{_bindir}/mysqlrouter_keyring
-%attr(755,root,root) %{_bindir}/mysqlrouter_passwd
-%attr(755,root,root) %{_bindir}/mysqlrouter_plugin_info
-%attr(755,root,root) %{_sbindir}/innochecksum
-%attr(755,root,root) %{_sbindir}/my_print_defaults
-%attr(755,root,root) %{_sbindir}/myisamchk
-%attr(755,root,root) %{_sbindir}/myisamlog
-%attr(755,root,root) %{_sbindir}/myisampack
-%attr(755,root,root) %{_sbindir}/mysql_upgrade
-%attr(755,root,root) %{_sbindir}/mysqlcheck
-%attr(755,root,root) %{_sbindir}/mysqld
+%attr(755,root,root) %{_bindir}/ibd2sdi%{majorver}
+%attr(755,root,root) %{_bindir}/mysql_migrate_keyring%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlrouter%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlrouter_keyring%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlrouter_passwd%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlrouter_plugin_info%{majorver}
+%attr(755,root,root) %{_sbindir}/innochecksum%{majorver}
+%attr(755,root,root) %{_sbindir}/my_print_defaults%{majorver}
+%attr(755,root,root) %{_sbindir}/myisamchk%{majorver}
+%attr(755,root,root) %{_sbindir}/myisamlog%{majorver}
+%attr(755,root,root) %{_sbindir}/myisampack%{majorver}
+%attr(755,root,root) %{_sbindir}/mysql_upgrade%{majorver}
+%attr(755,root,root) %{_sbindir}/mysqlcheck%{majorver}
+%attr(755,root,root) %{_sbindir}/mysqld%{majorver}
 
 %dir %{_libdir}/%{name}
 %dir %{_libdir}/%{name}/plugin
@@ -900,8 +750,8 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
 #%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_fido_client.so
-%{?with_ldap:%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so}
-%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
+#%{?with_ldap:%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so}
+#%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_audit_api_message_emit.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_keyring_file.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_filter_dragnet.so
@@ -942,38 +792,39 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
 %dir %{_libdir}/%{name}/private
-%{_libdir}/%{name}/private/icudt69l
-%dir %{_libdir}/mysqlrouter
-%attr(755,root,root) %{_libdir}/mysqlrouter/connection_pool.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/http_auth_backend.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/http_auth_realm.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/http_server.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/io.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/keepalive.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/metadata_cache.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/rest_api.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/rest_connection_pool.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/rest_metadata_cache.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/rest_router.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/rest_routing.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/router_openssl.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/router_protobuf.so
-%attr(755,root,root) %{_libdir}/mysqlrouter/routing.so
-%dir %{_libdir}/mysqlrouter/private
-%attr(755,root,root) %{_libdir}/mysqlrouter/private/libmysqlharness*.so*
-%attr(755,root,root) %{_libdir}/mysqlrouter/private/libmysqlrouter*.so*
-%{_mandir}/man1/ibd2sdi.1*
-%{_mandir}/man1/innochecksum.1*
-%{_mandir}/man1/my_print_defaults.1*
-%{_mandir}/man1/myisamchk.1*
-%{_mandir}/man1/myisamlog.1*
-%{_mandir}/man1/myisampack.1*
-%{_mandir}/man1/mysql_upgrade.1*
-%{_mandir}/man1/mysqlcheck.1*
-%{_mandir}/man1/mysqlrouter.1*
-%{_mandir}/man1/mysqlrouter_passwd.1*
-%{_mandir}/man1/mysqlrouter_plugin_info.1*
-%{_mandir}/man8/mysqld.8*
+%{_libdir}/%{name}/private/icudt*l
+%dir %{_libdir}/%{name}router
+%attr(755,root,root) %{_libdir}/%{name}router/connection_pool.so
+%attr(755,root,root) %{_libdir}/%{name}router/destination_status.so
+%attr(755,root,root) %{_libdir}/%{name}router/http_auth_backend.so
+%attr(755,root,root) %{_libdir}/%{name}router/http_auth_realm.so
+%attr(755,root,root) %{_libdir}/%{name}router/http_server.so
+%attr(755,root,root) %{_libdir}/%{name}router/io.so
+%attr(755,root,root) %{_libdir}/%{name}router/keepalive.so
+%attr(755,root,root) %{_libdir}/%{name}router/metadata_cache.so
+%attr(755,root,root) %{_libdir}/%{name}router/rest_api.so
+%attr(755,root,root) %{_libdir}/%{name}router/rest_connection_pool.so
+%attr(755,root,root) %{_libdir}/%{name}router/rest_metadata_cache.so
+%attr(755,root,root) %{_libdir}/%{name}router/rest_router.so
+%attr(755,root,root) %{_libdir}/%{name}router/rest_routing.so
+%attr(755,root,root) %{_libdir}/%{name}router/router_openssl.so
+%attr(755,root,root) %{_libdir}/%{name}router/router_protobuf.so
+%attr(755,root,root) %{_libdir}/%{name}router/routing.so
+%dir %{_libdir}/%{name}router/private
+%attr(755,root,root) %{_libdir}/%{name}router/private/libmysqlharness*.so*
+%attr(755,root,root) %{_libdir}/%{name}router/private/libmysqlrouter*.so*
+%{_mandir}/man1/ibd2sdi%{majorver}.1*
+%{_mandir}/man1/innochecksum%{majorver}.1*
+%{_mandir}/man1/my_print_defaults%{majorver}.1*
+%{_mandir}/man1/myisamchk%{majorver}.1*
+%{_mandir}/man1/myisamlog%{majorver}.1*
+%{_mandir}/man1/myisampack%{majorver}.1*
+%{_mandir}/man1/mysql_upgrade%{majorver}.1*
+%{_mandir}/man1/mysqlcheck%{majorver}.1*
+%{_mandir}/man1/mysqlrouter%{majorver}.1*
+%{_mandir}/man1/mysqlrouter_passwd%{majorver}.1*
+%{_mandir}/man1/mysqlrouter_plugin_info%{majorver}.1*
+%{_mandir}/man8/mysqld%{majorver}.8*
 
 %if %{?debug:1}0
 %attr(755,root,root) %{_bindir}/*resolve_stack_dump
@@ -984,11 +835,9 @@ done
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for mysql.rpm while mysql:mysql is potential security hole
 %attr(751,root,root) /var/lib/mysql
-# https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_secure-file-priv
-%attr(770,mysql,mysql) %dir /var/lib/mysql-files
-%attr(750,mysql,mysql) %dir /var/log/mysql
-%attr(750,mysql,mysql) %dir /var/log/archive/mysql
-%attr(640,mysql,mysql) %ghost /var/log/mysql/*
+%attr(750,mysql,mysql) %dir /var/log/%{name}
+%attr(750,mysql,mysql) %dir /var/log/archive/%{name}
+%attr(640,mysql,mysql) %ghost /var/log/%{name}/*
 
 # This is template for configuration file which is created after 'service mysql init'
 %{_datadir}/%{name}/mysqld.conf
@@ -1032,49 +881,49 @@ done
 
 %files extras
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/myisam_ftdump
-%attr(755,root,root) %{_bindir}/mysql_secure_installation
-%attr(755,root,root) %{_bindir}/mysql_ssl_rsa_setup
-%attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql
-%attr(755,root,root) %{_bindir}/perror
-%{_mandir}/man1/myisam_ftdump.1*
-%{_mandir}/man1/mysql_ssl_rsa_setup.1*
-%{_mandir}/man1/mysql_secure_installation.1*
-%{_mandir}/man1/mysql_tzinfo_to_sql.1*
-%{_mandir}/man1/perror.1*
+%attr(755,root,root) %{_bindir}/myisam_ftdump%{majorver}
+%attr(755,root,root) %{_bindir}/mysql_secure_installation%{majorver}
+%attr(755,root,root) %{_bindir}/mysql_ssl_rsa_setup%{majorver}
+%attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql%{majorver}
+%attr(755,root,root) %{_bindir}/perror%{majorver}
+%{_mandir}/man1/myisam_ftdump%{majorver}.1*
+%{_mandir}/man1/mysql_ssl_rsa_setup%{majorver}.1*
+%{_mandir}/man1/mysql_secure_installation%{majorver}.1*
+%{_mandir}/man1/mysql_tzinfo_to_sql%{majorver}.1*
+%{_mandir}/man1/perror%{majorver}.1*
 
 %files extras-perl
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/mysqldumpslow
-%{_mandir}/man1/mysqldumpslow.1*
+%attr(755,root,root) %{_bindir}/mysqldumpslow%{majorver}
+%{_mandir}/man1/mysqldumpslow%{majorver}.1*
 
 %files client
 %defattr(644,root,root,755)
 %attr(600,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf
-%attr(755,root,root) %{_bindir}/mysql
-%attr(755,root,root) %{_bindir}/mysqladmin
-%attr(755,root,root) %{_bindir}/mysqlbinlog
-%attr(755,root,root) %{_bindir}/mysql_config_editor
-%attr(755,root,root) %{_bindir}/mysqldump
-%attr(755,root,root) %{_bindir}/mysqlimport
-%attr(755,root,root) %{_bindir}/mysqlpump
-%attr(755,root,root) %{_bindir}/mysqlshow
-%{_mandir}/man1/mysql.1*
-%{_mandir}/man1/mysqladmin.1*
-%{_mandir}/man1/mysqlbinlog.1*
-%{_mandir}/man1/mysql_config_editor.1*
-%{_mandir}/man1/mysqldump.1*
-%{_mandir}/man1/mysqlimport.1*
-%{_mandir}/man1/mysqlpump.1*
-%{_mandir}/man1/mysqlshow.1*
+%attr(755,root,root) %{_bindir}/mysql%{majorver}
+%attr(755,root,root) %{_bindir}/mysqladmin%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlbinlog%{majorver}
+%attr(755,root,root) %{_bindir}/mysql_config_editor%{majorver}
+%attr(755,root,root) %{_bindir}/mysqldump%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlimport%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlpump%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlshow%{majorver}
+%{_mandir}/man1/mysql%{majorver}.1*
+%{_mandir}/man1/mysqladmin%{majorver}.1*
+%{_mandir}/man1/mysqlbinlog%{majorver}.1*
+%{_mandir}/man1/mysql_config_editor%{majorver}.1*
+%{_mandir}/man1/mysqldump%{majorver}.1*
+%{_mandir}/man1/mysqlimport%{majorver}.1*
+%{_mandir}/man1/mysqlpump%{majorver}.1*
+%{_mandir}/man1/mysqlshow%{majorver}.1*
 
 %files libs
 %defattr(644,root,root,755)
-%attr(751,root,root) %dir %{_sysconfdir}/mysql
+%attr(751,root,root) %dir %{_sysconfdir}/%{name}
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
 %{_sysconfdir}/%{name}/my.cnf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.21
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.22
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
@@ -1082,7 +931,7 @@ done
 
 %files devel
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/mysql_config
+%attr(755,root,root) %{_bindir}/mysql_config%{majorver}
 %attr(755,root,root) %{_libdir}/libmysqlclient.so
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so
@@ -1091,7 +940,7 @@ done
 %{_libdir}/libmysqlservices.a
 %{_includedir}/mysql
 %{_aclocaldir}/mysql.m4
-%{_mandir}/man1/mysql_config.1*
+%{_mandir}/man1/mysql_config%{majorver}.1*
 
 %files static
 %defattr(644,root,root,755)
@@ -1103,12 +952,12 @@ done
 # rename to test or split?
 %files bench
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/comp_err
-%attr(755,root,root) %{_bindir}/mysql_keyring_encryption_test
-%attr(755,root,root) %{_bindir}/mysqlslap
-%attr(755,root,root) %{_bindir}/mysqltest
-%attr(755,root,root) %{_bindir}/mysqltest_safe_process
-%attr(755,root,root) %{_bindir}/zlib_decompress
+%attr(755,root,root) %{_bindir}/comp_err%{majorver}
+%attr(755,root,root) %{_bindir}/mysql_keyring_encryption_test%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlslap%{majorver}
+%attr(755,root,root) %{_bindir}/mysqltest%{majorver}
+%attr(755,root,root) %{_bindir}/mysqltest_safe_process%{majorver}
+%attr(755,root,root) %{_bindir}/zlib_decompress%{majorver}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component1.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component2.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component3.so
@@ -1138,7 +987,6 @@ done
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_system_variable_source.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_table_access.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_udf_registration.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_udf_services.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/pfs_example_plugin_employee.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/test_services_host_application_signal.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/test_services_plugin_registry.so
@@ -1147,8 +995,8 @@ done
 #%{_datadir}/sql-bench/[CDRl]*
 #%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
 %{_mandir}/man1/lz4_decompress.1*
-%{_mandir}/man1/mysqlslap.1*
-%{_mandir}/man1/zlib_decompress.1*
+%{_mandir}/man1/mysqlslap%{majorver}.1*
+%{_mandir}/man1/zlib_decompress%{majorver}.1*
 
 #%files doc
 #%defattr(644,root,root,755)
@@ -1157,59 +1005,59 @@ done
 %if %{with ndb}
 %files ndb
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_sbindir}/ndbd
-%attr(754,root,root) /etc/rc.d/init.d/mysql-ndb
+%attr(755,root,root) %{_sbindir}/ndbd%{majorver}
+%attr(754,root,root) /etc/rc.d/init.d/%{name}-ndb
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb
-%{_mandir}/man1/ndbd_redo_log_reader.1*
-%{_mandir}/man8/ndbd.8*
+%{_mandir}/man1/ndbd_redo_log_reader%{majorver}.1*
+%{_mandir}/man8/ndbd%{majorver}.8*
 
 %files ndb-client
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/ndb_config
-%attr(755,root,root) %{_bindir}/ndb_delete_all
-%attr(755,root,root) %{_bindir}/ndb_desc
-%attr(755,root,root) %{_bindir}/ndb_drop_index
-%attr(755,root,root) %{_bindir}/ndb_drop_table
-%attr(755,root,root) %{_bindir}/ndb_error_reporter
-%attr(755,root,root) %{_bindir}/ndb_mgm
-%attr(755,root,root) %{_bindir}/ndb_print_backup_file
-%attr(755,root,root) %{_bindir}/ndb_print_schema_file
-%attr(755,root,root) %{_bindir}/ndb_print_sys_file
-%attr(755,root,root) %{_bindir}/ndb_restore
-%attr(755,root,root) %{_bindir}/ndb_select_all
-%attr(755,root,root) %{_bindir}/ndb_select_count
-%attr(755,root,root) %{_bindir}/ndb_show_tables
-%attr(755,root,root) %{_bindir}/ndb_size.pl
-%attr(755,root,root) %{_bindir}/ndb_test_platform
-%attr(755,root,root) %{_bindir}/ndb_waiter
-%{_mandir}/man1/ndb_config.1*
-%{_mandir}/man1/ndb_delete_all.1*
-%{_mandir}/man1/ndb_desc.1*
-%{_mandir}/man1/ndb_drop_index.1*
-%{_mandir}/man1/ndb_drop_table.1*
-%{_mandir}/man1/ndb_error_reporter.1*
-%{_mandir}/man1/ndb_mgm.1*
-%{_mandir}/man1/ndb_print_backup_file.1*
-%{_mandir}/man1/ndb_print_schema_file.1*
-%{_mandir}/man1/ndb_print_sys_file.1*
-%{_mandir}/man1/ndb_restore.1*
-%{_mandir}/man1/ndb_select_all.1*
-%{_mandir}/man1/ndb_select_count.1*
-%{_mandir}/man1/ndb_show_tables.1*
-%{_mandir}/man1/ndb_size.pl.1*
-%{_mandir}/man1/ndb_waiter.1*
+%attr(755,root,root) %{_bindir}/ndb_config%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_delete_all%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_desc%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_drop_index%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_drop_table%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_error_reporter%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_mgm%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_print_backup_file%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_print_schema_file%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_print_sys_file%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_restore%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_select_all%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_select_count%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_show_tables%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_size.pl%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_test_platform%{majorver}
+%attr(755,root,root) %{_bindir}/ndb_waiter%{majorver}
+%{_mandir}/man1/ndb_config%{majorver}.1*
+%{_mandir}/man1/ndb_delete_all%{majorver}.1*
+%{_mandir}/man1/ndb_desc%{majorver}.1*
+%{_mandir}/man1/ndb_drop_index%{majorver}.1*
+%{_mandir}/man1/ndb_drop_table%{majorver}.1*
+%{_mandir}/man1/ndb_error_reporter%{majorver}.1*
+%{_mandir}/man1/ndb_mgm%{majorver}.1*
+%{_mandir}/man1/ndb_print_backup_file%{majorver}.1*
+%{_mandir}/man1/ndb_print_schema_file%{majorver}.1*
+%{_mandir}/man1/ndb_print_sys_file%{majorver}.1*
+%{_mandir}/man1/ndb_restore%{majorver}.1*
+%{_mandir}/man1/ndb_select_all%{majorver}.1*
+%{_mandir}/man1/ndb_select_count%{majorver}.1*
+%{_mandir}/man1/ndb_show_tables%{majorver}.1*
+%{_mandir}/man1/ndb_size.pl%{majorver}.1*
+%{_mandir}/man1/ndb_waiter%{majorver}.1*
 
 %files ndb-mgm
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_sbindir}/ndb_mgmd
-%attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-mgm
+%attr(755,root,root) %{_sbindir}/ndb_mgmd%{majorver}
+%attr(754,root,root) /etc/rc.d/init.d/%{name}-ndb-mgm
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-mgm
-%{_mandir}/man8/ndb_mgmd.8*
+%{_mandir}/man8/ndb_mgmd%{majorver}.8*
 
 %files ndb-cpc
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_sbindir}/ndb_cpcd
-%attr(754,root,root) /etc/rc.d/init.d/mysql-ndb-cpc
+%attr(755,root,root) %{_sbindir}/ndb_cpcd%{majorver}
+%attr(754,root,root) /etc/rc.d/init.d/%{name}-ndb-cpc
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-cpc
-%{_mandir}/man1/ndb_cpcd.1*
+%{_mandir}/man1/ndb_cpcd%{majorver}.1*
 %endif
