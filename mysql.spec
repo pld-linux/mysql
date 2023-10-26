@@ -35,7 +35,7 @@ Summary(pt_BR.UTF-8):	MySQL: Um servidor SQL rápido e confiável
 Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
-%define majorver        81
+%define majorver        8.1
 Name:		mysql%{majorver}
 Version:	8.1.0
 Release:        0.1
