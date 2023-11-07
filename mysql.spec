@@ -35,15 +35,15 @@ Summary(pt_BR.UTF-8):	MySQL: Um servidor SQL rápido e confiável
 Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
-%define majorver        8.1
+%define majorver        8.2
 Name:		mysql%{majorver}
-Version:	8.1.0
+Version:	8.2.0
 Release:        0.1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
-#Source0Download: https://dev.mysql.com/downloads/mysql/8.1.html#downloads
-Source0:	http://cdn.mysql.com/Downloads/MySQL-8.1/mysql-%{version}.tar.gz
-# Source0-md5:	13fe8f9f463b2f462763cd21459590a0
+#Source0Download: https://dev.mysql.com/downloads/mysql/8.2.html#downloads
+Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
+# Source0-md5:	9ddeecbdb046cd4a8a4340445206130d
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -65,7 +65,6 @@ Source13:	mysql-client.conf
 Source14:	my.cnf
 Patch0:		mysql-opt.patch
 Patch1:		mysql-system-xxhash.patch
-Patch2:         notests-workaround.patch
 
 Patch17:	mysql-5.7-sphinx.patch
 Patch18:	mysql-sphinx.patch
@@ -477,9 +476,6 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 #%patch0 -p1
 # FIXME
 #%patch1 -p1
-
-# when tests are not built there is no cstrbuf-t target
-%{!?with_tests:%patch2 -p1}
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
