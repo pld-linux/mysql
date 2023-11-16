@@ -127,6 +127,8 @@ Provides:	user(mysql)
 Obsoletes:	MySQL < 3.22.27
 Obsoletes:	mysql-server < 4
 Conflicts:	logrotate < 3.8.0
+# "MySQL supports only 64-bit platforms."
+BuildArch:      %{x8664} %{arch64}
 BuildRoot:	%{tmpdir}/mysql-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
