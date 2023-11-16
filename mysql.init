@@ -477,17 +477,16 @@ mysqlinit() {
 		--skip-grant-tables \
 		--datadir=$MYSQL_DATA_DIR \
 		--user=$MYSQL_USER \
-		--slave-load-tmpdir=$MYSQL_DATA_DIR \
 		--tmpdir=$MYSQL_DATA_DIR \
 		--log-error=$MYSQL_ERRLOG \
 		&& ok=1
-	[ -f $MYSQL_DATA_DIR/mysql/user.frm ] || ok=0
+	[ -f $MYSQL_DATA_DIR/mysql.ibd ] || ok=0
 
 	if [ "$ok" = 1 ]; then
 		ok
 		cat << END_OF_MSG
 
-PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL{MYSQL_MAJOR} USERS!
+PLEASE REMEMBER TO CHANGE A PASSWORD FOR THE MySQL{MYSQL_MAJOR} USERS!
 
 Start database:
 $ service mysql{MYSQL_MAJOR} start
@@ -498,9 +497,9 @@ For 'root' user (ALL privileges, DB admin), paste command with new password:
 ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword';
 FLUSH PRIVILEGES;
 
-For 'mysql_sysadmin' (RELOAD and SHUTDOWN privileges):
+For 'mysql_sysadmin' (RELOAD, SHUTDOWN and REPLICATION CLIENT privileges):
 CREATE USER 'mysql_sysadmin'@'localhost' IDENTIFIED BY 'sysnewpassword' PASSWORD EXPIRE NEVER;
-GRANT RELOAD, SHUTDOWN ON *.* TO 'mysql_sysadmin'@'localhost';
+GRANT RELOAD, SHUTDOWN, REPLICATION CLIENT ON *.* TO 'mysql_sysadmin'@'localhost';
 FLUSH PRIVILEGES;
 
 
@@ -555,8 +554,8 @@ END_OF_MSG
 	fi
 
 	# if it's first server, register as default
-	if [ ! -e /var/lib/mysql{MYSQL_MAJOR}/mysql.sock ] || [ -L /var/lib/mysql{MYSQL_MAJOR}/mysql.sock ] && [ -z "$(readlink /var/lib/mysql/mysql.sock)" ]; then
-		sock=${MYSQL_SOCKET#/var/lib/mysql/} # make it relative if possible
+	if [ ! -e /var/lib/mysql{MYSQL_MAJOR}/mysql.sock ] || [ -L /var/lib/mysql{MYSQL_MAJOR}/mysql.sock ] && [ -z "$(readlink /var/lib/mysql{MYSQL_MAJOR}/mysql.sock)" ]; then
+		sock=${MYSQL_SOCKET#/var/lib/mysql{MYSQL_MAJOR}/} # make it relative if possible
 		ln -s "$sock" /var/lib/mysql{MYSQL_MAJOR}/mysql.sock
 	fi
 	# same for config, move to /etc

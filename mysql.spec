@@ -520,6 +520,7 @@ CPPFLAGS="%{rpmcppflags}" \
         -DINSTALL_PRIV_LIBDIR=%{_libdir}/%{name}/private \
 	-DINSTALL_MYSQLTESTDIR_RPM="" \
 	-DINSTALL_PLUGINDIR=%{_lib}/%{name}/plugin \
+        -DINSTALL_SECURE_FILE_PRIVDIR=/var/lib/%{name}-files \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=share/%{name}-support \
 	-DINSTALL_MYSQLSHAREDIR=share/%{name} \
@@ -553,7 +554,7 @@ CPPFLAGS="%{rpmcppflags}" \
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,%{name},skel} \
-	   $RPM_BUILD_ROOT/var/{log/{archive,}/%{name},lib/{mysql,%{name}-files}} \
+	   $RPM_BUILD_ROOT/var/{log/{archive,}/%{name},lib/{%{name},%{name}-files}} \
 	   $RPM_BUILD_ROOT%{_mysqlhome} \
 	   $RPM_BUILD_ROOT%{_libdir}
 
@@ -831,7 +832,8 @@ fi
 
 %attr(700,mysql,mysql) %{_mysqlhome}
 # root:root is proper here for mysql.rpm while mysql:mysql is potential security hole
-%attr(751,root,root) /var/lib/mysql
+%attr(751,root,root) /var/lib/%{name}
+%attr(750,mysql,mysql) %dir /var/lib/%{name}-files
 %attr(750,mysql,mysql) %dir /var/log/%{name}
 %attr(750,mysql,mysql) %dir /var/log/archive/%{name}
 %attr(640,mysql,mysql) %ghost /var/log/%{name}/*
