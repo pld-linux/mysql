@@ -11,12 +11,12 @@
 #
 # You must do this for every active cluster defined in /etc/mysql/clusters.conf
 
-/var/log/mysql/query.log
-/var/log/mysql/mysqld.log
-/var/log/mysql/slow.log
-/var/log/mysql/update*
+/var/log/mysql{MYSQL_MAJOR}/query.log
+/var/log/mysql{MYSQL_MAJOR}/mysqld.log
+/var/log/mysql{MYSQL_MAJOR}/slow.log
+/var/log/mysql{MYSQL_MAJOR}/update*
 {
-	olddir /var/log/archive/mysql
+	olddir /var/log/archive/mysql{MYSQL_MAJOR}
 	notifempty
 	missingok
 	create 640 mysql mysql
@@ -29,6 +29,6 @@
 	daily
 
 	postrotate
-		/sbin/service mysql flush-logs
+		/sbin/service mysql{MYSQL_MAJOR} flush-logs
 	endscript
 }

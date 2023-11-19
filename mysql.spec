@@ -566,7 +566,7 @@ install -d $RPM_BUILD_ROOT/etc/{logrotate.d,rc.d/init.d,sysconfig,%{name},skel} 
 sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE1} > $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}
 
 cp -a %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/%{name}
-cp -a %{SOURCE3} $RPM_BUILD_ROOT/etc/logrotate.d/%{name}
+sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE3} > $RPM_BUILD_ROOT/etc/logrotate.d/%{name}
 # This is template for configuration file which is created after 'service mysql init'
 sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE4} > mysqld.conf
 sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE5} > $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
