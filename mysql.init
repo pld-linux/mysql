@@ -539,7 +539,7 @@ shell> mysql{MYSQL_MAJOR} -u mysql mysql
 mysql> show tables
 
 Try 'mysqld --help' if you have problems with paths. Setting on
-logging in $MYSQL_DATA_DIR/mysqld.conf gives you a log in /var/log/mysql/query.log that
+logging in $MYSQL_DATA_DIR/mysqld.conf gives you a log in /var/log/mysql{MYSQL_MAJOR}/query.log that
 may be helpful. The latest information about MySQL is available on the
 web at http://www.mysql.com/.
 
