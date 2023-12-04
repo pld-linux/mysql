@@ -36,7 +36,7 @@ else
 	if [ -z "$MYSQL_DB_CLUSTERS" ]; then
 		nls "Warning: there are no configured clusters."
 		nls "Using default cluster /var/lib/mysql{MYSQL_MAJOR} (compatibility mode)"
-		MYSQL_DB_CLUSTERS=/var/lib/mysql{MYSQL_MAJOR}
+		MYSQL_DB_CLUSTERS=/var/lib/mysql{MYSQL_MAJOR}/01
 	fi
 fi
 
