@@ -508,6 +508,9 @@ cd build
 
 CPPFLAGS="%{rpmcppflags}" \
 %cmake .. \
+%if "%{_lib}" != "lib64"
+	-DUSE_LD_LLD=off \
+%endif
         -DCMAKE_EXECUTABLE_SUFFIX=string:%{majorver} \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
 	-DCMAKE_C_FLAGS_RELWITHDEBINFO="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
