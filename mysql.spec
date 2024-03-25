@@ -39,7 +39,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	8.0.36
-Release:    2
+Release:    3
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
@@ -907,7 +907,7 @@ fi
 
 %files client
 %defattr(644,root,root,755)
-%attr(600,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf
+#%attr(600,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf
 %attr(755,root,root) %{_bindir}/mysql%{majorver}
 %attr(755,root,root) %{_bindir}/mysqladmin%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlbinlog%{majorver}
