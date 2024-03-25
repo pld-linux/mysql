@@ -39,7 +39,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	8.0.36
-Release:    1
+Release:    2
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
@@ -334,6 +334,8 @@ Requires:	zlib-devel >= 1.2.12
 Obsoletes:	MySQL-devel < 3.22.27
 Obsoletes:	libmysql10-devel < 4
 Obsoletes:	webscalesql-devel
+Provides:	mysql-devel = %{version}-%{release}
+Obsoletes:	mysql-devel < %{version}-%{release}
 
 %description devel
 This package contains the development header files and other files
@@ -665,6 +667,9 @@ for f in $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/* ; do
     done
 done
 
+# keep mysql_config as -devel package colides anyway
+ln -s mysql_config%{majorver} $RPM_BUILD_ROOT%{_bindir}/mysql_config
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -934,6 +939,7 @@ fi
 
 %files devel
 %defattr(644,root,root,755)
+%attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_bindir}/mysql_config%{majorver}
 %attr(755,root,root) %{_libdir}/libmysqlclient.so
 %if %{with ndb}
