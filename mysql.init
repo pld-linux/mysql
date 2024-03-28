@@ -507,9 +507,8 @@ Both into command:
 $ mysql{MYSQL_MAJOR} -u root -p --ssl-mode=disabled -S $MYSQL_SOCKET
 
 NOTE 1:
-CURRENT TEMPORARY ROOT PASSWORD CAN BE FOUND IN LOG
-(grep for "A temporary password is generated" string):
-$MYSQL_ERRLOG
+CURRENT TEMPORARY ROOT PASSWORD CAN BE FOUND IN LOG:
+grep "A temporary password is generated" $MYSQL_ERRLOG
 
 
 NOTE 2:
@@ -557,10 +556,6 @@ END_OF_MSG
 	if [ ! -e /var/lib/mysql{MYSQL_MAJOR}/mysql.sock ] || [ -L /var/lib/mysql{MYSQL_MAJOR}/mysql.sock ] && [ -z "$(readlink /var/lib/mysql{MYSQL_MAJOR}/mysql.sock)" ]; then
 		sock=${MYSQL_SOCKET#/var/lib/mysql{MYSQL_MAJOR}/} # make it relative if possible
 		ln -s "$sock" /var/lib/mysql{MYSQL_MAJOR}/mysql.sock
-	fi
-	# same for config, move to /etc
-	if [ ! -e /etc/mysql{MYSQL_MAJOR}/mysqld.conf ]; then
-		mv "$MYSQL_CLUSTER_DIR/mysqld.conf" /etc/mysql{MYSQL_MAJOR}/mysqld.conf
 	fi
 }
 
