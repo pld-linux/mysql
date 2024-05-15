@@ -35,16 +35,16 @@ Summary(pt_BR.UTF-8):	MySQL: Um servidor SQL rápido e confiável
 Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
-%define majorver        8.0
+%define majorver        8.4
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
-Version:	8.0.37
+Version:	8.4.0
 Release:    1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
-#Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
+#Source0Download: https://dev.mysql.com/downloads/mysql/8.4.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
-# Source0-md5:	273a2f2a8149928974a63043a7224405
+# Source0-md5:	c3b1ccd1ba5b09f118ce6e27f0f0df98
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -619,7 +619,6 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{?debug:nm -n $RPM_BUILD_ROOT%{_sbindir}/mysqld > $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.sym}
 
 # do not clobber users $PATH
-%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_upgrade
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/innochecksum
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
@@ -746,7 +745,6 @@ fi
 %attr(755,root,root) %{_sbindir}/myisamchk%{majorver}
 %attr(755,root,root) %{_sbindir}/myisamlog%{majorver}
 %attr(755,root,root) %{_sbindir}/myisampack%{majorver}
-%attr(755,root,root) %{_sbindir}/mysql_upgrade%{majorver}
 %attr(755,root,root) %{_sbindir}/mysqlcheck%{majorver}
 %attr(755,root,root) %{_sbindir}/mysqld%{majorver}
 
@@ -777,7 +775,6 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ddl_rewriter.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/group_replication.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_mock.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_file.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/keyring_udf.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/libpluginmecab.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/locking_service.so
@@ -826,7 +823,6 @@ fi
 %{_mandir}/man1/myisamchk%{majorver}.1*
 %{_mandir}/man1/myisamlog%{majorver}.1*
 %{_mandir}/man1/myisampack%{majorver}.1*
-%{_mandir}/man1/mysql_upgrade%{majorver}.1*
 %{_mandir}/man1/mysqlcheck%{majorver}.1*
 %{_mandir}/man1/mysqlrouter%{majorver}.1*
 %{_mandir}/man1/mysqlrouter_passwd%{majorver}.1*
@@ -891,11 +887,9 @@ fi
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/myisam_ftdump%{majorver}
 %attr(755,root,root) %{_bindir}/mysql_secure_installation%{majorver}
-%attr(755,root,root) %{_bindir}/mysql_ssl_rsa_setup%{majorver}
 %attr(755,root,root) %{_bindir}/mysql_tzinfo_to_sql%{majorver}
 %attr(755,root,root) %{_bindir}/perror%{majorver}
 %{_mandir}/man1/myisam_ftdump%{majorver}.1*
-%{_mandir}/man1/mysql_ssl_rsa_setup%{majorver}.1*
 %{_mandir}/man1/mysql_secure_installation%{majorver}.1*
 %{_mandir}/man1/mysql_tzinfo_to_sql%{majorver}.1*
 %{_mandir}/man1/perror%{majorver}.1*
@@ -914,7 +908,6 @@ fi
 %attr(755,root,root) %{_bindir}/mysql_config_editor%{majorver}
 %attr(755,root,root) %{_bindir}/mysqldump%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlimport%{majorver}
-%attr(755,root,root) %{_bindir}/mysqlpump%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlshow%{majorver}
 %{_mandir}/man1/mysql%{majorver}.1*
 %{_mandir}/man1/mysqladmin%{majorver}.1*
@@ -922,7 +915,6 @@ fi
 %{_mandir}/man1/mysql_config_editor%{majorver}.1*
 %{_mandir}/man1/mysqldump%{majorver}.1*
 %{_mandir}/man1/mysqlimport%{majorver}.1*
-%{_mandir}/man1/mysqlpump%{majorver}.1*
 %{_mandir}/man1/mysqlshow%{majorver}.1*
 
 %files libs
@@ -931,7 +923,7 @@ fi
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
 %{_sysconfdir}/%{name}/my.cnf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.21
+%attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.24
 %if %{with ndb}
 %attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
@@ -966,7 +958,6 @@ fi
 %attr(755,root,root) %{_bindir}/mysqlslap%{majorver}
 %attr(755,root,root) %{_bindir}/mysqltest%{majorver}
 %attr(755,root,root) %{_bindir}/mysqltest_safe_process%{majorver}
-%attr(755,root,root) %{_bindir}/zlib_decompress%{majorver}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component1.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component2.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_example_component3.so
@@ -1003,9 +994,7 @@ fi
 #%dir %{_datadir}/sql-bench
 #%{_datadir}/sql-bench/[CDRl]*
 #%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
-%{_mandir}/man1/lz4_decompress.1*
 %{_mandir}/man1/mysqlslap%{majorver}.1*
-%{_mandir}/man1/zlib_decompress%{majorver}.1*
 
 #%files doc
 #%defattr(644,root,root,755)
