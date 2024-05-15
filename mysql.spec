@@ -39,7 +39,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	8.4.0
-Release:    1
+Release:    2
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.4.html#downloads
@@ -128,6 +128,8 @@ Provides:	user(mysql)
 Obsoletes:	MySQL < 3.22.27
 Obsoletes:	mysql-server < 4
 Conflicts:	logrotate < 3.8.0
+# "MySQL supports only 64-bit platforms."
+BuildArch:	%{x8664} %{arch64}
 BuildRoot:	%{tmpdir}/mysql-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_sbindir}
