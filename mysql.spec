@@ -1,8 +1,6 @@
 # TODO:
-# - -DWITH_AUTHENTICATION_LDAP=ON (it's OFF by default)?
 # - -DWITH_AUTHENTICATION_KERBEROS=ON (BR: MIT krb5)
-# - if not LDAP or KERBEROS, maybe WITH_AUTHENTICATION_CLIENT_PLUGINS or WITH_AUTHENTICATION_WEBAUTHN (BR: libfido2)
-# - -DWITH_ICU=system ?
+# - enable ldap by default after switching to MIT krb5
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
@@ -27,7 +25,7 @@
 %bcond_with	system_boost
 %bcond_without	tests		# run test suite
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
-%bcond_without	ldap		# LDAP auth support (requires MIT Kerberos)
+%bcond_with	ldap		# LDAP (server) auth support (requires MIT Kerberos)
 
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
@@ -76,15 +74,17 @@ Patch24:	mysql-cmake.patch
 Patch25:	mysql-readline.patch
 
 Patch26:	mysqldumpslow-clusters.patch
-URL:		http://www.mysql.com/products/community/
+URL:		https://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.77.0}
 BuildRequires:	cmake >= 3.14.6
-%{?with_ldap:BuildRequires:	cyrus-sasl-devel}
+BuildRequires:	cyrus-sasl-devel
 # for configure and tests
-%{?with_ldap:BuildRequires:	cyrus-sasl-scram}
+BuildRequires:	cyrus-sasl-scram
 #%{?with_ldap:BuildRequires:	krb5-devel}
 BuildRequires:	libaio-devel
+BuildRequires:	libfido2-devel
+BuildRequires:	libicu-devel
 BuildRequires:	libstdc++-devel >= 5:7.1
 BuildRequires:	libtirpc-devel
 %{?with_tcpd:BuildRequires:	libwrap-devel}
@@ -534,12 +534,15 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/mysql.sock \
 	-DROUTER_INSTALL_LIBDIR=%{_libdir}/%{name}router/private \
 	-DROUTER_INSTALL_PLUGINDIR=%{_libdir}/%{name}router \
-	%{!?with_ldap:-DWITH_AUTHENTICATION_LDAP=OFF} \
+	-DWITH_AUTHENTICATION_CLIENT_PLUGINS=ON \
+	%{?with_ldap:-DWITH_AUTHENTICATION_LDAP=ON} \
 	%{!?with_system_boost:-DWITH_BOOST="$(readlink -f boost_*)"} \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITH_EDITLINE=system \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
+	-DWITH_FIDO=system \
 	-DWITH_KERBEROS=system \
+	-DWITH_ICU=system \
 	%{?with_ldap:-DWITH_LDAP=system} \
 	-DWITH_MECAB=system \
 	-DWITH_LIBEVENT=system \
@@ -751,6 +754,9 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_webauthn_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_audit_api_message_emit.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_keyring_file.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_filter_dragnet.so
@@ -789,8 +795,6 @@ fi
 %if %{with sphinx}
 %attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
 %endif
-%dir %{_libdir}/%{name}/private
-%{_libdir}/%{name}/private/icudt*l
 %dir %{_libdir}/%{name}router
 %attr(755,root,root) %{_libdir}/%{name}router/connection_pool.so
 %attr(755,root,root) %{_libdir}/%{name}router/destination_status.so
