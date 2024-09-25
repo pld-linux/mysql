@@ -39,7 +39,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	8.0.39
-Release:    1
+Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
@@ -48,7 +48,7 @@ Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.g
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
-Source101:	http://downloads.sourceforge.net/boost/boost_1_77_0.tar.bz2
+Source101:	https://downloads.sourceforge.net/boost/boost_1_77_0.tar.bz2
 # Source101-md5:	09dc857466718f27237144c6f2432d86
 %endif
 Source1:	mysql.init
@@ -74,7 +74,7 @@ Patch24:	mysql-cmake.patch
 Patch25:	mysql-readline.patch
 
 Patch26:	mysqldumpslow-clusters.patch
-URL:		http://www.mysql.com/products/community/
+URL:		https://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.77.0}
 BuildRequires:	cmake >= 2.8.2
@@ -513,7 +513,7 @@ CPPFLAGS="%{rpmcppflags}" \
 %if "%{_lib}" != "lib64"
 	-DUSE_LD_LLD=off \
 %endif
-        -DCMAKE_EXECUTABLE_SUFFIX=string:%{majorver} \
+	-DCMAKE_EXECUTABLE_SUFFIX=string:%{majorver} \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
 	-DCMAKE_C_FLAGS_RELWITHDEBINFO="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
@@ -523,15 +523,15 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DFEATURE_SET="community" \
 	-DINSTALL_LAYOUT=RPM \
 	-DINSTALL_LIBDIR=%{_lib} \
-        -DINSTALL_PRIV_LIBDIR=%{_libdir}/%{name}/private \
+	-DINSTALL_PRIV_LIBDIR=%{_libdir}/%{name}/private \
 	-DINSTALL_MYSQLTESTDIR_RPM="" \
 	-DINSTALL_PLUGINDIR=%{_lib}/%{name}/plugin \
-        -DINSTALL_SECURE_FILE_PRIVDIR=/var/lib/%{name}-files \
+	-DINSTALL_SECURE_FILE_PRIVDIR=/var/lib/%{name}-files \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=share/%{name}-support \
 	-DINSTALL_MYSQLSHAREDIR=share/%{name} \
-        -DROUTER_INSTALL_LIBDIR=%{_libdir}/%{name}router/private \
-        -DROUTER_INSTALL_PLUGINDIR=%{_libdir}/%{name}router \
+	-DROUTER_INSTALL_LIBDIR=%{_libdir}/%{name}router/private \
+	-DROUTER_INSTALL_PLUGINDIR=%{_libdir}/%{name}router \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/mysql.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
@@ -545,7 +545,7 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_LZ4=system \
 	-DWITH_PROTOBUF=system \
 	-DWITH_SASL=system \
-        -DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
+	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
 	-DWITH_ZLIB=system \
