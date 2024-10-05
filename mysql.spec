@@ -1,6 +1,9 @@
 # TODO:
+# - -DWITH_AUTHENTICATION_LDAP=ON (it's OFF by default)?
 # - -DWITH_AUTHENTICATION_KERBEROS=ON (BR: MIT krb5)
 # - -DWITH_AUTHENTICATION_FIDO=ON (using system libfido?)
+# - if not LDAP or KERBEROS, maybe WITH_AUTHENTICATION_CLIENT_PLUGINS or WITH_AUTHENTICATION_FIDO (BR: libfido2)
+# - -DWITH_ICU=system ?
 # - mysqldump ... (invalid usage) prints to stdout not stderr (idiotic if you want to create dump and get usage in .sql)
 # - http://bugs.mysql.com/bug.php?id=16470
 # - innodb are dynamic (= as plugins) ?
@@ -77,19 +80,20 @@ Patch26:	mysqldumpslow-clusters.patch
 URL:		https://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.77.0}
-BuildRequires:	cmake >= 2.8.2
+BuildRequires:	cmake >= 3.5.1
 %{?with_ldap:BuildRequires:	cyrus-sasl-devel}
 # for configure and tests
 %{?with_ldap:BuildRequires:	cyrus-sasl-scram}
 #%{?with_ldap:BuildRequires:	krb5-devel}
 BuildRequires:	libaio-devel
 BuildRequires:	libevent-devel
-BuildRequires:	libhsclient-devel
 BuildRequires:	libstdc++-devel >= 5:7.1
+BuildRequires:	libtirpc-devel
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	lz4-devel
 BuildRequires:	mecab-devel
 BuildRequires:	ncurses-devel >= 4.2
+BuildRequires:	numactl-devel
 %{?with_ssl:BuildRequires:	openssl-devel >= 1.1.1}
 %{?with_ldap:BuildRequires:	openldap-devel}
 BuildRequires:	pam-devel
@@ -103,7 +107,6 @@ BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.605
 BuildRequires:	sed >= 4.0
 %{?with_systemtap:BuildRequires:	systemtap-sdt-devel}
-BuildRequires:	xxHash-devel
 BuildRequires:	zlib-devel >= 1.2.12
 BuildRequires:	zstd-devel
 Requires(post):	sed >= 4.0
@@ -496,7 +499,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
 [ -f sql/sql_yacc.h ] && %{__rm} sql/sql_yacc.h
 
-# ensure sytstem lib
+# ensure system lib
 # need to keep xxhash.[ch]
 # FIXME
 #%{__rm} -rv extra/lz4/lz4**
@@ -513,44 +516,44 @@ CPPFLAGS="%{rpmcppflags}" \
 %if "%{_lib}" != "lib64"
 	-DUSE_LD_LLD=off \
 %endif
-	-DCMAKE_EXECUTABLE_SUFFIX=string:%{majorver} \
 	-DCMAKE_BUILD_TYPE=%{!?debug:RelWithDebInfo}%{?debug:Debug} \
 	-DCMAKE_C_FLAGS_RELWITHDEBINFO="%{rpmcflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
+	-DCMAKE_EXECUTABLE_SUFFIX:STRING=%{majorver} \
 	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
 	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
 	%{?with_systemtap:-DENABLE_DTRACE=ON} \
 	-DFEATURE_SET="community" \
 	-DINSTALL_LAYOUT=RPM \
 	-DINSTALL_LIBDIR=%{_lib} \
-	-DINSTALL_PRIV_LIBDIR=%{_libdir}/%{name}/private \
+	-DINSTALL_MYSQLSHAREDIR=share/%{name} \
 	-DINSTALL_MYSQLTESTDIR_RPM="" \
 	-DINSTALL_PLUGINDIR=%{_lib}/%{name}/plugin \
+	-DINSTALL_PRIV_LIBDIR=%{_libdir}/%{name}/private \
 	-DINSTALL_SECURE_FILE_PRIVDIR=/var/lib/%{name}-files \
 	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=share/%{name}-support \
-	-DINSTALL_MYSQLSHAREDIR=share/%{name} \
+	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/mysql.sock \
 	-DROUTER_INSTALL_LIBDIR=%{_libdir}/%{name}router/private \
 	-DROUTER_INSTALL_PLUGINDIR=%{_libdir}/%{name}router \
-	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/mysql.sock \
 	%{?debug:-DWITH_DEBUG=ON} \
+	-DWITH_EDITLINE=system \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
 	%{!?with_ldap:-DWITH_AUTHENTICATION_LDAP=OFF} \
-	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
-	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
-	-DWITH_PIC=ON \
+	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
 	%{?with_ldap:-DWITH_LDAP=system} \
 	-DWITH_KERBEROS=system \
 	-DWITH_LIBEVENT=system \
+	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
 	-DWITH_LZ4=system \
+	-DWITH_MECAB=system \
+	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
+	-DWITH_PIC=ON \
 	-DWITH_PROTOBUF=system \
 	-DWITH_SASL=system \
-	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
-	%{!?with_system_boost:-DWITH_BOOST="$(pwd)/$(ls -1d ../boost_*)"} \
+	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
 	-DWITH_ZLIB=system \
-	-DWITH_EDITLINE=system \
-	-DWITH_MECAB=system \
 	-DTMPDIR=/var/tmp
 
 %{__make}
@@ -576,7 +579,7 @@ sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE4} > mysqld.conf
 sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE5} > $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
 
-mv $RPM_BUILD_ROOT/etc/logrotate.d/{mysqlrouter,%{name}router}
+%{__mv} $RPM_BUILD_ROOT/etc/logrotate.d/{mysqlrouter,%{name}router}
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
@@ -624,7 +627,6 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamchk
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisamlog
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/myisampack
-#%{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysql_fix_privilege_tables
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/my_print_defaults
 %{__mv} $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 
@@ -633,9 +635,6 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysqld_safe
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysqld_multi
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqld_{multi,safe}*
-#%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql-log-rotate
-#%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/mysql.server
-#%{__rm} $RPM_BUILD_ROOT%{_datadir}/%{name}/binary-configure
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysql.server*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/mysqlman.1*
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/comp_err.1*
@@ -975,12 +974,16 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_backup_lock_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_component_deinit.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_host_application_signal.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_command_services.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_current_thread_reader.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_runtime_error.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_system_variable_set.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_thd_store_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_pfs_notification.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_pfs_resource_group.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_sensitive_system_variables.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_server_telemetry_traces.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_reader.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service_int.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service_reg_only.so
@@ -997,12 +1000,10 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_table_access.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_udf_registration.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/pfs_example_plugin_employee.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/test_services_command_services.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/test_services_host_application_signal.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/test_services_plugin_registry.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/udf_example.so
-#%dir %{_datadir}/sql-bench
-#%{_datadir}/sql-bench/[CDRl]*
-#%attr(755,root,root) %{_datadir}/sql-bench/[bcgirst]*
 %{_mandir}/man1/lz4_decompress.1*
 %{_mandir}/man1/mysqlslap%{majorver}.1*
 %{_mandir}/man1/zlib_decompress%{majorver}.1*
