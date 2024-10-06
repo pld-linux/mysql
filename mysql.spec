@@ -102,7 +102,7 @@ BuildRequires:	readline-devel >= 6.2
 BuildRequires:	rpcsvc-proto
 BuildRequires:	rpm-build >= 4.6
 BuildRequires:	rpm-perlprov >= 4.1-13
-BuildRequires:	rpmbuild(macros) >= 1.605
+BuildRequires:	rpmbuild(macros) >= 1.745
 BuildRequires:	sed >= 4.0
 %{?with_systemtap:BuildRequires:	systemtap-sdt-devel}
 BuildRequires:	zlib-devel >= 1.2.12
