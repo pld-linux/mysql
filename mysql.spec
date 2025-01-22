@@ -23,7 +23,7 @@
 %bcond_with	sphinx		# Sphinx storage engine support
 # mysql needs boost 1.77.0 and doesn't support newer/older boost versions
 %bcond_with	system_boost
-%bcond_without	tests		# run test suite
+%bcond_with	tests		# run test suite (doesn't run cleanly for ages)
 %bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 %bcond_with	ldap		# LDAP (server) auth support (requires MIT Kerberos)
 
@@ -38,13 +38,13 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 %define majorver	8.4
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
-Version:	8.4.2
-Release:	3
+Version:	8.4.4
+Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.4.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
-# Source0-md5:	a632063fdb1c7de2c5db47e1f66191cd
+# Source0-md5:	8a84adf49a62da3147998928056d880b
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
