@@ -486,12 +486,12 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 %{__mv} sphinx-*/mysqlse storage/sphinx
-%patch17 -p1
-%patch18 -p1
+%patch -P17 -p1
+%patch -P18 -p1
 %endif
 
-%patch24 -p1
-%patch25 -p1
+%patch -P24 -p1
+%patch -P25 -p1
 
 #%patch26 -p1
 
