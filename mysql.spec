@@ -479,9 +479,9 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %prep
 %setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101} -n mysql-%{version}
 
-#%patch0 -p1
+#%%patch0 -p1
 # FIXME
-#%patch1 -p1
+#%%patch1 -p1
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
@@ -493,7 +493,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch -P24 -p1
 %patch -P25 -p1
 
-#%patch26 -p1
+#%%patch26 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
