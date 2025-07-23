@@ -37,13 +37,13 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 %define majorver        8.0
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
-Version:	8.0.41
+Version:	8.0.43
 Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
-# Source0-md5:	5ea07b3e0e4c82af2b41553a32c26c62
+# Source0-md5:	7874062a56957c17c03763563b69b354
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
@@ -477,21 +477,21 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %prep
 %setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101} -n mysql-%{version}
 
-#%patch0 -p1
+#%%patch -P0 -p1
 # FIXME
-#%patch1 -p1
+#%%patch -P1 -p1
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 %{__mv} sphinx-*/mysqlse storage/sphinx
-%patch17 -p1
-%patch18 -p1
+%patch -P17 -p1
+%patch -P18 -p1
 %endif
 
-%patch24 -p1
-%patch25 -p1
+%patch -P24 -p1
+%patch -P25 -p1
 
-#%patch26 -p1
+#%%patch -P26 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
