@@ -38,7 +38,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	8.0.43
-Release:	2
+Release:	3
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
@@ -731,7 +731,8 @@ fi
 %files
 %defattr(644,root,root,755)
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}router
+# don't package: no use for now and no mysqlrouter group
+#%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}router
 %attr(754,root,root) /etc/rc.d/init.d/%{name}
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
