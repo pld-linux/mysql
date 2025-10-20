@@ -495,24 +495,24 @@ sed -i -e 's#perconaserverclient#mysqlclient#g' libmysql/libmysql.{ver.in,map}
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
-%patch18 -p1
+%patch -P18 -p1
 %endif
 
-%patch0 -p1
+%patch -P0 -p1
 
-%patch2 -p1
-%patch3 -p1
+%patch -P2 -p1
+%patch -P3 -p1
 
-%patch6 -p1
+%patch -P6 -p1
 
-%patch9 -p1
-%patch11 -p1
-%patch12 -p1
-%patch14 -p1
-%patch19 -p1
-%patch20 -p1
+%patch -P9 -p1
+%patch -P11 -p1
+%patch -P12 -p1
+%patch -P14 -p1
+%patch -P19 -p1
+%patch -P20 -p1
 
-%patch22 -p1
+%patch -P22 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc
