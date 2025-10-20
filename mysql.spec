@@ -514,36 +514,36 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 find . -name CMakeLists.txt -exec sed -i -e 's#perconaserverclient#mysqlclient#g' "{}" ";"
 sed -i -e 's#perconaserverclient#mysqlclient#g' libmysql/libmysql.{ver.in,map} scripts/mysql_config.*
 
-%patch0 -p1
+%patch -P0 -p1
 
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 mv sphinx-*/mysqlse storage/sphinx
-%patch18 -p1
+%patch -P18 -p1
 %endif
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
+%patch -P1 -p1
+%patch -P2 -p1
+%patch -P3 -p1
+%patch -P4 -p1
 %{?with_system_hsclient:%patch5 -p1}
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch11 -p1
-%patch12 -p1
+%patch -P6 -p1
+%patch -P7 -p1
+%patch -P8 -p1
+%patch -P9 -p1
+%patch -P11 -p1
+%patch -P12 -p1
 
-%patch19 -p1
-%patch20 -p1
+%patch -P19 -p1
+%patch -P20 -p1
 
-%patch22 -p1
-%patch23 -p1
-%patch24 -p1
+%patch -P22 -p1
+%patch -P23 -p1
+%patch -P24 -p1
 
 # not compatible with percona server at this point, see content
 # of scripts/mysqldumpslow.sh
 #%patch26 -p1
-%patch27 -p1
+%patch -P27 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
@@ -770,60 +770,6 @@ fi
 %post   libs -p /sbin/ldconfig
 %postun libs -p /sbin/ldconfig
 
-%triggerpostun -- mysql < 4.0.20-2.4
-# For clusters in /etc/%{name}/clusters.conf
-if [ -f /etc/sysconfig/mysql ]; then
-	. /etc/sysconfig/mysql
-	if [ -n "$MYSQL_DB_CLUSTERS" ]; then
-		for i in "$MYSQL_DB_CLUSTERS"; do
-			echo "$i/mysqld.conf=$i" >> /etc/%{name}/clusters.conf
-		done
-		echo "# Do not use **obsolete** option MYSQL_DB_CLUSTERS" >> /etc/sysconfig/mysql
-		echo "# USE /etc/%{name}/clusters.conf instead" >> /etc/sysconfig/mysql
-		echo "Converted clusters from MYSQL_DB_CLUSTERS to /etc/%{name}/clusters.conf."
-		echo "You NEED to fix your /etc/sysconfig/mysql and verify /etc/%{name}/clusters.conf."
-	fi
-fi
-
-%triggerpostun -- mysql < 4.1.1
-# For better compatibility with prevoius versions:
-for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
-	if echo "$config" | grep -q '^/'; then
-		config_file="$config"
-	elif [ -f "/etc/%{name}/$config" ]; then
-		config_file=/etc/%{name}/$config
-	else
-		clusterdir=$(awk -F= "/^$config/{print \$2}" /etc/%{name}/clusters.conf)
-		if [ -z "$clusterdir" ]; then
-			echo >&2 "Can't find cluster dir for $config!"
-			echo >&2 "Please remove extra (leading) spaces from /etc/%{name}/clusters.conf"
-			exit 1
-		fi
-		config_file="$clusterdir/mysqld.conf"
-	fi
-
-	if [ ! -f "$config_file" ]; then
-			echo >&2 "Lost myself! Please report this (with above errors, if any) to http://bugs.pld-linux.org/"
-			exit 1
-	fi
-	echo "Adding option old-passwords to config: $config_file"
-	echo "If you want to use new, better passwords - remove it"
-
-	# sed magic to add 'old-passwords' to [mysqld] section
-	sed -i -e '/./{H;$!d;};x;/\[mysqld\]/{
-		a
-		a; Compatibility options:
-		aold-passwords
-	}
-	' $config_file
-done
-
-%banner -e %{name}-4.1.x <<-EOF
-	If you want to use new help tables in MySQL 4.1.x then You'll need to import the help data:
-	mysql -u mysql mysql < %{_datadir}/%{_orgname}/fill_help_tables.sql
-EOF
-#'
-
 %triggerpostun -- mysql < 5.1.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
@@ -863,7 +809,6 @@ for config in $configs; do
 done
 ) | %banner -e %{name}-5.1
 
-%triggerpostun -- mysql < 5.5.0
 configs=""
 for config in $(awk -F= '!/^#/ && /=/{print $1}' /etc/%{name}/clusters.conf); do
 	if echo "$config" | grep -q '^/'; then
