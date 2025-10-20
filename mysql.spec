@@ -468,20 +468,20 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %prep
 %setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101}
 
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
+%patch -P0 -p1
+%patch -P1 -p1
+%patch -P2 -p1
 %if %{with sphinx}
 # http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
 %{__mv} sphinx-*/mysqlse storage/sphinx
-%patch3 -p1
-%patch4 -p1
+%patch -P3 -p1
+%patch -P4 -p1
 %endif
 # really not fixed? verify
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
+%patch -P5 -p1
+%patch -P6 -p1
+%patch -P7 -p1
+%patch -P8 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
