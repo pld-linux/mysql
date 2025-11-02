@@ -38,18 +38,18 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 %define majorver	8.4
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
-Version:	8.4.6
-Release:	3
+Version:	8.4.7
+Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.4.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
-# Source0-md5:	33a1d8f60875f1f28cc7551015082c63
+# Source0-md5:	36f9659bb933b25cca127efdf12b58a1
 Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
-Source101:	http://downloads.sourceforge.net/boost/boost_1_77_0.tar.bz2
-# Source101-md5:	09dc857466718f27237144c6f2432d86
+Source101:	http://downloads.sourceforge.net/boost/boost_1_84_0.tar.bz2
+# Source101-md5:	9dcd632441e4da04a461082ebbafd337
 %endif
 Source1:	mysql.init
 Source2:	mysql.sysconfig
