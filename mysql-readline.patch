@@ -1,33 +1,10 @@
---- mysql-8.0.20/client/mysql.cc~	2020-05-12 19:39:17.000000000 +0200
-+++ mysql-8.0.20/client/mysql.cc	2020-05-12 19:49:31.903300850 +0200
-@@ -79,6 +79,7 @@
+--- mysql-9.7.0/client/mysql.cc~	2020-05-12 19:39:17.000000000 +0200
++++ mysql-9.7.0/client/mysql.cc	2020-05-12 19:49:31.903300850 +0200
+@@ -94,6 +94,7 @@
  #define LOG_USER 0
  #else
  #include <readline.h>
 +#include <history.h>
  #include <syslog.h>
- 
+
  #define HAVE_READLINE
-@@ -1134,22 +1134,6 @@ static COMMANDS commands[] = {
- static const char *load_default_groups[] = {"mysql", "client", nullptr};
- 
- #ifdef HAVE_READLINE
--/*
-- HIST_ENTRY is defined for libedit, but not for the real readline
-- Need to redefine it for real readline to find it
--*/
--#if !defined(HAVE_HIST_ENTRY)
--typedef struct _hist_entry {
--  const char *line;
--  const char *data;
--} HIST_ENTRY;
--#endif
--
--extern "C" int add_history(const char *command); /* From readline directory */
--extern "C" int read_history(const char *command);
--extern "C" int write_history(const char *command);
--extern "C" HIST_ENTRY *history_get(int num);
--extern "C" int history_length;
- static int not_in_history(const char *line);
- static void initialize_readline(char *name);
- #endif /* HAVE_READLINE */

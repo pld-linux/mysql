@@ -13,18 +13,10 @@
 #     (profiling disabled temporaily to workaround this)
 #
 # Conditional build:
-%bcond_without	innodb		# InnoDB storage engine support
-%bcond_without	big_tables	# Support tables with more than 4G rows even on 32 bit platforms
-%bcond_without	federated	# Federated storage engine support
-%bcond_without	raid		# RAID support
 %bcond_without	ssl		# OpenSSL support
 %bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
-%bcond_with	sphinx		# Sphinx storage engine support
-# mysql needs boost 1.77.0 and doesn't support newer/older boost versions
-%bcond_with	system_boost
 %bcond_with	tests		# run test suite (doesn't run cleanly for ages)
-%bcond_with	ndb		# NDB is now a separate product, this here is broken, so disable it
 %bcond_with	ldap		# LDAP (server) auth support (requires MIT Kerberos)
 
 Summary:	MySQL: a very fast and reliable SQL database engine
@@ -35,53 +27,33 @@ Summary(pt_BR.UTF-8):	MySQL: Um servidor SQL rápido e confiável
 Summary(ru.UTF-8):	MySQL - быстрый SQL-сервер
 Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
-%define majorver	8.4
+%define majorver	9.7
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
-Version:	8.4.9
+Version:	9.7.0
 Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
-#Source0Download: https://dev.mysql.com/downloads/mysql/8.4.html#downloads
+#Source0Download: https://dev.mysql.com/downloads/mysql/%{majorver}.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
-# Source0-md5:	7b2591fa0b5388f604cc9b8273eab331
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
-# Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
-%if %{without system_boost}
-Source101:	http://downloads.sourceforge.net/boost/boost_1_84_0.tar.bz2
-# Source101-md5:	9dcd632441e4da04a461082ebbafd337
-%endif
+# Source0-md5:	09137b601658906da52585f411a37fa7
 Source1:	mysql.init
 Source2:	mysql.sysconfig
 Source3:	mysql.logrotate
 Source4:	mysqld.conf
 Source5:	mysql-clusters.conf
-Source7:	mysql-ndb.init
-Source8:	mysql-ndb.sysconfig
-Source9:	mysql-ndb-mgm.init
-Source10:	mysql-ndb-mgm.sysconfig
-Source11:	mysql-ndb-cpc.init
-Source12:	mysql-ndb-cpc.sysconfig
 Source13:	mysql-client.conf
 Source14:	my.cnf
-Patch0:		mysql-opt.patch
-Patch1:		mysql-system-xxhash.patch
-
-Patch17:	mysql-5.7-sphinx.patch
-Patch18:	mysql-sphinx.patch
-
 Patch24:	mysql-cmake.patch
 Patch25:	mysql-readline.patch
-
-Patch26:	mysqldumpslow-clusters.patch
 URL:		https://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
-%{?with_system_boost:BuildRequires:	boost-devel >= 1.77.0}
 BuildRequires:	cmake >= 3.14.6
 BuildRequires:	cyrus-sasl-devel
 # for configure and tests
 BuildRequires:	cyrus-sasl-scram
 #%{?with_ldap:BuildRequires:	krb5-devel}
+BuildRequires:	curl-devel
 BuildRequires:	libaio-devel
 BuildRequires:	libfido2-devel
 BuildRequires:	libicu-devel
@@ -427,73 +399,11 @@ This package contains manual in HTML format.
 %description doc -l pl.UTF-8
 Podręcznik MySQL-a w formacie HTML.
 
-%package ndb
-Summary:	MySQL - NDB Storage Engine Daemon
-Summary(pl.UTF-8):	MySQL - demon silnika przechowywania danych NDB
-Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}-%{release}
-
-%description ndb
-This package contains the standard MySQL NDB Storage Engine Daemon.
-
-%description ndb -l pl.UTF-8
-Ten pakiet zawiera standardowego demona silnika przechowywania danych
-NDB.
-
-%package ndb-client
-Summary:	MySQL - NDB Clients
-Summary(pl.UTF-8):	MySQL - programy klienckie NDB
-Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}-%{release}
-
-%description ndb-client
-This package contains the standard MySQL NDB Clients.
-
-%description ndb-client -l pl.UTF-8
-Ten pakiet zawiera standardowe programy klienckie MySQL NDB.
-
-%package ndb-mgm
-Summary:	MySQL - NDB Management Daemon
-Summary(pl.UTF-8):	MySQL - demon zarządzający NDB
-Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}-%{release}
-
-%description ndb-mgm
-This package contains the standard MySQL NDB Management Daemon.
-
-%description ndb-mgm -l pl.UTF-8
-Ten pakiet zawiera standardowego demona zarządzającego MySQL NDB.
-
-%package ndb-cpc
-Summary:	MySQL - NDB CPC Daemon
-Summary(pl.UTF-8):	MySQL - demon NDB CPC
-Group:		Applications/Databases
-Requires:	%{name}-libs = %{version}-%{release}
-
-%description ndb-cpc
-This package contains the standard MySQL NDB CPC Daemon.
-
-%description ndb-cpc -l pl.UTF-8
-Ten pakiet zawiera standardowego demona MySQL NDB CPC.
-
 %prep
-%setup -q %{?with_sphinx:-a100} %{!?with_system_boost:-a101} -n mysql-%{version}
-
-#%%patch0 -p1
-# FIXME
-#%%patch1 -p1
-
-%if %{with sphinx}
-# http://www.sphinxsearch.com/docs/manual-0.9.9.html#sphinxse-mysql51
-%{__mv} sphinx-*/mysqlse storage/sphinx
-%patch -P17 -p1
-%patch -P18 -p1
-%endif
+%setup -q -n mysql-%{version}
 
 %patch -P24 -p1
 %patch -P25 -p1
-
-#%%patch26 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
@@ -536,7 +446,8 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DROUTER_INSTALL_PLUGINDIR=%{_libdir}/%{name}router \
 	-DWITH_AUTHENTICATION_CLIENT_PLUGINS=ON \
 	%{?with_ldap:-DWITH_AUTHENTICATION_LDAP=ON} \
-	%{!?with_system_boost:-DWITH_BOOST="$(readlink -f boost_*)"} \
+	-DWITH_AUTHENTICATION_WEBAUTHN=ON \
+	-DWITH_CURL=system \
 	%{?debug:-DWITH_DEBUG=ON} \
 	-DWITH_EDITLINE=system \
 	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
@@ -580,32 +491,12 @@ sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE4} > mysqld.conf
 sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE5} > $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
 
-%{__mv} $RPM_BUILD_ROOT/etc/logrotate.d/{mysqlrouter,%{name}router}
-
-# remove innodb directives from mysqld.conf if mysqld is configured without
-%if %{without innodb}
-	cp mysqld.conf mysqld.tmp
-	awk 'BEGIN { RS="\n\n" } !/innodb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
-%endif
-
-# remove berkeley-db directives from mysqld.conf if mysqld is configured without
-cp mysqld.conf mysqld.tmp
-awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.conf
+%{__rm} $RPM_BUILD_ROOT/etc/logrotate.d/mysqlrouter
 
 cp -a mysqld.conf $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.conf
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/mysql-client.conf
 ln -s mysql-client.conf $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/my.cnf
-cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf
-
-# NDB
-%if %{with ndb}
-install -p %{SOURCE7} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}-ndb
-cp -a %{SOURCE8} $RPM_BUILD_ROOT/etc/sysconfig/%{name}-ndb
-install -p %{SOURCE9} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}-ndb-mgm
-cp -a %{SOURCE10} $RPM_BUILD_ROOT/etc/sysconfig/%{name}-ndb-mgm
-install -p %{SOURCE11} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}-ndb-cpc
-cp -a %{SOURCE12} $RPM_BUILD_ROOT/etc/sysconfig/%{name}-ndb-cpc
-%endif
+cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf-%{majorver}
 
 sed -i -e 's,/usr//usr,%{_prefix},g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
@@ -654,6 +545,9 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/rewrite_example.so
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/test_security_context.so
 
+# empty debug-plugin dir is only populated when building with sanitizers
+rmdir $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/debug
+
 # fix names for parallel coinstallation
 for f in $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/* ; do
     fb=$(basename "$f")
@@ -694,36 +588,6 @@ if [ "$1" = "0" ]; then
 	%groupremove mysql
 fi
 
-%post ndb
-/sbin/chkconfig --add %{name}-ndb
-%service %{name}-ndb restart "%{name} NDB engine"
-
-%preun ndb
-if [ "$1" = "0" ]; then
-	%service %{name}-ndb stop
-	/sbin/chkconfig --del %{name}-ndb
-fi
-
-%post ndb-mgm
-/sbin/chkconfig --add %{name}-ndb-mgm
-%service %{name}-ndb-mgm restart "%{name} NDB management node"
-
-%preun ndb-mgm
-if [ "$1" = "0" ]; then
-	%service %{name}-ndb-mgm stop
-	/sbin/chkconfig --del %{name}-ndb-mgm
-fi
-
-%post ndb-cpc
-/sbin/chkconfig --add %{name}-ndb-cpc
-%service %{name}-ndb-cpc restart "%{name} NDB CPC"
-
-%preun ndb-cpc
-if [ "$1" = "0" ]; then
-	%service %{name}-ndb-cpc stop
-	/sbin/chkconfig --del %{name}-ndb-cpc
-fi
-
 %post	libs -p /sbin/ldconfig
 %postun	libs -p /sbin/ldconfig
 
@@ -738,7 +602,9 @@ fi
 %attr(755,root,root) %{_bindir}/ibd2sdi%{majorver}
 %attr(755,root,root) %{_bindir}/mysql_migrate_keyring%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlrouter%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlrouter_bootstrap%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlrouter_keyring%{majorver}
+%attr(755,root,root) %{_bindir}/mysqlrouter_mrs_client%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlrouter_passwd%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlrouter_plugin_info%{majorver}
 %attr(755,root,root) %{_sbindir}/innochecksum%{majorver}
@@ -757,8 +623,14 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_openid_connect_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_webauthn_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_audit_api_message_emit.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_classic_hashing.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_connection_control.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_group_replication_elect_prefers_most_updated.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_group_replication_flow_control_stats.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_group_replication_resource_manager.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_keyring_file.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_filter_dragnet.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_sink_json.so
@@ -769,6 +641,8 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_pfs_example_component_population.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_query_attributes.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_reference_cache.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_replication_applier_metrics.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_telemetry.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_udf_*_func.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_validate_password.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/conflicting_variables.so
@@ -781,32 +655,31 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/locking_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mypluglib.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_clone.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_native_password.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/mysql_no_login.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_interface.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/qa_auth_server.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/replication_observers_example_plugin.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/rewriter.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_master.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_replica.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_slave.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/semisync_source.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/telemetry_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/validate_password.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/version_token.so
-%if %{with sphinx}
-%attr(755,root,root) %{_libdir}/%{name}/plugin/ha_sphinx.so
-%endif
 %dir %{_libdir}/%{name}router
 %attr(755,root,root) %{_libdir}/%{name}router/connection_pool.so
 %attr(755,root,root) %{_libdir}/%{name}router/destination_status.so
+%attr(755,root,root) %{_libdir}/%{name}router/host_cache.so
 %attr(755,root,root) %{_libdir}/%{name}router/http_auth_backend.so
 %attr(755,root,root) %{_libdir}/%{name}router/http_auth_realm.so
 %attr(755,root,root) %{_libdir}/%{name}router/http_server.so
 %attr(755,root,root) %{_libdir}/%{name}router/io.so
 %attr(755,root,root) %{_libdir}/%{name}router/keepalive.so
 %attr(755,root,root) %{_libdir}/%{name}router/metadata_cache.so
+%attr(755,root,root) %{_libdir}/%{name}router/mysql_rest_service.so
 %attr(755,root,root) %{_libdir}/%{name}router/rest_api.so
 %attr(755,root,root) %{_libdir}/%{name}router/rest_connection_pool.so
+%attr(755,root,root) %{_libdir}/%{name}router/rest_host_cache.so
 %attr(755,root,root) %{_libdir}/%{name}router/rest_metadata_cache.so
 %attr(755,root,root) %{_libdir}/%{name}router/rest_router.so
 %attr(755,root,root) %{_libdir}/%{name}router/rest_routing.so
@@ -900,7 +773,7 @@ fi
 
 %files client
 %defattr(644,root,root,755)
-#%attr(600,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf
+%attr(600,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf-%{majorver}
 %attr(755,root,root) %{_bindir}/mysql%{majorver}
 %attr(755,root,root) %{_bindir}/mysqladmin%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlbinlog%{majorver}
@@ -923,19 +796,12 @@ fi
 %{_sysconfdir}/%{name}/my.cnf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.24
-%if %{with ndb}
-%attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
-%endif
 
 %files devel
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_bindir}/mysql_config
 %attr(755,root,root) %{_bindir}/mysql_config%{majorver}
 %attr(755,root,root) %{_libdir}/libmysqlclient.so
-%if %{with ndb}
-%attr(755,root,root) %{_libdir}/libndbclient.so
-%endif
 %{_pkgconfigdir}/mysqlclient.pc
 %{_libdir}/libmysqlservices.a
 %{_includedir}/mysql
@@ -945,9 +811,6 @@ fi
 %files static
 %defattr(644,root,root,755)
 %{_libdir}/libmysqlclient.a
-%if %{with ndb}
-%{_libdir}/libndbclient.a
-%endif
 
 # rename to test or split?
 %files bench
@@ -965,6 +828,9 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_audit_api_message.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_backup_lock_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_component_deinit.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_component_deinit_no_deadlock.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_component_init_fail.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_component_init_then_register.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_event_tracking_consumer.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_event_tracking_consumer_a.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_event_tracking_consumer_b.so
@@ -976,6 +842,7 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_host_application_signal.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_command_services.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_current_thread_reader.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_file_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_runtime_error.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_signal_handler.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_mysql_system_variable_set.so
@@ -983,8 +850,11 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_pfs_notification.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_pfs_resource_group.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_sensitive_system_variables.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_server_telemetry_logs_client.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_server_telemetry_logs_export.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_server_telemetry_metrics.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_server_telemetry_traces.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_session_var_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_reader.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_status_var_service_int.so
@@ -1000,6 +870,9 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_sys_var_service_str.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_system_variable_source.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_table_access.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_telemetry_resource_provider.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_telemetry_secret_provider.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_udf_aggregate.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_test_udf_registration.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/pfs_example_plugin_employee.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/test_services_command_services.so
@@ -1011,63 +884,3 @@ fi
 #%files doc
 #%defattr(644,root,root,755)
 #%doc Docs/manual.html Docs/manual_toc.html
-
-%if %{with ndb}
-%files ndb
-%defattr(644,root,root,755)
-%attr(755,root,root) %{_sbindir}/ndbd%{majorver}
-%attr(754,root,root) /etc/rc.d/init.d/%{name}-ndb
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb
-%{_mandir}/man1/ndbd_redo_log_reader%{majorver}.1*
-%{_mandir}/man8/ndbd%{majorver}.8*
-
-%files ndb-client
-%defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/ndb_config%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_delete_all%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_desc%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_drop_index%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_drop_table%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_error_reporter%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_mgm%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_print_backup_file%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_print_schema_file%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_print_sys_file%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_restore%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_select_all%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_select_count%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_show_tables%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_size.pl%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_test_platform%{majorver}
-%attr(755,root,root) %{_bindir}/ndb_waiter%{majorver}
-%{_mandir}/man1/ndb_config%{majorver}.1*
-%{_mandir}/man1/ndb_delete_all%{majorver}.1*
-%{_mandir}/man1/ndb_desc%{majorver}.1*
-%{_mandir}/man1/ndb_drop_index%{majorver}.1*
-%{_mandir}/man1/ndb_drop_table%{majorver}.1*
-%{_mandir}/man1/ndb_error_reporter%{majorver}.1*
-%{_mandir}/man1/ndb_mgm%{majorver}.1*
-%{_mandir}/man1/ndb_print_backup_file%{majorver}.1*
-%{_mandir}/man1/ndb_print_schema_file%{majorver}.1*
-%{_mandir}/man1/ndb_print_sys_file%{majorver}.1*
-%{_mandir}/man1/ndb_restore%{majorver}.1*
-%{_mandir}/man1/ndb_select_all%{majorver}.1*
-%{_mandir}/man1/ndb_select_count%{majorver}.1*
-%{_mandir}/man1/ndb_show_tables%{majorver}.1*
-%{_mandir}/man1/ndb_size.pl%{majorver}.1*
-%{_mandir}/man1/ndb_waiter%{majorver}.1*
-
-%files ndb-mgm
-%defattr(644,root,root,755)
-%attr(755,root,root) %{_sbindir}/ndb_mgmd%{majorver}
-%attr(754,root,root) /etc/rc.d/init.d/%{name}-ndb-mgm
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-mgm
-%{_mandir}/man8/ndb_mgmd%{majorver}.8*
-
-%files ndb-cpc
-%defattr(644,root,root,755)
-%attr(755,root,root) %{_sbindir}/ndb_cpcd%{majorver}
-%attr(754,root,root) /etc/rc.d/init.d/%{name}-ndb-cpc
-%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/mysql-ndb-cpc
-%{_mandir}/man1/ndb_cpcd%{majorver}.1*
-%endif
