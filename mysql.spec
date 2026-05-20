@@ -27,7 +27,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.0.96
-Release:	11
+Release:	12
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.0.html#source
@@ -523,69 +523,69 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %prep
 %setup -q %{?with_sphinx:-a100}
 cp -p %{SOURCE1} .
-%patch0 -p1
+%patch -P0 -p1
 %if %{with sphinx}
 mv sphinx-*/mysqlse sql/sphinx
-%patch1 -p1
+%patch -P1 -p1
 %endif
-%patch2 -p1
-%patch3 -p1
+%patch -P2 -p1
+%patch -P3 -p1
 %ifarch alpha
 # this is strange: mysqld functions for UDF modules are not explicitly defined,
 # so -rdynamic is used; in such case gcc3+ld on alpha doesn't like C++ vtables
 # in objects compiled without -fPIC
-%patch4 -p1
+%patch -P4 -p1
 # gcc 3.3.x ICE
-%patch10 -p1
+%patch -P10 -p1
 %endif
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
-%patch17 -p1
+%patch -P5 -p1
+%patch -P6 -p1
+%patch -P7 -p1
+%patch -P8 -p1
+%patch -P9 -p1
+%patch -P11 -p1
+%patch -P12 -p1
+%patch -P13 -p1
+%patch -P14 -p1
+%patch -P15 -p1
+%patch -P16 -p1
+%patch -P17 -p1
 %{?with_xtrabackup:%patch18 -p1}
-%patch19 -p1
-%patch20 -p1
+%patch -P19 -p1
+%patch -P20 -p1
 
 # <percona %patches>
-%patch100 -p1
-%patch101 -p1
-%patch102 -p1
-%patch103 -p1
-%patch104 -p1
-%patch105 -p1
-%patch106 -p1
-%patch107 -p1
-%patch108 -p1
-%patch109 -p1
-%patch110 -p1
-%patch111 -p1
-%patch112 -p1
-%patch113 -p1
-%patch114 -p1
-%patch115 -p1
-%patch116 -p1
-%patch117 -p1
-%patch118 -p1
-%patch119 -p1
+%patch -P100 -p1
+%patch -P101 -p1
+%patch -P102 -p1
+%patch -P103 -p1
+%patch -P104 -p1
+%patch -P105 -p1
+%patch -P106 -p1
+%patch -P107 -p1
+%patch -P108 -p1
+%patch -P109 -p1
+%patch -P110 -p1
+%patch -P111 -p1
+%patch -P112 -p1
+%patch -P113 -p1
+%patch -P114 -p1
+%patch -P115 -p1
+%patch -P116 -p1
+%patch -P117 -p1
+%patch -P118 -p1
+%patch -P119 -p1
 # </percona>
 
-%patch21 -p1
-%patch22 -p1
-%patch23 -p1
-%patch24 -p1
-%patch25 -p1
-%patch26 -p1
-%patch27 -p1
-%patch28 -p1
-%patch29 -p1
+%patch -P21 -p1
+%patch -P22 -p1
+%patch -P23 -p1
+%patch -P24 -p1
+%patch -P25 -p1
+%patch -P26 -p1
+%patch -P27 -p1
+%patch -P28 -p1
+%patch -P29 -p1
 
 %{__sed} -i -e 's/AM_CONFIG_HEADER/AC_CONFIG_HEADERS/' configure.in
 
@@ -597,8 +597,8 @@ mv sphinx-*/mysqlse sql/sphinx
 %{__autoconf}
 
 # The compiler flags are as per their "official" spec ;)
-CXXFLAGS="%{rpmcflags} -fno-implicit-templates -fno-exceptions -fno-rtti"
-CFLAGS="%{rpmcflags}"
+CXXFLAGS="%{rpmcflags} -fno-implicit-templates -fno-exceptions -fno-rtti -std=gnu++03"
+CFLAGS="%{rpmcflags} -std=gnu89"
 CPPFLAGS="%{rpmcppflags} -Wno-narrowing"
 
 # NOTE: the PS, FIND_PROC, KILL, CHECK_PID are not used by PLD Linux
