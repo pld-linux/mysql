@@ -30,7 +30,7 @@
 %undefine	with_tokudb
 %endif
 
-%define		rel	2
+%define		rel	3
 %define		percona_rel	91.0
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank

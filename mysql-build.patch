@@ -71,6 +71,70 @@
 -    (type *)((char *)__mptr - offsetof(type, member));  \
 -  })
 +      ((type *)((char *)ptr - offsetof(type, member)))
- 
+
  /*
    A lot of our programs uses asserts, so better to always include it
+@@ -519,7 +516,7 @@ typedef int	my_socket;	/* File descripto
+ /* Type for fuctions that handles signals */
+ #define sig_handler RETSIGTYPE
+ C_MODE_START
+-typedef void	(*sig_return)();/* Returns type from signal */
++typedef void	(*sig_return)(int);/* Returns type from signal */
+ C_MODE_END
+ #if defined(__GNUC__) && !defined(_lint)
+ typedef char	pchar;		/* Mixed prototypes can take char */
+--- percona-server-5.6.51-91.0/configure.cmake~	2021-02-02 15:20:34.000000000 +0100
++++ percona-server-5.6.51-91.0/configure.cmake	2026-05-20 00:00:00.000000000 +0200
+@@ -978,7 +978,7 @@ CHECK_C_SOURCE_COMPILES("
+ #ifdef __cplusplus
+ extern \"C\" void (*signal (int, void (*)(int)))(int);
+ #else
+-void (*signal ()) ();
++extern void (*signal(int, void (*)(int)))(int);
+ #endif
+ int main(int ac, char **av) {}
+ " SIGNAL_RETURN_TYPE_IS_VOID)
+--- percona-server-5.6.51-91.0/storage/tokudb/PerconaFT/portability/toku_assert.h~	2021-02-02 15:20:34.000000000 +0100
++++ percona-server-5.6.51-91.0/storage/tokudb/PerconaFT/portability/toku_assert.h	2026-05-20 00:00:00.000000000 +0200
+@@ -43,6 +43,7 @@ Copyright (c) 2006, 2015, Percona and/or
+ /* This version will complain if NDEBUG is set. */
+ /* It evaluates the argument and then calls a function  toku_do_assert() which takes all the hits for the branches not taken. */
+
++#undef NDEBUG
+ #include <portability/toku_config.h>
+
+ #include <stdint.h>
+--- percona-server-5.6.51-91.0/storage/tokudb/PerconaFT/cmake_modules/TokuBuildTagDatabases.cmake~	2021-02-02 15:20:34.000000000 +0100
++++ percona-server-5.6.51-91.0/storage/tokudb/PerconaFT/cmake_modules/TokuBuildTagDatabases.cmake	2026-05-20 00:00:00.000000000 +0200
+@@ -37,10 +37,14 @@ option(USE_ETAGS "Build the etags databa
+ if (USE_ETAGS)
+   find_program(ETAGS "etags")
+   if (NOT ETAGS MATCHES NOTFOUND)
++      file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/etags.files" "")
++      foreach(file ${all_srcs} ${all_hdrs})
++          file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/etags.files" "${file}\n")
++      endforeach(file)
+     add_custom_command(
+       OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/TAGS"
+       OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/etags-stamp"
+-      COMMAND ${ETAGS} -o TAGS ${all_srcs} ${all_hdrs}
++      COMMAND ${ETAGS} -o TAGS -L "${CMAKE_CURRENT_BINARY_DIR}/etags.files"
+       COMMAND touch "${CMAKE_CURRENT_BINARY_DIR}/etags-stamp"
+       DEPENDS ${all_srcs} ${all_hdrs} install_tdb_h generate_config_h generate_log_code
+       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+@@ -54,10 +58,14 @@ if (USE_CTAGS AND
+     (NOT APPLE OR NOT USE_ETAGS))
+   find_program(CTAGS "ctags")
+   if (NOT CTAGS MATCHES NOTFOUND)
++      file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/ctags.files" "")
++      foreach(file ${all_srcs} ${all_hdrs})
++          file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/ctags.files" "${file}\n")
++      endforeach(file)
+     add_custom_command(
+       OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/tags"
+       OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ctags-stamp"
+-      COMMAND ${CTAGS} -o tags ${all_srcs} ${all_hdrs}
++      COMMAND ${CTAGS} -o tags -L "${CMAKE_CURRENT_BINARY_DIR}/ctags.files"
+       COMMAND touch "${CMAKE_CURRENT_BINARY_DIR}/ctags-stamp"
+       DEPENDS ${all_srcs} ${all_hdrs} install_tdb_h generate_config_h generate_log_code
+       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
