@@ -3,10 +3,32 @@ diff -urNp -x '*.orig' percona-server-5.5.62-38.14.org/sql/mysqld.cc percona-ser
 +++ percona-server-5.5.62-38.14/sql/mysqld.cc	2022-11-21 13:28:23.178843274 +0100
 @@ -4758,7 +4758,7 @@ int mysqld_main(int argc, char **argv)
    select_thread_in_use=1;
- 
+
  #ifdef HAVE_LIBWRAP
 -  libwrapName= my_progname+dirname_length(my_progname);
 +  libwrapName= (char *)my_progname+dirname_length(my_progname);
    openlog(libwrapName, LOG_PID, LOG_AUTH);
  #endif
- 
+
+--- percona-server-5.5.62-38.14.org/configure.cmake	2018-11-15 14:19:23.000000000 +0100
++++ percona-server-5.5.62-38.14/configure.cmake	2026-05-20 10:30:00.000000000 +0200
+@@ -756,7 +756,7 @@ CHECK_C_SOURCE_COMPILES("
+ #ifdef __cplusplus
+ extern \"C\" void (*signal (int, void (*)(int)))(int);
+ #else
+-void (*signal ()) ();
++extern void (*signal(int, void (*)(int)))(int);
+ #endif
+ int main(int ac, char **av) {}
+ " SIGNAL_RETURN_TYPE_IS_VOID)
+--- percona-server-5.5.62-38.14.org/include/my_global.h	2018-11-15 14:19:23.000000000 +0100
++++ percona-server-5.5.62-38.14/include/my_global.h	2026-05-20 10:30:00.000000000 +0200
+@@ -525,7 +525,7 @@
+ /* Type for fuctions that handles signals */
+ #define sig_handler RETSIGTYPE
+ C_MODE_START
+-typedef void	(*sig_return)();/* Returns type from signal */
++typedef void	(*sig_return)(int);/* Returns type from signal */
+ C_MODE_END
+ #if defined(__GNUC__) && !defined(_lint)
+ typedef char	pchar;		/* Mixed prototypes can take char */
