@@ -31,7 +31,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	9.7.0
-Release:	1
+Release:	2
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/%{majorver}.html#downloads
