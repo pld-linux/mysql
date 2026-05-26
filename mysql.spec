@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.44
-Release:	2
+Release:	3
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
@@ -70,6 +70,7 @@ Patch5:		%{name}-chain-certs.patch
 Patch6:		%{name}-cmake.patch
 Patch7:		%{name}-readline.patch
 Patch8:		%{name}dumpslow-clusters.patch
+Patch9:		%{name}-sig_return.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	automake
 BuildRequires:	bison >= 1.875
@@ -482,6 +483,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch -P6 -p1
 %patch -P7 -p1
 %patch -P8 -p1
+%patch -P9 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc

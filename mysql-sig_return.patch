@@ -1,0 +1,18 @@
+Match sig_return to the prototype glibc's signal() actually uses.
+
+GCC 14 makes -Wincompatible-pointer-types an error by default. sig_return
+was declared with an unprototyped K&R signature, void (*)(), but it only
+ever holds the value round-tripped through signal() in my_lock.c, whose
+type is __sighandler_t == void (*)(int). Give the typedef that signature.
+
+--- mysql-5.7.44/include/my_global.h.orig
++++ mysql-5.7.44/include/my_global.h
+@@ -213,7 +213,7 @@
+ #define INVALID_SOCKET -1
+ #endif
+ C_MODE_START
+-typedef void	(*sig_return)();/* Returns type from signal */
++typedef void	(*sig_return)(int);/* Returns type from signal */
+ C_MODE_END
+ #if defined(__GNUC__)
+ typedef char	pchar;		/* Mixed prototypes can take char */
