@@ -38,7 +38,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	8.0.46
-Release:	1
+Release:	2
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
@@ -73,6 +73,10 @@ Patch24:	mysql-cmake.patch
 Patch25:	mysql-readline.patch
 
 Patch26:	mysqldumpslow-clusters.patch
+# 8.0 is EOL upstream, so post-8.0.46 security fixes come from Ubuntu
+Patch27:	mysql-CVE-2026-46862.patch
+Patch28:	mysql-CVE-2026-46863.patch
+Patch29:	mysql-2026-07-cpu.patch
 URL:		https://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.77.0}
@@ -315,12 +319,29 @@ Group:		Libraries
 Requires:	zlib >= 1.2.12
 Obsoletes:	libmysql10 < 4
 Obsoletes:	mysql-doc < 4.1.12
+Suggests:	%{name}-client-plugins = %{version}-%{release}
 
 %description libs
 Shared libraries for MySQL.
 
 %description libs -l pl.UTF-8
 Biblioteki współdzielone MySQL.
+
+%package client-plugins
+Summary:	MySQL client-side authentication plugins
+Summary(pl.UTF-8):	Wtyczki uwierzytelniania po stronie klienta dla MySQL-a
+Group:		Libraries
+Requires:	%{name}-libs = %{version}-%{release}
+
+%description client-plugins
+Client-side authentication plugins for MySQL: LDAP/SASL and FIDO. Install
+this if the MySQL account you connect with uses the authentication_ldap_sasl
+or authentication_fido method.
+
+%description client-plugins -l pl.UTF-8
+Wtyczki uwierzytelniania po stronie klienta dla MySQL-a: LDAP/SASL oraz
+FIDO. Ten pakiet jest potrzebny, jeśli konto MySQL-a, z którego się
+łączysz, używa metody authentication_ldap_sasl lub authentication_fido.
 
 %package devel
 Summary:	MySQL - development header files and other files
@@ -490,6 +511,9 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %patch -P24 -p1
 %patch -P25 -p1
+%patch -P27 -p1
+%patch -P28 -p1
+%patch -P29 -p1
 
 #%%patch -P26 -p1
 
@@ -595,7 +619,7 @@ awk 'BEGIN { RS="\n\n" } !/bdb/ { printf("%s\n\n", $0) }' < mysqld.tmp > mysqld.
 cp -a mysqld.conf $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.conf
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/mysql-client.conf
 ln -s mysql-client.conf $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/my.cnf
-cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf
+cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf-%{majorver}
 
 # NDB
 %if %{with ndb}
@@ -751,15 +775,10 @@ fi
 %attr(755,root,root) %{_sbindir}/mysqlcheck%{majorver}
 %attr(755,root,root) %{_sbindir}/mysqld%{majorver}
 
-%dir %{_libdir}/%{name}
-%dir %{_libdir}/%{name}/plugin
 %attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_fido_client.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_audit_api_message_emit.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_keyring_file.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_filter_dragnet.so
@@ -906,7 +925,7 @@ fi
 
 %files client
 %defattr(644,root,root,755)
-#%attr(600,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf
+%attr(600,root,root) %config(noreplace,missingok) %verify(not md5 mtime size) /etc/skel/.my.cnf-%{majorver}
 %attr(755,root,root) %{_bindir}/mysql%{majorver}
 %attr(755,root,root) %{_bindir}/mysqladmin%{majorver}
 %attr(755,root,root) %{_bindir}/mysqlbinlog%{majorver}
@@ -926,6 +945,9 @@ fi
 
 %files libs
 %defattr(644,root,root,755)
+%dir %{_libdir}/%{name}
+%dir %{_libdir}/%{name}/plugin
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
 %attr(751,root,root) %dir %{_sysconfdir}/%{name}
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
 %{_sysconfdir}/%{name}/my.cnf
@@ -935,6 +957,11 @@ fi
 %attr(755,root,root) %{_libdir}/libndbclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libndbclient.so.3
 %endif
+
+%files client-plugins
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_fido_client.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
 
 %files devel
 %defattr(644,root,root,755)
