@@ -30,13 +30,13 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 %define majorver	8.4
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
-Version:	8.4.9
-Release:	2
+Version:	8.4.11
+Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.4.html#downloads
 Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
-# Source0-md5:	7b2591fa0b5388f604cc9b8273eab331
+# Source0-md5:	7e36429318298eb05a79054309f18cb2
 Source1:	mysql.init
 Source2:	mysql.sysconfig
 Source3:	mysql.logrotate
@@ -288,12 +288,30 @@ Group:		Libraries
 Requires:	zlib >= 1.2.12
 Obsoletes:	libmysql10 < 4
 Obsoletes:	mysql-doc < 4.1.12
+Suggests:	%{name}-client-plugins = %{version}-%{release}
 
 %description libs
 Shared libraries for MySQL.
 
 %description libs -l pl.UTF-8
 Biblioteki współdzielone MySQL.
+
+%package client-plugins
+Summary:	MySQL client-side authentication plugins
+Summary(pl.UTF-8):	Wtyczki uwierzytelniania po stronie klienta dla MySQL-a
+Group:		Libraries
+Requires:	%{name}-libs = %{version}-%{release}
+
+%description client-plugins
+Client-side authentication plugins for MySQL: LDAP/SASL and WebAuthn
+(FIDO2). Install this if the MySQL account you connect with uses the
+authentication_ldap_sasl or authentication_webauthn method.
+
+%description client-plugins -l pl.UTF-8
+Wtyczki uwierzytelniania po stronie klienta dla MySQL-a: LDAP/SASL oraz
+WebAuthn (FIDO2). Ten pakiet jest potrzebny, jeśli konto MySQL-a, z
+którego się łączysz, używa metody authentication_ldap_sasl lub
+authentication_webauthn.
 
 %package devel
 Summary:	MySQL - development header files and other files
@@ -611,15 +629,10 @@ fi
 %attr(755,root,root) %{_sbindir}/mysqlcheck%{majorver}
 %attr(755,root,root) %{_sbindir}/mysqld%{majorver}
 
-%dir %{_libdir}/%{name}
-%dir %{_libdir}/%{name}/plugin
 %attr(755,root,root) %{_libdir}/%{name}/plugin/adt_null.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_socket.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/auth_test_plugin.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
-%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_webauthn_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_audit_api_message_emit.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_keyring_file.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/component_log_filter_dragnet.so
@@ -777,11 +790,19 @@ fi
 
 %files libs
 %defattr(644,root,root,755)
+%dir %{_libdir}/%{name}
+%dir %{_libdir}/%{name}/plugin
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_oci_client.so
 %attr(751,root,root) %dir %{_sysconfdir}/%{name}
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/mysql-client.conf
 %{_sysconfdir}/%{name}/my.cnf
 %attr(755,root,root) %{_libdir}/libmysqlclient.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libmysqlclient.so.24
+
+%files client-plugins
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_webauthn_client.so
 
 %files devel
 %defattr(644,root,root,755)
