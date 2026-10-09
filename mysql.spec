@@ -38,7 +38,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	8.0.46
-Release:	2
+Release:	3
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
@@ -77,6 +77,7 @@ Patch26:	mysqldumpslow-clusters.patch
 Patch27:	mysql-CVE-2026-46862.patch
 Patch28:	mysql-CVE-2026-46863.patch
 Patch29:	mysql-2026-07-cpu.patch
+Patch30:	mysql-old-server-auth.patch
 URL:		https://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.77.0}
@@ -514,6 +515,7 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch -P27 -p1
 %patch -P28 -p1
 %patch -P29 -p1
+%patch -P30 -p1
 
 #%%patch -P26 -p1
 

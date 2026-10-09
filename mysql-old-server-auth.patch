@@ -1,0 +1,21 @@
+Servers older than 5.5 (no CLIENT_PLUGIN_AUTH) get an empty password: the
+handshake scramble is tagged caching_sha2_password while the client picks
+mysql_native_password, so the scramble is discarded and an empty auth
+response is sent ("Access denied ... (using password: NO)").
+
+Backport of upstream 8.3/8.4 commit:
+https://github.com/mysql/mysql-server/commit/56b9aaede424d766649382d38fb6a0de3d4e702f
+Bug#36066161: 8.3 client unable authenticate into to 5.0.15 server with
+mysql_native_password
+
+--- a/sql-common/client.cc	2026-10-09 12:22:37.969490343 +0200
++++ b/sql-common/client.cc	2026-10-09 12:22:37.979490343 +0200
+@@ -6921,7 +6921,7 @@
+       }
+     } else {
+       ctx->scramble_data_len = (int)(pkt_end - ctx->scramble_data);
+-      ctx->scramble_plugin = caching_sha2_password_plugin_name;
++      ctx->scramble_plugin = native_password_plugin_name;
+     }
+   } else {
+     set_mysql_error(mysql, CR_MALFORMED_PACKET, unknown_sqlstate);
