@@ -30,13 +30,13 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 %define majorver	8.4
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
-Version:	8.4.11
+Version:	8.4.13
 Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.4.html#downloads
-Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
-# Source0-md5:	7e36429318298eb05a79054309f18cb2
+Source0:	https://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
+# Source0-md5:	a6edcc422fcdfca29f6d48a5116acbdf
 Source1:	mysql.init
 Source2:	mysql.sysconfig
 Source3:	mysql.logrotate
