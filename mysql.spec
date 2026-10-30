@@ -30,13 +30,13 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 %define majorver	9.7
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
-Version:	9.7.2
+Version:	9.7.4
 Release:	1
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/%{majorver}.html#downloads
-Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
-# Source0-md5:	dd0a38f0e4187f0f096964363c37c4ba
+Source0:	https://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
+# Source0-md5:	55a8f054435120d47d7a8700986997fd
 Source1:	mysql.init
 Source2:	mysql.sysconfig
 Source3:	mysql.logrotate
@@ -92,6 +92,7 @@ Requires:	%{name}-libs = %{version}-%{release}
 Requires:	/usr/bin/setsid
 Requires:	rc-scripts >= 0.2.0
 Suggests:	%{name}-client
+Suggests:	%{name}-server-plugins = %{version}-%{release}
 %{?with_tcpd:Suggests:	tcp_wrappers}
 Suggests:	vim-syntax-mycnf
 Provides:	MySQL-server
@@ -313,6 +314,22 @@ Wtyczki uwierzytelniania po stronie klienta dla MySQL-a: LDAP/SASL oraz
 WebAuthn (FIDO2). Ten pakiet jest potrzebny, jeśli konto MySQL-a, z
 którego się łączysz, używa metody authentication_ldap_sasl lub
 authentication_webauthn.
+
+%package server-plugins
+Summary:	MySQL server-side authentication plugins
+Summary(pl.UTF-8):	Wtyczki uwierzytelniania po stronie serwera dla MySQL-a
+Group:		Applications/Databases
+Requires:	%{name} = %{version}-%{release}
+
+%description server-plugins
+Server-side authentication plugins for MySQL: WebAuthn (FIDO2).
+Install this if MySQL accounts are to use the authentication_webauthn
+method.
+
+%description server-plugins -l pl.UTF-8
+Wtyczki uwierzytelniania po stronie serwera dla MySQL-a: WebAuthn
+(FIDO2). Ten pakiet jest potrzebny, jeśli konta MySQL-a mają używać
+metody authentication_webauthn.
 
 %package devel
 Summary:	MySQL - development header files and other files
@@ -818,6 +835,10 @@ fi
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_ldap_sasl_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_webauthn_client.so
+
+%files server-plugins
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_libdir}/%{name}/plugin/authentication_webauthn.so
 
 %files devel
 %defattr(644,root,root,755)
