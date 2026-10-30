@@ -38,13 +38,13 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	8.0.46
-Release:	3
+Release:	4
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/8.0.html#downloads
-Source0:	http://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
+Source0:	https://cdn.mysql.com/Downloads/MySQL-%{majorver}/mysql-%{version}.tar.gz
 # Source0-md5:	6707beb0d46a9e08a19aa596329ca79d
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
+Source100:	https://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
 Source101:	https://downloads.sourceforge.net/boost/boost_1_77_0.tar.bz2
@@ -606,7 +606,7 @@ sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE4} > mysqld.conf
 sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE5} > $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
 
-%{__mv} $RPM_BUILD_ROOT/etc/logrotate.d/{mysqlrouter,%{name}router}
+%{__rm} $RPM_BUILD_ROOT/etc/logrotate.d/mysqlrouter
 
 # remove innodb directives from mysqld.conf if mysqld is configured without
 %if %{without innodb}
