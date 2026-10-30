@@ -290,7 +290,8 @@ mysqlstart() {
 	# SERVICE_LIMITS isn't applied automatically: mysqld is started directly, not via daemon()
 	_daemon_set_ulimits
 
-	TMPDIR=/tmp nice -n ${SERVICE_RUN_NICE_LEVEL:-$DEFAULT_SERVICE_RUN_NICE_LEVEL} \
+	# absolute nice level, as daemon() sets it; nice -n alone adds to the caller's level
+	TMPDIR=/tmp nice -n $((${SERVICE_RUN_NICE_LEVEL:-$DEFAULT_SERVICE_RUN_NICE_LEVEL} - $(nice))) \
 		/usr/bin/setsid /usr/sbin/mysqld \
 			--defaults-file=$MYSQL_CONFIG \
 			--datadir=$MYSQL_DATA_DIR \

@@ -40,12 +40,12 @@ Release:	3
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
-Source0:	http://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
+Source0:	https://cdn.mysql.com/Downloads/MySQL-5.7/%{name}-%{version}.tar.gz
 # Source0-md5:	ae41273621d44307ab6f3f7fd77baa44
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
+Source100:	https://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 %if %{without system_boost}
-Source101:	http://downloads.sourceforge.net/boost/boost_1_59_0.tar.bz2
+Source101:	https://downloads.sourceforge.net/boost/boost_1_59_0.tar.bz2
 # Source101-md5:	6aa9a5c6a4ca1016edd0ed1178e3cb87
 %endif
 Source1:	%{name}.init
@@ -628,7 +628,7 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # we don't package those (we have no -test or -testsuite pkg) and some of them just segfault
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/{mysql_client_test,mysqlxtest}
-%{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/test_udf_services.so
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/mysql/plugin/{test_udf_services,udf_example}.so
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/mysql-test
 # libmysqld examples
 %{__rm} $RPM_BUILD_ROOT%{_bindir}/mysql{_client_test_embedded,_embedded,test_embedded}
@@ -641,6 +641,9 @@ sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libtest*.so
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/rewrite_example.so
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/test_security_context.so
+
+# not an .info file
+%{__rm} $RPM_BUILD_ROOT%{_infodir}/mysql.info
 
 %clean
 rm -rf $RPM_BUILD_ROOT
