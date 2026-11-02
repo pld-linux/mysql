@@ -1,0 +1,29 @@
+Threads stuck waiting in connection control plugin (Bug#35205358)
+https://github.com/percona/percona-server/commit/0df51ea69e
+https://github.com/mysql/mysql-server/commit/3fc9c6a63a2
+
+--- mysql-5.7.44.orig/plugin/connection_control/connection_delay.cc
++++ mysql-5.7.44/plugin/connection_control/connection_delay.cc
+@@ -587,8 +587,7 @@ namespace connection_control
+ 
+     /* Finish waiting and deregister wait condition */
+     mysql_mutex_unlock(&connection_delay_mutex);
+-    thd_exit_cond(thd, &stage_waiting_in_connection_control_plugin,
+-                  __func__, __FILE__, __LINE__);
++    thd_exit_cond(thd, &old_stage, __func__, __FILE__, __LINE__);
+ 
+     /* Cleanup */
+     mysql_mutex_destroy(&connection_delay_mutex);
+@@ -675,6 +674,12 @@ namespace connection_control
+       rd_lock.lock();
+     }
+ 
++    /*
++      Introduce a delay to check that connection delay status doesn't last
++      longer than configured
++    */
++    DBUG_EXECUTE_IF("delay_after_connection_delay", sleep(2););
++
+     if (connection_event->status)
+     {
+       /*

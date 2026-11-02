@@ -1,0 +1,155 @@
+InnoDB: Failing assertion: result != FTS_INVALID (Bug#36234681)
+https://github.com/percona/percona-server/commit/e87c07230b
+https://github.com/mysql/mysql-server/commit/a8c96ce81ab
+
+--- mysql-5.7.44.orig/storage/innobase/dict/dict0mem.cc
++++ mysql-5.7.44/storage/innobase/dict/dict0mem.cc
+@@ -1127,6 +1127,32 @@ dict_foreign_set_validate(
+ 	       && dict_foreign_set_validate(table.referenced_set));
+ }
+ 
++bool dict_foreign_t::is_fts_col_affected() const
++{
++	/* The check is skipped:
++	- if the table has no full text index defined.
++	- if it is a self referential foreign constaint. This is because
++	  in the context of cascading DML operation, only the referenced
++	  table is relevant for the validation even if the current table
++          has FTS index. */
++	if (!foreign_table->fts || foreign_table == referenced_table) {
++		 return false;
++	}
++
++	for (ulint i = 0; i < n_fields; i++)
++	{
++		const dict_col_t* col = dict_index_get_nth_col(
++						foreign_index, i);
++
++		if (dict_table_is_fts_column(foreign_table->fts->indexes,
++			dict_col_get_no(col),
++			dict_col_is_virtual(col)) != ULINT_UNDEFINED) {
++                       return true;
++		}
++	}
++	return false;
++}
++
+ std::ostream&
+ operator<< (std::ostream& out, const dict_foreign_t& foreign)
+ {
+--- mysql-5.7.44.orig/storage/innobase/include/dict0mem.h
++++ mysql-5.7.44/storage/innobase/include/dict0mem.h
+@@ -1092,6 +1092,14 @@ struct dict_foreign_t{
+ 
+ 	dict_vcol_set*	v_cols;		/*!< set of virtual columns affected
+ 					by foreign key constraint. */
++	/** Check whether foreign key constraint contains a column with a full
++	index on it. The function is used in the context of cascading DML
++	operations.
++	@retval true  if the column has FTS index on it.
++	@retval false if the FK table has no FTS index or has self referential
++		      relationship
++	*/
++        bool is_fts_col_affected() const;
+ };
+ 
+ std::ostream&
+--- mysql-5.7.44.orig/storage/innobase/row/row0ins.cc
++++ mysql-5.7.44/storage/innobase/row/row0ins.cc
+@@ -534,7 +534,7 @@ row_ins_cascade_calc_update_vec(
+ 
+ 	n_fields_updated = 0;
+ 
+-	*fts_col_affected = FALSE;
++	*fts_col_affected = foreign->is_fts_col_affected();
+ 
+ 	if (table->fts) {
+ 		doc_id_pos = dict_table_get_nth_col_pos(
+@@ -654,16 +654,6 @@ row_ins_cascade_calc_update_vec(
+ 							padded_data, min_size);
+ 				}
+ 
+-				/* Check whether the current column has
+-				FTS index on it */
+-				if (table->fts
+-				    && dict_table_is_fts_column(
+-					table->fts->indexes,
+-					dict_col_get_no(col),
+-					dict_col_is_virtual(col))
+-					!= ULINT_UNDEFINED) {
+-					*fts_col_affected = TRUE;
+-				}
+ 
+ 				/* If Doc ID is updated, check whether the
+ 				Doc ID is valid */
+@@ -1111,7 +1101,6 @@ row_ins_foreign_check_on_constraint(
+ 	trx_t*		trx;
+ 	mem_heap_t*	tmp_heap	= NULL;
+ 	doc_id_t	doc_id = FTS_NULL_DOC_ID;
+-	ibool		fts_col_affacted = FALSE;
+ 
+ 	DBUG_ENTER("row_ins_foreign_check_on_constraint");
+ 	ut_a(thr);
+@@ -1342,17 +1331,9 @@ row_ins_foreign_check_on_constraint(
+ 			ufield->exp = NULL;
+ 			dfield_set_null(&ufield->new_val);
+ 
+-			if (table->fts && dict_table_is_fts_column(
+-				table->fts->indexes,
+-				dict_index_get_nth_col_no(index, i),
+-				dict_col_is_virtual(
+-					dict_index_get_nth_col(index, i)))
+-			    != ULINT_UNDEFINED) {
+-				fts_col_affacted = TRUE;
+-			}
+ 		}
+ 
+-		if (fts_col_affacted) {
++		if (foreign->is_fts_col_affected()) {
+ 			fts_trx_add_op(trx, table, doc_id, FTS_DELETE, NULL);
+ 		}
+ 
+@@ -1369,31 +1350,21 @@ row_ins_foreign_check_on_constraint(
+ 
+ 	} else if (table->fts && cascade->is_delete) {
+ 		/* DICT_FOREIGN_ON_DELETE_CASCADE case */
+-		for (i = 0; i < foreign->n_fields; i++) {
+-			if (table->fts && dict_table_is_fts_column(
+-				table->fts->indexes,
+-				dict_index_get_nth_col_no(index, i),
+-				dict_col_is_virtual(
+-					dict_index_get_nth_col(index, i)))
+-			    != ULINT_UNDEFINED) {
+-				fts_col_affacted = TRUE;
+-			}
+-		}
+-
+-		if (fts_col_affacted) {
++		if (foreign->is_fts_col_affected()) {
+ 			fts_trx_add_op(trx, table, doc_id, FTS_DELETE, NULL);
+ 		}
+ 	}
+ 
+ 	if (!node->is_delete
+ 	    && (foreign->type & DICT_FOREIGN_ON_UPDATE_CASCADE)) {
++		ibool fts_col_affected = FALSE;
+ 
+ 		/* Build the appropriate update vector which sets changing
+ 		foreign->n_fields first fields in rec to new values */
+ 
+ 		n_to_update = row_ins_cascade_calc_update_vec(
+ 			node, foreign, tmp_heap,
+-			trx, &fts_col_affacted);
++			trx, &fts_col_affected);
+ 
+ 
+ 		if (foreign->v_cols != NULL
+@@ -1434,7 +1405,7 @@ row_ins_foreign_check_on_constraint(
+ 		}
+ 
+ 		/* Mark the old Doc ID as deleted */
+-		if (fts_col_affacted) {
++		if (fts_col_affected) {
+ 			ut_ad(table->fts);
+ 			fts_trx_add_op(trx, table, doc_id, FTS_DELETE, NULL);
+ 		}

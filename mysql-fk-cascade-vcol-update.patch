@@ -1,0 +1,220 @@
+ON UPDATE/DELETE SET NULL computed an indexed virtual column from the parent
+row instead of the child's cascade update vector; the index got a wrong
+value and the cascade hit ut_a(!cursor->index->is_committed())
+(Bug#37478594). Percona's 5.7 port without the prebuilt argument of its
+compressed columns.
+https://github.com/percona/percona-server/commit/ecfdc636ef
+https://github.com/mysql/mysql-server/commit/fc4b73f4002
+
+--- mysql-5.7.44.orig/storage/innobase/handler/ha_innodb.cc
++++ mysql-5.7.44/storage/innobase/handler/ha_innodb.cc
+@@ -20795,45 +20795,24 @@ innobase_rename_vc_templ(
+ 	table->vc_templ->tb_name = t_tbname;
+ }
+ 
+-/** Get the updated parent field value from the update vector for the
+-given col_no.
+-@param[in]	foreign		foreign key information
+-@param[in]	update		updated parent vector.
+-@param[in]	col_no		base column position of the child table to check
+-@return updated field from the parent update vector, else NULL */
+-dfield_t*
+-innobase_get_field_from_update_vector(
+-	dict_foreign_t*	foreign,
++/** Get the updated field value from an update vector for the given column
++number.
++@param[in]	table	the table that is used for creating update vector
++@param[in]	update	the update vector for the table's clustered index
++@param[in]	col_no	the number of the non-virtual column in the table
++@return the field's new value if it's updated, otherwise nullptr */
++static
++const dfield_t *innobase_get_field_from_update_vector(
++	dict_table_t*	table,
+ 	upd_t*		update,
+-	uint32_t	col_no)
+-{
+-	dict_table_t*	parent_table = foreign->referenced_table;
+-	dict_index_t*	parent_index = foreign->referenced_index;
+-	uint32_t	parent_field_no;
+-	uint32_t	parent_col_no;
+-	uint32_t	child_col_no;
+-
+-	for (uint32_t i = 0; i < foreign->n_fields; i++) {
+-		child_col_no = dict_index_get_nth_col_no(
+-			foreign->foreign_index, i);
+-		if (child_col_no != col_no) {
+-			continue;
+-		}
+-		parent_col_no = dict_index_get_nth_col_no(parent_index, i);
+-		parent_field_no = dict_table_get_nth_col_pos(
+-			parent_table, parent_col_no);
+-
+-		for (uint32_t j = 0; j < update->n_fields; j++) {
+-			upd_field_t*	parent_ufield
+-				= &update->fields[j];
+-
+-			if (parent_ufield->field_no == parent_field_no) {
+-				return(&parent_ufield->new_val);
+-			}
+-		}
+-	}
+-
+-	return (NULL);
++	uint32_t 	col_no)
++{
++	dict_index_t*	clustered_index = dict_table_get_first_index(table);
++	ulint		index_field_pos = dict_index_get_nth_col_pos(
++	    clustered_index, col_no);
++	const upd_field_t *upd_field = upd_get_field_by_field_no(
++	    update, index_field_pos, false);
++	return upd_field ? &upd_field->new_val : NULL;
+ }
+ 
+ /** Get the computed value by supplying the base column values.
+@@ -20847,8 +20826,9 @@ innobase_get_field_from_update_vector(
+ @param[in,out]	mysql_table	mysql table object
+ @param[in]	old_table	during ALTER TABLE, this is the old table
+ 				or NULL.
+-@param[in]	parent_update	update vector for the parent row
+-@param[in]	foreign		foreign key information
++@param[in]	cascade_update	update vector for the current table involved in
++				cascade update
++@param[in]	foreign		foreign key information [unused]
+ @return the field filled with computed value, or NULL if just want
+ to store the value in passed in "my_rec" */
+ dfield_t*
+@@ -20862,7 +20842,7 @@ innobase_get_computed_value(
+ 	THD*			thd,
+ 	TABLE*			mysql_table,
+ 	const dict_table_t*	old_table,
+-	upd_t*			parent_update,
++	upd_t*			cascade_update,
+ 	dict_foreign_t*		foreign)
+ {
+ 	byte		rec_buf1[REC_VERSION_56_MAX_INDEX_COL_LEN];
+@@ -20880,6 +20860,7 @@ innobase_get_computed_value(
+ 
+ 	ut_ad(index->table->vc_templ);
+ 	ut_ad(thd != NULL);
++	ut_ad(foreign == NULL);
+ 
+ 	const mysql_row_templ_t*
+ 			vctempl =  index->table->vc_templ->vtempl[
+@@ -20908,11 +20889,11 @@ innobase_get_computed_value(
+ 			= index->table->vc_templ->vtempl[col_no];
+ 		const byte*			data;
+ 
+-		if (parent_update != NULL) {
++		if (cascade_update != NULL) {
+ 			/** Get the updated field from update vector
+-			of the parent table. */
+-			row_field = innobase_get_field_from_update_vector(
+-					foreign, parent_update, col_no);
++			of the table involved in cascade update */
++			row_field = innobase_get_field_from_update_vector(index->table,
++					cascade_update, col_no);
+ 		}
+ 
+ 		if (row_field == NULL) {
+--- mysql-5.7.44.orig/storage/innobase/include/row0mysql.h
++++ mysql-5.7.44/storage/innobase/include/row0mysql.h
+@@ -951,18 +951,6 @@ struct SysIndexCallback {
+ 	virtual void operator()(mtr_t* mtr, btr_pcur_t* pcur) throw() = 0;
+ };
+ 
+-/** Get the updated parent field value from the update vector for the
+-given col_no.
+-@param[in]	foreign		foreign key information
+-@param[in]	update		updated parent vector.
+-@param[in]	col_no		base column position of the child table to check
+-@return updated field from the parent update vector, else NULL */
+-dfield_t*
+-innobase_get_field_from_update_vector(
+-	dict_foreign_t*	foreign,
+-	upd_t*		update,
+-	uint32_t	col_no);
+-
+ /** Get the computed value by supplying the base column values.
+ @param[in,out]	row		the data row
+ @param[in]	col		virtual column
+@@ -974,8 +962,9 @@ innobase_get_field_from_update_vector(
+ @param[in,out]	mysql_table	mysql table object
+ @param[in]	old_table	during ALTER TABLE, this is the old table
+ 				or NULL.
+-@param[in]	parent_update	update vector for the parent row
+-@param[in]	foreign		foreign key information
++@param[in]	cascade_update	update vector for the current table involved in
++				cascade update
++@param[in]	foreign		foreign key information [unused]
+ @return the field filled with computed value */
+ dfield_t*
+ innobase_get_computed_value(
+@@ -988,7 +977,7 @@ innobase_get_computed_value(
+ 	THD*			thd,
+ 	TABLE*			mysql_table,
+ 	const dict_table_t*	old_table,
+-	upd_t*			parent_update,
++	upd_t*			cascade_update,
+ 	dict_foreign_t*		foreign);
+ 
+ /** Get the computed value by supplying the base column values.
+--- mysql-5.7.44.orig/storage/innobase/row/row0ins.cc
++++ mysql-5.7.44/storage/innobase/row/row0ins.cc
+@@ -1007,48 +1007,15 @@ row_ins_foreign_fill_virtual(
+ 		dfield_copy(upd_field->old_v_val, vfield);
+ 
+ 		upd_field_set_v_field_no(upd_field, i, index);
+-
+-		if (node->is_delete
+-		    ? (foreign->type & DICT_FOREIGN_ON_DELETE_SET_NULL)
+-		    : (foreign->type & DICT_FOREIGN_ON_UPDATE_SET_NULL)) {
+-			uint32_t col_match_count =
+-			    dict_vcol_base_is_foreign_key(col, foreign);
+-			if (col_match_count == col->num_base) {
+-				/* If all base columns of virtual col are
+-				in FK */
+-				dfield_set_null(&upd_field->new_val);
+-			} else if (col_match_count == 0) {
+-				/* If no base column of virtual col is in FK */
+-				dfield_copy(&(upd_field->new_val), vfield);
+-			} else {
+-				/* If at least one base column of virtual col
+-				is in FK */
+-				for (uint32_t j = 0; j < col->num_base; j++) {
+-					dict_col_t *base_col = col->base_col[j];
+-					uint32_t col_no = base_col->ind;
+-					dfield_t *row_field =
+-					  innobase_get_field_from_update_vector(
+-					  foreign, node->update, col_no);
+-					if (row_field != NULL) {
+-						dfield_set_null(row_field);
+-					}
+-				}
+-				dfield_t *new_vfield = innobase_get_computed_value(
+-				    update->old_vrow, col, index, &v_heap,
+-				    update->heap, NULL, thd, NULL,
+-				    NULL, node->update, foreign);
+-				dfield_copy(&(upd_field->new_val), new_vfield);
+-			}
+-
+-		}
+-
+-		if (!node->is_delete
+-		    && (foreign->type & DICT_FOREIGN_ON_UPDATE_CASCADE)) {
+-
+-			dfield_t* new_vfield = innobase_get_computed_value(
+-					update->old_vrow, col, index,
+-					&v_heap, update->heap, NULL, thd,
+-					NULL, NULL, node->update, foreign);
++		if (!dict_vcol_base_is_foreign_key(col, foreign)) {
++			/* If no base column of virtual col is in FK, the virtual field
++			is not affected by update */
++			dfield_copy(&(upd_field->new_val), vfield);
++		} else {
++			const dfield_t *const new_vfield =
++			  innobase_get_computed_value(
++				update->old_vrow, col, index, &v_heap,
++				update->heap, NULL, thd, NULL, NULL, update, NULL);
+ 
+ 			if (new_vfield == NULL) {
+ 				*err = DB_COMPUTE_VALUE_FAILED;

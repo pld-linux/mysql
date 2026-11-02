@@ -1,0 +1,95 @@
+Improve fake Rotate event handling (Bug#39253359)
+https://github.com/percona/percona-server/commit/b2ace1edde
+https://github.com/mysql/mysql-server/commit/ca21b0c3295
+
+--- mysql-5.7.44.orig/sql/rpl_binlog_sender.cc
++++ mysql-5.7.44/sql/rpl_binlog_sender.cc
+@@ -1028,6 +1028,8 @@ int Binlog_sender::fake_rotate_event(const char *next_log_file,
+   size_t event_len = ident_len + LOG_EVENT_HEADER_LEN + Binary_log_event::ROTATE_HEADER_LEN +
+     (event_checksum_on() ? BINLOG_CHECKSUM_LEN : 0);
+ 
++  DBUG_EXECUTE_IF("binlog_sender_large_rotate_event", event_len = 4096;);
++
+   /* reset transmit packet for the fake rotate event below */
+   if (reset_transmit_packet(0, event_len))
+     DBUG_RETURN(1);
+@@ -1049,6 +1051,13 @@ int Binlog_sender::fake_rotate_event(const char *next_log_file,
+ 
+   int8store(rotate_header, log_pos);
+   memcpy(rotate_header + Binary_log_event::ROTATE_HEADER_LEN, p, ident_len);
++  DBUG_EXECUTE_IF("binlog_sender_large_rotate_event", {
++    uchar *rotate_payload = rotate_header + Binary_log_event::ROTATE_HEADER_LEN;
++    const size_t rotate_payload_len =
++        event_len - LOG_EVENT_HEADER_LEN - Binary_log_event::ROTATE_HEADER_LEN -
++        (event_checksum_on() ? BINLOG_CHECKSUM_LEN : 0);
++    memset(rotate_payload + ident_len, 'X', rotate_payload_len - ident_len);
++  };);
+ 
+   if (event_checksum_on())
+     calc_event_checksum(header, event_len);
+--- mysql-5.7.44.orig/sql/rpl_slave.cc
++++ mysql-5.7.44/sql/rpl_slave.cc
+@@ -8404,6 +8404,33 @@ bool queue_event(Master_info* mi,const char* buf, ulong event_len)
+     goto end;
+   case binary_log::ROTATE_EVENT:
+   {
++    const bool is_fake_rotate= uint4korr(&buf[0]) == 0;
++    const bool add_checksum_to_fake_rotate=
++        is_fake_rotate &&
++        checksum_alg == binary_log::BINLOG_CHECKSUM_ALG_OFF &&
++        mi->rli->relay_log.relay_log_checksum_alg !=
++            binary_log::BINLOG_CHECKSUM_ALG_OFF;
++    const bool strip_checksum_from_fake_rotate=
++        is_fake_rotate &&
++        checksum_alg != binary_log::BINLOG_CHECKSUM_ALG_OFF &&
++        mi->rli->relay_log.relay_log_checksum_alg ==
++            binary_log::BINLOG_CHECKSUM_ALG_OFF;
++
++    if ((add_checksum_to_fake_rotate &&
++         event_len > sizeof(rot_buf) - BINLOG_CHECKSUM_LEN) ||
++        (strip_checksum_from_fake_rotate &&
++         (event_len < BINLOG_CHECKSUM_LEN ||
++          event_len - BINLOG_CHECKSUM_LEN > sizeof(rot_buf))))
++    {
++      mi->report(ERROR_LEVEL, ER_SLAVE_RELAY_LOG_WRITE_FAILURE,
++                 ER(ER_SLAVE_RELAY_LOG_WRITE_FAILURE),
++                 "Received oversized rotate event. Please retry the "
++                 "connection. If the problem persists, investigate the "
++                 "source of the invalid event and verify the "
++                 "master-slave connection.");
++      goto err;
++    }
++
+     Rotate_log_event rev(buf, checksum_alg != binary_log::BINLOG_CHECKSUM_ALG_OFF ?
+                          event_len - BINLOG_CHECKSUM_LEN : event_len,
+                          mi->get_mi_description_event());
+@@ -8428,12 +8455,10 @@ bool queue_event(Master_info* mi,const char* buf, ulong event_len)
+               to compute checksum for its first FD event for RL
+               the fake Rotate gets checksummed here.
+     */
+-    if (uint4korr(&buf[0]) == 0 && checksum_alg ==
+-                  binary_log::BINLOG_CHECKSUM_ALG_OFF &&
+-                  mi->rli->relay_log.relay_log_checksum_alg !=
+-                  binary_log::BINLOG_CHECKSUM_ALG_OFF)
++    if (add_checksum_to_fake_rotate)
+     {
+       ha_checksum rot_crc= checksum_crc32(0L, NULL, 0);
++      assert(event_len <= sizeof(rot_buf) - BINLOG_CHECKSUM_LEN);
+       event_len += BINLOG_CHECKSUM_LEN;
+       memcpy(rot_buf, buf, event_len - BINLOG_CHECKSUM_LEN);
+       int4store(&rot_buf[EVENT_LEN_OFFSET],
+@@ -8456,11 +8481,10 @@ bool queue_event(Master_info* mi,const char* buf, ulong event_len)
+         RSC_2: If NM \and fake Rotate \and slave does not compute checksum
+         the fake Rotate's checksum is stripped off before relay-logging.
+       */
+-      if (uint4korr(&buf[0]) == 0 && checksum_alg !=
+-                    binary_log::BINLOG_CHECKSUM_ALG_OFF &&
+-                    mi->rli->relay_log.relay_log_checksum_alg ==
+-                    binary_log::BINLOG_CHECKSUM_ALG_OFF)
++      if (strip_checksum_from_fake_rotate)
+       {
++        assert(event_len >= BINLOG_CHECKSUM_LEN);
++        assert(event_len - BINLOG_CHECKSUM_LEN <= sizeof(rot_buf));
+         event_len -= BINLOG_CHECKSUM_LEN;
+         memcpy(rot_buf, buf, event_len);
+         int4store(&rot_buf[EVENT_LEN_OFFSET],

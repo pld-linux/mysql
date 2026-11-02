@@ -1,0 +1,115 @@
+Validate DECIMAL user var event metadata (Bug#39254885)
+https://github.com/percona/percona-server/commit/932ebdba4a
+https://github.com/mysql/mysql-server/commit/567cb464de2
+
+--- mysql-5.7.44.orig/libbinlogevents/include/statement_events.h
++++ mysql-5.7.44/libbinlogevents/include/statement_events.h
+@@ -38,6 +38,17 @@
+ 
+ #include "control_events.h"
+ 
++#include <stddef.h>
++
++/*
++  Only decimal_bin_size() is needed here, and its signature involves no MySQL
++  types, so it is declared rather than pulled in with decimal.h. That keeps this
++  header free of the dependency: decimal.h is a C header with no extern "C"
++  guard of its own, and it needs the typedefs from my_global.h, which not every
++  translation unit reaching this header has already included.
++*/
++extern "C" int decimal_bin_size(int precision, int scale);
++
+ namespace binary_log
+ {
+ 
+@@ -709,6 +720,40 @@ template <class T> bool valid_buffer_range(T jump,
+   return (jump <= available_buffer(buf_start, buf_current, buf_len));
+ }
+ 
++/**
++  Validates DECIMAL user variable metadata and payload length.
++
++  @param val           Encoded user variable payload, starting with precision
++                       and scale.
++  @param val_len       Length of the encoded payload in bytes.
++  @param max_precision Maximum allowed DECIMAL precision for the caller.
++  @param max_scale     Maximum allowed DECIMAL scale for the caller.
++
++  @retval true  The metadata is well-formed for the given payload.
++  @retval false The metadata is incomplete, out of range, or inconsistent.
++*/
++inline bool is_user_var_decimal_metadata_valid(const char *val,
++                                               size_t val_len,
++                                               int max_precision,
++                                               int max_scale)
++{
++  if (val_len < 2)
++    return false;
++
++  const int precision= static_cast<unsigned char>(val[0]);
++  const int scale= static_cast<unsigned char>(val[1]);
++
++  /*
++    DECIMAL(M,D): reject precision beyond the caller limit, scale beyond the
++    caller scale limit, or scale greater than precision.
++  */
++  if (precision > max_precision || scale > max_scale || scale > precision)
++    return false;
++
++  return decimal_bin_size(precision, scale) <=
++         static_cast<int>(val_len) - 2;
++}
++
+ /**
+   @class User_var_event
+ 
+--- mysql-5.7.44.orig/libbinlogevents/src/statement_events.cpp
++++ mysql-5.7.44/libbinlogevents/src/statement_events.cpp
+@@ -27,6 +27,14 @@
+ namespace binary_log
+ {
+ 
++namespace
++{
++
++const int k_max_user_var_decimal_precision= 65;
++const int k_max_user_var_decimal_scale= 30;
++
++} // namespace
++
+ /******************************************************************************
+                      Query_event methods
+ ******************************************************************************/
+@@ -544,6 +552,19 @@ User_var_event(const char* buf, unsigned int event_len,
+       goto err;
+     }
+ 
++    /*
++      For decimal, val[0] is precision and val[1] is scale, and the payload
++      that follows must be long enough for that precision and scale.
++    */
++    if (type == DECIMAL_TYPE &&
++        !is_user_var_decimal_metadata_valid(val, val_len,
++                                            k_max_user_var_decimal_precision,
++                                            k_max_user_var_decimal_scale))
++    {
++      error= true;
++      goto err;
++    }
++
+     /**
+       We need to check if this is from an old server
+       that did not pack information for flags.
+--- mysql-5.7.44.orig/sql/log_event.cc
++++ mysql-5.7.44/sql/log_event.cc
+@@ -7927,7 +7927,9 @@ int User_var_log_event::do_apply_event(Relay_log_info const *rli)
+       break;
+     case DECIMAL_TYPE:
+     {
+-      if (val_len < 3)
++      if (val_len < 3 ||
++          !binary_log::is_user_var_decimal_metadata_valid(
++              val, val_len, DECIMAL_MAX_PRECISION, DECIMAL_MAX_SCALE))
+       {
+         rli->report(ERROR_LEVEL, ER_SLAVE_FATAL_ERROR,
+                     ER_THD(thd, ER_SLAVE_FATAL_ERROR),

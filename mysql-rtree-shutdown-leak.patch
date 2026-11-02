@@ -1,0 +1,15 @@
+Fixes a memory leak during shutdown
+https://github.com/percona/percona-server/commit/5c0ab3735e
+
+--- mysql-5.7.44.orig/storage/innobase/gis/gis0rtree.cc
++++ mysql-5.7.44/storage/innobase/gis/gis0rtree.cc
+@@ -386,6 +386,9 @@ rtr_update_mbr_field(
+ 
+ 		if (!rtr_update_mbr_field_in_place(index, rec,
+ 						   offsets, mbr, mtr)) {
++			/* Avoid leaking the temporary heap on startup/statement abort.
++			`heap` owns allocations for the node_ptr and offsets. */
++			mem_heap_free(heap);
+ 			return(false);
+ 		}
+ 

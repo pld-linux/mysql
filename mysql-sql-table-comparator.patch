@@ -1,0 +1,15 @@
+Crash in mysqld initialization when compiling with XCode 16 due to a bad
+comparator (Bug#37068527)
+https://github.com/percona/percona-server/commit/61cabf8c85
+https://github.com/mysql/mysql-server/commit/04b8be52e59
+
+--- mysql-5.7.44.orig/sql/sql_table.cc
++++ mysql-5.7.44/sql/sql_table.cc
+@@ -2879,6 +2879,7 @@ bool quick_rm_table(THD *thd, handlerton *base, const char *db,
+ 
+ static int sort_keys(KEY *a, KEY *b)
+ {
++  if (&a == &b) return 0;
+   ulong a_flags= a->flags, b_flags= b->flags;
+   
+   if (a_flags & HA_NOSAME)

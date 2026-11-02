@@ -1,0 +1,15 @@
+db cache is not flushed on DROP USER (Bug#37132323)
+https://github.com/percona/percona-server/commit/b3938045d8
+https://github.com/mysql/mysql-server/commit/dd8b0c5c7d6
+
+--- mysql-5.7.44.orig/sql/auth/sql_user.cc
++++ mysql-5.7.44/sql/auth/sql_user.cc
+@@ -1614,6 +1614,8 @@ bool mysql_drop_user(THD *thd, List <LEX_USER> &list, bool if_exists)
+ 
+   /* Rebuild 'acl_check_hosts' since 'acl_users' has been modified */
+   rebuild_check_host();
++  /* Clear privilege cache */
++  acl_cache->clear(1);
+ 
+   mysql_mutex_unlock(&acl_cache->lock);
+ 

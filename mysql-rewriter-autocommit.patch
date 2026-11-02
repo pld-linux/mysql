@@ -1,0 +1,15 @@
+Query rewrite plugin not working when server runs with autocommit=OFF
+(Bug#36784795)
+https://github.com/percona/percona-server/commit/1876c98161
+https://github.com/mysql/mysql-server/commit/b5ab2959dbd
+
+--- mysql-5.7.44.orig/sql/parser_service.cc
++++ mysql-5.7.44/sql/parser_service.cc
+@@ -189,6 +189,7 @@ void *parser_service_start_routine(void *arg)
+   (tt->m_fun)(tt->m_arg);
+ 
+   trans_commit_stmt(thd);
++  trans_commit(thd);
+   close_thread_tables(thd);
+   thd->mdl_context.release_transactional_locks();
+   close_mysql_tables(thd);

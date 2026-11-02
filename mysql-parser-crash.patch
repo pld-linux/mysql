@@ -1,0 +1,19 @@
+CRASH INSIDE OF THE QUERY PARSER/PLANNER/RESOLVER (Bug#38928287)
+https://github.com/percona/percona-server/commit/7e89512133
+https://github.com/mysql/mysql-server/commit/3c5baa98cdc
+
+--- mysql-5.7.44.orig/sql/parse_tree_nodes.h
++++ mysql-5.7.44/sql/parse_tree_nodes.h
+@@ -374,7 +374,11 @@ protected:
+   {
+     if (tr1 != NULL)
+       return false; // already done
+-      
++
++    char buff[NAME_LEN + 1];
++    if (check_stack_overrun(pc->thd, STACK_MIN_SIZE, pointer_cast<uchar *>(buff)))
++      return true; /* purecov: inspected */
++
+     if (tab1_node->contextualize(pc) || tab2_node->contextualize(pc))
+       return true;
+ 

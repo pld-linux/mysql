@@ -1,0 +1,93 @@
+Forgeting to call btr_pcur_close() leads to memory leak (Bug#37403052)
+https://github.com/percona/percona-server/commit/539202f5a7
+https://github.com/mysql/mysql-server/commit/df130daa135
+
+--- mysql-5.7.44.orig/storage/innobase/ibuf/ibuf0ibuf.cc
++++ mysql-5.7.44/storage/innobase/ibuf/ibuf0ibuf.cc
+@@ -3186,6 +3186,8 @@ ibuf_update_max_tablespace_id(void)
+ 		max_space_id = mach_read_from_4(field);
+ 	}
+ 
++	btr_pcur_close(&pcur);
++
+ 	ibuf_mtr_commit(&mtr);
+ 
+ 	/* printf("Maximum space id in insert buffer %lu\n", max_space_id); */
+--- mysql-5.7.44.orig/storage/innobase/row/row0ins.cc
++++ mysql-5.7.44/storage/innobase/row/row0ins.cc
+@@ -2183,7 +2183,7 @@ row_ins_scan_sec_index_for_duplicate(
+ end_scan:
+ 	/* Restore old value */
+ 	dtuple_set_n_fields_cmp(entry, n_fields_cmp);
+-
++	btr_pcur_close(&pcur);
+ 	DBUG_RETURN(err);
+ }
+ 
+--- mysql-5.7.44.orig/storage/innobase/row/row0log.cc
++++ mysql-5.7.44/storage/innobase/row/row0log.cc
+@@ -53,6 +53,25 @@ Created 2011-05-26 Marko Makela
+ #include <algorithm>
+ #include <map>
+ 
++/** RAII interface to B-tree page cursor. Calls btr_pcur_close() on scope exit
++*/
++class Btr_pcur_guard {
++public:
++	/** Attach a pcur to the guard */
++	Btr_pcur_guard(btr_pcur_t *pcur) : m_pcur(pcur) {}
++
++	/** Call cursor close at the time of destruction. */
++	~Btr_pcur_guard() {
++		if (m_pcur != NULL) {
++			btr_pcur_close(m_pcur);
++		}
++	}
++
++private:
++	/** Btree page cursor object */
++	btr_pcur_t *m_pcur;
++};
++
+ /** Table row modification operations during online table rebuild.
+ Delete-marked records are not copied to the rebuilt table. */
+ enum row_tab_op {
+@@ -1920,6 +1939,9 @@ row_log_table_apply_delete(
+ 	btr_pcur_open(index, old_pk, PAGE_CUR_LE,
+ 		      BTR_MODIFY_TREE | BTR_LATCH_FOR_DELETE,
+ 		      &pcur, &mtr);
++
++	Btr_pcur_guard pcur_guard(&pcur);
++
+ #ifdef UNIV_DEBUG
+ 	switch (btr_pcur_get_btr_cur(&pcur)->flag) {
+ 	case BTR_CUR_DELETE_REF:
+@@ -2073,6 +2095,9 @@ row_log_table_apply_update(
+ 	mtr.set_named_space(index->space);
+ 	btr_pcur_open(index, old_pk, PAGE_CUR_LE,
+ 		      BTR_MODIFY_TREE, &pcur, &mtr);
++
++	Btr_pcur_guard pcur_guard(&pcur);
++
+ #ifdef UNIV_DEBUG
+ 	switch (btr_pcur_get_btr_cur(&pcur)->flag) {
+ 	case BTR_CUR_DELETE_REF:
+--- mysql-5.7.44.orig/storage/innobase/row/row0mysql.cc
++++ mysql-5.7.44/storage/innobase/row/row0mysql.cc
+@@ -2132,6 +2132,7 @@ row_update_inplace_for_intrinsic(const upd_node_t* node)
+ 		index, offsets, node->update);
+ 
+ 	if (size_changes) {
++		btr_pcur_close(&pcur);
+ 		mtr_commit(&mtr);
+ 		return(DB_FAIL);
+ 	}
+@@ -2143,7 +2144,7 @@ row_update_inplace_for_intrinsic(const upd_node_t* node)
+ 	the changes */
+ 
+ 	mtr.set_modified();
+-
++	btr_pcur_close(&pcur);
+ 	mtr_commit(&mtr);
+ 
+ 	return(DB_SUCCESS);

@@ -1,0 +1,84 @@
+Improve malformed heartbeat handling (Bug#39377010)
+https://github.com/percona/percona-server/commit/92adb1d9cc
+https://github.com/mysql/mysql-server/commit/f2682635b5f
+
+--- mysql-5.7.44.orig/libbinlogevents/src/control_events.cpp
++++ mysql-5.7.44/libbinlogevents/src/control_events.cpp
+@@ -990,14 +990,27 @@ Heartbeat_event::Heartbeat_event(const char* buf, unsigned int event_len,
+                                  description_event)
+ : Binary_log_event(&buf, description_event->binlog_version,
+                    description_event->server_version),
+-  log_ident(buf)
++  log_ident(NULL), ident_len(0)
+ {
+   //buf is advanced in Binary_log_event constructor to point to
+   //beginning of post-header
+   unsigned char header_size= description_event->common_header_len;
++  if (header()->log_pos < BIN_LOG_HEADER_SIZE)
++    return;
++
++  if (event_len <= header_size)
++    return;
++
+   ident_len= event_len - header_size;
+   if (ident_len > FN_REFLEN - 1)
+     ident_len= FN_REFLEN - 1;
++
++  log_ident= buf;
++  if (log_ident == NULL)
++  {
++    ident_len= 0;
++    return;
++  }
+ }
+ 
+ #ifndef HAVE_MYSYS
+--- mysql-5.7.44.orig/sql/log_event.cc
++++ mysql-5.7.44/sql/log_event.cc
+@@ -14512,7 +14512,8 @@ Heartbeat_log_event::Heartbeat_log_event(const char* buf, uint event_len,
+   : binary_log::Heartbeat_event(buf, event_len, description_event),
+     Log_event(header(), footer())
+ {
+-  if ((log_ident != NULL && header()->log_pos >= BIN_LOG_HEADER_SIZE))
++  if (log_ident != NULL && ident_len > 0 &&
++      header()->log_pos >= BIN_LOG_HEADER_SIZE)
+     is_valid_param= true;
+ }
+ #endif
+--- mysql-5.7.44.orig/sql/rpl_binlog_sender.cc
++++ mysql-5.7.44/sql/rpl_binlog_sender.cc
+@@ -1311,6 +1311,12 @@ int Binlog_sender::send_heartbeat_event(my_off_t log_pos)
+   size_t ident_len= strlen(p);
+   size_t event_len= ident_len + LOG_EVENT_HEADER_LEN +
+     (event_checksum_on() ? BINLOG_CHECKSUM_LEN : 0);
++  DBUG_EXECUTE_IF("binlog_sender_header_only_heartbeat",
++                  {
++                    ident_len= 0;
++                    event_len= LOG_EVENT_HEADER_LEN +
++                      (event_checksum_on() ? BINLOG_CHECKSUM_LEN : 0);
++                  };);
+ 
+   DBUG_PRINT("info", ("log_file_name %s, log_pos %llu", p, log_pos));
+ 
+@@ -1328,7 +1334,8 @@ int Binlog_sender::send_heartbeat_event(my_off_t log_pos)
+   int4store(header + EVENT_LEN_OFFSET, event_len);
+   int4store(header + LOG_POS_OFFSET, static_cast<uint32>(log_pos));
+   int2store(header + FLAGS_OFFSET, 0);
+-  memcpy(header + LOG_EVENT_HEADER_LEN, p, ident_len);
++  if (ident_len > 0)
++    memcpy(header + LOG_EVENT_HEADER_LEN, p, ident_len);
+ 
+   if (event_checksum_on())
+     calc_event_checksum(header, event_len);
+--- mysql-5.7.44.orig/sql/rpl_slave.cc
++++ mysql-5.7.44/sql/rpl_slave.cc
+@@ -8604,7 +8604,8 @@ bool queue_event(Master_info* mi,const char* buf, ulong event_len)
+       char llbuf[22];
+       sprintf(errbuf, "inconsistent heartbeat event content; the event's data: "
+               "log_file_name %-.512s log_pos %s",
+-              hb.get_log_ident(), llstr(hb.common_header->log_pos, llbuf));
++              hb.get_log_ident() ? hb.get_log_ident() : "",
++              llstr(hb.common_header->log_pos, llbuf));
+       mi->report(ERROR_LEVEL, ER_SLAVE_HEARTBEAT_FAILURE,
+                  ER(ER_SLAVE_HEARTBEAT_FAILURE), errbuf);
+       goto err;

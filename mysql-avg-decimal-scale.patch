@@ -1,0 +1,16 @@
+MYSQL SERVER 8.3.0 GLOBAL-BUFFER-OVERFLOW AT 'DECIMAL_BIN_SIZE_INLINE'
+(Bug#36563773)
+https://github.com/percona/percona-server/commit/2a26b295f3
+https://github.com/mysql/mysql-server/commit/2f67801d010
+
+--- mysql-5.7.44.orig/sql/item_sum.cc
++++ mysql-5.7.44/sql/item_sum.cc
+@@ -1727,7 +1727,7 @@ void Item_sum_avg::fix_length_and_dec()
+                                                              decimals,
+                                                              unsigned_flag);
+     f_precision= min(precision+DECIMAL_LONGLONG_DIGITS, DECIMAL_MAX_PRECISION);
+-    f_scale=  args[0]->decimals;
++    f_scale = min<uint>(args[0]->decimals, f_precision);
+     dec_bin_size= my_decimal_get_binary_size(f_precision, f_scale);
+   }
+   else {

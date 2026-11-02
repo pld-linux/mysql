@@ -1,0 +1,30 @@
+Validate rows event width earlier (Bug#39282350)
+https://github.com/percona/percona-server/commit/46cbd37669
+https://github.com/mysql/mysql-server/commit/582bbdbf628
+
+--- mysql-5.7.44.orig/libbinlogevents/include/rows_event.h
++++ mysql-5.7.44/libbinlogevents/include/rows_event.h
+@@ -691,6 +691,9 @@ public:
+   virtual ~Rows_event();
+ 
+ protected:
++  // Maximum number of columns supported by a rows event.
++  static const unsigned long max_fields= 4096;
++
+   Log_event_type  m_type;     /** Actual event type */
+ 
+   /** Post header content */
+--- mysql-5.7.44.orig/libbinlogevents/src/rows_event.cpp
++++ mysql-5.7.44/libbinlogevents/src/rows_event.cpp
+@@ -289,6 +289,11 @@ Rows_event::Rows_event(const char *buf, unsigned int event_len,
+   unsigned char const *const ptr_width= var_start;
+   unsigned char *ptr_after_width= (unsigned char*) ptr_width;
+   m_width = get_field_length(&ptr_after_width);
++  if (m_width == 0 || m_width > Rows_event::max_fields)
++  {
++    m_width= 0;
++    return;
++  }
+   n_bits_len= (m_width + 7) / 8;
+   /* Avoid reading out of buffer */
+   if (ptr_after_width + n_bits_len > (const unsigned char *)(buf +

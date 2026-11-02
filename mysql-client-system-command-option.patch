@@ -1,0 +1,54 @@
+mysqldump blindly trusting SHOW CREATE TABLE leads to arbitrary code
+execution.
+https://github.com/percona/percona-server/commit/51fa3a62d0
+
+--- mysql-5.7.44.orig/client/mysql.cc
++++ mysql-5.7.44/client/mysql.cc
+@@ -371,7 +371,7 @@ static COMMANDS commands[] = {
+     "Execute an SQL script file. Takes a file name as an argument."},
+   { "status", 's', com_status, 0, "Get status information from the server."},
+ #ifdef USE_POPEN
+-  { "system", '!', com_shell,  1, "Execute a system shell command."},
++  { "system", '!', com_shell,  1, "Execute a system shell command, if enabled."},
+ #endif
+   { "tee",    'T', com_tee,    1, 
+     "Set outfile [to_outfile]. Append everything into given outfile." },
+@@ -1624,6 +1624,10 @@ void window_resize(int sig)
+ }
+ #endif
+ 
++#ifdef USE_POPEN
++static bool opt_system_command = true;
++#endif
++
+ static struct my_option my_long_options[] =
+ {
+   {"help", '?', "Display this help and exit.", 0, 0, 0, GET_NO_ARG, NO_ARG, 0,
+@@ -1882,6 +1886,12 @@ static struct my_option my_long_options[] =
+    "test purpose, so it is just built when DEBUG is on.",
+    &opt_build_completion_hash, &opt_build_completion_hash, 0, GET_BOOL,
+    NO_ARG, 0, 0, 0, 0, 0, 0},
++#endif
++#ifdef USE_POPEN
++  {"system-command", 0,
++   "Enable (by default) or disable the system mysql command.",
++   &opt_system_command, &opt_system_command, 0, GET_BOOL, NO_ARG,
++   1, 0, 0, 0, 0, 0},
+ #endif
+   { 0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
+ };
+@@ -4570,6 +4580,14 @@ com_shell(String *buffer MY_ATTRIBUTE((unused)),
+     put_info("Usage: \\! shell-command", INFO_ERROR);
+     return -1;
+   }
++
++  if (!opt_system_command) {
++    return put_info(
++        "'system' command received, but the --system-command option is off. "
++        "Skipping.",
++        INFO_ERROR);
++  }
++
+   /*
+     The output of the shell command does not
+     get directed to the pager or the outfile

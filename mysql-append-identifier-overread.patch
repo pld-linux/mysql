@@ -1,0 +1,18 @@
+ASAN: NAME_CONST WITH INVALID IDENTIFIER, HEAP-BUFFER-OVERFLOW
+(Bug#22958632)
+https://github.com/percona/percona-server/commit/b3d19a5392
+https://github.com/mysql/mysql-server/commit/5f3490aea8c
+
+--- mysql-5.7.44.orig/sql/sql_show.cc
++++ mysql-5.7.44/sql/sql_show.cc
+@@ -1281,7 +1281,9 @@ append_identifier(THD *thd, String *packet, const char *name, size_t length,
+       to_length= 1;
+     if (to_length == 1 && chr == static_cast<uchar>(quote_char))
+       packet->append(&quote_char, 1, system_charset_info);
+-    packet->append(to_name, to_length, system_charset_info);
++    packet->append(to_name,
++                   std::min(to_length, static_cast<size_t>(name_end - to_name)),
++                   system_charset_info);
+   }
+   packet->append(&quote_char, 1, system_charset_info);
+ }

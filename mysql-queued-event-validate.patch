@@ -1,0 +1,87 @@
+Improve directly queued event validation (Bug#39254914)
+https://github.com/percona/percona-server/commit/c6f9af55b7
+https://github.com/mysql/mysql-server/commit/ad2a119907c
+
+--- mysql-5.7.44.orig/sql/rpl_binlog_sender.cc
++++ mysql-5.7.44/sql/rpl_binlog_sender.cc
+@@ -1276,6 +1276,18 @@ inline int Binlog_sender::read_event(IO_CACHE *log_cache, enum_binlog_checksum_a
+              ("Read event %s",
+               Log_event::get_type_str(Log_event_type
+                                       ((*event_ptr)[EVENT_TYPE_OFFSET]))));
++
++  DBUG_EXECUTE_IF("binlog_sender_short_rotate_event_len", {
++    if ((*event_ptr)[EVENT_TYPE_OFFSET] == binary_log::ROTATE_EVENT &&
++        *event_len > 8) {
++      // Advertise a shorter event length while keeping the transmitted packet
++      // intact so the receiver's direct Rotate parser truncates the filename
++      // if it trusts the header length over the packet length.
++      int4store(*event_ptr + EVENT_LEN_OFFSET, *event_len - 8);
++      if (event_checksum_on()) calc_event_checksum(*event_ptr, *event_len);
++    }
++  };);
++
+ #ifndef NDEBUG
+   if (check_event_count())
+     DBUG_RETURN(1);
+--- mysql-5.7.44.orig/sql/rpl_slave.cc
++++ mysql-5.7.44/sql/rpl_slave.cc
+@@ -31,6 +31,7 @@
+   replication slave.
+ */
+ 
++#include "mysqld_error.h"
+ #ifdef HAVE_REPLICATION
+ #include "rpl_slave.h"
+ 
+@@ -67,6 +68,7 @@
+ 
+ #include <signal.h>
+ #include <algorithm>
++#include <sstream>
+ 
+ using std::min;
+ using std::max;
+@@ -8125,6 +8127,20 @@ static int queue_old_event(Master_info *mi, const char *buf,
+   }
+ }
+ 
++/// Check whether queue_event() constructs this event type directly instead of
++/// using the general deserialization path.
++///
++/// @param event_type The incoming event type.
++///
++/// @retval true if queue_event() uses direct construction for this event type.
++/// @retval false otherwise.
++static bool queue_event_uses_direct_construction(Log_event_type event_type) {
++  return event_type == binary_log::ROTATE_EVENT ||
++         event_type == binary_log::HEARTBEAT_LOG_EVENT ||
++         event_type == binary_log::GTID_LOG_EVENT ||
++         event_type == binary_log::ANONYMOUS_GTID_LOG_EVENT;
++}
++
+ /**
+   Store an event received from the master connection into the relay
+   log.
+@@ -8237,6 +8253,22 @@ bool queue_event(Master_info* mi,const char* buf, ulong event_len)
+     goto err;
+   }
+ 
++  if (queue_event_uses_direct_construction(event_type) &&
++      (event_len < LOG_EVENT_MINIMAL_HEADER_LEN ||
++       event_len != uint4korr(buf + EVENT_LEN_OFFSET))) {
++    std::stringstream ss;
++    const uint32 header_event_len = event_len < LOG_EVENT_MINIMAL_HEADER_LEN
++                                        ? 0
++                                        : uint4korr(buf + EVENT_LEN_OFFSET);
++    ss << "Rejected malformed " << Log_event::get_type_str(event_type)
++       << " event from source: received packet length " << event_len
++       << " does not match event header length " << header_event_len
++       << ". Verify the source and binary log stream integrity.";
++    mi->report(ERROR_LEVEL, ER_SLAVE_CREATE_EVENT_FAILURE, "%s",
++               ss.str().c_str());
++    goto err;
++  }
++
+   mysql_mutex_lock(&mi->data_lock);
+   assert(lock_count == 0);
+   lock_count= 1;

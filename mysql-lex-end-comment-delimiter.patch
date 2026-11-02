@@ -1,0 +1,16 @@
+Binlog record error when delimiter is set to other symbols
+(Bug#37117875)
+https://github.com/percona/percona-server/commit/4060e62647
+https://github.com/mysql/mysql-server/commit/9d4ead06951
+
+--- mysql-5.7.44.orig/sql/sql_lex.cc
++++ mysql-5.7.44/sql/sql_lex.cc
+@@ -2052,6 +2052,8 @@ static int lex_one_token(YYSTYPE *yylval, THD *thd)
+       state=MY_LEX_CHAR;
+       break;
+     case MY_LEX_END:
++      /* Unclosed special comments result in a syntax error */
++      if (lip->in_comment == DISCARD_COMMENT) return (ABORT_SYM);
+       lip->next_state=MY_LEX_END;
+       return(0);			// We found end of input last time
+ 

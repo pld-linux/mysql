@@ -1,0 +1,47 @@
+MySQL Group Replication applier pipeline validations (Bug#38712932)
+https://github.com/percona/percona-server/commit/3c967ac40b
+https://github.com/mysql/mysql-server/commit/1c7b3e6e
+
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/include/pipeline_interfaces.h
++++ mysql-5.7.44/rapid/plugin/group_replication/include/pipeline_interfaces.h
+@@ -330,6 +330,20 @@ private:
+     const char *errmsg = 0;
+ 
+     uint event_len= uint4korr(((uchar*)(packet->payload)) + EVENT_LEN_OFFSET);
++
++    DBUG_EXECUTE_IF("group_replication_pipeline_force_invalid_event_length",
++                    { event_len= packet->len + 1; });
++
++    if (event_len > packet->len)
++    {
++      log_message(MY_ERROR_LEVEL,
++                  "Unable to convert a packet into an event on the applier!"
++                  " Error: invalid event length."); /* purecov: inspected */
++      delete packet;  /* purecov: inspected */
++      packet= NULL;   /* purecov: inspected */
++      return 1;       /* purecov: inspected */
++    }
++
+     log_event= Log_event::read_log_event((const char*)packet->payload, event_len,
+                                          &errmsg, format_descriptor, TRUE);
+ 
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/src/applier.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/src/applier.cc
+@@ -320,6 +320,17 @@ int Applier_module::apply_data_packet(Data_packet *data_packet,
+   {
+     uint event_len= uint4korr(((uchar*)payload) + EVENT_LEN_OFFSET);
+ 
++    DBUG_EXECUTE_IF("group_replication_applier_force_invalid_event_length",
++                    { event_len= data_packet->len + 1; });
++
++    if (event_len > data_packet->len)
++    {
++      log_message(MY_ERROR_LEVEL,
++                  "Invalid event length while applying data packet on group "
++                  "replication applier pipeline."); /* purecov: inspected */
++      return 1; /* purecov: inspected */
++    }
++
+     Data_packet* new_packet= new Data_packet(payload, event_len);
+     payload= payload + event_len;
+ 

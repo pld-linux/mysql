@@ -36,7 +36,7 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.7.44
-Release:	3
+Release:	4
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/5.7.html#downloads
@@ -71,15 +71,97 @@ Patch6:		%{name}-cmake.patch
 Patch7:		%{name}-readline.patch
 Patch8:		%{name}dumpslow-clusters.patch
 Patch9:		%{name}-sig_return.patch
+# fixes Percona carried in 5.7.44-48..60 (post-EOL), see each patch
+Patch100:	%{name}-md5-length.patch
+Patch101:	%{name}-fts-ngram-percent.patch
+Patch102:	%{name}-dump-server-version.patch
+Patch103:	%{name}-make-set-pullout.patch
+Patch104:	%{name}-subselect-null-name.patch
+Patch105:	%{name}-loose-index-scan-results.patch
+Patch106:	%{name}-gr-certifier-gtid-set.patch
+Patch107:	%{name}-trx-in-innodb-hang.patch
+Patch108:	%{name}-fts-sync-concurrency.patch
+Patch109:	%{name}-plugin-deinit.patch
+Patch110:	%{name}-btr-merge-backward-scan.patch
+Patch111:	%{name}-gtid-executed-crash-save.patch
+Patch112:	%{name}-ibuf-restore-pos.patch
+Patch113:	%{name}-avg-decimal-scale.patch
+Patch114:	%{name}-item-ref-uaf.patch
+Patch115:	%{name}-spatial-index-optimizer.patch
+Patch116:	%{name}-connection-control-wait.patch
+Patch117:	%{name}-fts-optimize-last-word.patch
+Patch118:	%{name}-privilege-desc-bounds.patch
+Patch119:	%{name}-client-system-command-option.patch
+Patch120:	%{name}-dump-tablespace-escape.patch
+Patch121:	%{name}-strfunc-strlen-overflow.patch
+Patch122:	%{name}-lex-hints-crash.patch
+Patch123:	%{name}-fts-doc-id-cmp.patch
+Patch124:	%{name}-updatexml-root-copy.patch
+Patch125:	%{name}-client-table-leak.patch
+Patch126:	%{name}-fts-drop-add-index.patch
+Patch127:	%{name}-row-upd-primary-corrupted.patch
+Patch128:	%{name}-fk-cascade-vcol-crash.patch
+Patch129:	%{name}-drop-user-acl-cache.patch
+Patch130:	%{name}-fts-self-fk-cascade.patch
+Patch131:	%{name}-getopt-help-overrun.patch
+Patch132:	%{name}-client-hint-comment.patch
+Patch133:	%{name}-spatial-inplace-alter-corruption.patch
+Patch134:	%{name}-fk-pad-col-assert.patch
+Patch135:	%{name}-rollup-sum-switcher-crash.patch
+Patch136:	%{name}-sql-table-comparator.patch
+Patch137:	%{name}-fts-doc-id-64bit.patch
+Patch138:	%{name}-broken-utf8-overflow.patch
+Patch139:	%{name}-append-identifier-overread.patch
+Patch140:	%{name}-multisource-get-mi-overflow.patch
+Patch141:	%{name}-geofunc-uaf.patch
+Patch142:	%{name}-dump-view-query-escape.patch
+Patch143:	%{name}-btr-pcur-close-leak.patch
+Patch144:	%{name}-vcol-index-id-32bit.patch
+Patch145:	%{name}-lex-end-comment-delimiter.patch
+Patch146:	%{name}-wait-until-gtids-validate.patch
+Patch147:	%{name}-client-commands-option.patch
+Patch148:	%{name}-blob-prefix-key-field.patch
+Patch149:	%{name}-rewriter-autocommit.patch
+Patch150:	%{name}-lex-off-by-one.patch
+Patch151:	%{name}-vcol-index-corruption.patch
+Patch152:	%{name}-buffer-pool-max-size.patch
+Patch153:	%{name}-innodb-locks-crash.patch
+Patch154:	%{name}-gis-temp-bulk-insert.patch
+Patch155:	%{name}-join-max-tables.patch
+Patch156:	%{name}-gr-applier-validate.patch
+Patch157:	%{name}-gr-snapshot-validate.patch
+Patch158:	%{name}-spatial-deadlock.patch
+Patch159:	%{name}-varchar-deadlock.patch
+Patch160:	%{name}-fts-sort-mem-limit.patch
+Patch161:	%{name}-greedy-search-no-plan.patch
+Patch162:	%{name}-parser-crash.patch
+Patch163:	%{name}-parser-kill-large-query.patch
+Patch164:	%{name}-rtree-shutdown-leak.patch
+Patch165:	%{name}-connect-attrs-oob.patch
+Patch166:	%{name}-xplugin-no-backslash-escapes.patch
+Patch167:	%{name}-xplugin-mysql41-auth.patch
+Patch168:	%{name}-gr-payload-decode.patch
+Patch169:	%{name}-xcom-client-msg-injection.patch
+Patch170:	%{name}-xml-parse-slash.patch
+Patch171:	%{name}-table-map-name-length.patch
+Patch172:	%{name}-user-var-decimal-meta.patch
+Patch173:	%{name}-table-map-meta-bounds.patch
+Patch174:	%{name}-receiver-event-type.patch
+Patch175:	%{name}-gtid-interval-length.patch
+Patch176:	%{name}-fake-rotate-event.patch
+Patch177:	%{name}-queued-event-validate.patch
+Patch178:	%{name}-rows-event-width.patch
+Patch179:	%{name}-packed-row-size.patch
+Patch180:	%{name}-heartbeat-validate.patch
+Patch181:	%{name}-fk-cascade-vcol-update.patch
+Patch182:	%{name}-dump-comment-buffer-reuse.patch
 URL:		http://www.mysql.com/products/community/
-BuildRequires:	automake
 BuildRequires:	bison >= 1.875
 %{?with_system_boost:BuildRequires:	boost-devel >= 1.59.0}
 BuildRequires:	cmake >= 2.8.9
 BuildRequires:	libaio-devel
 BuildRequires:	libatomic-devel
 BuildRequires:	libevent-devel
-BuildRequires:	libhsclient-devel
 BuildRequires:	libstdc++-devel >= 5:4.0
 BuildRequires:	libtirpc-devel >= 1.0.0
 %{?with_tcpd:BuildRequires:	libwrap-devel}
@@ -88,10 +170,8 @@ BuildRequires:	mecab-devel
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
 %{?with_ldap:BuildRequires:	openldap-devel}
-BuildRequires:	pam-devel
 BuildRequires:	perl-devel >= 1:5.6.1
 %{?with_system_protobuf:BuildRequires:	protobuf-devel >= 2.5}
-BuildRequires:	python-modules
 BuildRequires:	readline-devel >= 6.2
 BuildRequires:	rpcsvc-proto
 BuildRequires:	rpm-build >= 4.6
@@ -484,6 +564,90 @@ Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 %patch -P7 -p1
 %patch -P8 -p1
 %patch -P9 -p1
+
+%patch -P100 -p1
+%patch -P101 -p1
+%patch -P102 -p1
+%patch -P103 -p1
+%patch -P104 -p1
+%patch -P105 -p1
+%patch -P106 -p1
+%patch -P107 -p1
+%patch -P108 -p1
+%patch -P109 -p1
+%patch -P110 -p1
+%patch -P111 -p1
+%patch -P112 -p1
+%patch -P113 -p1
+%patch -P114 -p1
+%patch -P115 -p1
+%patch -P116 -p1
+%patch -P117 -p1
+%patch -P118 -p1
+%patch -P119 -p1
+%patch -P120 -p1
+%patch -P121 -p1
+%patch -P122 -p1
+%patch -P123 -p1
+%patch -P124 -p1
+%patch -P125 -p1
+%patch -P126 -p1
+%patch -P127 -p1
+%patch -P128 -p1
+%patch -P129 -p1
+%patch -P130 -p1
+%patch -P131 -p1
+%patch -P132 -p1
+%patch -P133 -p1
+%patch -P134 -p1
+%patch -P135 -p1
+%patch -P136 -p1
+%patch -P137 -p1
+%patch -P138 -p1
+%patch -P139 -p1
+%patch -P140 -p1
+%patch -P141 -p1
+%patch -P142 -p1
+%patch -P143 -p1
+%patch -P144 -p1
+%patch -P145 -p1
+%patch -P146 -p1
+%patch -P147 -p1
+%patch -P148 -p1
+%patch -P149 -p1
+%patch -P150 -p1
+%patch -P151 -p1
+%patch -P152 -p1
+%patch -P153 -p1
+%patch -P154 -p1
+%patch -P155 -p1
+%patch -P156 -p1
+%patch -P157 -p1
+%patch -P158 -p1
+%patch -P159 -p1
+%patch -P160 -p1
+%patch -P161 -p1
+%patch -P162 -p1
+%patch -P163 -p1
+%patch -P164 -p1
+%patch -P165 -p1
+%patch -P166 -p1
+%patch -P167 -p1
+%patch -P168 -p1
+%patch -P169 -p1
+%patch -P170 -p1
+%patch -P171 -p1
+%patch -P172 -p1
+%patch -P173 -p1
+%patch -P174 -p1
+%patch -P175 -p1
+%patch -P176 -p1
+%patch -P177 -p1
+%patch -P178 -p1
+%patch -P179 -p1
+%patch -P180 -p1
+%patch -P181 -p1
+%patch -P182 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc

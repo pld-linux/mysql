@@ -1,0 +1,313 @@
+FTS_DOC_ID comparison incorrect for large values (Bug#36210202)
+https://github.com/percona/percona-server/commit/d131e82d5c
+
+--- mysql-5.7.44.orig/storage/innobase/fts/fts0fts.cc
++++ mysql-5.7.44/storage/innobase/fts/fts0fts.cc
+@@ -2433,7 +2433,8 @@ fts_trx_table_create(
+ 	ftt->table = table;
+ 	ftt->fts_trx = fts_trx;
+ 
+-	ftt->rows = rbt_create(sizeof(fts_trx_row_t), fts_trx_row_doc_id_cmp);
++	ftt->rows = rbt_create(
++                   sizeof(fts_trx_row_t), fts_doc_id_field_cmp<fts_trx_row_t>);
+ 
+ 	return(ftt);
+ }
+@@ -2457,7 +2458,8 @@ fts_trx_table_clone(
+ 	ftt->table = ftt_src->table;
+ 	ftt->fts_trx = ftt_src->fts_trx;
+ 
+-	ftt->rows = rbt_create(sizeof(fts_trx_row_t), fts_trx_row_doc_id_cmp);
++	ftt->rows = rbt_create(
++                   sizeof(fts_trx_row_t), fts_doc_id_field_cmp<fts_trx_row_t>);
+ 
+ 	/* Copy the rb tree values to the new savepoint. */
+ 	rbt_merge_uniq(ftt->rows, ftt_src->rows);
+@@ -4067,7 +4069,7 @@ fts_sync_add_deleted_cache(
+ 
+ 	ut_a(ib_vector_size(doc_ids) > 0);
+ 
+-	ib_vector_sort(doc_ids, fts_update_doc_id_cmp);
++	ib_vector_sort(doc_ids, fts_doc_id_field_cmp<fts_update_t>);
+ 
+ 	info = pars_info_create();
+ 
+--- mysql-5.7.44.orig/storage/innobase/fts/fts0opt.cc
++++ mysql-5.7.44/storage/innobase/fts/fts0opt.cc
+@@ -1050,7 +1050,7 @@ fts_table_fetch_doc_ids(
+ 	if (error == DB_SUCCESS) {
+ 		fts_sql_commit(trx);
+ 
+-		ib_vector_sort(doc_ids->doc_ids, fts_update_doc_id_cmp);
++		ib_vector_sort(doc_ids->doc_ids, fts_doc_id_field_cmp<fts_update_t>);
+ 	} else {
+ 		fts_sql_rollback(trx);
+ 	}
+--- mysql-5.7.44.orig/storage/innobase/fts/fts0que.cc
++++ mysql-5.7.44/storage/innobase/fts/fts0que.cc
+@@ -292,6 +292,9 @@ struct fts_word_freq_t {
+ 	double		idf;		/*!< Inverse document frequency */
+ };
+ 
++static ib_rbt_compare fts_ranking_doc_id_cmp =
++    fts_doc_id_field_cmp<fts_ranking_t>;
++
+ /********************************************************************
+ Callback function to fetch the rows in an FTS INDEX record.
+ @return always TRUE */
+@@ -391,25 +394,7 @@ fts_query_terms_in_document(
+ 	fts_query_t*	query,		/*!< in: FTS query state */
+ 	doc_id_t	doc_id,		/*!< in: the word to check */
+ 	ulint*		total);		/*!< out: total words in document */
+-#endif
+ 
+-/********************************************************************
+-Compare two fts_doc_freq_t doc_ids.
+-@return < 0 if n1 < n2, 0 if n1 == n2, > 0 if n1 > n2 */
+-UNIV_INLINE
+-int
+-fts_freq_doc_id_cmp(
+-/*================*/
+-	const void*	p1,			/*!< in: id1 */
+-	const void*	p2)			/*!< in: id2 */
+-{
+-	const fts_doc_freq_t*	fq1 = (const fts_doc_freq_t*) p1;
+-	const fts_doc_freq_t*	fq2 = (const fts_doc_freq_t*) p2;
+-
+-	return((int) (fq1->doc_id - fq2->doc_id));
+-}
+-
+-#if 0
+ /*******************************************************************//**
+ Print the table used for calculating LCS. */
+ static
+@@ -682,7 +667,7 @@ fts_query_add_word_freq(
+ 		word_freq.doc_count = 0;
+ 
+ 		word_freq.doc_freqs = rbt_create(
+-			sizeof(fts_doc_freq_t), fts_freq_doc_id_cmp);
++			sizeof(fts_doc_freq_t), fts_doc_id_field_cmp<fts_doc_freq_t>);
+ 
+ 		parent.last = rbt_add_node(
+ 			query->word_freqs, &parent, &word_freq);
+@@ -4073,7 +4058,7 @@ fts_query(
+ 	DEBUG_SYNC_C("fts_deleted_doc_ids_append");
+ 
+ 	/* Sort the vector so that we can do a binary search over the ids. */
+-	ib_vector_sort(query.deleted->doc_ids, fts_update_doc_id_cmp);
++	ib_vector_sort(query.deleted->doc_ids, fts_doc_id_field_cmp<fts_doc_freq_t>);
+ 
+ 	/* Convert the query string to lower case before parsing. We own
+ 	the ut_malloc'ed result and so remember to free it before return. */
+--- mysql-5.7.44.orig/storage/innobase/include/fts0types.h
++++ mysql-5.7.44/storage/innobase/include/fts0types.h
+@@ -303,45 +303,6 @@ struct fts_token_t {
+ /** It's defined in fts/fts0fts.c */
+ extern const fts_index_selector_t fts_index_selector[];
+ 
+-/******************************************************************//**
+-Compare two fts_trx_row_t instances doc_ids. */
+-UNIV_INLINE
+-int
+-fts_trx_row_doc_id_cmp(
+-/*===================*/
+-						/*!< out:
+-						< 0 if n1 < n2,
+-						0 if n1 == n2,
+-						> 0 if n1 > n2 */
+-	const void*	p1,			/*!< in: id1 */
+-	const void*	p2);			/*!< in: id2 */
+-
+-/******************************************************************//**
+-Compare two fts_ranking_t instances doc_ids. */
+-UNIV_INLINE
+-int
+-fts_ranking_doc_id_cmp(
+-/*===================*/
+-						/*!< out:
+-						< 0 if n1 < n2,
+-						0 if n1 == n2,
+-						> 0 if n1 > n2 */
+-	const void*	p1,			/*!< in: id1 */
+-	const void*	p2);			/*!< in: id2 */
+-
+-/******************************************************************//**
+-Compare two fts_update_t instances doc_ids. */
+-UNIV_INLINE
+-int
+-fts_update_doc_id_cmp(
+-/*==================*/
+-						/*!< out:
+-						< 0 if n1 < n2,
+-						0 if n1 == n2,
+-						> 0 if n1 > n2 */
+-	const void*	p1,			/*!< in: id1 */
+-	const void*	p2);			/*!< in: id2 */
+-
+ /******************************************************************//**
+ Decode and return the integer that was encoded using our VLC scheme.*/
+ UNIV_INLINE
+--- mysql-5.7.44.orig/storage/innobase/include/fts0types.ic
++++ mysql-5.7.44/storage/innobase/include/fts0types.ic
+@@ -57,51 +57,35 @@ fts_string_dup(
+ }
+ 
+ /******************************************************************//**
+-Compare two fts_trx_row_t doc_ids.
+-@return < 0 if n1 < n2, 0 if n1 == n2, > 0 if n1 > n2 */
++Compare two doc_ids.
++ @param[in] id1  1st doc_id to compare
++ @param[in] id2  2nd doc_id to compare
++ @return < 0 if id1 < id2, 0 if id1 == id2, > 0 if id1 > id2 */
+ UNIV_INLINE
+ int
+-fts_trx_row_doc_id_cmp(
+-/*===================*/
+-	const void*	p1,			/*!< in: id1 */
+-	const void*	p2)			/*!< in: id2 */
++fts_doc_id_cmp(doc_id_t id1, doc_id_t id2)
+ {
+-	const fts_trx_row_t*	tr1 = (const fts_trx_row_t*) p1;
+-	const fts_trx_row_t*	tr2 = (const fts_trx_row_t*) p2;
+-
+-	return((int)(tr1->doc_id - tr2->doc_id));
++  if (id1 < id2) {
++    return -1;
++  } else if (id1 > id2) {
++    return 1;
++  } else {
++    return 0;
++  }
+ }
+ 
+ /******************************************************************//**
+-Compare two fts_ranking_t doc_ids.
+-@return < 0 if n1 < n2, 0 if n1 == n2, > 0 if n1 > n2 */
+-UNIV_INLINE
+-int
+-fts_ranking_doc_id_cmp(
+-/*===================*/
+-	const void*	p1,			/*!< in: id1 */
+-	const void*	p2)			/*!< in: id2 */
+-{
+-	const fts_ranking_t*	rk1 = (const fts_ranking_t*) p1;
+-	const fts_ranking_t*	rk2 = (const fts_ranking_t*) p2;
+-
+-	return((int)(rk1->doc_id - rk2->doc_id));
+-}
+-
+-/******************************************************************//**
+-Compare two fts_update_t doc_ids.
+-@return < 0 if n1 < n2, 0 if n1 == n2, > 0 if n1 > n2 */
+-UNIV_INLINE
+-int
+-fts_update_doc_id_cmp(
+-/*==================*/
+-	const void*	p1,			/*!< in: id1 */
+-	const void*	p2)			/*!< in: id2 */
++Compare doc_ids of 2 objects.
++ @param[in] p1 Pointer to first instance o1 of T
++ @param[in] p2 Pointer to second instance o2 of T
++ @return sign(o1->doc_id - o2->doc_id) */
++template <typename T>
++int fts_doc_id_field_cmp(const void *p1, const void *p2)
+ {
+-	const fts_update_t*	up1 = (const fts_update_t*) p1;
+-	const fts_update_t*	up2 = (const fts_update_t*) p2;
++  const T *o1 = static_cast<const T *>(p1);
++  const T *o2 = static_cast<const T *>(p2);
+ 
+-	return((int)(up1->doc_id - up2->doc_id));
++  return fts_doc_id_cmp(o1->doc_id, o2->doc_id);
+ }
+ 
+ /******************************************************************//**
+--- mysql-5.7.44.orig/unittest/gunit/innodb/CMakeLists.txt
++++ mysql-5.7.44/unittest/gunit/innodb/CMakeLists.txt
+@@ -38,6 +38,7 @@ SET(TESTS
+   ut0crc32
+   ut0mem
+   ut0new
++  ut0rbt
+ )
+ 
+ IF (MERGE_UNITTESTS)
+new file mode 100644
+--- /dev/null
++++ mysql-5.7.44/unittest/gunit/innodb/ut0rbt-t.cc
+@@ -0,0 +1,75 @@
++/* Copyright (c) 2024, Oracle and/or its affiliates.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License, version 2.0,
++   as published by the Free Software Foundation.
++
++   This program is designed to work with certain software (including
++   but not limited to OpenSSL) that is licensed under separate terms,
++   as designated in a particular file or component or in included license
++   documentation.  The authors of MySQL hereby grant you an additional
++   permission to link the program and your derivative works with the
++   separately licensed software that they have either included with
++   the program or referenced in the documentation.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License, version 2.0, for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
++
++#include <gtest/gtest.h>
++
++#include "fts0fts.h"
++#include "fts0types.h"
++#include "univ.i"
++#include "ut0rbt.h"
++
++namespace innodb_ut0rbt_unittest {
++
++/* Doc id array for testing with values exceeding 32-bit integer limit */
++const doc_id_t doc_ids[] = {
++    17574,      89783,      94755,      97537,      101358,     101361,
++    102587,     103571,     104018,     106821,     108647,     109352,
++    109379,     110325,     122868,     210682130,  231275441,  234172769,
++    366236849,  526467159,  1675241735, 1675243405, 1947751899, 1949940363,
++    2033691953, 2148227299, 2256289791, 2294223591, 2367501260, 2792700091,
++    2792701220, 2817121627, 2820680352, 2821165664, 3253312130, 3404918378,
++    3532599429, 3538712078, 3539373037, 3546479309, 3566641838, 3580209634,
++    3580871267, 3693930556, 3693932734, 3693932983, 3781949558, 3839877411,
++    3930968983, 4146309172, 4524715523, 4524715525, 4534911119, 4597818456};
++
++const doc_id_t search_doc_id = 1675241735;
++
++namespace {
++struct dummy {
++  doc_id_t doc_id;
++};
++}  // namespace
++
++TEST(ut0rbt, fts_doc_id_cmp) {
++  ib_rbt_t *doc_id_rbt = rbt_create(sizeof(dummy), fts_doc_id_field_cmp<dummy>);
++
++  /* Insert doc ids into rbtree. */
++  for (unsigned i = 0; i < sizeof(doc_ids)/sizeof(doc_ids[0]); i++)
++  {
++    const doc_id_t& doc_id = doc_ids[i];
++    ib_rbt_bound_t parent;
++    dummy obj;
++    obj.doc_id = doc_id;
++
++    if (rbt_search(doc_id_rbt, &parent, &obj.doc_id) != 0) {
++      rbt_add_node(doc_id_rbt, &parent, &obj);
++    }
++  }
++
++  /* Check if doc id exists in rbtree */
++  ib_rbt_bound_t parent;
++  EXPECT_EQ(rbt_search(doc_id_rbt, &parent, &search_doc_id), 0);
++
++  rbt_free(doc_id_rbt);
++}
++}  // namespace innodb_ut0rbt_unittest

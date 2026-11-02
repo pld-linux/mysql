@@ -1,0 +1,37 @@
+Spatial index issues (Bug#35894664, Bug#36361834, Bug#36366621)
+https://github.com/percona/percona-server/commit/e77ff2bf93
+
+--- mysql-5.7.44.orig/sql/sql_optimizer.cc
++++ mysql-5.7.44/sql/sql_optimizer.cc
+@@ -1620,12 +1620,15 @@ uint find_shortest_key(TABLE *table, const key_map *usable_keys)
+       if (usable_keys->is_set(nr))
+       {
+         /*
+-          Can not do full index scan on rtree index because it is not
+-          supported by Innodb, probably not supported by others either.
++          Cannot do full index scan on rtree index. It is not supported by
++          Innodb as it's rtree index does not store data, but only the
++          minimum bouding box (maybe makes sense only for geometries of
++          type POINT). Index scans on rtrees are probabaly not supported
++          by other storage engines either.
+          */
+         const KEY &key_ref= table->key_info[nr];
+-        if (key_ref.key_length < min_length &&
+-            !(key_ref.flags & HA_SPATIAL))
++        assert(!(key_ref.flags & HA_SPATIAL));
++        if (key_ref.key_length < min_length)
+         {
+           min_length=key_ref.key_length;
+           best=nr;
+--- mysql-5.7.44.orig/sql/table.cc
++++ mysql-5.7.44/sql/table.cc
+@@ -935,7 +935,8 @@ static void setup_key_part_field(TABLE_SHARE *share, handler *handler_file,
+   if (field->key_length() == key_part->length &&
+       !(field->flags & BLOB_FLAG))
+   {
+-    if (handler_file->index_flags(key_n, key_part_n, 0) & HA_KEYREAD_ONLY)
++    if ((handler_file->index_flags(key_n, key_part_n, 0) & HA_KEYREAD_ONLY) &&
++        !(keyinfo->flags & HA_SPATIAL))
+     {
+       share->keys_for_keyread.set_bit(key_n);
+       field->part_of_key.set_bit(key_n);

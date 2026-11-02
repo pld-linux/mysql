@@ -1,0 +1,80 @@
+=?UTF-8?q?PS-9174=20InnoDB=EF=BC=9Atrx=20hangs=20due=20to?=
+=?UTF-8?q?=20wrong=20trx->in=5Finnodb=20value?= (Bug#35277407)
+https://github.com/percona/percona-server/commit/5a77b57fa4
+https://github.com/mysql/mysql-server/commit/88b0ebafdf6
+
+--- mysql-5.7.44.orig/storage/innobase/handler/ha_innodb.cc
++++ mysql-5.7.44/storage/innobase/handler/ha_innodb.cc
+@@ -17285,9 +17285,10 @@ innobase_commit_by_xid(
+ 	trx_t*	trx = trx_get_trx_by_xid(xid);
+ 
+ 	if (trx != NULL) {
+-		TrxInInnoDB	trx_in_innodb(trx);
+-
+-		innobase_commit_low(trx);
++		{
++			TrxInInnoDB	trx_in_innodb(trx);
++			innobase_commit_low(trx);
++		}
+                 ut_ad(trx->mysql_thd == NULL);
+ 		/* use cases are: disconnected xa, slave xa, recovery */
+ 		trx_deregister_from_2pc(trx);
+@@ -17317,9 +17318,11 @@ innobase_rollback_by_xid(
+ 	trx_t*	trx = trx_get_trx_by_xid(xid);
+ 
+ 	if (trx != NULL) {
+-		TrxInInnoDB	trx_in_innodb(trx);
+-
+-		int	ret = innobase_rollback_trx(trx);
++		int ret;
++		{
++			TrxInInnoDB trx_in_innodb(trx);
++			ret = innobase_rollback_trx(trx);
++		}
+ 
+ 		trx_deregister_from_2pc(trx);
+ 		ut_ad(!trx->will_lock);
+--- mysql-5.7.44.orig/storage/innobase/include/trx0types.h
++++ mysql-5.7.44/storage/innobase/include/trx0types.h
+@@ -72,7 +72,7 @@ static const ib_uint32_t TRX_FORCE_ROLLBACK_ASYNC = 1 << 30;
+ /** Mark the transaction for forced rollback */
+ static const ib_uint32_t TRX_FORCE_ROLLBACK = 1 << 31;
+ 
+-/** For masking out the above four flags */
++/** For masking out the above flags */
+ static const ib_uint32_t TRX_FORCE_ROLLBACK_MASK = 0x1FFFFFFF;
+ 
+ /** Transaction execution states when trx->state == TRX_STATE_ACTIVE */
+--- mysql-5.7.44.orig/storage/innobase/trx/trx0trx.cc
++++ mysql-5.7.44/storage/innobase/trx/trx0trx.cc
+@@ -250,6 +250,9 @@ struct TrxFactory {
+ 
+ 		trx->dict_operation_lock_mode = 0;
+ 
++		ut_a(trx->in_innodb == 0);
++		ut_a(trx->in_depth == 0);
++
+ 		trx->xid = UT_NEW_NOKEY(xid_t());
+ 
+ 		trx->detailed_error = reinterpret_cast<char*>(
+@@ -511,10 +514,12 @@ trx_free(trx_t*& trx)
+ 
+ 	ut_ad(trx->read_view == NULL);
+ 	ut_ad(trx->is_dd_trx == false);
++	ut_ad(trx->in_depth == 0);
+ 
+ 	/* trx locking state should have been reset before returning trx
+ 	to pool */
+ 	ut_ad(trx->will_lock == 0);
++	trx->in_innodb &= TRX_FORCE_ROLLBACK_MASK;
+ 
+ 	trx_pools->mem_free(trx);
+ 
+@@ -647,6 +652,7 @@ trx_free_prepared(
+ 	was not called. */
+ 	trx->lock.table_locks.clear();
+ 
++	trx_validate_state_before_free(trx);
+ 	trx_free(trx);
+ }
+ 

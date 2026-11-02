@@ -1,0 +1,499 @@
+Unauthenticated XCom client_msg injection executes arbitrary replicated
+SQL on Group Replication members (Bug#39234600)
+https://github.com/percona/percona-server/commit/1723ba2f2b
+https://github.com/mysql/mysql-server/commit/0caeb6f8d15
+
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_interface.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_interface.cc
+@@ -93,6 +93,7 @@ void      cb_xcom_expel(int status);
+ synode_no cb_xcom_get_app_snap(blob *gcs_snap);
+ void      cb_xcom_handle_app_snap(blob *gcs_snap);
+ int       cb_xcom_socket_accept(int fd, site_def const *xcom_config);
++int       cb_xcom_local_connection(int fd);
+ 
+ 
+ // XCom logging callback
+@@ -815,6 +816,7 @@ initialize_xcom(const Gcs_interface_parameters &interface_params)
+   ::set_xcom_exit_cb(cb_xcom_exit);
+   ::set_xcom_expel_cb(cb_xcom_expel);
+   ::set_xcom_socket_accept_cb(cb_xcom_socket_accept);
++  ::set_xcom_local_connection_cb(cb_xcom_local_connection);
+ 
+   const std::string *wait_time_str=
+     interface_params.get_parameter("wait_time");
+@@ -1538,3 +1540,14 @@ int cb_xcom_socket_accept(int fd, site_def const *xcom_config)
+ 
+   return wl.shall_block(fd, xcom_config) ? 0 : 1;
+ }
++
++/*
++  Decide whether an accepted XCom connection is one of this process's own local
++  handler connections. Invoked from the XCom thread to exempt locally submitted
++  cargo from the external XCom client gate. Answers false whenever the proxy is
++  not available, so an unrecognized connection is never treated as local.
++*/
++int cb_xcom_local_connection(int fd)
++{
++  return (xcom_proxy != NULL && xcom_proxy->xcom_is_local_connection(fd)) ? 1 : 0;
++}
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_utils.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_utils.cc
+@@ -38,6 +38,15 @@
+ #include <set>
+ #include <limits>
+ #include <assert.h>
++#include <string.h>
++
++#ifdef _WIN32
++#include <winsock2.h>
++#include <ws2tcpip.h>
++#else
++#include <sys/socket.h>
++#include <netinet/in.h>
++#endif
+ 
+ /**
+   6 is the recommended value. Too large numbers
+@@ -367,6 +376,38 @@ void Gcs_xcom_proxy_impl::xcom_set_ssl_parameters(
+ }
+ 
+ 
++/*
++  Whether two socket endpoints refer to the same address family, address and
++  port. Only these fields are compared: getsockname and getpeername return the
++  kernel canonical form, and the padding in sockaddr_storage (sin_zero,
++  flowinfo, scope_id) is not part of the endpoint identity.
++*/
++static bool same_inet_endpoint(const struct sockaddr_storage *a,
++                               const struct sockaddr_storage *b)
++{
++  if (a->ss_family != b->ss_family) return false;
++
++  if (a->ss_family == AF_INET)
++  {
++    const struct sockaddr_in *sa= reinterpret_cast<const struct sockaddr_in *>(a);
++    const struct sockaddr_in *sb= reinterpret_cast<const struct sockaddr_in *>(b);
++    return sa->sin_port == sb->sin_port &&
++           sa->sin_addr.s_addr == sb->sin_addr.s_addr;
++  }
++
++  if (a->ss_family == AF_INET6)
++  {
++    const struct sockaddr_in6 *sa=
++        reinterpret_cast<const struct sockaddr_in6 *>(a);
++    const struct sockaddr_in6 *sb=
++        reinterpret_cast<const struct sockaddr_in6 *>(b);
++    return sa->sin6_port == sb->sin6_port &&
++           memcmp(&sa->sin6_addr, &sb->sin6_addr, sizeof(sa->sin6_addr)) == 0;
++  }
++
++  return false;
++}
++
+ bool Gcs_xcom_proxy_impl::xcom_open_handlers(std::string saddr, xcom_port port)
+ {
+   bool success= true;
+@@ -407,6 +448,19 @@ bool Gcs_xcom_proxy_impl::xcom_open_handlers(std::string saddr, xcom_port port)
+         if ((xcom_client_enable_arbitrator(con) <= 0) ||
+             (xcom_client_disable_arbitrator(con) <= 0))
+           success= false;
++
++        /*
++          Snapshot this handler's local endpoint. It is the peer endpoint XCom
++          sees for this connection, so it is what xcom_is_local_connection
++          matches an accepted connection against to recognize it as this
++          process's own.
++        */
++        socklen_t len= static_cast<socklen_t>(sizeof(m_local_endpoints[i]));
++        memset(&m_local_endpoints[i], 0, sizeof(m_local_endpoints[i]));
++        if (getsockname(con->fd,
++                        reinterpret_cast<struct sockaddr *>(&m_local_endpoints[i]),
++                        &len) != 0)
++          success= false;
+       }
+ 
+       m_xcom_handlers[i]->set_fd(con);
+@@ -422,10 +476,20 @@ bool Gcs_xcom_proxy_impl::xcom_open_handlers(std::string saddr, xcom_port port)
+           m_xcom_handlers[i]->set_fd(NULL);
+         }
+       }
++      m_local_endpoint_count= 0;
+       m_xcom_handlers_cursor= -1;
+     }
+     else
++    {
++      /*
++        Publish the snapshot last, after every endpoint is filled, so the
++        lock-free reader on the XCom thread sees either a complete snapshot or
++        an empty one. The write is released to that reader when the cursor lock
++        is unlocked below.
++      */
++      m_local_endpoint_count= m_xcom_handlers_size;
+       m_xcom_handlers_cursor= 0;
++    }
+   }
+   else
+   {
+@@ -442,6 +506,8 @@ bool Gcs_xcom_proxy_impl::xcom_close_handlers()
+   m_lock_xcom_cursor.lock();
+   // Prevent that any other thread gets a new handler.
+   m_xcom_handlers_cursor= -1;
++  // Retract the local endpoint snapshot before the fds are closed.
++  m_local_endpoint_count= 0;
+   m_lock_xcom_cursor.unlock();
+ 
+   /* Close the file descriptors */
+@@ -487,12 +553,39 @@ int Gcs_xcom_proxy_impl::xcom_acquire_handler()
+   return res;
+ }
+ 
++
++bool Gcs_xcom_proxy_impl::xcom_is_local_connection(int fd)
++{
++  struct sockaddr_storage peer;
++  socklen_t peer_len= static_cast<socklen_t>(sizeof(peer));
++
++  memset(&peer, 0, sizeof(peer));
++  if (getpeername(fd, reinterpret_cast<struct sockaddr *>(&peer), &peer_len) != 0)
++    return false;
++
++  /*
++    Read the published snapshot without a lock. The entries do not change
++    between open and close, and the count is published after every entry is
++    filled, so a non-zero count means the whole snapshot is valid.
++  */
++  int count= m_local_endpoint_count;
++  for (int i= 0; i < count; i++)
++  {
++    if (same_inet_endpoint(&peer, &m_local_endpoints[i]))
++      return true;
++  }
++
++  return false;
++}
++
+ /* purecov: begin deadcode */
+ Gcs_xcom_proxy_impl::Gcs_xcom_proxy_impl()
+   :m_xcom_handlers_cursor(-1), m_lock_xcom_cursor(),
+    m_xcom_handlers_size(XCOM_MAX_HANDLERS),
+    m_wait_time(WAITING_TIME),
+-   m_xcom_handlers(NULL), m_lock_xcom_ready(),
++   m_xcom_handlers(NULL),
++   m_local_endpoints(NULL), m_local_endpoint_count(0),
++   m_lock_xcom_ready(),
+    m_cond_xcom_ready(), m_is_xcom_ready(false),
+    m_lock_xcom_comms_status(), m_cond_xcom_comms_status(),
+    m_xcom_comms_status(XCOM_COMM_STATUS_UNDEFINED),
+@@ -515,6 +608,8 @@ Gcs_xcom_proxy_impl::Gcs_xcom_proxy_impl()
+   for (int i= 0; i < m_xcom_handlers_size; i++)
+     m_xcom_handlers[i]= new Xcom_handler();
+ 
++  m_local_endpoints= new struct sockaddr_storage[m_xcom_handlers_size];
++
+   m_lock_xcom_cursor.init(NULL);
+   m_lock_xcom_ready.init(NULL);
+   m_cond_xcom_ready.init();
+@@ -531,7 +626,9 @@ Gcs_xcom_proxy_impl::Gcs_xcom_proxy_impl(int wt)
+   :m_xcom_handlers_cursor(-1), m_lock_xcom_cursor(),
+    m_xcom_handlers_size(XCOM_MAX_HANDLERS),
+    m_wait_time(wt),
+-   m_xcom_handlers(NULL), m_lock_xcom_ready(),
++   m_xcom_handlers(NULL),
++   m_local_endpoints(NULL), m_local_endpoint_count(0),
++   m_lock_xcom_ready(),
+    m_cond_xcom_ready(), m_is_xcom_ready(false),
+    m_lock_xcom_comms_status(), m_cond_xcom_comms_status(),
+    m_xcom_comms_status(XCOM_COMM_STATUS_UNDEFINED),
+@@ -554,6 +651,8 @@ Gcs_xcom_proxy_impl::Gcs_xcom_proxy_impl(int wt)
+   for (int i= 0; i < m_xcom_handlers_size; i++)
+     m_xcom_handlers[i]= new Xcom_handler();
+ 
++  m_local_endpoints= new struct sockaddr_storage[m_xcom_handlers_size];
++
+   m_lock_xcom_cursor.init(NULL);
+   m_lock_xcom_ready.init(NULL);
+   m_cond_xcom_ready.init();
+@@ -572,6 +671,7 @@ Gcs_xcom_proxy_impl::~Gcs_xcom_proxy_impl()
+     delete m_xcom_handlers[i];
+ 
+   delete [] m_xcom_handlers;
++  delete [] m_local_endpoints;
+   m_lock_xcom_cursor.destroy();
+   m_lock_xcom_ready.destroy();
+   m_cond_xcom_ready.destroy();
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_utils.h
++++ mysql-5.7.44/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_utils.h
+@@ -457,6 +457,23 @@ public:
+   virtual void xcom_release_handler(int index)= 0;
+ 
+ 
++  /**
++    Decides whether an accepted XCom connection originates from this very
++    process, i.e. it is the peer end of one of the local handler connections
++    opened by @c xcom_open_handlers.
++
++    Invoked from the XCom thread to exempt locally submitted cargo from the
++    external XCom client gate. It reads a snapshot of the handler local
++    endpoints published at open time, so it takes no lock.
++
++    @param fd the accepted (server side) socket, as passed by XCom
++    @return true if the peer is one of this process's local handler
++            connections, false otherwise
++  */
++
++  virtual bool xcom_is_local_connection(int fd)= 0;
++
++
+   /**
+     This member waits for XCom to be initialized.
+   */
+@@ -649,6 +666,7 @@ public:
+   bool xcom_close_handlers();
+   int xcom_acquire_handler();
+   void xcom_release_handler(int index);
++  bool xcom_is_local_connection(int fd);
+   enum_gcs_error xcom_wait_ready();
+   bool xcom_is_ready();
+   void xcom_set_ready(bool value);
+@@ -690,6 +708,21 @@ private:
+   /* A list of local XCom connections. */
+   Xcom_handler **m_xcom_handlers;
+ 
++  /*
++    Snapshot of the local endpoint (getsockname) of each handler connection this
++    process opened to its own XCom. Written once by xcom_open_handlers and read
++    without a lock from the XCom thread by xcom_is_local_connection: the entries
++    never change between open and close, so no synchronization is needed. Sized
++    to m_xcom_handlers_size and allocated alongside m_xcom_handlers.
++
++    m_local_endpoint_count is the number of valid entries. It is published last,
++    after all endpoints are filled, and reset to 0 on close, so the reader
++    either sees a fully built snapshot or an empty one. Only the address family,
++    address and port of each entry are compared, so no length is kept.
++  */
++  struct sockaddr_storage *m_local_endpoints;
++  int                      m_local_endpoint_count;
++
+   // For synchronization between XCom and MySQL GCS infrastructure at startup.
+   My_xp_mutex_impl m_lock_xcom_ready;
+   My_xp_cond_impl  m_cond_xcom_ready;
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/xcom/xcom_base.c
++++ mysql-5.7.44/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/xcom/xcom_base.c
+@@ -3942,6 +3942,140 @@ learnop:
+ 
+ /* }}} */
+ 
++/**
++ * Check if any data chunk in the application data list has the given cargo
++ * type.
++ *
++ * @param data the application data list
++ * @param cargo the cargo type to look for within the application data body
++ *
++ * @return TRUE if at least one data chunk has the given cargo type, FALSE
++ *         otherwise.
++ */
++static bool_t has_app_data_with_cargo_type(app_data_ptr data,
++                                           cargo_type cargo)
++{
++	while (data != NULL) {
++		if (data->body.c_t == cargo) return TRUE;
++		data = data->next;
++	}
++	return FALSE;
++}
++
++/**
++ * Check whether a cargo type is allowed on an external XCom client connection.
++ *
++ * This path must continue to support XCom client/control requests, including
++ * membership configuration requests used by the XCOM communication stack. Cargo
++ * that belongs to application delivery, transaction/view handling, reset, or
++ * termination is rejected before it reaches dispatch_op(), which is where this
++ * line handles a client_msg.
++ *
++ * The cargo_type enum differs from the one the upstream fix classifies, so the
++ * arms below are not a copy of it:
++ *
++ *   - absent here, and therefore not listed: get/set_event_horizon_type,
++ *     get_synode_app_data_type, set/get_leaders_type, set_max_leaders and
++ *     convert_into_local_server_type.
++ *   - present only here, and rejected: xcom_recover, query_type and
++ *     query_next_log. Upstream classifies none of them. None is something a
++ *     legitimate external client sends: the xcom_recover handler in
++ *     execute_msg() has an empty body wrapped in "purecov: deadcode", and
++ *     query_type and query_next_log appear only in app_data.c serialisation,
++ *     with nothing dispatching them.
++ *
++ * @param cargo the cargo type to check
++ *
++ * @return TRUE if the cargo type is allowed, FALSE otherwise.
++ */
++static bool_t is_allowed_external_client_cargo_type(cargo_type cargo)
++{
++	switch (cargo) {
++	case add_node_type:
++	case disable_arbitrator:
++	case enable_arbitrator:
++	case force_config_type:
++	case remove_node_type:
++	case set_cache_limit:
++	case unified_boot_type:
++		return TRUE;
++	case abort_trans:
++	case app_type:
++	case begin_trans:
++	case exit_type:
++	case prepared_trans:
++	case query_next_log:
++	case query_type:
++	case remove_reset_type:
++	case reset_type:
++	case view_msg:
++	case x_terminate_and_exit:
++	case xcom_boot_type:
++	case xcom_recover:
++	case xcom_set_group:
++		return FALSE;
++	}
++	return FALSE;
++}
++
++/**
++ * Check if the application data list contains cargo not allowed on an external
++ * XCom client connection.
++ *
++ * @param data the application data list
++ *
++ * @return TRUE if at least one data chunk is not allowed, FALSE otherwise.
++ */
++static bool_t has_disallowed_external_client_cargo_type(app_data_ptr data)
++{
++	if (has_app_data_with_cargo_type(data, app_type)) return TRUE;
++
++	while (data != NULL) {
++		if (!is_allowed_external_client_cargo_type(data->body.c_t))
++			return TRUE;
++		data = data->next;
++	}
++	return FALSE;
++}
++
++/*
++  Callback used to decide whether an accepted connection originates from this
++  very process, i.e. from one of Group Replication's own local XCom handler
++  connections.
++
++  This has no upstream counterpart. Upstream moves the local connection to a
++  local_server task via convert_into_local_server_type, after which local
++  payload arrives through an in-process queue and never travels this path. On
++  this line the local payload stays on the socket, so the connection has to be
++  recognized here. Group Replication (in the GCS binding) registers a callback
++  that matches the accepted socket's peer endpoint against the local endpoints
++  of the handler connections it opened to this node's own XCom, which pins the
++  peer to this process rather than merely to this host. NULL when no callback is
++  registered, in which case no connection is treated as local.
++*/
++static xcom_local_connection_cb xcom_local_connection_callback = NULL;
++
++int set_xcom_local_connection_cb(xcom_local_connection_cb x)
++{
++	xcom_local_connection_callback = x;
++	return 1;
++}
++
++/**
++ * Check whether an accepted connection originates from this process.
++ *
++ * @param fd the accepted (server side) socket
++ *
++ * @return TRUE if the peer is one of this process's local XCom handler
++ *         connections, FALSE otherwise, including when no callback is
++ *         registered.
++ */
++static bool_t is_local_connection(int fd)
++{
++	return (bool_t)(xcom_local_connection_callback != NULL &&
++	                xcom_local_connection_callback(fd));
++}
++
+ /* {{{ Acceptor-learner task */
+ int	acceptor_learner_task(task_arg arg)
+ {
+@@ -3955,6 +4089,14 @@ int	acceptor_learner_task(task_arg arg)
+ 	linkage reply_queue;
+ 	int	errors;
+ 	server *srv;
++	/*
++	  Whether this connection originates from this very process, i.e. from one
++	  of Group Replication's own local XCom handler connections. Tri-state: -1
++	  not yet determined, 0 no, 1 yes. Resolved lazily and at most once per
++	  connection, so the common case, a peer sending paxos operations, never
++	  pays for it.
++	*/
++	int	is_local;
+ 	END_ENV;
+ 
+ 	TASK_BEGIN
+@@ -3970,6 +4112,7 @@ int	acceptor_learner_task(task_arg arg)
+ 	ep->buf = NULL;
+ 	ep->errors = 0;
+ 	ep->srv = 0;
++	ep->is_local = -1;
+ 
+ 	/* We have a connection, make socket non-blocking and wait for request */
+ 	unblock_fd(ep->rfd.fd);
+@@ -4076,6 +4219,34 @@ int	acceptor_learner_task(task_arg arg)
+ 				add_event(int_arg(ep->p->from));
+ 				add_event(string_arg(pax_op_to_str(ep->p->op)));
+ 			);
++			/*
++			  XCom client messages may carry external XCom client/control
++			  requests. Only cargo types that are part of the external XCom
++			  client/control protocol may continue through this task.
++			  Application, transaction, view, or otherwise unsupported cargo
++			  must not enter through this external connection path.
++
++			  Unlike upstream, this task also serves this node's own
++			  connections to its own XCom, which legitimately carry app_type -
++			  that is how Group Replication submits work here. Upstream never
++			  sees those, because convert_into_local_server_type has already
++			  moved them to a local_server task. This line has no such
++			  mechanism, so they are told apart by the connection originating
++			  from this process.
++			*/
++			if (ep->p->op == client_msg &&
++			    has_disallowed_external_client_cargo_type(ep->p->a)) {
++				if (ep->is_local < 0)
++					ep->is_local = is_local_connection(ep->rfd.fd) ? 1 : 0;
++
++				if (!ep->is_local) {
++					G_WARNING("Rejecting unsupported data received through an "
++					          "external XCom client connection.");
++					delete_pax_msg(ep->p);
++					ep->p = NULL;
++					TERMINATE;
++				}
++			}
+ 			if (ep->p->msg_type == normal ||
+ 			    ep->p->synode.msgno == 0 || /* Used by i-am-alive and so on */
+ 				is_cached(ep->p->synode) || /* Already in cache */
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/xcom/xcom_base.h
++++ mysql-5.7.44/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/xcom/xcom_base.h
+@@ -205,6 +205,16 @@ app_data_ptr init_config_with_group(app_data *a, node_list *nl, cargo_type type,
+ typedef int (*xcom_socket_accept_cb)(int fd, site_def const *xcom_config);
+ int set_xcom_socket_accept_cb(xcom_socket_accept_cb x);
+ 
++/*
++ Registers a callback that decides whether an accepted connection originates
++ from this very process, i.e. from one of Group Replication's own local XCom
++ handler connections. Used to exempt locally submitted cargo from the external
++ XCom client gate in acceptor_learner_task(). The callback receives the accepted
++ (server side) socket and returns non-zero if the peer is local to this process.
++ */
++typedef int (*xcom_local_connection_cb)(int fd);
++int set_xcom_local_connection_cb(xcom_local_connection_cb x);
++
+ connection_descriptor *xcom_open_client_connection(char *server,
+                                                    xcom_port port);
+ int xcom_close_client_connection(connection_descriptor* connection);

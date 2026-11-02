@@ -1,0 +1,84 @@
+FTS cleanup on DROP INDEX issue when adding a FULLTEXT index in same
+transaction (Bug#36559642)
+https://github.com/percona/percona-server/commit/03f112e255
+
+--- mysql-5.7.44.orig/storage/innobase/fts/fts0fts.cc
++++ mysql-5.7.44/storage/innobase/fts/fts0fts.cc
+@@ -811,17 +811,21 @@ fts_drop_index(
+ /*===========*/
+ 	dict_table_t*	table,	/*!< in: Table where indexes are dropped */
+ 	dict_index_t*	index,	/*!< in: Index to be dropped */
+-	trx_t*		trx)	/*!< in: Transaction for the drop */
++	trx_t*		trx,	/*!< in: Transaction for the drop */
++	bool		adding_another) /*! in: Another FTS index is to be
++                                            added as part of the same
++                                            transaction */
+ {
+ 	ib_vector_t*	indexes = table->fts->indexes;
+ 	dberr_t		err = DB_SUCCESS;
+ 
+ 	ut_a(indexes);
+ 
+-	if ((ib_vector_size(indexes) == 1
++	const bool last_index = (ib_vector_size(indexes) == 1
+ 	    && (index == static_cast<dict_index_t*>(
+ 			ib_vector_getp(table->fts->indexes, 0))))
+-	   || ib_vector_is_empty(indexes)) {
++	   || ib_vector_is_empty(indexes);
++	if (last_index && !adding_another) {
+ 		doc_id_t	current_doc_id;
+ 		doc_id_t	first_doc_id;
+ 
+--- mysql-5.7.44.orig/storage/innobase/handler/handler0alter.cc
++++ mysql-5.7.44/storage/innobase/handler/handler0alter.cc
+@@ -8018,12 +8018,17 @@ commit_cache_norebuild(
+ 		}
+ 	}
+ 
++	bool adding_fts_index = false;
++
+ 	for (ulint i = 0; i < ctx->num_to_add_index; i++) {
+ 		dict_index_t*	index = ctx->add_index[i];
+ 		assert(dict_index_get_online_status(index)
+ 		       == ONLINE_INDEX_COMPLETE);
+ 		assert(!index->is_committed());
+ 		index->set_committed(true);
++		if (index->type & DICT_FTS) {
++			adding_fts_index = true;
++		}
+ 	}
+ 
+ 	if (ctx->num_to_drop_index) {
+@@ -8070,7 +8075,7 @@ commit_cache_norebuild(
+ 				       || (index->type
+ 					   & DICT_CORRUPT));
+ 				assert(index->table->fts);
+-				fts_drop_index(index->table, index, trx);
++				fts_drop_index(index->table, index, trx, adding_fts_index);
+ 			}
+ 
+ 			dict_index_remove_from_cache(index->table, index);
+@@ -8857,9 +8862,6 @@ foreign_fail:
+ 
+ 			if (index->type & DICT_FTS) {
+ 				assert(index->type == DICT_FTS);
+-				/* We reset DICT_TF2_FTS here because the bit
+-				is left unset when a drop proceeds the add. */
+-				DICT_TF2_FLAG_SET(ctx->new_table, DICT_TF2_FTS);
+ 				fts_add_index(index, ctx->new_table);
+ 			}
+ 		}
+--- mysql-5.7.44.orig/storage/innobase/include/fts0fts.h
++++ mysql-5.7.44/storage/innobase/include/fts0fts.h
+@@ -1046,7 +1046,10 @@ fts_drop_index(
+ /*===========*/
+ 	dict_table_t*	table,	/*!< in: Table where indexes are dropped */
+ 	dict_index_t*	index,	/*!< in: Index to be dropped */
+-	trx_t*		trx);	/*!< in: Transaction for the drop */
++	trx_t*		trx,	/*!< in: Transaction for the drop */
++	bool		adding_another = false); /*!< in: Another FTS index is
++                                                      to be added as part of
++                                                      the same transaction */
+ 
+ /****************************************************************//**
+ Rename auxiliary tables for all fts index for a table

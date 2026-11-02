@@ -1,0 +1,54 @@
+FK: assertion failure in row_MySQL_pad_col (Bug#33327093)
+https://github.com/percona/percona-server/commit/5d715bdb96
+https://github.com/mysql/mysql-server/commit/0ac176453bf
+
+--- mysql-5.7.44.orig/storage/innobase/include/data0data.h
++++ mysql-5.7.44/storage/innobase/include/data0data.h
+@@ -595,6 +595,10 @@ struct dfield_t{
+ 				created.
+ 	@return	the cloned object. */
+ 	dfield_t* clone(mem_heap_t* heap);
++
++	/** Checks if the field is virtual
++	@return	true if virtual else returns false. */
++	bool is_virtual() const { return (type.is_virtual()); }
+ };
+ 
+ /** Structure for an SQL data tuple of fields (logical record) */
+--- mysql-5.7.44.orig/storage/innobase/include/data0type.h
++++ mysql-5.7.44/storage/innobase/include/data0type.h
+@@ -586,6 +586,8 @@ struct dtype_t{
+ 					mbminlen=DATA_MBMINLEN(mbminmaxlen);
+ 					mbmaxlen=DATA_MBMINLEN(mbminmaxlen) */
+ #endif /* !UNIV_HOTBACKUP */
++
++	bool is_virtual() const { return ((prtype & DATA_VIRTUAL) == DATA_VIRTUAL); }
+ };
+ 
+ #ifndef UNIV_NONINL
+--- mysql-5.7.44.orig/storage/innobase/include/row0upd.h
++++ mysql-5.7.44/storage/innobase/include/row0upd.h
+@@ -459,6 +459,9 @@ struct upd_field_t{
+ #endif /* !UNIV_HOTBACKUP */
+ 	dfield_t	new_val;	/*!< new value for the column */
+ 	dfield_t*	old_v_val;	/*!< old value for the virtual column */
++
++	bool is_virtual() const { return (new_val.is_virtual()); }
++
+ };
+ 
+ 
+--- mysql-5.7.44.orig/storage/innobase/row/row0ins.cc
++++ mysql-5.7.44/storage/innobase/row/row0ins.cc
+@@ -551,6 +551,11 @@ row_ins_cascade_calc_update_vec(
+ 			const upd_field_t*	parent_ufield
+ 				= &parent_update->fields[j];
+ 
++			/* Skip if the updated field is virtual */
++			if (parent_ufield->is_virtual()) {
++				continue;
++			}
++
+ 			if (parent_ufield->field_no == parent_field_no) {
+ 
+ 				ulint			min_size;

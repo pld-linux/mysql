@@ -1,0 +1,25 @@
+There is a memory leak defect on line 3960 of the mysql.cc file
+(Bug#36600203)
+https://github.com/percona/percona-server/commit/d03ad650df
+https://github.com/mysql/mysql-server/commit/de82d8ade0a
+
+--- mysql-5.7.44.orig/client/mysql.cc
++++ mysql-5.7.44/client/mysql.cc
+@@ -3943,8 +3943,6 @@ print_table_data(MYSQL_RES *result)
+   bool		*num_flag;
+   size_t        sz;
+ 
+-  sz= sizeof(bool) * mysql_num_fields(result);
+-  num_flag= (bool *) my_safe_alloca(sz, MAX_ALLOCA_SIZE);
+   if (column_types_flag)
+   {
+     print_field_types(result);
+@@ -3952,6 +3950,8 @@ print_table_data(MYSQL_RES *result)
+       return;
+     mysql_field_seek(result,0);
+   }
++  sz= sizeof(bool) * mysql_num_fields(result);
++  num_flag= (bool *) my_safe_alloca(sz, MAX_ALLOCA_SIZE);
+   separator.copy("+",1,charset_info);
+   while ((field = mysql_fetch_field(result)))
+   {

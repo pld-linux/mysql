@@ -1,0 +1,15 @@
+MySQL server heap-buffer-overflow in strlen (Bug#36593265)
+https://github.com/percona/percona-server/commit/103f8884d7
+https://github.com/mysql/mysql-server/commit/c6997b13cfa
+
+--- mysql-5.7.44.orig/sql/item_strfunc.cc
++++ mysql-5.7.44/sql/item_strfunc.cc
+@@ -435,7 +435,7 @@ class kdf_argument {
+       *error_generated = TRUE;
+       return FALSE;
+     }
+-    kdf_option = kdf_option_value->ptr();
++    kdf_option = string(kdf_option_value->ptr(), kdf_option_value->length());
+     return TRUE;
+   }
+ 

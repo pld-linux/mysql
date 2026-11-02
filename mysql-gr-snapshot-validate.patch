@@ -1,0 +1,104 @@
+MySQL Group Replication snapshot decode validations (Bug#38673285)
+https://github.com/percona/percona-server/commit/28ea38e8cd
+https://github.com/mysql/mysql-server/commit/29f48df9
+
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_control_interface.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_control_interface.cc
+@@ -1450,6 +1450,23 @@ void Gcs_xcom_control::process_control_message(Gcs_message *msg)
+     new Xcom_member_state(msg->get_message_data().get_payload(),
+                           msg->get_message_data().get_payload_length());
+ 
++  /*
++    If decoding failed (e.g. payload smaller than the encoded header),
++    return without processing the message process_member_state().
++    Treat the bad message as if it had been lost on the wire
++    state-exchange/join timeouts will recover.
++  */
++  if (!ms_info->is_valid())
++  {
++    MYSQL_GCS_LOG_ERROR(
++      "Failed to decode member state exchange message from " <<
++      msg->get_origin().get_member_id().c_str() << ". Discarding message."
++    );
++    delete ms_info;
++    delete msg;
++    return;
++  }
++
+   MYSQL_GCS_LOG_TRACE(
+     "Reading message that carries exchangeable data: (payload)=" <<
+     msg->get_message_data().get_payload_length()
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_state_exchange.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_state_exchange.cc
+@@ -37,7 +37,7 @@ Xcom_member_state::Xcom_member_state(const Gcs_xcom_view_identifier &view_id,
+                                      synode_no configuration_id,
+                                      const uchar *data, uint64_t data_size)
+   :m_view_id(NULL), m_configuration_id(configuration_id),
+-   m_data(NULL), m_data_size(0)
++   m_data(NULL), m_data_size(0), m_valid(true)
+ {
+   m_view_id=
+     new Gcs_xcom_view_identifier(view_id.get_fixed_part(),
+@@ -55,7 +55,7 @@ Xcom_member_state::Xcom_member_state(const Gcs_xcom_view_identifier &view_id,
+ Xcom_member_state::Xcom_member_state(const uchar *data,
+                                      uint64_t data_size)
+   :m_view_id(NULL), m_configuration_id(null_synode), m_data(NULL),
+-   m_data_size(0)
++   m_data_size(0), m_valid(true)
+ {
+   uint64_t fixed_view_id= 0;
+   uint32_t monotonic_view_id= 0;
+@@ -63,8 +63,19 @@ Xcom_member_state::Xcom_member_state(const uchar *data,
+   uint64_t msg_no= 0;
+   uint32_t node_no= 0;
+ 
+-  const uchar *slider= data;
+   uint64_t exchangeable_header_size= get_encode_header_size();
++
++  if (data_size < exchangeable_header_size)
++  {
++    MYSQL_GCS_LOG_ERROR(
++      "Buffer to decode header information from member state exchange too "
++      "small."
++    );
++    m_valid= false;
++    return;
++  }
++
++  const uchar *slider= data;
+   uint64_t exchangeable_data_size= data_size - exchangeable_header_size;
+ 
+   memcpy(&fixed_view_id, slider, WIRE_XCOM_VARIABLE_VIEW_ID_SIZE);
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_state_exchange.h
++++ mysql-5.7.44/rapid/plugin/group_replication/libmysqlgcs/src/bindings/xcom/gcs_xcom_state_exchange.h
+@@ -172,6 +172,17 @@ public:
+   }
+ 
+ 
++  /**
++    @return true if the data provided to the constructor was successfully
++            decoded. Otherwise, false.
++  */
++
++  bool is_valid() const
++  {
++    return m_valid;
++  }
++
++
+ private:
+   /*
+     View identifier installed by the current member if there
+@@ -195,6 +206,12 @@ private:
+   */
+   uint64_t m_data_size;
+ 
++  /*
++    Whether the data provided to the decoding constructor was successfully
++    validated and decoded. If false, the object should not be used.
++  */
++  bool m_valid;
++
+   /*
+     Disabling the copy constructor and assignment operator.
+   */

@@ -1,0 +1,17 @@
+Bulk inserts into temporary tables with GIS indexes will inevitably
+cause crashes (Bug#38208188)
+https://github.com/percona/percona-server/commit/2de5d80b4d
+https://github.com/mysql/mysql-server/commit/d338ba09220
+
+--- mysql-5.7.44.orig/storage/innobase/row/row0ins.cc
++++ mysql-5.7.44/storage/innobase/row/row0ins.cc
+@@ -2988,6 +2988,9 @@ row_ins_sec_index_entry_low(
+ 			rtr_info_update_btr(&cursor, &rtr_info);
+ 			mtr_start(&mtr);
+ 			mtr.set_named_space(index->space);
++			if (dict_table_is_temporary(index->table)) {
++				mtr.set_log_mode(MTR_LOG_NO_REDO);
++			}
+ 			search_mode &= ~BTR_MODIFY_LEAF;
+ 			search_mode |= BTR_MODIFY_TREE;
+ 			btr_cur_search_to_nth_level(

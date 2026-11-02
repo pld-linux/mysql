@@ -1,0 +1,18 @@
+Failure in Protocol_classic::send_field_metadata (Bug#35904044)
+https://github.com/percona/percona-server/commit/d3a00fe2c1
+https://github.com/mysql/mysql-server/commit/271dcf231d0
+
+--- mysql-5.7.44.orig/sql/item_subselect.cc
++++ mysql-5.7.44/sql/item_subselect.cc
+@@ -439,7 +439,10 @@ bool Item_subselect::fix_fields(THD *thd, Item **ref)
+     {
+       int ret= 0;
+       (*ref)= substitution;
+-      substitution->item_name= item_name;
++      if (item_name.is_set())
++      {
++        substitution->item_name = item_name;
++      }
+       if (have_to_be_excluded)
+ 	engine->exclude();
+       substitution= 0;

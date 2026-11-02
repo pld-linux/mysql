@@ -1,0 +1,85 @@
+Unified behaviour when calling plugin->deinit for all plugins
+(Bug#36317795)
+https://github.com/percona/percona-server/commit/5883b88cb0
+https://github.com/mysql/mysql-server/commit/ce036717cb5
+
+--- mysql-5.7.44.orig/plugin/audit_null/audit_null.c
++++ mysql-5.7.44/plugin/audit_null/audit_null.c
+@@ -221,6 +221,7 @@ static int audit_null_plugin_init(void *arg MY_ATTRIBUTE((unused)))
+ 
+ static int audit_null_plugin_deinit(void *arg MY_ATTRIBUTE((unused)))
+ {
++  assert(arg);
+   if (g_plugin_installed == TRUE)
+   {
+     my_free((void *)(g_record_buffer));
+--- mysql-5.7.44.orig/sql/handler.cc
++++ mysql-5.7.44/sql/handler.cc
+@@ -797,7 +797,7 @@ int ha_finalize_handlerton(st_plugin_int *plugin)
+       engine plugins.
+     */
+     DBUG_PRINT("info", ("Deinitializing plugin: '%s'", plugin->name.str));
+-    if (plugin->plugin->deinit(NULL))
++    if (plugin->plugin->deinit(plugin))
+     {
+       DBUG_PRINT("warning", ("Plugin '%s' deinit function returned error.",
+                              plugin->name.str));
+@@ -957,7 +957,7 @@ err_deinit:
+     was successfully called before.
+   */
+   if (plugin->plugin->deinit)
+-    (void) plugin->plugin->deinit(NULL);
++    (void) plugin->plugin->deinit(plugin);
+           
+ err:
+   my_free(hton);
+--- mysql-5.7.44.orig/sql/sql_audit.cc
++++ mysql-5.7.44/sql/sql_audit.cc
+@@ -1346,7 +1346,7 @@ int finalize_audit_plugin(st_plugin_int *plugin)
+ {
+   unsigned long event_class_mask[MYSQL_AUDIT_CLASS_MASK_SIZE];
+ 
+-  if (plugin->plugin->deinit && plugin->plugin->deinit(NULL))
++  if (plugin->plugin->deinit && plugin->plugin->deinit(plugin))
+   {
+     DBUG_PRINT("warning", ("Plugin '%s' deinit function returned error.",
+                             plugin->name.str));
+--- mysql-5.7.44.orig/sql/sql_show.cc
++++ mysql-5.7.44/sql/sql_show.cc
+@@ -9208,7 +9208,7 @@ int finalize_schema_table(st_plugin_int *plugin)
+     if (plugin->plugin->deinit)
+     {
+       DBUG_PRINT("info", ("Deinitializing plugin: '%s'", plugin->name.str));
+-      if (plugin->plugin->deinit(NULL))
++      if (plugin->plugin->deinit(plugin))
+       {
+         DBUG_PRINT("warning", ("Plugin '%s' deinit function returned error.",
+                                plugin->name.str));
+--- mysql-5.7.44.orig/storage/example/ha_example.cc
++++ mysql-5.7.44/storage/example/ha_example.cc
+@@ -132,6 +132,16 @@ static int example_init_func(void *p)
+ }
+ 
+ 
++static int example_deinit_func(void *p)
++{
++  DBUG_ENTER("example_deinit_func");;
++
++  assert(p);
++
++  DBUG_RETURN(0);
++}
++
++
+ /**
+   @brief
+   Example of simple lock controls. The "share" it creates is a
+@@ -1022,7 +1032,7 @@ mysql_declare_plugin(example)
+   "Example storage engine",
+   PLUGIN_LICENSE_GPL,
+   example_init_func,                            /* Plugin Init */
+-  NULL,                                         /* Plugin Deinit */
++  example_deinit_func,                          /* Plugin Deinit */
+   0x0001 /* 0.1 */,
+   func_status,                                  /* status variables */
+   example_system_variables,                     /* system variables */

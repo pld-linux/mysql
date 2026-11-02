@@ -1,0 +1,14 @@
+Avoid out of bounds access due to ulong bitmask (Bug#35507223)
+https://github.com/percona/percona-server/commit/d71d742d09
+https://github.com/mysql/mysql-server/commit/3a27636ac1b
+
+--- mysql-5.7.44.orig/sql/auth/sql_authorization.cc
++++ mysql-5.7.44/sql/auth/sql_authorization.cc
+@@ -2910,6 +2910,7 @@ void get_privilege_desc(char *to, uint max_length, ulong access)
+     max_length--;                               // Reserve place for end-zero
+     for (pos=0 ; access ; pos++, access>>=1)
+     {
++      if (pos >= array_elements(command_lengths)) break;
+       if ((access & 1) &&
+           command_lengths[pos] + (uint) (to-start) < max_length)
+       {

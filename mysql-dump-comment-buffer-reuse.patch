@@ -1,0 +1,21 @@
+mysqldump: fix_identifier_with_newline() kept the heap buffer its callers
+free in static variables; the next call wrote into freed memory, e.g.
+--where longer than 64 characters with two or more tables (PLD fix).
+
+--- mysql-5.7.44.orig/client/mysqldump.c
++++ mysql-5.7.44/client/mysqldump.c
+@@ -2263,10 +2263,11 @@ static char const* fix_identifier_with_newline(char const* object_name, my_bool*
+ {
+   const size_t PREFIX_LENGTH= 3; // strlen ("-- ")
+ 
+-  // static buffer for replacement procedure
++  // static buffer for replacement procedure; a heap buffer belongs to the
++  // caller, which frees it, so only the static storage may outlive the call
+   static char storage[NAME_LEN + 1];
+-  static char* buffer= storage;
+-  static size_t buffer_size= sizeof(storage) - 1;
++  char* buffer= storage;
++  size_t buffer_size= sizeof(storage) - 1;
+   size_t index= 0;
+   size_t required_size= 0;
+ 

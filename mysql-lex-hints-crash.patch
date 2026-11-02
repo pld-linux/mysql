@@ -1,0 +1,20 @@
+A stored procedure often causes "mysqld got exception 0xc0000005" error
+(Bug#36492114)
+https://github.com/percona/percona-server/commit/06c8a6ac79
+https://github.com/mysql/mysql-server/commit/0f8002cf6ae
+
+--- mysql-5.7.44.orig/sql/sql_lex_hints.h
++++ mysql-5.7.44/sql/sql_lex_hints.h
+@@ -259,7 +259,11 @@ protected:
+     case HINT_CHR_IDENT:
+     case HINT_CHR_DIGIT:
+     case HINT_CHR_MB:
+-      return scan_ident() == HINT_ARG_IDENT ? HINT_ARG_QB_NAME : HINT_ERROR;
++      if (scan_ident() == HINT_ARG_IDENT) {
++        yytext = thd->strmake(yytext, yyleng);
++        return HINT_ARG_QB_NAME;
++      } else
++        return HINT_ERROR;
+     case HINT_CHR_BACKQUOTE:
+       return scan_quoted_ident<HINT_CHR_BACKQUOTE>() == HINT_ARG_IDENT ?
+           HINT_ARG_QB_NAME : HINT_ERROR;

@@ -1,0 +1,120 @@
+fix: Fixed problem with percent character in n-grams
+https://github.com/percona/percona-server/commit/4400b0a9c8
+
+--- mysql-5.7.44.orig/storage/innobase/fts/fts0opt.cc
++++ mysql-5.7.44/storage/innobase/fts/fts0opt.cc
+@@ -490,7 +490,8 @@ fts_index_fetch_nodes(
+ 	fts_table_t*	fts_table,	/*!< in: table of the FTS INDEX */
+ 	const fts_string_t*
+ 			word,		/*!< in: the word to fetch */
+-	fts_fetch_t*	fetch)		/*!< in: fetch callback.*/
++	fts_fetch_t*	fetch,		/*!< in: fetch callback.*/
++	bool		exact_match)	/*!< in: exact match.*/
+ {
+ 	pars_info_t*	info;
+ 	dberr_t		error;
+@@ -525,23 +526,26 @@ fts_index_fetch_nodes(
+ 		*graph = fts_parse_sql(
+ 			fts_table,
+ 			info,
+-			"DECLARE FUNCTION my_func;\n"
+-			"DECLARE CURSOR c IS"
+-			" SELECT word, doc_count, first_doc_id, last_doc_id,"
+-			" ilist\n"
+-			" FROM $table_name\n"
+-			" WHERE word LIKE :word\n"
+-			" ORDER BY first_doc_id;\n"
+-			"BEGIN\n"
+-			"\n"
+-			"OPEN c;\n"
+-			"WHILE 1 = 1 LOOP\n"
+-			"  FETCH c INTO my_func();\n"
+-			"  IF c % NOTFOUND THEN\n"
+-			"    EXIT;\n"
+-			"  END IF;\n"
+-			"END LOOP;\n"
+-			"CLOSE c;");
++			mem_heap_printf(
++				info->heap,
++				"DECLARE FUNCTION my_func;\n"
++				"DECLARE CURSOR c IS"
++				" SELECT word, doc_count, first_doc_id,"
++				" last_doc_id, ilist\n"
++				" FROM $table_name\n"
++				" WHERE word %s :word\n"
++				" ORDER BY first_doc_id;\n"
++				"BEGIN\n"
++				"\n"
++				"OPEN c;\n"
++				"WHILE 1 = 1 LOOP\n"
++				"  FETCH c INTO my_func();\n"
++				"  IF c %% NOTFOUND THEN\n"
++				"    EXIT;\n"
++				"  END IF;\n"
++				"END LOOP;\n"
++				"CLOSE c;",
++				(exact_match ? "=" : "LIKE")));
+ 	}
+ 
+ 	for (;;) {
+@@ -1819,7 +1823,7 @@ fts_optimize_words(
+ 		fetch.total_memory = 0;
+ 		error = fts_index_fetch_nodes(
+ 			trx, &graph, &optim->fts_index_table, word,
+-			&fetch);
++			&fetch, true);
+ 		ut_ad(fetch.total_memory < fts_result_cache_limit);
+ 
+ 		if (error == DB_SUCCESS) {
+--- mysql-5.7.44.orig/storage/innobase/fts/fts0que.cc
++++ mysql-5.7.44/storage/innobase/fts/fts0que.cc
+@@ -1193,7 +1193,8 @@ fts_query_difference(
+ 		fetch.read_record = fts_query_index_fetch_nodes;
+ 
+ 		error = fts_index_fetch_nodes(
+-			trx, &graph, &query->fts_index_table, token, &fetch);
++			trx, &graph, &query->fts_index_table, token, &fetch,
++			 false);
+ 
+ 		/* DB_FTS_EXCEED_RESULT_CACHE_LIMIT passed by 'query->error' */
+ 		ut_ad(!(query->error != DB_SUCCESS && error != DB_SUCCESS));
+@@ -1317,7 +1318,8 @@ fts_query_intersect(
+ 		fetch.read_record = fts_query_index_fetch_nodes;
+ 
+ 		error = fts_index_fetch_nodes(
+-			trx, &graph, &query->fts_index_table, token, &fetch);
++			trx, &graph, &query->fts_index_table, token, &fetch,
++			false);
+ 
+ 		/* DB_FTS_EXCEED_RESULT_CACHE_LIMIT passed by 'query->error' */
+ 		ut_ad(!(query->error != DB_SUCCESS && error != DB_SUCCESS));
+@@ -1437,7 +1439,7 @@ fts_query_union(
+ 
+ 	/* Read the nodes from disk. */
+ 	error = fts_index_fetch_nodes(
+-		trx, &graph, &query->fts_index_table, token, &fetch);
++		trx, &graph, &query->fts_index_table, token, &fetch, false);
+ 
+ 	/* DB_FTS_EXCEED_RESULT_CACHE_LIMIT passed by 'query->error' */
+ 	ut_ad(!(query->error != DB_SUCCESS && error != DB_SUCCESS));
+@@ -2810,7 +2812,7 @@ fts_query_phrase_search(
+ 
+ 			error = fts_index_fetch_nodes(
+ 				trx, &graph, &query->fts_index_table,
+-				token, &fetch);
++				token, &fetch, false);
+ 
+ 			/* DB_FTS_EXCEED_RESULT_CACHE_LIMIT passed by 'query->error' */
+ 			ut_ad(!(query->error != DB_SUCCESS && error != DB_SUCCESS));
+--- mysql-5.7.44.orig/storage/innobase/include/fts0priv.h
++++ mysql-5.7.44/storage/innobase/include/fts0priv.h
+@@ -308,7 +308,8 @@ fts_index_fetch_nodes(
+ 	fts_table_t*	fts_table,	/*!< in: FTS aux table */
+ 	const fts_string_t*
+ 			word,		/*!< in: the word to fetch */
+-	fts_fetch_t*	fetch);		/*!< in: fetch callback.*/
++	fts_fetch_t*	fetch,		/*!< in: fetch callback.*/
++	bool		exact_match);	/*!< in: exact match.*/
+ 
+ /******************************************************************//**
+ Create a fts_optimizer_word_t instance.

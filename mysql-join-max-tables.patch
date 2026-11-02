@@ -1,0 +1,30 @@
+MySQL server: CPU-eating Denial_of_Service query (Bug#38573285)
+https://github.com/percona/percona-server/commit/af1a0e0601
+https://github.com/mysql/mysql-server/commit/b56c64b
+
+--- mysql-5.7.44.orig/sql/parse_tree_nodes.h
++++ mysql-5.7.44/sql/parse_tree_nodes.h
+@@ -275,6 +275,11 @@ public:
+     THD *thd= pc->thd;
+     Yacc_state *yyps= &thd->m_parser_state->m_yacc;
+ 
++    if (pc->select->table_count() >= MAX_TABLES) {
++      my_error(ER_TOO_MANY_TABLES, MYF(0), static_cast<int>(MAX_TABLES));
++      return true;
++    }
++
+     value= pc->select->add_table_to_list(thd, table_ident, opt_table_alias, 0,
+                                          yyps->m_lock_type,
+                                          yyps->m_mdl_type,
+--- mysql-5.7.44.orig/sql/sql_lex.h
++++ mysql-5.7.44/sql/sql_lex.h
+@@ -792,6 +792,9 @@ public:
+   /// @return the active query options
+   ulonglong active_options() const { return m_active_options; }
+ 
++  /// @returns number of tables in query block
++  size_t table_count() const { return table_list.elements; }
++
+ private:
+   /**
+     Intrusive double-linked list of all query blocks within the same

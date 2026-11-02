@@ -1,0 +1,529 @@
+X Plugin string quoting with NO_BACKSLASH_ESCAPES (Bug#39268863)
+https://github.com/percona/percona-server/commit/76aab37cb6
+https://github.com/mysql/mysql-server/commit/f8f111564b2
+
+--- mysql-5.7.44.orig/include/mysql/plugin.h
++++ mysql-5.7.44/include/mysql/plugin.h
+@@ -607,6 +607,13 @@ int thd_in_lock_tables(const MYSQL_THD thd);
+ int thd_tablespace_op(const MYSQL_THD thd);
+ long long thd_test_options(const MYSQL_THD thd, long long test_options);
+ int thd_sql_command(const MYSQL_THD thd);
++/**
++  Checks whether a session has NO_BACKSLASH_ESCAPES set in @@sql_mode.
++
++  @param thd  User thread connection handle
++  @return non-zero if NO_BACKSLASH_ESCAPES is set for the session
++*/
++int thd_is_sql_mode_no_backslash_escapes(const MYSQL_THD thd);
+ const char *set_thd_proc_info(MYSQL_THD thd, const char *info,
+                               const char *calling_func,
+                               const char *calling_file,
+--- mysql-5.7.44.orig/include/mysql/plugin_audit.h.pp
++++ mysql-5.7.44/include/mysql/plugin_audit.h.pp
+@@ -81,6 +81,7 @@ int thd_in_lock_tables(const void* thd);
+ int thd_tablespace_op(const void* thd);
+ long long thd_test_options(const void* thd, long long test_options);
+ int thd_sql_command(const void* thd);
++int thd_is_sql_mode_no_backslash_escapes(const void* thd);
+ const char *set_thd_proc_info(void* thd, const char *info,
+                               const char *calling_func,
+                               const char *calling_file,
+--- mysql-5.7.44.orig/include/mysql/plugin_auth.h.pp
++++ mysql-5.7.44/include/mysql/plugin_auth.h.pp
+@@ -81,6 +81,7 @@ int thd_in_lock_tables(const void* thd);
+ int thd_tablespace_op(const void* thd);
+ long long thd_test_options(const void* thd, long long test_options);
+ int thd_sql_command(const void* thd);
++int thd_is_sql_mode_no_backslash_escapes(const void* thd);
+ const char *set_thd_proc_info(void* thd, const char *info,
+                               const char *calling_func,
+                               const char *calling_file,
+--- mysql-5.7.44.orig/include/mysql/plugin_ftparser.h.pp
++++ mysql-5.7.44/include/mysql/plugin_ftparser.h.pp
+@@ -81,6 +81,7 @@ int thd_in_lock_tables(const void* thd);
+ int thd_tablespace_op(const void* thd);
+ long long thd_test_options(const void* thd, long long test_options);
+ int thd_sql_command(const void* thd);
++int thd_is_sql_mode_no_backslash_escapes(const void* thd);
+ const char *set_thd_proc_info(void* thd, const char *info,
+                               const char *calling_func,
+                               const char *calling_file,
+--- mysql-5.7.44.orig/include/mysql/plugin_keyring.h.pp
++++ mysql-5.7.44/include/mysql/plugin_keyring.h.pp
+@@ -81,6 +81,7 @@ int thd_in_lock_tables(const void* thd);
+ int thd_tablespace_op(const void* thd);
+ long long thd_test_options(const void* thd, long long test_options);
+ int thd_sql_command(const void* thd);
++int thd_is_sql_mode_no_backslash_escapes(const void* thd);
+ const char *set_thd_proc_info(void* thd, const char *info,
+                               const char *calling_func,
+                               const char *calling_file,
+--- mysql-5.7.44.orig/rapid/plugin/x/src/admin_cmd_handler.cc
++++ mysql-5.7.44/rapid/plugin/x/src/admin_cmd_handler.cc
+@@ -309,6 +309,7 @@ namespace
+ ngs::Error_code create_collection_impl(xpl::Sql_data_context &da, const std::string &schema, const std::string &name)
+ {
+   xpl::Query_string_builder qb;
++  qb.set_no_backslash_escapes(da.is_no_backslash_escapes());
+   qb.put("CREATE TABLE ");
+   if (!schema.empty())
+     qb.quote_identifier(schema).dot();
+@@ -496,6 +497,7 @@ ngs::Error_code remove_nonvirtual_column_names(const std::string &schema_name, c
+                                                String_fields_values &ret_column_names, xpl::Sql_data_context &da)
+ {
+   xpl::Query_string_builder qb;
++  qb.set_no_backslash_escapes(da.is_no_backslash_escapes());
+   const unsigned FIELD_COLMN_IDX = 0;
+   const unsigned EXTRA_COLMN_IDX = 5;
+ 
+@@ -543,6 +545,7 @@ ngs::Error_code index_on_virtual_column_supported(const std::string &schema_name
+ {
+   const unsigned CREATE_COLMN_IDX = 1;
+   xpl::Query_string_builder qb;
++  qb.set_no_backslash_escapes(da.is_no_backslash_escapes());
+   std::vector<unsigned> fields_ids(1);
+   fields_ids[0] = CREATE_COLMN_IDX;
+   String_fields_values create_stmts;
+@@ -584,6 +587,7 @@ bool table_column_exists(const std::string &schema_name, const std::string &tabl
+                          const std::string &column_name, xpl::Sql_data_context &da, bool &r_exists)
+ {
+   xpl::Query_string_builder qb;
++  qb.set_no_backslash_escapes(da.is_no_backslash_escapes());
+   xpl::Buffering_command_delegate::Resultset r_rows;
+   std::vector<xpl::Command_delegate::Field_type> r_types;
+   xpl::Sql_data_context::Result_info r_info;
+@@ -636,6 +640,7 @@ ngs::Error_code xpl::Admin_command_handler::create_collection_index(Command_argu
+   m_session.update_status<&Common_status_variables::m_stmt_create_collection_index>();
+ 
+   Query_string_builder qb;
++  qb.set_no_backslash_escapes(m_da.is_no_backslash_escapes());
+   bool required = false;
+   typedef Index_field_traits _T;
+   static std::map<std::string, _T> valid_types;
+@@ -840,6 +845,7 @@ ngs::Error_code xpl::Admin_command_handler::drop_collection(Command_arguments &a
+   m_session.update_status<&Common_status_variables::m_stmt_drop_collection>();
+ 
+   Query_string_builder qb;
++  qb.set_no_backslash_escapes(m_da.is_no_backslash_escapes());
+   std::string schema;
+   std::string collection;
+ 
+@@ -874,6 +880,7 @@ ngs::Error_code get_index_virtual_column_names(const std::string &schema_name, c
+ {
+   const unsigned INDEX_NAME_COLUMN_IDX = 4;
+   xpl::Query_string_builder qb;
++  qb.set_no_backslash_escapes(da.is_no_backslash_escapes());
+ 
+   /* get list of all index column names */
+   qb.put("SHOW INDEX FROM ")
+@@ -938,6 +945,7 @@ ngs::Error_code xpl::Admin_command_handler::drop_collection_index(Command_argume
+   m_session.update_status<&Common_status_variables::m_stmt_drop_collection_index>();
+ 
+   Query_string_builder qb;
++  qb.set_no_backslash_escapes(m_da.is_no_backslash_escapes());
+   std::string schema;
+   std::string collection;
+   std::string name;
+@@ -1115,6 +1123,7 @@ namespace
+ ngs::Error_code is_schema_selected_and_exists(xpl::Sql_data_context &da, const std::string &schema)
+ {
+   xpl::Query_string_builder qb;
++  qb.set_no_backslash_escapes(da.is_no_backslash_escapes());
+   qb.put("SHOW TABLES");
+   if (!schema.empty())
+     qb.put(" FROM ").quote_identifier(schema);
+@@ -1193,6 +1202,7 @@ ngs::Error_code xpl::Admin_command_handler::list_objects(Command_arguments &args
+     return error;
+ 
+   Query_string_builder qb;
++  qb.set_no_backslash_escapes(m_da.is_no_backslash_escapes());
+   qb.put("SELECT ")
+       .put(BINARY_OPERATOR)
+       .put("T.table_name AS name, "
+@@ -1237,6 +1247,7 @@ namespace
+ bool is_collection(xpl::Sql_data_context &da, const std::string &schema, const std::string &name)
+ {
+   xpl::Query_string_builder qb;
++  qb.set_no_backslash_escapes(da.is_no_backslash_escapes());
+   qb.put("SELECT COUNT(*) AS cnt,")
+     .put(COUNT_DOC).put(" AS doc,").put(COUNT_ID).put(" AS id,").put(COUNT_GEN).put(" AS gen "
+       "FROM information_schema.columns "
+--- mysql-5.7.44.orig/rapid/plugin/x/src/crud_cmd_handler.cc
++++ mysql-5.7.44/rapid/plugin/x/src/crud_cmd_handler.cc
+@@ -49,6 +49,7 @@ ngs::Error_code Crud_command_handler::execute(
+ {
+   session.update_status(variable);
+   m_qb.clear();
++  m_qb.set_no_backslash_escapes(session.data_context().is_no_backslash_escapes());
+   try
+   {
+     builder.build(msg);
+--- mysql-5.7.44.orig/rapid/plugin/x/src/query_formatter.cc
++++ mysql-5.7.44/rapid/plugin/x/src/query_formatter.cc
+@@ -27,7 +27,7 @@
+ 
+ #include "xpl_log.h"
+ #include "query_formatter.h"
+-#include "my_sys.h" // escape_string_for_mysql
++#include "my_sys.h" // escape_quotes_for_mysql, escape_string_for_mysql
+ #include "xpl_error.h"
+ #include "ngs/error_code.h"
+ 
+@@ -43,7 +43,18 @@ public:
+     m_matching_chars_comment(0),
+     m_matching_chars_line_comment1(0),
+     m_matching_chars_line_comment2(0),
+-    m_escape_chars(0)
++    m_escape_chars(0),
++    m_no_backslash_escapes(false)
++  {
++  }
++
++  explicit Sql_search_tags(bool no_backslash_escapes)
++  : m_state(Block_none),
++    m_matching_chars_comment(0),
++    m_matching_chars_line_comment1(0),
++    m_matching_chars_line_comment2(0),
++    m_escape_chars(0),
++    m_no_backslash_escapes(no_backslash_escapes)
+   {
+   }
+ 
+@@ -137,7 +148,7 @@ public:
+ 
+   bool should_be_ignored(const char character)
+   {
+-    const bool escape_sequence = true;
++    const bool escape_sequence = !m_no_backslash_escapes;
+ 
+     if (should_ignore_block(character, Block_string_quoted, '\'', '\'', escape_sequence))
+       return true;
+@@ -174,11 +185,12 @@ private:
+   uint8_t m_matching_chars_line_comment1;
+   uint8_t m_matching_chars_line_comment2;
+   uint8_t m_escape_chars;
++  bool m_no_backslash_escapes;
+ };
+ 
+ 
+-Query_formatter::Query_formatter(ngs::PFS_string &query, charset_info_st &charset)
+-: m_query(query), m_charset(charset), m_last_tag_position(0)
++Query_formatter::Query_formatter(ngs::PFS_string &query, charset_info_st &charset, bool no_backslash_escapes)
++: m_query(query), m_charset(charset), m_last_tag_position(0), m_no_backslash_escapes(no_backslash_escapes)
+ {
+ }
+ 
+@@ -220,7 +232,7 @@ Query_formatter &Query_formatter::operator % (const No_escape<std::string> &valu
+ 
+ void Query_formatter::validate_next_tag()
+ {
+-  ngs::PFS_string::iterator i = std::find_if(m_query.begin() + m_last_tag_position, m_query.end(), Sql_search_tags());
++  ngs::PFS_string::iterator i = std::find_if(m_query.begin() + m_last_tag_position, m_query.end(), Sql_search_tags(m_no_backslash_escapes));
+ 
+   if (m_query.end() == i)
+   {
+@@ -235,7 +247,9 @@ void Query_formatter::put_value_and_escape(const char *value, const std::size_t
+   const std::size_t length_maximum = 2 * length + 1 + 2;
+   std::string       value_escaped(length_maximum, '\0');
+ 
+-  std::size_t length_escaped = escape_string_for_mysql(&m_charset, &value_escaped[1], length_maximum, value, length);
++  std::size_t length_escaped = m_no_backslash_escapes
++                                    ? escape_quotes_for_mysql(&m_charset, &value_escaped[1], length_maximum, value, length, '\'')
++                                    : escape_string_for_mysql(&m_charset, &value_escaped[1], length_maximum, value, length);
+   value_escaped[0] = value_escaped[1 + length_escaped] = '\'';
+ 
+   value_escaped.resize(length_escaped + 2);
+--- mysql-5.7.44.orig/rapid/plugin/x/src/query_formatter.h
++++ mysql-5.7.44/rapid/plugin/x/src/query_formatter.h
+@@ -44,7 +44,8 @@ namespace xpl
+   class Query_formatter
+   {
+   public:
+-    Query_formatter(ngs::PFS_string &query, charset_info_st &charser);
++    explicit Query_formatter(ngs::PFS_string &query, charset_info_st &charser,
++                              bool no_backslash_escapes = false);
+ 
+     template <typename Value_type>
+     class No_escape
+@@ -100,6 +101,7 @@ namespace xpl
+     ngs::PFS_string      &m_query;
+     charset_info_st &m_charset;
+     std::size_t      m_last_tag_position;
++    bool             m_no_backslash_escapes;
+   };
+ 
+   template<>
+--- mysql-5.7.44.orig/rapid/plugin/x/src/query_string_builder.cc
++++ mysql-5.7.44/rapid/plugin/x/src/query_string_builder.cc
+@@ -26,7 +26,7 @@
+ 
+ #include "query_string_builder.h"
+ #include "mysql/plugin.h"
+-#include "my_sys.h" // escape_string_for_mysql
++#include "my_sys.h" // escape_quotes_for_mysql, escape_string_for_mysql
+ 
+ using namespace xpl;
+ 
+@@ -40,7 +40,7 @@ void Query_string_builder::init_charset()
+ 
+ 
+ Query_string_builder::Query_string_builder(size_t reserve)
+-  : m_in_quoted(false), m_in_identifier(false)
++  : m_in_quoted(false), m_in_identifier(false), m_no_backslash_escapes(false)
+ {
+   my_thread_once(&m_charset_initialized, init_charset);
+   assert(m_charset != NULL);
+@@ -111,7 +111,9 @@ Query_string_builder &Query_string_builder::escape_string(const char *s, size_t
+   // resize the buffer to fit the original size + worst case length of s
+   m_str.resize(str_pos + 2*length+1);
+ 
+-  size_t r = escape_string_for_mysql(m_charset, &m_str[str_pos], 2*length+1, s, length);
++  size_t r = m_no_backslash_escapes
++                 ? escape_quotes_for_mysql(m_charset, &m_str[str_pos], 2*length+1, s, length, '\'')
++                 : escape_string_for_mysql(m_charset, &m_str[str_pos], 2*length+1, s, length);
+   m_str.resize(str_pos + r);
+ 
+   return *this;
+@@ -143,5 +145,5 @@ Query_string_builder &Query_string_builder::put(const char *s, size_t length)
+ 
+ Query_formatter Query_string_builder::format()
+ {
+-  return Query_formatter(m_str, *m_charset);
++  return Query_formatter(m_str, *m_charset, m_no_backslash_escapes);
+ }
+--- mysql-5.7.44.orig/rapid/plugin/x/src/query_string_builder.h
++++ mysql-5.7.44/rapid/plugin/x/src/query_string_builder.h
+@@ -112,6 +112,9 @@ public:
+ 
+   Query_formatter format();
+ 
++  void set_no_backslash_escapes(bool value) { m_no_backslash_escapes = value; }
++  bool no_backslash_escapes() const { return m_no_backslash_escapes; }
++
+   Query_string_builder &put(const char *s) { return put(s, strlen(s)); }
+ 
+   Query_string_builder &put(const std::string &s)
+@@ -140,6 +143,7 @@ private:
+   ngs::PFS_string m_str;
+   bool m_in_quoted;
+   bool m_in_identifier;
++  bool m_no_backslash_escapes;
+ 
+   static void init_charset();
+   static my_thread_once_t  m_charset_initialized;
+--- mysql-5.7.44.orig/rapid/plugin/x/src/sql_data_context.cc
++++ mysql-5.7.44/rapid/plugin/x/src/sql_data_context.cc
+@@ -516,3 +516,10 @@ MYSQL_THD Sql_data_context::get_thd() const
+ {
+   return srv_session_info_get_thd(m_mysql_session);
+ }
++
++
++bool Sql_data_context::is_no_backslash_escapes() const
++{
++  const MYSQL_THD thd = get_thd();
++  return thd != NULL && thd_is_sql_mode_no_backslash_escapes(thd) != 0;
++}
+--- mysql-5.7.44.orig/rapid/plugin/x/src/sql_data_context.h
++++ mysql-5.7.44/rapid/plugin/x/src/sql_data_context.h
+@@ -99,6 +99,13 @@ public:
+   uint64_t mysql_session_id() const;
+   MYSQL_THD get_thd() const;
+ 
++  // Queries the session's own sql_mode for NO_BACKSLASH_ESCAPES via the
++  // thd_is_sql_mode_no_backslash_escapes() plugin service function
++  // (include/mysql/plugin.h, implemented in sql/sql_class.cc). That
++  // function runs inside the server binary itself, where THD's full
++  // layout is visible, so this plugin never touches THD's ABI directly.
++  virtual bool is_no_backslash_escapes() const;
++
+   void detach();
+ 
+   ngs::Error_code set_connection_type(const ngs::Connection_type type);
+--- mysql-5.7.44.orig/rapid/plugin/x/src/update_statement_builder.cc
++++ mysql-5.7.44/rapid/plugin/x/src/update_statement_builder.cc
+@@ -92,6 +92,7 @@ void xpl::Update_statement_builder::add_document_operation_item(const Operation_
+   case UpdateOperation::ITEM_MERGE:
+   {
+     Query_string_builder value;
++    value.set_no_backslash_escapes(m_builder.m_qb.no_backslash_escapes());
+     m_builder.m_gen.clone(value).feed(item.value());
+     m_builder.put(",IF(JSON_TYPE(").put(value)
+        .put(")='OBJECT',JSON_REMOVE(").put(value)
+--- mysql-5.7.44.orig/rapid/plugin/x/src/user_verification_helper.h
++++ mysql-5.7.44/rapid/plugin/x/src/user_verification_helper.h
+@@ -55,7 +55,7 @@ namespace xpl {
+       Resultset   r_result_set;
+       Result_info r_info;
+ 
+-      ngs::PFS_string query = get_sql(user.c_str(), host.c_str());
++      ngs::PFS_string query = get_sql(sql_data_context, user.c_str(), host.c_str());
+       ngs::Error_code error = sql_data_context.execute_sql_and_collect_results(
+           query.c_str(),
+           query.length(),
+@@ -86,8 +86,9 @@ namespace xpl {
+     }
+ 
+   private:
+-    ngs::PFS_string get_sql(const char *user, const char *host) const {
++    ngs::PFS_string get_sql(Sql_data_context &sql_data_context, const char *user, const char *host) const {
+       Query_string_builder qb;
++      qb.set_no_backslash_escapes(sql_data_context.is_no_backslash_escapes());
+ 
+       // Query for a concrete users primary key (USER,HOST columns) which was chosen by MySQL Server
+       // and verify hash and plugin column.
+--- mysql-5.7.44.orig/rapid/plugin/x/src/xpl_dispatcher.cc
++++ mysql-5.7.44/rapid/plugin/x/src/xpl_dispatcher.cc
+@@ -55,6 +55,7 @@ public:
+       return execute(da, proto, show_warnings, compact_metadata, query.data(), query.length());
+ 
+     m_qb.clear();
++    m_qb.set_no_backslash_escapes(da.is_no_backslash_escapes());
+     m_qb.put(query);
+ 
+     try
+--- mysql-5.7.44.orig/rapid/unittest/gunit/xplugin/mock/session.h
++++ mysql-5.7.44/rapid/unittest/gunit/xplugin/mock/session.h
+@@ -211,6 +211,7 @@ public:
+       std::vector<Command_delegate::Field_type> &,
+       Buffering_command_delegate::Resultset &,
+       Result_info &));
++  MOCK_CONST_METHOD0(is_no_backslash_escapes, bool ());
+ };
+ 
+ 
+--- mysql-5.7.44.orig/rapid/unittest/gunit/xplugin/query_string_builder_t.cc
++++ mysql-5.7.44/rapid/unittest/gunit/xplugin/query_string_builder_t.cc
+@@ -250,6 +250,87 @@ INSTANTIATE_TEST_CASE_P(InstantiationNegativeTest,
+         ));
+ 
+ 
++// -- NO_BACKSLASH_ESCAPES (BUG#39268863 / PS-11437) --
++
++TEST_F(Query_string_builder_testsuite, no_backslash_escapes_defaultsToFalse) {
++  ASSERT_FALSE(query.no_backslash_escapes());
++}
++
++TEST_F(Query_string_builder_testsuite, no_backslash_escapes_reflectsSetter) {
++  query.set_no_backslash_escapes(true);
++
++  ASSERT_TRUE(query.no_backslash_escapes());
++}
++
++TEST_F(Query_string_builder_testsuite, quote_string_escapesQuoteWithBackslash_whenNoBackslashEscapesIsDisabled) {
++  query.quote_string("O'Brien");
++
++  ASSERT_STREQ("'O\\'Brien'", query.get().c_str());
++}
++
++TEST_F(Query_string_builder_testsuite, quote_string_doublesQuote_whenNoBackslashEscapesIsEnabled) {
++  query.set_no_backslash_escapes(true);
++  query.quote_string("O'Brien");
++
++  ASSERT_STREQ("'O''Brien'", query.get().c_str());
++}
++
++TEST_F(Query_string_builder_testsuite, quote_string_escapesBackslashItself_whenNoBackslashEscapesIsDisabled) {
++  query.quote_string("back\\slash");
++
++  ASSERT_STREQ("'back\\\\slash'", query.get().c_str());
++}
++
++TEST_F(Query_string_builder_testsuite, quote_string_leavesBackslashLiteral_whenNoBackslashEscapesIsEnabled) {
++  query.set_no_backslash_escapes(true);
++  query.quote_string("back\\slash");
++
++  ASSERT_STREQ("'back\\slash'", query.get().c_str());
++}
++
++TEST_F(Query_string_builder_testsuite, format_valueEscaping_usesBackslashEscaping_whenNoBackslashEscapesIsDisabled) {
++  query.put("SELECT ?");
++  query.format() % "O'Brien";
++
++  ASSERT_STREQ("SELECT 'O\\'Brien'", query.get().c_str());
++}
++
++TEST_F(Query_string_builder_testsuite, format_valueEscaping_usesQuoteDoubling_whenNoBackslashEscapesIsEnabled) {
++  query.set_no_backslash_escapes(true);
++  query.put("SELECT ?");
++  query.format() % "O'Brien";
++
++  ASSERT_STREQ("SELECT 'O''Brien'", query.get().c_str());
++}
++
++// A backslash-escaped quote inside a string literal keeps the tag hidden
++// inside the (still open) string, so only the trailing, real placeholder
++// is substituted -- matches the server parser's own interpretation of
++// backslash-escapes when NO_BACKSLASH_ESCAPES is *not* set.
++TEST_F(Query_string_builder_testsuite,
++       format_placeholderInsideBackslashEscapedQuotedString_isSkipped_whenNoBackslashEscapesIsDisabled) {
++  query.put("SELECT '\\'?' , ?");
++  query.format() % "value";
++
++  ASSERT_STREQ("SELECT '\\'?' , 'value'", query.get().c_str());
++}
++
++// Under NO_BACKSLASH_ESCAPES the server parser does not treat backslash as
++// an escape character, so the same "\'" sequence actually closes the string
++// one character earlier than the backslash-escape reading assumes. The
++// placeholder scanner must follow that same reading, or it substitutes the
++// value at the wrong position relative to what the server will parse --
++// exactly the quoting mismatch this fix closes.
++TEST_F(Query_string_builder_testsuite,
++       format_placeholderInsideBackslashEscapedQuotedString_isTag_whenNoBackslashEscapesIsEnabled) {
++  query.set_no_backslash_escapes(true);
++  query.put("SELECT '\\'?' , ?");
++  query.format() % "value";
++
++  ASSERT_STREQ("SELECT '\\''value'' , ?", query.get().c_str());
++}
++
++
+ } // namespace test
+ 
+ } // namespace xpl
+--- mysql-5.7.44.orig/rapid/unittest/gunit/xplugin/stubs/sql_session_service.cc
++++ mysql-5.7.44/rapid/unittest/gunit/xplugin/stubs/sql_session_service.cc
+@@ -91,6 +91,12 @@ extern "C" {
+     assert(0);
+     return 0;
+   }
++
++  int thd_is_sql_mode_no_backslash_escapes(const MYSQL_THD)
++  {
++    assert(0);
++    return 0;
++  }
+ #ifdef __cplusplus
+ }
+ #endif
+--- mysql-5.7.44.orig/rapid/unittest/gunit/xplugin/user_verification_helper_t.cc
++++ mysql-5.7.44/rapid/unittest/gunit/xplugin/user_verification_helper_t.cc
+@@ -107,6 +107,12 @@ namespace xpl
+ 
+         result_set.push_back(m_row_data);
+ 
++        // get_sql() checks the session's own NO_BACKSLASH_ESCAPES sql_mode
++        // (BUG#39268863 / PS-11437) before building the account-lookup
++        // query. The value doesn't affect the (pre-baked) mocked rows.
++        EXPECT_CALL(m_sql_data_context, is_no_backslash_escapes())
++          .WillOnce(Return(false));
++
+         EXPECT_CALL(m_sql_data_context, execute_sql_and_collect_results(_, _, _, _, _))
+           .WillOnce(DoAll(
+               SetArgReferee<2>(m_field_types),
+--- mysql-5.7.44.orig/sql/sql_class.cc
++++ mysql-5.7.44/sql/sql_class.cc
+@@ -847,6 +847,12 @@ int thd_sql_command(const THD *thd)
+   return (int) thd->lex->sql_command;
+ }
+ 
++extern "C"
++int thd_is_sql_mode_no_backslash_escapes(const THD *thd)
++{
++  return (thd->variables.sql_mode & MODE_NO_BACKSLASH_ESCAPES) != 0;
++}
++
+ extern "C"
+ int thd_tx_isolation(const THD *thd)
+ {

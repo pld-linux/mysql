@@ -1,0 +1,57 @@
+mysql.gtid_executed persistent GTID info lost when MySQL crash in
+Gtid_state::save
+https://github.com/percona/percona-server/commit/11d4fedecc
+Non existent binlog cache means empty (Bug#36252805)
+https://github.com/percona/percona-server/commit/b41b7954eb
+https://github.com/mysql/mysql-server/commit/fed401689c2
+
+--- mysql-5.7.44.orig/sql/binlog.cc
++++ mysql-5.7.44/sql/binlog.cc
+@@ -4746,7 +4746,7 @@ bool MYSQL_BIN_LOG::init_gtid_sets(Gtid_set *all_gtids, Gtid_set *lost_gtids,
+             GLOBAL.GTID_PURGED should be empty in the case.
+           */
+           if (binlog_gtid_simple_recovery && is_server_starting &&
+-              !is_relay_log)
++              !is_relay_log && reached_first_file)
+           {
+             assert(all_gtids->is_empty());
+             assert(lost_gtids->is_empty());
+@@ -10121,13 +10121,13 @@ bool THD::is_binlog_cache_empty(bool is_transactional)
+   // If opt_bin_log==0, it is not safe to call thd_get_cache_mngr
+   // because binlog_hton has not been completely set up.
+   assert(opt_bin_log);
+-  binlog_cache_mngr *cache_mngr= thd_get_cache_mngr(this);
+-
+-  // cache_mngr is NULL until we call thd->binlog_setup_trx_data, so
+-  // we assert that this has been done.
+-  assert(cache_mngr != NULL);
++  binlog_cache_mngr *const cache_mngr = thd_get_cache_mngr(this);
++  if (cache_mngr == NULL) {
++    // The cache has not been setup and is thus empty
++    DBUG_RETURN(true);
++  }
+ 
+-  binlog_cache_data *cache_data=
++  binlog_cache_data *const cache_data=
+     cache_mngr->get_binlog_cache_data(is_transactional);
+   assert(cache_data != NULL);
+ 
+--- mysql-5.7.44.orig/sql/rpl_gtid_state.cc
++++ mysql-5.7.44/sql/rpl_gtid_state.cc
+@@ -738,6 +738,7 @@ int Gtid_state::save(THD *thd)
+ int Gtid_state::save(const Gtid_set *gtid_set)
+ {
+   DBUG_ENTER("Gtid_state::save(Gtid_set *gtid_set)");
++  DBUG_EXECUTE_IF("crash_before_gtid_persist", DBUG_SUICIDE(););
+   int ret= gtid_table_persistor->save(gtid_set);
+   DBUG_RETURN(ret);
+ }
+@@ -1008,8 +1009,6 @@ void Gtid_state::update_gtids_impl_own_anonymous(THD* thd,
+   */
+   if (opt_bin_log)
+   {
+-    // Needed before is_binlog_cache_empty.
+-    thd->binlog_setup_trx_data();
+     if (!thd->is_binlog_cache_empty(true))
+     {
+       *more_trx= true;

@@ -1,0 +1,1545 @@
+Group Replication malformed payload decode validation - Part 1
+(Bug#39253416)
+https://github.com/percona/percona-server/commit/23656a7691
+https://github.com/mysql/mysql-server/commit/7206c72ea29
+Group Replication malformed payload decode validation - Part 2
+(Bug#39253416)
+https://github.com/percona/percona-server/commit/10f9a1247a
+https://github.com/mysql/mysql-server/commit/7206c72ea29
+
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/include/gcs_event_handlers.h
++++ mysql-5.7.44/rapid/plugin/group_replication/include/gcs_event_handlers.h
+@@ -265,6 +265,31 @@ private:
+   */
+   void leave_group_on_error() const;
+ 
++  /**
++    Logs and leaves the group after receiving a malformed message.
++
++    @param[in] error_message the error message to log and report
++  */
++  void leave_on_malformed_message(const char* error_message) const;
++
++  /**
++    Gets the first payload item raw data, or leaves the group if the message is
++    malformed.
++
++    @param[in]  message             the message received from GCS
++    @param[in]  error_message       the error message to log and report
++    @param[out] payload_item_data   the data
++    @param[out] payload_item_length the length of the data
++
++    @return the operation status
++      @retval false    OK
++      @retval true     Error
++  */
++  bool get_first_payload_item_or_leave(const Gcs_message& message,
++                                       const char* error_message,
++                                       const unsigned char** payload_item_data,
++                                       uint64* payload_item_length) const;
++
+   /**
+     This method checks if member was expelled from the group due
+     to network failures.
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/include/gcs_plugin_messages.h
++++ mysql-5.7.44/rapid/plugin/group_replication/include/gcs_plugin_messages.h
+@@ -212,27 +212,50 @@ public:
+     Return the cargo type of a given message buffer, without decode
+     the complete message.
+ 
+-    @param[in] buffer the buffer to decode from.
+-
+-    @return the cargo type of a given message buffer
++    A cargo type that this version does not know, which is what a higher
++    version member sends in a mixed version group, is reported as
++    CT_UNKNOWN and is not an error, so that the caller ignores the message
++    instead of treating it as malformed.
++
++    @param[in]  buffer     the buffer to decode from.
++    @param[in]  length     the length of the buffer.
++    @param[out] cargo_type the decoded cargo type, CT_UNKNOWN if the
++                           encoded value is not known to this version.
++
++    @return the operation status
++      @retval false    OK
++      @retval true     Error, the buffer is shorter than the fixed header
+    */
+-  static enum_cargo_type get_cargo_type(const unsigned char* buffer);
++  static bool get_cargo_type(const unsigned char* buffer,
++                             uint64 length,
++                             enum_cargo_type* cargo_type);
+ 
+   /**
+     Return the raw data of the first payload item of a given message buffer,
+     without decode the complete message.
+ 
+-    @param[out] buffer              the buffer to decode from.
++    @param[in]  buffer              the buffer to decode from.
++    @param[in]  length              the length of the buffer.
+     @param[out] payload_item_data   the data.
+     @param[out] payload_item_length the length of the data.
+ 
+-    @return the raw data of the first payload item
++    @return the operation status
++      @retval false    OK
++      @retval true     Error
+   */
+-  static void get_first_payload_item_raw_data(const unsigned char* buffer,
++  static bool get_first_payload_item_raw_data(const unsigned char* buffer,
++                                              uint64 length,
+                                               const unsigned char** payload_item_data,
+                                               uint64* payload_item_length);
+ 
++  /**
++    @return true if a decode error was detected while parsing the payload.
++   */
++  bool is_decode_error() const { return m_decode_error; }
++
+ protected:
++  bool m_decode_error;
++
+   /**
+     Plugin_gcs_message constructor. Only to be called by derivative classes
+ 
+@@ -301,8 +324,9 @@ protected:
+     @param[out] type   the type of the payload item
+     @param[out] value  the value of the payload item
+   */
+-  void decode_payload_item_char(const unsigned char** buffer,
++  bool decode_payload_item_char(const unsigned char** buffer,
+                                 uint16* type,
++                                const unsigned char* end,
+                                 unsigned char* value);
+ 
+   /**
+@@ -326,8 +350,9 @@ protected:
+     @param[out] type   the type of the payload item
+     @param[out] value  the value of the payload item
+   */
+-  void decode_payload_item_int2(const unsigned char** buffer,
++  bool decode_payload_item_int2(const unsigned char** buffer,
+                                 uint16* type,
++                                const unsigned char* end,
+                                 uint16* value);
+ 
+   /**
+@@ -351,8 +376,9 @@ protected:
+     @param[out] type   the type of the payload item
+     @param[out] value  the value of the payload item
+   */
+-  void decode_payload_item_int4(const unsigned char** buffer,
++  bool decode_payload_item_int4(const unsigned char** buffer,
+                                 uint16* type,
++                                const unsigned char* end,
+                                 uint32* value);
+ 
+   /**
+@@ -376,8 +402,9 @@ protected:
+     @param[out] type   the type of the payload item
+     @param[out] value  the value of the payload item
+   */
+-  void decode_payload_item_int8(const unsigned char** buffer,
++  bool decode_payload_item_int8(const unsigned char** buffer,
+                                 uint16* type,
++                                const unsigned char* end,
+                                 ulonglong* value);
+ 
+   /**
+@@ -404,8 +431,9 @@ protected:
+     @param[out] value  the value of the payload item
+     @param[out] length the length of the payload item
+   */
+-  void decode_payload_item_string(const unsigned char** buffer,
++  bool decode_payload_item_string(const unsigned char** buffer,
+                                   uint16* type,
++                                  const unsigned char* end,
+                                   std::string* value,
+                                   unsigned long long* length);
+ };
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/src/gcs_event_handlers.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/src/gcs_event_handlers.cc
+@@ -61,12 +61,61 @@ Plugin_gcs_events_handler::~Plugin_gcs_events_handler()
+   delete joiner_compatibility_status;
+ }
+ 
++void
++Plugin_gcs_events_handler::
++leave_on_malformed_message(const char* error_message) const
++{
++  log_message(MY_ERROR_LEVEL, "%s", error_message);
++  group_member_mgr->update_member_status(local_member_info->get_uuid(),
++                                         Group_member_info::MEMBER_ERROR);
++  this->leave_group_on_error();
++
++  /*
++    This line has no leave_group_on_failure, so leave_group_on_error() above
++    covers only CLEAN_GROUP_MEMBERSHIP and STOP_APPLIER. The read mode and
++    HANDLE_EXIT_STATE_ACTION are applied here instead.
++  */
++  log_message(MY_ERROR_LEVEL,
++              "The server was automatically set into read only mode after an "
++              "error was detected.");
++  enable_server_read_mode(PSESSION_INIT_THREAD);
++
++  if (exit_state_action_var == EXIT_STATE_ACTION_ABORT_SERVER)
++    abort_plugin_process("Fatal error during execution of Group Replication");
++}
++
++bool
++Plugin_gcs_events_handler::
++get_first_payload_item_or_leave(const Gcs_message& message,
++                                const char* error_message,
++                                const unsigned char** payload_item_data,
++                                uint64* payload_item_length) const
++{
++  if (!Plugin_gcs_message::get_first_payload_item_raw_data(
++          message.get_message_data().get_payload(),
++          message.get_message_data().get_payload_length(),
++          payload_item_data, payload_item_length))
++    return false;
++
++  leave_on_malformed_message(error_message);
++  return true;
++}
++
+ void
+ Plugin_gcs_events_handler::on_message_received(const Gcs_message& message) const
+ {
+   Plugin_gcs_message::enum_cargo_type message_type=
+-      Plugin_gcs_message::get_cargo_type(
+-          message.get_message_data().get_payload());
++      Plugin_gcs_message::CT_UNKNOWN;
++  if (Plugin_gcs_message::get_cargo_type(
++          message.get_message_data().get_payload(),
++          message.get_message_data().get_payload_length(),
++          &message_type))
++  {
++    leave_on_malformed_message("Malformed group replication message header "
++                               "received from the group. The member will now "
++                               "exit the group.");
++    return;
++  }
+ 
+   switch (message_type)
+   {
+@@ -105,9 +154,12 @@ handle_transactional_message(const Gcs_message& message) const
+   {
+     const unsigned char* payload_data= NULL;
+     uint64 payload_size= 0;
+-    Plugin_gcs_message::get_first_payload_item_raw_data(
+-        message.get_message_data().get_payload(),
+-        &payload_data, &payload_size);
++    if (get_first_payload_item_or_leave(message,
++                                        "Malformed transaction message payload "
++                                        "received from the group. The member "
++                                        "will now exit the group.",
++                                        &payload_data, &payload_size))
++      return;
+ 
+     this->applier_module->handle(payload_data, static_cast<ulong>(payload_size));
+   }
+@@ -134,9 +186,12 @@ Plugin_gcs_events_handler::handle_certifier_message(const Gcs_message& message)
+ 
+   const unsigned char* payload_data= NULL;
+   uint64 payload_size= 0;
+-  Plugin_gcs_message::get_first_payload_item_raw_data(
+-      message.get_message_data().get_payload(),
+-      &payload_data, &payload_size);
++  if (get_first_payload_item_or_leave(message,
++                                      "Malformed certification message payload "
++                                      "received from the group. The member will "
++                                      "now exit the group.",
++                                      &payload_data, &payload_size))
++    return;
+ 
+   if (certifier->handle_certifier_data(payload_data,
+                                        static_cast<ulong>(payload_size),
+@@ -152,6 +207,14 @@ Plugin_gcs_events_handler::handle_recovery_message(const Gcs_message& message) c
+   Recovery_message recovery_message(message.get_message_data().get_payload(),
+                                     message.get_message_data().get_payload_length());
+ 
++  if (recovery_message.is_decode_error())
++  {
++    leave_on_malformed_message("Malformed recovery message payload received "
++                               "from the group. The member will now exit the "
++                               "group.");
++    return;
++  }
++
+   std::string member_uuid= recovery_message.get_member_uuid();
+ 
+   bool is_local= !member_uuid.compare(local_member_info->get_uuid());
+@@ -262,6 +325,14 @@ Plugin_gcs_events_handler::handle_single_primary_message(const Gcs_message& mess
+       single_primary_message(message.get_message_data().get_payload(),
+                              message.get_message_data().get_payload_length());
+ 
++  if (single_primary_message.is_decode_error())
++  {
++    leave_on_malformed_message("Malformed single primary message payload "
++                               "received from the group. The member will now "
++                               "exit the group.");
++    return;
++  }
++
+   if (single_primary_message.get_single_primary_message_type() ==
+       Single_primary_message::SINGLE_PRIMARY_QUEUE_APPLIED_MESSAGE)
+   {
+@@ -1167,6 +1238,30 @@ process_local_exchanged_data(const Exchanged_data &exchanged_data,
+     vector<Group_member_info*>* member_infos=
+         group_member_mgr->decode(data, length);
+ 
++    if (member_infos == NULL)
++    {
++      /*
++        The exchanged data did not decode. Leaving the group is the same
++        response as for a duplicate server_uuid below: this member cannot build
++        a trustworthy view of the group, so it must not install one.
++      */
++      log_message(MY_ERROR_LEVEL,
++                  "Malformed group member information in exchanged data");
++
++      // Clean up temporary states.
++      std::set<Group_member_info*,Group_member_info_pointer_comparator>::iterator
++          temporary_states_it;
++      for (temporary_states_it= temporary_states->begin();
++           temporary_states_it != temporary_states->end();
++           temporary_states_it++)
++      {
++        delete (*temporary_states_it);
++      }
++      temporary_states->clear();
++
++      return 1;
++    }
++
+     //This construct is here in order to deallocate memory of duplicates
+     vector<Group_member_info*>::iterator member_infos_it;
+     for(member_infos_it= member_infos->begin();
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/src/gcs_plugin_messages.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/src/gcs_plugin_messages.cc
+@@ -47,7 +47,8 @@ Plugin_gcs_message::Plugin_gcs_message(enum_cargo_type cargo_type)
+   : m_version(PLUGIN_GCS_MESSAGE_VERSION),
+     m_fixed_header_len(WIRE_FIXED_HEADER_SIZE),
+     m_msg_len(WIRE_FIXED_HEADER_SIZE),
+-    m_cargo_type(cargo_type)
++    m_cargo_type(cargo_type),
++    m_decode_error(false)
+ {
+ }
+ 
+@@ -105,10 +106,16 @@ void Plugin_gcs_message::decode(const unsigned char* buffer,
+   DBUG_VOID_RETURN;
+ }
+ 
+-Plugin_gcs_message::enum_cargo_type
+-Plugin_gcs_message::get_cargo_type(const unsigned char* buffer)
++bool
++Plugin_gcs_message::get_cargo_type(const unsigned char* buffer,
++                                   uint64 length,
++                                   enum_cargo_type* cargo_type)
+ {
+-  DBUG_ENTER("Plugin_gcs_message::decode");
++  DBUG_ENTER("Plugin_gcs_message::get_cargo_type");
++
++  if (length < WIRE_FIXED_HEADER_SIZE)
++    DBUG_RETURN(true);
++
+   const unsigned char *slider= buffer +
+                                WIRE_VERSION_SIZE +
+                                WIRE_HD_LEN_SIZE +
+@@ -116,28 +123,63 @@ Plugin_gcs_message::get_cargo_type(const unsigned char* buffer)
+ 
+   unsigned short s_cargo_type= 0;
+   s_cargo_type= uint2korr(slider);
++  /*
++    A cargo type outside the range this version knows is not a malformed
++    message: it is what a higher version member sends in a mixed version group.
++    Report it as CT_UNKNOWN so on_message_received() ignores it through the
++    switch `default`, as it did before this validation existed, instead of
++    leaving the group during a rolling upgrade. Only a truncated fixed header,
++    checked above, is malformed.
++
++    This line's CT_MAX is 8 and 8.0 defines six cargo types above it, so any of
++    them would otherwise evict a 5.7 member of a 5.7 to 8.0 upgrade - and abort
++    the server where group_replication_exit_state_action is ABORT_SERVER. The
++    group action message is not gated on the group's lowest version before it is
++    sent, so one group_replication_set_as_primary() on an 8.0 member reaches
++    every 5.7 member before any of them objects to the version.
++
++    Keeping the value inside the enumeration range also avoids the undefined
++    behaviour of converting an out of range integer to an enumeration whose
++    underlying type is not fixed.
++  */
++  if (s_cargo_type <= CT_UNKNOWN || s_cargo_type >= CT_MAX)
++  {
++    *cargo_type= CT_UNKNOWN;
++    DBUG_RETURN(false);
++  }
++
+   // enum may have 32bit storage
+-  Plugin_gcs_message::enum_cargo_type cargo_type=
+-    (Plugin_gcs_message::enum_cargo_type) s_cargo_type;
++  *cargo_type= (Plugin_gcs_message::enum_cargo_type) s_cargo_type;
+ 
+-  DBUG_RETURN(cargo_type);
++  DBUG_RETURN(false);
+ }
+ 
+-void
++bool
+ Plugin_gcs_message::get_first_payload_item_raw_data(const unsigned char* buffer,
++                                                    uint64 length,
+                                                     const unsigned char** payload_item_data,
+                                                     uint64* payload_item_length)
+ {
+   DBUG_ENTER("Plugin_gcs_message::get_first_payload_item_raw_data");
++
++  if (length < WIRE_FIXED_HEADER_SIZE + WIRE_PAYLOAD_ITEM_HEADER_SIZE)
++    DBUG_RETURN(true);
++
++  const unsigned char *end= buffer + length;
+   const unsigned char *slider= buffer +
+                                WIRE_FIXED_HEADER_SIZE +
+                                WIRE_PAYLOAD_ITEM_TYPE_SIZE;
+ 
+-  *payload_item_length= uint8korr(slider);
++  const unsigned long long payload_item_length_aux= uint8korr(slider);
+   slider += WIRE_PAYLOAD_ITEM_LEN_SIZE;
++  if (slider > end ||
++      static_cast<unsigned long long>(end - slider) < payload_item_length_aux)
++    DBUG_RETURN(true);
++
+   *payload_item_data= slider;
++  *payload_item_length= payload_item_length_aux;
+ 
+-  DBUG_VOID_RETURN;
++  DBUG_RETURN(false);
+ }
+ 
+ void
+@@ -193,19 +235,27 @@ Plugin_gcs_message::encode_payload_item_char(std::vector<unsigned char>* buffer,
+   DBUG_VOID_RETURN;
+ }
+ 
+-void
++bool
+ Plugin_gcs_message::decode_payload_item_char(const unsigned char** buffer,
+                                              uint16* type,
++                                             const unsigned char* end,
+                                              unsigned char* value)
+ {
+   DBUG_ENTER("Plugin_gcs_message::decode_payload_item_char");
+ 
++  if (*buffer > end ||
++      static_cast<size_t>(end - *buffer) < WIRE_PAYLOAD_ITEM_HEADER_SIZE + 1)
++    { m_decode_error= true; DBUG_RETURN(true); }
++
+   unsigned long long length= 0;
+   decode_payload_item_type_and_length(buffer, type, &length);
++  if (length != 1 || *buffer > end ||
++      static_cast<size_t>(end - *buffer) < 1)
++    { m_decode_error= true; DBUG_RETURN(true); }
+   *value= **buffer;
+   *buffer += 1;
+ 
+-  DBUG_VOID_RETURN;
++  DBUG_RETURN(false);
+ }
+ 
+ void
+@@ -224,19 +274,27 @@ Plugin_gcs_message::encode_payload_item_int2(std::vector<unsigned char>* buffer,
+   DBUG_VOID_RETURN;
+ }
+ 
+-void
++bool
+ Plugin_gcs_message::decode_payload_item_int2(const unsigned char** buffer,
+                                              uint16* type,
++                                             const unsigned char* end,
+                                              uint16* value)
+ {
+   DBUG_ENTER("Plugin_gcs_message::decode_payload_item_int2");
+ 
++  if (*buffer > end ||
++      static_cast<size_t>(end - *buffer) < WIRE_PAYLOAD_ITEM_HEADER_SIZE + 2)
++    { m_decode_error= true; DBUG_RETURN(true); }
++
+   unsigned long long length= 0;
+   decode_payload_item_type_and_length(buffer, type, &length);
++  if (length != 2 || *buffer > end ||
++      static_cast<size_t>(end - *buffer) < 2)
++    { m_decode_error= true; DBUG_RETURN(true); }
+   *value= uint2korr(*buffer);
+   *buffer += 2;
+ 
+-  DBUG_VOID_RETURN;
++  DBUG_RETURN(false);
+ }
+ 
+ void
+@@ -255,19 +313,27 @@ Plugin_gcs_message::encode_payload_item_int4(std::vector<unsigned char>* buffer,
+   DBUG_VOID_RETURN;
+ }
+ 
+-void
++bool
+ Plugin_gcs_message::decode_payload_item_int4(const unsigned char** buffer,
+                                              uint16* type,
++                                             const unsigned char* end,
+                                              uint32* value)
+ {
+   DBUG_ENTER("Plugin_gcs_message::decode_payload_item_int4");
+ 
++  if (*buffer > end ||
++      static_cast<size_t>(end - *buffer) < WIRE_PAYLOAD_ITEM_HEADER_SIZE + 4)
++    { m_decode_error= true; DBUG_RETURN(true); }
++
+   unsigned long long length= 0;
+   decode_payload_item_type_and_length(buffer, type, &length);
++  if (length != 4 || *buffer > end ||
++      static_cast<size_t>(end - *buffer) < 4)
++    { m_decode_error= true; DBUG_RETURN(true); }
+   *value= uint4korr(*buffer);
+   *buffer += 4;
+ 
+-  DBUG_VOID_RETURN;
++  DBUG_RETURN(false);
+ }
+ 
+ void
+@@ -286,19 +352,27 @@ Plugin_gcs_message::encode_payload_item_int8(std::vector<unsigned char>* buffer,
+   DBUG_VOID_RETURN;
+ }
+ 
+-void
++bool
+ Plugin_gcs_message::decode_payload_item_int8(const unsigned char** buffer,
+                                              uint16* type,
++                                             const unsigned char* end,
+                                              ulonglong* value)
+ {
+   DBUG_ENTER("Plugin_gcs_message::decode_payload_item_int8");
+ 
++  if (*buffer > end ||
++      static_cast<size_t>(end - *buffer) < WIRE_PAYLOAD_ITEM_HEADER_SIZE + 8)
++    { m_decode_error= true; DBUG_RETURN(true); }
++
+   unsigned long long length= 0;
+   decode_payload_item_type_and_length(buffer, type, &length);
++  if (length != 8 || *buffer > end ||
++      static_cast<size_t>(end - *buffer) < 8)
++    { m_decode_error= true; DBUG_RETURN(true); }
+   *value= uint8korr(*buffer);
+   *buffer += 8;
+ 
+-  DBUG_VOID_RETURN;
++  DBUG_RETURN(false);
+ }
+ 
+ void
+@@ -316,17 +390,30 @@ Plugin_gcs_message::encode_payload_item_string(std::vector<unsigned char>* buffe
+   DBUG_VOID_RETURN;
+ }
+ 
+-void
++bool
+ Plugin_gcs_message::decode_payload_item_string(const unsigned char** buffer,
+                                                uint16* type,
++                                               const unsigned char* end,
+                                                std::string* value,
+                                                unsigned long long* length)
+ {
+   DBUG_ENTER("Plugin_gcs_message::decode_payload_item_string");
+ 
++  if (*buffer > end ||
++      static_cast<size_t>(end - *buffer) < WIRE_PAYLOAD_ITEM_HEADER_SIZE)
++    { m_decode_error= true; DBUG_RETURN(true); }
++
+   decode_payload_item_type_and_length(buffer, type, length);
++  /*
++    length is attacker controlled: it comes straight off the wire. Without this
++    check the assign() below reads past the end of the received buffer.
++  */
++  if (*buffer > end ||
++      static_cast<unsigned long long>(end - *buffer) < *length)
++    { m_decode_error= true; DBUG_RETURN(true); }
++
+   value->assign(reinterpret_cast<const char*>(*buffer), (size_t)*length);
+   *buffer += *length;
+ 
+-  DBUG_VOID_RETURN;
++  DBUG_RETURN(false);
+ }
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/src/member_info.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/src/member_info.cc
+@@ -183,74 +183,154 @@ Group_member_info::decode_payload(const unsigned char* buffer,
+   const unsigned char *slider= buffer;
+   uint16 payload_item_type= 0;
+   unsigned long long payload_item_length= 0;
++  m_decode_error= false;
+ 
+-  decode_payload_item_string(&slider,
+-                             &payload_item_type,
+-                             &hostname,
+-                             &payload_item_length);
++  /*
++    Every payload item is checked twice: that the bounded helper accepted it,
++    and that it is the item this position of the payload is supposed to carry.
++    Without the second check a peer can reorder items and have them decode into
++    the wrong fields - a uuid taken from the hostname item, for instance - since
++    the helpers only ever look at lengths.
++  */
++  if (decode_payload_item_string(&slider,
++                                 &payload_item_type,
++                                 end,
++                                 &hostname,
++                                 &payload_item_length) ||
++      payload_item_type != PIT_HOSTNAME)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+ 
+   uint16 port_aux= 0;
+-  decode_payload_item_int2(&slider,
+-                           &payload_item_type,
+-                           &port_aux);
++  if (decode_payload_item_int2(&slider,
++                               &payload_item_type,
++                               end,
++                               &port_aux) ||
++      payload_item_type != PIT_PORT)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   port= (uint)port_aux;
+ 
+-  decode_payload_item_string(&slider,
+-                             &payload_item_type,
+-                             &uuid,
+-                             &payload_item_length);
++  if (decode_payload_item_string(&slider,
++                                 &payload_item_type,
++                                 end,
++                                 &uuid,
++                                 &payload_item_length) ||
++      payload_item_type != PIT_UUID)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+ 
+   std::string gcs_member_id_aux;
+-  decode_payload_item_string(&slider,
+-                             &payload_item_type,
+-                             &gcs_member_id_aux,
+-                             &payload_item_length);
++  if (decode_payload_item_string(&slider,
++                                 &payload_item_type,
++                                 end,
++                                 &gcs_member_id_aux,
++                                 &payload_item_length) ||
++      payload_item_type != PIT_GCS_ID)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   delete gcs_member_id;
+   gcs_member_id= new Gcs_member_identifier(gcs_member_id_aux);
+ 
+   unsigned char status_aux= 0;
+-  decode_payload_item_char(&slider,
+-                           &payload_item_type,
+-                           &status_aux);
++  if (decode_payload_item_char(&slider,
++                               &payload_item_type,
++                               end,
++                               &status_aux) ||
++      payload_item_type != PIT_STATUS)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   status= (Group_member_status)status_aux;
+ 
+   uint32 member_version_aux= 0;
+-  decode_payload_item_int4(&slider,
+-                           &payload_item_type,
+-                           &member_version_aux);
++  if (decode_payload_item_int4(&slider,
++                               &payload_item_type,
++                               end,
++                               &member_version_aux) ||
++      payload_item_type != PIT_VERSION)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   delete member_version;
+   member_version= new Member_version(member_version_aux);
+ 
+   uint16 write_set_extraction_algorithm_aux= 0;
+-  decode_payload_item_int2(&slider,
+-                           &payload_item_type,
+-                           &write_set_extraction_algorithm_aux);
++  if (decode_payload_item_int2(&slider,
++                               &payload_item_type,
++                               end,
++                               &write_set_extraction_algorithm_aux) ||
++      payload_item_type != PIT_WRITE_SET_EXTRACTION_ALGORITHM)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   write_set_extraction_algorithm= (uint)write_set_extraction_algorithm_aux;
+ 
+-  decode_payload_item_string(&slider,
+-                             &payload_item_type,
+-                             &executed_gtid_set,
+-                             &payload_item_length);
++  if (decode_payload_item_string(&slider,
++                                 &payload_item_type,
++                                 end,
++                                 &executed_gtid_set,
++                                 &payload_item_length) ||
++      payload_item_type != PIT_EXECUTED_GTID)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+ 
+-  decode_payload_item_string(&slider,
+-                             &payload_item_type,
+-                             &retrieved_gtid_set,
+-                             &payload_item_length);
++  if (decode_payload_item_string(&slider,
++                                 &payload_item_type,
++                                 end,
++                                 &retrieved_gtid_set,
++                                 &payload_item_length) ||
++      payload_item_type != PIT_RETRIEVED_GTID)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+ 
+-  decode_payload_item_int8(&slider,
+-                           &payload_item_type,
+-                           &gtid_assignment_block_size);
++  if (decode_payload_item_int8(&slider,
++                               &payload_item_type,
++                               end,
++                               &gtid_assignment_block_size) ||
++      payload_item_type != PIT_GTID_ASSIGNMENT_BLOCK_SIZE)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+ 
+   unsigned char role_aux= 0;
+-  decode_payload_item_char(&slider,
+-                           &payload_item_type,
+-                           &role_aux);
++  if (decode_payload_item_char(&slider,
++                               &payload_item_type,
++                               end,
++                               &role_aux) ||
++      payload_item_type != PIT_MEMBER_ROLE)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   role= (Group_member_role)role_aux;
+ 
+   uint32 configuration_flags_aux= 0;
+-  decode_payload_item_int4(&slider,
+-                           &payload_item_type,
+-                           &configuration_flags_aux);
++  if (decode_payload_item_int4(&slider,
++                               &payload_item_type,
++                               end,
++                               &configuration_flags_aux) ||
++      payload_item_type != PIT_CONFIGURATION_FLAGS)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   configuration_flags= configuration_flags_aux;
+ 
+   /*
+@@ -264,35 +344,58 @@ Group_member_info::decode_payload(const unsigned char* buffer,
+     decode_payload_item_type_and_length(&slider,
+                                         &payload_item_type,
+                                         &payload_item_length);
++    /*
++      The header is unbounded, so the length it declares has to be checked
++      against what is left of the payload before any of it is read. A declared
++      length that does not fit is a malformed payload, not an item to skip: the
++      old code silently left the field at its default and carried on with a
++      slider that had already been advanced past the header.
++    */
++    if (slider > end ||
++        static_cast<unsigned long long>(end - slider) < payload_item_length)
++    {
++      m_decode_error= true;
++      DBUG_VOID_RETURN;
++    }
+ 
+     switch (payload_item_type)
+     {
+       case PIT_CONFLICT_DETECTION_ENABLE:
+-        if (slider + payload_item_length <= end)
++        if (payload_item_length != 1)
+         {
+-          unsigned char conflict_detection_enable_aux= *slider;
+-          slider += payload_item_length;
+-          conflict_detection_enable=
+-              (conflict_detection_enable_aux == '1') ? true : false;
++          m_decode_error= true;
++          DBUG_VOID_RETURN;
+         }
++        conflict_detection_enable= (*slider == '1') ? true : false;
++        slider += payload_item_length;
+         break;
+ 
+       case PIT_MEMBER_WEIGHT:
+-        if (slider + payload_item_length <= end)
++        if (payload_item_length != 2)
+         {
+-          uint16 member_weight_aux= uint2korr(slider);
+-          slider += payload_item_length;
+-          member_weight= (uint)member_weight_aux;
++          m_decode_error= true;
++          DBUG_VOID_RETURN;
+         }
++        member_weight= static_cast<uint>(uint2korr(slider));
++        slider += payload_item_length;
+         break;
+ 
+       case PIT_LOWER_CASE_TABLE_NAME:
+-        if (slider + payload_item_length <= end)
++        if (payload_item_length != 2)
+         {
+-          uint16 lower_case_table_names_aux= uint2korr(slider);
+-          slider += payload_item_length;
+-          lower_case_table_names= static_cast <uint>(lower_case_table_names_aux);
++          m_decode_error= true;
++          DBUG_VOID_RETURN;
+         }
++        lower_case_table_names= static_cast<uint>(uint2korr(slider));
++        slider += payload_item_length;
++        break;
++
++      default:
++        /*
++          An item this version does not know about, from a newer member. Skipped
++          rather than rejected, which is what makes the loop forward compatible.
++        */
++        slider += payload_item_length;
+         break;
+     }
+   }
+@@ -862,7 +965,12 @@ Group_member_info_manager::decode(const uchar* to_decode, uint64 length)
+   Group_member_info_manager_message *group_info_message=
+     new Group_member_info_manager_message();
+   group_info_message->decode(to_decode, length);
+-  decoded_members= group_info_message->get_all_members();
++  /*
++    NULL rather than a partially decoded list, so that the caller has to deal
++    with a malformed payload instead of installing whatever survived it.
++  */
++  if (!group_info_message->is_decode_error())
++    decoded_members= group_info_message->get_all_members();
+   delete group_info_message;
+ 
+   return decoded_members;
+@@ -1026,20 +1134,61 @@ Group_member_info_manager_message::decode_payload(const unsigned char* buffer,
+   const unsigned char *slider= buffer;
+   uint16 payload_item_type= 0;
+   unsigned long long payload_item_length= 0;
++  m_decode_error= false;
+ 
+   uint16 number_of_members= 0;
+-  decode_payload_item_int2(&slider,
+-                           &payload_item_type,
+-                           &number_of_members);
++  if (decode_payload_item_int2(&slider,
++                               &payload_item_type,
++                               end,
++                               &number_of_members) ||
++      payload_item_type != PIT_MEMBERS_NUMBER)
++  {
++    m_decode_error= true;
++    clear_members();
++    DBUG_VOID_RETURN;
++  }
+ 
+   clear_members();
++  /*
++    number_of_members is wire controlled, up to 65535, and so is every item
++    length inside the loop. Each iteration therefore has to establish that a
++    header fits before reading one, and that the length that header declares
++    fits before handing that range to the nested decode - otherwise the nested
++    Group_member_info validates itself against a forged end, and the slider
++    walks off the payload.
++  */
+   for(uint16 i= 0; i < number_of_members; i++)
+   {
++    if (slider > end ||
++        static_cast<size_t>(end - slider) <
++            Plugin_gcs_message::WIRE_PAYLOAD_ITEM_HEADER_SIZE)
++    {
++      m_decode_error= true;
++      clear_members();
++      DBUG_VOID_RETURN;
++    }
++
+     decode_payload_item_type_and_length(&slider,
+                                         &payload_item_type,
+                                         &payload_item_length);
++    if (payload_item_type != PIT_MEMBER_DATA ||
++        slider > end ||
++        static_cast<unsigned long long>(end - slider) < payload_item_length)
++    {
++      m_decode_error= true;
++      clear_members();
++      DBUG_VOID_RETURN;
++    }
++
+     Group_member_info* member= new Group_member_info(slider,
+                                                      payload_item_length);
++    if (member->is_decode_error())
++    {
++      delete member;
++      m_decode_error= true;
++      clear_members();
++      DBUG_VOID_RETURN;
++    }
+     members->push_back(member);
+     slider+= payload_item_length;
+   }
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/src/pipeline_stats.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/src/pipeline_stats.cc
+@@ -162,6 +162,27 @@ Pipeline_stats_member_message::encode_payload(std::vector<unsigned char> *buffer
+   encode_payload_item_int8(buffer, PIT_TRANSACTIONS_LOCAL,
+                            transactions_local_aux);
+ 
++  /*
++    Test hook for the cargo type range check in get_cargo_type(). Rewrites the
++    cargo type in the fixed header to CT_MAX, which is what a cargo type this
++    version does not know looks like on the wire - CT_MAX here is 8, the value
++    8.0 uses for its group action message. The receiver must ignore such a
++    message, not treat it as malformed and leave the group.
++
++    The stats message carries the injection because every online member
++    broadcasts one periodically and dropping one has no consequence, so the test
++    can assert that nothing happened. Test-only: reached only with the debug
++    point set.
++  */
++  DBUG_EXECUTE_IF("group_replication_unknown_cargo_type",
++                  {
++                    int2store(buffer->data() +
++                              WIRE_VERSION_SIZE +
++                              WIRE_HD_LEN_SIZE +
++                              WIRE_MSG_LEN_SIZE,
++                              (uint16)CT_MAX);
++                  };);
++
+   DBUG_VOID_RETURN;
+ }
+ 
+@@ -173,39 +194,70 @@ Pipeline_stats_member_message::decode_payload(const unsigned char *buffer,
+   DBUG_ENTER("Pipeline_stats_member_message::decode_payload");
+   const unsigned char *slider= buffer;
+   uint16 payload_item_type= 0;
++  m_decode_error= false;
+ 
+   uint32 transactions_waiting_certification_aux= 0;
+-  decode_payload_item_int4(&slider,
+-                           &payload_item_type,
+-                           &transactions_waiting_certification_aux);
++  if (decode_payload_item_int4(&slider,
++                               &payload_item_type,
++                               end,
++                               &transactions_waiting_certification_aux) ||
++      payload_item_type != PIT_TRANSACTIONS_WAITING_CERTIFICATION)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   m_transactions_waiting_certification=
+       (int32)transactions_waiting_certification_aux;
+ 
+   uint32 transactions_waiting_apply_aux= 0;
+-  decode_payload_item_int4(&slider,
+-                           &payload_item_type,
+-                           &transactions_waiting_apply_aux);
++  if (decode_payload_item_int4(&slider,
++                               &payload_item_type,
++                               end,
++                               &transactions_waiting_apply_aux) ||
++      payload_item_type != PIT_TRANSACTIONS_WAITING_APPLY)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   m_transactions_waiting_apply=
+       (int32)transactions_waiting_apply_aux;
+ 
+   uint64 transactions_certified_aux= 0;
+-  decode_payload_item_int8(&slider,
+-                           &payload_item_type,
+-                           &transactions_certified_aux);
++  if (decode_payload_item_int8(&slider,
++                               &payload_item_type,
++                               end,
++                               &transactions_certified_aux) ||
++      payload_item_type != PIT_TRANSACTIONS_CERTIFIED)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   m_transactions_certified=
+       (int64)transactions_certified_aux;
+ 
+   uint64 transactions_applied_aux= 0;
+-  decode_payload_item_int8(&slider,
+-                           &payload_item_type,
+-                           &transactions_applied_aux);
++  if (decode_payload_item_int8(&slider,
++                               &payload_item_type,
++                               end,
++                               &transactions_applied_aux) ||
++      payload_item_type != PIT_TRANSACTIONS_APPLIED)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   m_transactions_applied=
+       (int64)transactions_applied_aux;
+ 
+   uint64 transactions_local_aux= 0;
+-  decode_payload_item_int8(&slider,
+-                           &payload_item_type,
+-                           &transactions_local_aux);
++  if (decode_payload_item_int8(&slider,
++                               &payload_item_type,
++                               end,
++                               &transactions_local_aux) ||
++      payload_item_type != PIT_TRANSACTIONS_LOCAL)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   m_transactions_local=
+       (int64)transactions_local_aux;
+ 
+@@ -640,6 +692,17 @@ Flow_control_module::handle_stats_data(const uchar *data,
+   int error= 0;
+   Pipeline_stats_member_message message(data, len);
+ 
++  /*
++    Nothing else consulted is_decode_error() for this message type, so a
++    malformed payload used to reach update_member_stats() and be applied as flow
++    control input.
++  */
++  if (message.is_decode_error())
++  {
++    log_message(MY_ERROR_LEVEL, "Malformed pipeline stats message");
++    DBUG_RETURN(1);
++  }
++
+   /*
+     This method is called synchronously by communication layer, so
+     we do not need concurrency control.
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/src/recovery_message.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/src/recovery_message.cc
+@@ -47,17 +47,35 @@ void Recovery_message::decode_payload(const unsigned char* buffer,
+   const unsigned char *slider= buffer;
+   uint16 payload_item_type= 0;
+   unsigned long long payload_item_length= 0;
++  m_decode_error= false;
+ 
+   uint16 recovery_message_type_aux= 0;
+-  decode_payload_item_int2(&slider,
+-                           &payload_item_type,
+-                           &recovery_message_type_aux);
++  if (decode_payload_item_int2(&slider,
++                               &payload_item_type,
++                               end,
++                               &recovery_message_type_aux) ||
++      payload_item_type != PIT_RECOVERY_MESSAGE_TYPE)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   recovery_message_type= (Recovery_message_type)recovery_message_type_aux;
+ 
+-  decode_payload_item_string(&slider,
+-                             &payload_item_type,
+-                             &member_uuid,
+-                             &payload_item_length);
++  if (decode_payload_item_string(&slider,
++                                 &payload_item_type,
++                                 end,
++                                 &member_uuid,
++                                 &payload_item_length) ||
++      payload_item_type != PIT_MEMBER_UUID)
++  {
++    /*
++      Cleared rather than left holding whatever decoded, because a member uuid
++      is what handle_recovery_message() matches members on.
++    */
++    member_uuid.clear();
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+ 
+   DBUG_VOID_RETURN;
+ }
+@@ -74,5 +92,44 @@ void Recovery_message::encode_payload(std::vector<unsigned char>* buffer) const
+                              member_uuid.c_str(),
+                              member_uuid.length());
+ 
++  /*
++    Rewrite the on-the-wire length of the member uuid payload
++    item so that it claims far more data than the message carries. That is the
++    shape of a malformed payload from a peer, and it cannot be produced through
++    any supported interface, so injecting it here is the only way an MTR test
++    can drive the decode validation on a running group. Test-only: reached only
++    with the debug point set.
++
++    Upstream added the equivalent hook for the message service message on the
++    8.0 line, see gr_invalid_message_service_tag_length. No such message class
++    exists here, so the recovery message, which every joining member broadcasts
++    when it comes online, carries the injection instead.
++  */
++  DBUG_EXECUTE_IF("group_replication_malformed_recovery_message_payload",
++                  {
++                    ulonglong invalid_payload_item_length= 1ULL << 30;
++                    int8store(buffer->data() +
++                              WIRE_FIXED_HEADER_SIZE +
++                              WIRE_PAYLOAD_ITEM_HEADER_SIZE + 2 +
++                              WIRE_PAYLOAD_ITEM_TYPE_SIZE,
++                              invalid_payload_item_length);
++                  };);
++
++  /*
++    The same injection point for the payload item type rather than its length:
++    the member uuid item is relabelled as the recovery message type item. Every
++    length on the wire stays correct, so a decoder that only validates lengths
++    accepts this and assigns the uuid value to the field it believes it is
++    reading - which is what the type checks in decode_payload() exist to stop,
++    and what no bounds check can catch. Test-only, as above.
++  */
++  DBUG_EXECUTE_IF("group_replication_malformed_recovery_message_payload_type",
++                  {
++                    int2store(buffer->data() +
++                              WIRE_FIXED_HEADER_SIZE +
++                              WIRE_PAYLOAD_ITEM_HEADER_SIZE + 2,
++                              (uint16)PIT_RECOVERY_MESSAGE_TYPE);
++                  };);
++
+   DBUG_VOID_RETURN;
+ }
+--- mysql-5.7.44.orig/rapid/plugin/group_replication/src/single_primary_message.cc
++++ mysql-5.7.44/rapid/plugin/group_replication/src/single_primary_message.cc
+@@ -44,11 +44,18 @@ void Single_primary_message::decode_payload(const unsigned char* buffer,
+   DBUG_ENTER("Single_primary_message::decode_payload");
+   const unsigned char *slider= buffer;
+   uint16 payload_item_type= 0;
++  m_decode_error= false;
+ 
+   uint16 single_primary_message_type_aux= 0;
+-  decode_payload_item_int2(&slider,
+-                           &payload_item_type,
+-                           &single_primary_message_type_aux);
++  if (decode_payload_item_int2(&slider,
++                               &payload_item_type,
++                               end,
++                               &single_primary_message_type_aux) ||
++      payload_item_type != PIT_SINGLE_PRIMARY_MESSAGE_TYPE)
++  {
++    m_decode_error= true;
++    DBUG_VOID_RETURN;
++  }
+   single_primary_message_type= (Single_primary_message_type)single_primary_message_type_aux;
+ 
+   DBUG_VOID_RETURN;
+--- mysql-5.7.44.orig/rapid/unittest/gunit/group_replication/group_replication_member_info-t.cc
++++ mysql-5.7.44/rapid/unittest/gunit/group_replication/group_replication_member_info-t.cc
+@@ -446,4 +446,373 @@ TEST_F(ClusterMemberInfoManagerTest, EncodeDecodeLargeSets)
+   delete retrieved_local_info;
+ }
+ 
++/*
++  Group Replication malformed payload decode validation.
++
++  The decode_payload_item_* helpers advanced the read pointer and copied
++  `length` bytes out of the received buffer without checking against the end of
++  that buffer. For the variable-length variants the length comes straight off
++  the wire, so a crafted GCS message from a peer could drive reads past the end
++  of the buffer - an out-of-bounds read.
++
++  Group Replication messages arrive over GCS/XCom from other members, so this is
++  externally influenced input. These tests feed truncated encodings, which is
++  exactly the shape of a malformed payload, and assert the decoder reports the
++  failure instead of reading past the end.
++*/
++
++TEST_F(ClusterMemberInfoTest, TruncatedPayloadIsRejected)
++{
++  vector<uchar>* encoded= new vector<uchar>();
++  local_node->encode(encoded);
++
++  /* A complete encoding must still decode cleanly. */
++  Group_member_info whole(&encoded->front(), encoded->size());
++  ASSERT_FALSE(whole.is_decode_error());
++
++  /*
++    A prefix too short to hold the items this decoder reads must be reported as
++    a failure. Note a long prefix may legitimately decode clean: the decoder
++    stops once it has read the items it knows about, so trailing bytes of the
++    encoding are not required. What must never happen is a read past the end,
++    which is what the bounds checks in decode_payload_item_* now prevent.
++  */
++  Group_member_info short_prefix(&encoded->front(), 8);
++  ASSERT_TRUE(short_prefix.is_decode_error())
++    << "an 8 byte prefix of a " << encoded->size()
++    << " byte message cannot hold the required payload items";
++
++  /*
++    Sweep every truncation. This asserts nothing on its own beyond "does not
++    crash and terminates" - its value is as a vehicle for the sanitiser builds,
++    where an out-of-bounds read here is a hard failure. Before the fix this
++    sweep reads past the end of the buffer for a large fraction of the lengths.
++  */
++  for (size_t len= 1; len < encoded->size(); len++)
++  {
++    Group_member_info truncated(&encoded->front(), len);
++    /* Touch the result so the decode cannot be optimised away. */
++    ASSERT_TRUE(truncated.is_decode_error() || !truncated.is_decode_error());
++  }
++
++  delete encoded;
++}
++
++TEST_F(ClusterMemberInfoTest, EmptyPayloadIsRejected)
++{
++  /* Nothing at all to decode: must fail, not read from the pointer. */
++  vector<uchar>* encoded= new vector<uchar>();
++  local_node->encode(encoded);
++
++  Group_member_info empty(&encoded->front(), 0);
++  ASSERT_TRUE(empty.is_decode_error());
++
++  delete encoded;
++}
++
++TEST_F(ClusterMemberInfoTest, OversizedPayloadItemLengthIsRejected)
++{
++  /*
++    The direct reproducer for the out-of-bounds read. A payload item is
++    type (2 bytes) + length (8 bytes) + data. Take a valid encoding and rewrite
++    the first item's length field to claim far more data than the buffer holds,
++    which is what a malicious peer would send. The decoder must reject it rather
++    than assign() from past the end of the buffer.
++  */
++  vector<uchar>* encoded= new vector<uchar>();
++  local_node->encode(encoded);
++
++  Group_member_info whole(&encoded->front(), encoded->size());
++  ASSERT_FALSE(whole.is_decode_error());
++
++  /* Offset of the first payload item's length field. */
++  size_t const len_off= Group_member_info::WIRE_FIXED_HEADER_SIZE +
++                        Group_member_info::WIRE_PAYLOAD_ITEM_TYPE_SIZE;
++  ASSERT_LT(len_off + Group_member_info::WIRE_PAYLOAD_ITEM_LEN_SIZE,
++            encoded->size());
++
++  uchar* raw= &encoded->front();
++  /* Claim a 0x00FFFFFF byte string inside a few-hundred byte buffer. */
++  int8store(raw + len_off, (ulonglong)0x00FFFFFFULL);
++
++  Group_member_info hostile(raw, encoded->size());
++  ASSERT_TRUE(hostile.is_decode_error())
++    << "a payload item claiming more data than the buffer holds must be "
++       "rejected, not read past the end";
++
++  delete encoded;
++}
++
++/*
++  The two entry points that read a peer supplied buffer at fixed
++  offsets without decoding the whole message. Both are reached before any
++  Plugin_gcs_message instance exists, so neither is covered by the decode
++  validation tests above.
++*/
++
++TEST_F(ClusterMemberInfoManagerTest, GetCargoTypeRejectsTruncatedFixedHeader)
++{
++  vector<uchar>* encoded= new vector<uchar>();
++  cluster_member_mgr->encode(encoded);
++
++  ASSERT_GT(encoded->size(), Plugin_gcs_message::WIRE_FIXED_HEADER_SIZE);
++
++  Plugin_gcs_message::enum_cargo_type cargo_type=
++      Plugin_gcs_message::CT_UNKNOWN;
++  bool const error= Plugin_gcs_message::get_cargo_type(
++      &encoded->front(),
++      Plugin_gcs_message::WIRE_FIXED_HEADER_SIZE - 1,
++      &cargo_type);
++
++  EXPECT_TRUE(error)
++    << "a buffer shorter than the fixed header must be rejected, not read "
++       "past the end";
++
++  delete encoded;
++}
++
++TEST_F(ClusterMemberInfoManagerTest, GetCargoTypeIgnoresOutOfRangeCargoType)
++{
++  /*
++    A cargo type this version does not know is what a higher version member
++    sends in a mixed version group, not a malformed message. get_cargo_type()
++    reports it as CT_UNKNOWN and succeeds, so that on_message_received() ignores
++    it through the switch default instead of reporting a malformed header and
++    leaving the group. Only a truncated fixed header is malformed, which the
++    case above covers.
++  */
++  vector<uchar>* encoded= new vector<uchar>();
++  cluster_member_mgr->encode(encoded);
++
++  size_t const cargo_type_offset= Plugin_gcs_message::WIRE_VERSION_SIZE +
++                                  Plugin_gcs_message::WIRE_HD_LEN_SIZE +
++                                  Plugin_gcs_message::WIRE_MSG_LEN_SIZE;
++  ASSERT_LT(cargo_type_offset + Plugin_gcs_message::WIRE_CARGO_TYPE_SIZE,
++            encoded->size());
++
++  uint16 const unknown_cargo_types[]=
++    { (uint16)Plugin_gcs_message::CT_UNKNOWN,
++      (uint16)Plugin_gcs_message::CT_MAX,
++      (uint16)(Plugin_gcs_message::CT_MAX + 1),
++      (uint16)65535 };
++
++  for (size_t i= 0; i < array_elements(unknown_cargo_types); i++)
++  {
++    int2store(&encoded->front() + cargo_type_offset, unknown_cargo_types[i]);
++
++    /*
++      Seeded with a known type, so that the assertion below shows the function
++      wrote CT_UNKNOWN rather than leaving the value untouched.
++    */
++    Plugin_gcs_message::enum_cargo_type cargo_type=
++        Plugin_gcs_message::CT_MEMBER_INFO_MANAGER_MESSAGE;
++    bool const error= Plugin_gcs_message::get_cargo_type(
++        &encoded->front(), encoded->size(), &cargo_type);
++
++    EXPECT_FALSE(error) << "cargo type " << unknown_cargo_types[i]
++                        << " must not be reported as malformed";
++    EXPECT_EQ(Plugin_gcs_message::CT_UNKNOWN, cargo_type)
++        << "cargo type " << unknown_cargo_types[i]
++        << " must be reported as CT_UNKNOWN so the caller ignores it";
++  }
++
++  delete encoded;
++}
++
++TEST_F(ClusterMemberInfoManagerTest, GetCargoTypeAcceptsValidMessage)
++{
++  vector<uchar>* encoded= new vector<uchar>();
++  cluster_member_mgr->encode(encoded);
++
++  Plugin_gcs_message::enum_cargo_type cargo_type=
++      Plugin_gcs_message::CT_UNKNOWN;
++  bool const error= Plugin_gcs_message::get_cargo_type(
++      &encoded->front(), encoded->size(), &cargo_type);
++
++  EXPECT_FALSE(error);
++  EXPECT_EQ(Plugin_gcs_message::CT_MEMBER_INFO_MANAGER_MESSAGE, cargo_type);
++
++  delete encoded;
++}
++
++TEST_F(ClusterMemberInfoManagerTest, GetFirstPayloadItemRejectsTruncatedHeader)
++{
++  vector<uchar>* encoded= new vector<uchar>();
++  cluster_member_mgr->encode(encoded);
++
++  size_t const minimum_size=
++      Plugin_gcs_message::WIRE_FIXED_HEADER_SIZE +
++      Plugin_gcs_message::WIRE_PAYLOAD_ITEM_HEADER_SIZE;
++  ASSERT_GT(encoded->size(), minimum_size);
++
++  const unsigned char* payload_data= NULL;
++  uint64 payload_length= 0;
++  bool const error= Plugin_gcs_message::get_first_payload_item_raw_data(
++      &encoded->front(), minimum_size - 1, &payload_data, &payload_length);
++
++  EXPECT_TRUE(error)
++    << "a buffer too short to hold the first payload item header must be "
++       "rejected";
++
++  delete encoded;
++}
++
++TEST_F(ClusterMemberInfoManagerTest, GetFirstPayloadItemRejectsOverrunningLength)
++{
++  vector<uchar>* encoded= new vector<uchar>();
++  cluster_member_mgr->encode(encoded);
++
++  size_t const payload_item_len_offset=
++      Plugin_gcs_message::WIRE_FIXED_HEADER_SIZE +
++      Plugin_gcs_message::WIRE_PAYLOAD_ITEM_TYPE_SIZE;
++  ASSERT_LT(payload_item_len_offset +
++                Plugin_gcs_message::WIRE_PAYLOAD_ITEM_LEN_SIZE,
++            encoded->size());
++
++  size_t const bytes_after_item_header=
++      encoded->size() - (payload_item_len_offset +
++                         Plugin_gcs_message::WIRE_PAYLOAD_ITEM_LEN_SIZE);
++
++  /* One byte more than the buffer holds must be rejected. */
++  int8store(&encoded->front() + payload_item_len_offset,
++            (ulonglong)(bytes_after_item_header + 1));
++
++  const unsigned char* payload_data= NULL;
++  uint64 payload_length= 0;
++  bool error= Plugin_gcs_message::get_first_payload_item_raw_data(
++      &encoded->front(), encoded->size(), &payload_data, &payload_length);
++
++  EXPECT_TRUE(error)
++    << "a declared payload item length larger than the buffer must be "
++       "rejected, not handed to the applier";
++
++  /* Exactly what the buffer holds must still be accepted. */
++  int8store(&encoded->front() + payload_item_len_offset,
++            (ulonglong)bytes_after_item_header);
++
++  error= Plugin_gcs_message::get_first_payload_item_raw_data(
++      &encoded->front(), encoded->size(), &payload_data, &payload_length);
++
++  EXPECT_FALSE(error);
++  EXPECT_EQ(bytes_after_item_header, payload_length);
++
++  delete encoded;
++}
++
++TEST_F(ClusterMemberInfoManagerTest, GetFirstPayloadItemAcceptsValidMessage)
++{
++  vector<uchar>* encoded= new vector<uchar>();
++  cluster_member_mgr->encode(encoded);
++
++  const unsigned char* payload_data= NULL;
++  uint64 payload_length= 0;
++  bool const error= Plugin_gcs_message::get_first_payload_item_raw_data(
++      &encoded->front(), encoded->size(), &payload_data, &payload_length);
++
++  EXPECT_FALSE(error);
++  EXPECT_TRUE(payload_data != NULL);
++  EXPECT_GT(payload_length, 0U);
++  EXPECT_LE(payload_data + payload_length,
++            &encoded->front() + encoded->size());
++
++  delete encoded;
++}
++
++/*
++  The two cases below are ports of the gunit tests upstream ships with
++  Bug#39253416 (7206c72ea29): DecodeRejectsMemberEntryWithInvalidPortLength and
++  DecodeRejectsUnexpectedMemberInfoManagerEntryType. The third upstream case,
++  GetPitDataRejectsUnexpectedMemberInfoManagerEntryType, has no counterpart here
++  because get_pit_data() reads payload items this line does not have.
++
++  They cover Group_member_info_manager_message::decode_payload(), the state
++  exchange path, which no MTR test on this line can reach: injecting there needs
++  a debug point in Group_member_info::encode_payload(), and that encode runs on a
++  GCS engine thread, which has no DBUG state, so the hook never fires.
++
++  Both walk a Group_member_info_manager_message encoding:
++
++    fixed header
++    PIT_MEMBERS_NUMBER item   header + 2 bytes
++    PIT_MEMBER_DATA item      header + a whole nested Group_member_info
++*/
++static size_t get_first_member_entry_offset()
++{
++  size_t const int2_payload_size= 2;
++  return Group_member_info::WIRE_FIXED_HEADER_SIZE +
++         Group_member_info::WIRE_PAYLOAD_ITEM_HEADER_SIZE +
++         int2_payload_size;
++}
++
++static size_t get_first_member_port_length_offset(size_t hostname_length)
++{
++  /* Where the nested member's own encoding starts. */
++  size_t const first_member_payload_offset=
++      get_first_member_entry_offset() +
++      Group_member_info::WIRE_PAYLOAD_ITEM_HEADER_SIZE;
++  /* Its first item is the hostname, and the port item follows it. */
++  size_t const hostname_item_size=
++      Group_member_info::WIRE_PAYLOAD_ITEM_HEADER_SIZE + hostname_length;
++
++  return first_member_payload_offset +
++         Group_member_info::WIRE_FIXED_HEADER_SIZE + hostname_item_size +
++         Group_member_info::WIRE_PAYLOAD_ITEM_TYPE_SIZE;
++}
++
++TEST_F(ClusterMemberInfoManagerTest,
++       DecodeRejectsMemberEntryWithInvalidPortLength)
++{
++  vector<uchar>* encoded= new vector<uchar>();
++  cluster_member_mgr->encode(encoded);
++
++  size_t const port_length_offset=
++      get_first_member_port_length_offset(local_node->get_hostname().length());
++  ASSERT_LT(port_length_offset + Group_member_info::WIRE_PAYLOAD_ITEM_LEN_SIZE,
++            encoded->size() + 1);
++
++  /* A port item declaring one byte where the decoder needs two. */
++  int8store(&encoded->front() + port_length_offset, 1ULL);
++
++  std::vector<Group_member_info*>* decoded_members=
++      cluster_member_mgr->decode(&encoded->front(), encoded->size());
++
++  EXPECT_TRUE(decoded_members == NULL)
++    << "a nested member whose port item declares the wrong length must fail "
++       "the whole message, not yield a partially decoded member list";
++
++  delete decoded_members;
++  delete encoded;
++}
++
++TEST_F(ClusterMemberInfoManagerTest,
++       DecodeRejectsUnexpectedMemberInfoManagerEntryType)
++{
++  vector<uchar>* encoded= new vector<uchar>();
++  cluster_member_mgr->encode(encoded);
++
++  size_t const member_entry_offset= get_first_member_entry_offset();
++  ASSERT_LT(member_entry_offset +
++                Group_member_info::WIRE_PAYLOAD_ITEM_TYPE_SIZE,
++            encoded->size() + 1);
++
++  /*
++    Relabel the member entry as something that is not PIT_MEMBER_DATA. Upstream
++    relabels it PIT_MEMBER_ACTIONS, which this line does not have;
++    PIT_MEMBERS_NUMBER is the equivalent - a valid member of the enum that does
++    not belong at this position. Every length stays correct, so only the type
++    check can reject it.
++  */
++  int2store(&encoded->front() + member_entry_offset,
++            (uint16)Group_member_info_manager_message::PIT_MEMBERS_NUMBER);
++
++  std::vector<Group_member_info*>* decoded_members=
++      cluster_member_mgr->decode(&encoded->front(), encoded->size());
++
++  EXPECT_TRUE(decoded_members == NULL)
++    << "a member entry that is not PIT_MEMBER_DATA must fail the whole message";
++
++  delete decoded_members;
++  delete encoded;
++}
++
+ }

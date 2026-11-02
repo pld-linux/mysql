@@ -1,0 +1,87 @@
+MySQL server 8.3.0 crashes at Item_rollup_sum_switcher::current_arg
+(Bug#36593235)
+https://github.com/percona/percona-server/commit/56f305e24d
+https://github.com/mysql/mysql-server/commit/9a32e4495c5
+
+--- mysql-5.7.44.orig/sql/item_cmpfunc.cc
++++ mysql-5.7.44/sql/item_cmpfunc.cc
+@@ -4928,12 +4928,20 @@ void cmp_item_row::store_value(Item *item)
+   assert(comparators);
+   if (comparators)
+   {
+-    item->bring_value();
+     item->null_value= 0;
+-    for (uint i= 0; i < n; i++)
++    item->bring_value();
++    if (item->null_value)
+     {
+-      comparators[i]->store_value(item->element_index(i));
+-      item->null_value|= item->element_index(i)->null_value;
++      set_null_value(/*nv=*/true);
++    }
++    else
++    {
++      item->null_value= false;
++      for (uint i= 0; i < n; i++)
++      {
++        comparators[i]->store_value(item->element_index(i));
++        item->null_value|= item->element_index(i)->null_value;
++      }
+     }
+   }
+   DBUG_VOID_RETURN;
+@@ -4951,15 +4959,23 @@ void cmp_item_row::store_value_by_template(cmp_item *t, Item *item)
+   n= tmpl->n;
+   if ((comparators= (cmp_item **) sql_alloc(sizeof(cmp_item *)*n)))
+   {
+-    item->bring_value();
+     item->null_value= 0;
+-    for (uint i=0; i < n; i++)
++    item->bring_value();
++    if (item->null_value)
+     {
+-      if (!(comparators[i]= tmpl->comparators[i]->make_same()))
+-	break;					// new failed
+-      comparators[i]->store_value_by_template(tmpl->comparators[i],
+-					      item->element_index(i));
+-      item->null_value|= item->element_index(i)->null_value;
++      set_null_value(/*nv=*/true);
++    }
++    else
++    {
++      item->null_value= false;
++      for (uint i= 0; i < n; i++)
++      {
++        if (!(comparators[i]= tmpl->comparators[i]->make_same()))
++          break;                                  // new failed
++        comparators[i]->store_value_by_template(tmpl->comparators[i],
++                                                item->element_index(i));
++        item->null_value|= item->element_index(i)->null_value;
++      }
+     }
+   }
+ }
+--- mysql-5.7.44.orig/sql/item_cmpfunc.h
++++ mysql-5.7.44/sql/item_cmpfunc.h
+@@ -1418,6 +1418,7 @@ public:
+   {
+     store_value(item);
+   }
++  virtual void set_null_value(bool nv) = 0;
+ };
+ 
+ /// cmp_item which stores a scalar (i.e. non-ROW).
+@@ -1767,6 +1768,13 @@ public:
+   int compare(const cmp_item *arg) const;
+   cmp_item *make_same();
+   void store_value_by_template(cmp_item *tmpl, Item *);
++  void set_null_value(bool nv)
++  {
++    for (uint i= 0; i < n; i++)
++    {
++      comparators[i]->set_null_value(nv);
++    }
++  }
+   friend void Item_func_in::fix_length_and_dec();
+ };
+ 
