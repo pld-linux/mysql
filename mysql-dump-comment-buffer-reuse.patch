@@ -1,0 +1,18 @@
+mysqldump: fix_identifier_with_newline() kept the heap buffer its callers
+free in static variables; the next long name with a newline was written
+into freed memory.
+
+--- percona-server-5.6.51-91.0.orig/client/mysqldump.c
++++ percona-server-5.6.51-91.0/client/mysqldump.c
+@@ -2262,8 +2262,9 @@ static char const* fix_identifier_with_newline(char const* object_name, my_bool*
+ 
+   // static buffer for replacement procedure
+   static char storage[NAME_LEN + 1];
+-  static char* buffer= storage;
+-  static size_t buffer_size= sizeof(storage) - 1;
++  // callers free a returned heap buffer, so never reuse one across calls
++  char* buffer= storage;
++  size_t buffer_size= sizeof(storage) - 1;
+   size_t index= 0;
+   size_t required_size= 0;
+ 

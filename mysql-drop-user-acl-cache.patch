@@ -1,0 +1,15 @@
+DROP USER did not flush the privilege cache, connected sessions of the
+dropped user kept their cached database privileges (Bug#37132323).
+https://github.com/percona/percona-server/commit/b3938045d8 (https://github.com/mysql/mysql-server/commit/dd8b0c5c7d6)
+
+--- percona-server-5.6.51-91.0.orig/sql/sql_acl.cc
++++ percona-server-5.6.51-91.0/sql/sql_acl.cc
+@@ -8745,6 +8745,8 @@ bool mysql_drop_user(THD *thd, List <LEX_USER> &list)
+ 
+   /* Rebuild 'acl_check_hosts' since 'acl_users' has been modified */
+   rebuild_check_host();
++  /* Clear privilege cache */
++  acl_cache->clear(1);
+ 
+   mysql_mutex_unlock(&acl_cache->lock);
+ 

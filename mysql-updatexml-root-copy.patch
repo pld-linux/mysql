@@ -1,0 +1,16 @@
+UpdateXML(xml, '/', rep) returned a buffer owned by its argument instead of
+its own copy (Bug#36684463).
+https://github.com/percona/percona-server/commit/c31b08e705 (https://github.com/mysql/mysql-server/commit/4ea181e95f0)
+
+--- percona-server-5.6.51-91.0.orig/sql/item_xmlfunc.cc
++++ percona-server-5.6.51-91.0/sql/item_xmlfunc.cc
+@@ -2908,7 +2908,8 @@ String *Item_func_xml_update::val_str(String *str)
+       UpdateXML(xml, '/', 'replacement');
+       Just return the replacement string.
+     */
+-    return rep;
++    tmp_value.copy(*rep);
++    return &tmp_value;
+   }
+ 
+   tmp_value.length(0);

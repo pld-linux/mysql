@@ -1,0 +1,3112 @@
+Percona Server 5.6.51-92.0 and 93.0 (post-EOL fixes), shipped by Percona as git tags only:
+diff of tags Percona-Server-5.6.51-91.0..Percona-Server-5.6.51-93.0 without doc/
+https://github.com/percona/percona-server/compare/Percona-Server-5.6.51-91.0...Percona-Server-5.6.51-93.0
+
+--- a/client/mysqltest.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/client/mysqltest.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -727,8 +727,9 @@
+         DBUG_VOID_RETURN;
+       }
+ 
+-      DBUG_PRINT("info", ("Read %lu bytes from file, buf: %s",
+-                          (unsigned long)bytes, buf));
++      DBUG_PRINT("info",
++                 ("Read %lu bytes from file, buf: %.*s", (unsigned long)bytes,
++                  static_cast<int>(bytes), buf));
+ 
+       char* show_from= buf + bytes;
+       while(show_from > buf && lines > 0 )
+--- a/include/errmsg.h	2021-02-02 15:20:34.000000000 +0100
++++ b/include/errmsg.h	2022-11-11 18:25:54.000000000 +0100
+@@ -41,7 +41,8 @@
+ #define CR_MAX_ERROR		2999
+ #if !defined(ER)
+ #define ER(X) (((X) >= CR_ERROR_FIRST && (X) <= CR_ERROR_LAST)? \
+-               client_errors[(X)-CR_ERROR_FIRST]: client_errors[CR_UNKNOWN_ERROR])
++               client_errors[(X)-CR_ERROR_FIRST]: \
++               client_errors[CR_UNKNOWN_ERROR -CR_ERROR_FIRST])
+ 
+ #endif
+ #define CLIENT_ERRMAP		2	/* Errormap used by my_error() */
+--- a/mysql-test/r/audit_log_xml_escape.result	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/r/audit_log_xml_escape.result	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,10 @@
++SET GLOBAL audit_log_flush=ON;
++SET GLOBAL audit_log_flush=ON;
++CREATE TABLE a (id int) ENGINE = InnoDB;
++INSERT INTO a 
++VALUES (1);
++INSERT INTO a 	VALUES (2);
++INSERT INTO a VALUES (3);
++set global audit_log_flush= ON;
++Escape rules Ok
++DROP TABLE a;
+--- a/mysql-test/r/func_group.result	2021-02-02 15:20:34.000000000 +0100
++++ b/mysql-test/r/func_group.result	2022-11-11 18:25:54.000000000 +0100
+@@ -1831,3 +1831,38 @@
+ 0
+ 0
+ DROP TABLE t1;
++#
++# Bug#32552332 - CAN'T WRITE; DUPLICATE KEY IN TABLE '/TMP/#SQL...'
++#
++CREATE TABLE tr (c1 INT);
++INSERT INTO tr VALUES (1);
++CREATE FUNCTION seq_1_to_2() RETURNS INT
++BEGIN
++DECLARE limit_value, return_value INT;
++SET limit_value = 2;
++SELECT c1 INTO return_value FROM tr;
++IF (return_value < limit_value) THEN
++UPDATE tr SET c1 = c1 + 1;
++ELSE
++UPDATE tr SET c1 = 1;
++END IF;
++RETURN (return_value);
++END|
++CREATE TABLE t1 (c1 INT);
++INSERT INTO t1 VALUES (10);
++INSERT INTO t1 VALUES (11);
++SELECT seq_1_to_2() as seq, COUNT(*) FROM t1 GROUP BY seq;
++seq	COUNT(*)
++1	1
++2	1
++SELECT FLOOR(seq_1_to_2() * 2) AS val, COUNT(*) FROM t1 GROUP BY val;
++val	COUNT(*)
++2	1
++4	1
++SELECT val, COUNT(*) FROM (SELECT FLOOR(seq_1_to_2())+1 val FROM t1) x
++GROUP BY x.val;
++val	COUNT(*)
++2	1
++3	1
++DROP TABLE t1, tr;
++DROP FUNCTION seq_1_to_2;
+--- a/mysql-test/suite/innodb/r/partition_autoinc.result	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/suite/innodb/r/partition_autoinc.result	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,5 @@
++# PS-7856: update on partition tables crashes the server
++CREATE TABLE t1(ip_col INT, i1 INT AUTO_INCREMENT, INDEX tt_2_pi1(i1)) PARTITION BY HASH (ip_col);
++INSERT INTO t1(ip_col) VALUES(1);
++UPDATE t1 SET i1 = 1 WHERE ip_col = 1;
++DROP TABLE t1;
+--- a/mysql-test/suite/innodb/t/partition_autoinc-master.opt	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/suite/innodb/t/partition_autoinc-master.opt	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1 @@
++--disable-log-bin
+--- a/mysql-test/suite/innodb/t/partition_autoinc.test	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/suite/innodb/t/partition_autoinc.test	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,9 @@
++--source include/have_innodb.inc
++
++#################################
++--echo # PS-7856: update on partition tables crashes the server
++#################################
++CREATE TABLE t1(ip_col INT, i1 INT AUTO_INCREMENT, INDEX tt_2_pi1(i1)) PARTITION BY HASH (ip_col);
++INSERT INTO t1(ip_col) VALUES(1);
++UPDATE t1 SET i1 = 1 WHERE ip_col = 1;
++DROP TABLE t1;
+--- a/mysql-test/suite/innodb_fts/r/bug_32831765.result	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/suite/innodb_fts/r/bug_32831765.result	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,111 @@
++#
++# Bug#32831765 SERVER HITS OOM CONDITION WHEN LOADING TWO
++# INNODB TABLES WITH FTS INDEXES
++#
++create table t1 ( `id` int unsigned NOT NULL AUTO_INCREMENT, `col01` text,
++`col02` text, `col03` text, `col04` text, `col05` text, `col06` text, `col07`
++text, `col08` text, `col09` text, `col10` text, `col11` text, `col12` text,
++`col13` text, `col14` text, `col15` text, `col16` text, `col17` text, `col18`
++text, `col19` text, `col20` text, `col21` text, `col22` text, `col23` text,
++`col24` text, `col25` text, `col26` text, `col27` text, `col28` text, `col29`
++text, `col30` text, PRIMARY KEY (`id`), FULLTEXT KEY (`col01`), FULLTEXT KEY
++(`col02`), FULLTEXT KEY (`col03`), FULLTEXT KEY (`col04`), FULLTEXT KEY
++(`col05`), FULLTEXT KEY (`col06`), FULLTEXT KEY (`col07`), FULLTEXT KEY
++(`col08`), FULLTEXT KEY (`col09`), FULLTEXT KEY (`col10`), FULLTEXT KEY
++(`col11`), FULLTEXT KEY (`col12`), FULLTEXT KEY (`col13`), FULLTEXT KEY
++(`col14`), FULLTEXT KEY (`col15`), FULLTEXT KEY (`col16`), FULLTEXT KEY
++(`col17`), FULLTEXT KEY (`col18`), FULLTEXT KEY (`col19`), FULLTEXT KEY
++(`col20`), FULLTEXT KEY (`col21`), FULLTEXT KEY (`col22`), FULLTEXT KEY
++(`col23`), FULLTEXT KEY (`col24`), FULLTEXT KEY (`col25`), FULLTEXT KEY
++(`col26`), FULLTEXT KEY (`col27`), FULLTEXT KEY (`col28`), FULLTEXT KEY
++(`col29`), FULLTEXT KEY (`col30`)) engine=innodb;
++create table t2 ( `id` int unsigned NOT NULL AUTO_INCREMENT, `col01` text,
++`col02` text, `col03` text, `col04` text, `col05` text, `col06` text, `col07`
++text, `col08` text, `col09` text, `col10` text, `col11` text, `col12` text,
++`col13` text, `col14` text, `col15` text, `col16` text, `col17` text, `col18`
++text, `col19` text, `col20` text, `col21` text, `col22` text, `col23` text,
++`col24` text, `col25` text, `col26` text, `col27` text, `col28` text, `col29`
++text, `col30` text, PRIMARY KEY (`id`), FULLTEXT KEY (`col01`), FULLTEXT KEY
++(`col02`), FULLTEXT KEY (`col03`), FULLTEXT KEY (`col04`), FULLTEXT KEY
++(`col05`), FULLTEXT KEY (`col06`), FULLTEXT KEY (`col07`), FULLTEXT KEY
++(`col08`), FULLTEXT KEY (`col09`), FULLTEXT KEY (`col10`), FULLTEXT KEY
++(`col11`), FULLTEXT KEY (`col12`), FULLTEXT KEY (`col13`), FULLTEXT KEY
++(`col14`), FULLTEXT KEY (`col15`), FULLTEXT KEY (`col16`), FULLTEXT KEY
++(`col17`), FULLTEXT KEY (`col18`), FULLTEXT KEY (`col19`), FULLTEXT KEY
++(`col20`), FULLTEXT KEY (`col21`), FULLTEXT KEY (`col22`), FULLTEXT KEY
++(`col23`), FULLTEXT KEY (`col24`), FULLTEXT KEY (`col25`), FULLTEXT KEY
++(`col26`), FULLTEXT KEY (`col27`), FULLTEXT KEY (`col28`), FULLTEXT KEY
++(`col29`), FULLTEXT KEY (`col30`)) engine=innodb;
++create table t3 ( `id` int unsigned NOT NULL AUTO_INCREMENT, `col01` text,
++`col02` text, `col03` text, `col04` text, `col05` text, `col06` text, `col07`
++text, `col08` text, `col09` text, `col10` text, `col11` text, `col12` text,
++`col13` text, `col14` text, `col15` text, `col16` text, `col17` text, `col18`
++text, `col19` text, `col20` text, `col21` text, `col22` text, `col23` text,
++`col24` text, `col25` text, `col26` text, `col27` text, `col28` text, `col29`
++text, `col30` text, PRIMARY KEY (`id`), FULLTEXT KEY (`col01`), FULLTEXT KEY
++(`col02`), FULLTEXT KEY (`col03`), FULLTEXT KEY (`col04`), FULLTEXT KEY
++(`col05`), FULLTEXT KEY (`col06`), FULLTEXT KEY (`col07`), FULLTEXT KEY
++(`col08`), FULLTEXT KEY (`col09`), FULLTEXT KEY (`col10`), FULLTEXT KEY
++(`col11`), FULLTEXT KEY (`col12`), FULLTEXT KEY (`col13`), FULLTEXT KEY
++(`col14`), FULLTEXT KEY (`col15`), FULLTEXT KEY (`col16`), FULLTEXT KEY
++(`col17`), FULLTEXT KEY (`col18`), FULLTEXT KEY (`col19`), FULLTEXT KEY
++(`col20`), FULLTEXT KEY (`col21`), FULLTEXT KEY (`col22`), FULLTEXT KEY
++(`col23`), FULLTEXT KEY (`col24`), FULLTEXT KEY (`col25`), FULLTEXT KEY
++(`col26`), FULLTEXT KEY (`col27`), FULLTEXT KEY (`col28`), FULLTEXT KEY
++(`col29`), FULLTEXT KEY (`col30`)) engine=innodb;
++create table t4 ( `id` int unsigned NOT NULL AUTO_INCREMENT, `col01` text,
++`col02` text, `col03` text, `col04` text, `col05` text, `col06` text, `col07`
++text, `col08` text, `col09` text, `col10` text, `col11` text, `col12` text,
++`col13` text, `col14` text, `col15` text, `col16` text, `col17` text, `col18`
++text, `col19` text, `col20` text, `col21` text, `col22` text, `col23` text,
++`col24` text, `col25` text, `col26` text, `col27` text, `col28` text, `col29`
++text, `col30` text, PRIMARY KEY (`id`), FULLTEXT KEY (`col01`), FULLTEXT KEY
++(`col02`), FULLTEXT KEY (`col03`), FULLTEXT KEY (`col04`), FULLTEXT KEY
++(`col05`), FULLTEXT KEY (`col06`), FULLTEXT KEY (`col07`), FULLTEXT KEY
++(`col08`), FULLTEXT KEY (`col09`), FULLTEXT KEY (`col10`), FULLTEXT KEY
++(`col11`), FULLTEXT KEY (`col12`), FULLTEXT KEY (`col13`), FULLTEXT KEY
++(`col14`), FULLTEXT KEY (`col15`), FULLTEXT KEY (`col16`), FULLTEXT KEY
++(`col17`), FULLTEXT KEY (`col18`), FULLTEXT KEY (`col19`), FULLTEXT KEY
++(`col20`), FULLTEXT KEY (`col21`), FULLTEXT KEY (`col22`), FULLTEXT KEY
++(`col23`), FULLTEXT KEY (`col24`), FULLTEXT KEY (`col25`), FULLTEXT KEY
++(`col26`), FULLTEXT KEY (`col27`), FULLTEXT KEY (`col28`), FULLTEXT KEY
++(`col29`), FULLTEXT KEY (`col30`)) engine=innodb;
++#create procedure to inset into the table.
++CREATE  PROCEDURE `proc_insert`(IN tab_name VARCHAR(40))
++BEGIN
++DECLARE i INT DEFAULT 1;
++SET @insert_tbl =CONCAT('INSERT INTO ', tab_name, '( `col01`, `col02`,
++	`col03`, `col04`, `col05`, `col06`, `col07`, `col08`, `col09`, `col10`,
++	`col11`, `col12`, `col13`, `col14`, `col15`, `col16`, `col17`, `col18`,
++	`col19`, `col20`, `col21`, `col22`, `col23`, `col24`, `col25`, `col26`,
++	`col27`, `col28`, `col29`, `col30`)
++	VALUES ( MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()))');
++PREPARE ins_stmt FROM @insert_tbl;
++while (i <= 2000) DO
++EXECUTE ins_stmt;
++SET i = i + 1;
++END WHILE;
++DEALLOCATE PREPARE ins_stmt;
++END |
++call proc_insert('t1');;
++call proc_insert('t1');;
++call proc_insert('t2');;
++call proc_insert('t2');;
++call proc_insert('t3');;
++call proc_insert('t3');;
++call proc_insert('t4');;
++call proc_insert('t4');;
++SET GLOBAL DEBUG="+d,fts_optimize_wq_count_check";
++SET GLOBAL DEBUG="-d,fts_optimize_wq_count_check";
++# clean up
++DROP TABLE t1;
++DROP TABLE t2;
++DROP TABLE t3;
++DROP TABLE t4;
++DROP PROCEDURE proc_insert;
+--- a/mysql-test/suite/innodb_fts/r/innodb_fts_index_table.result	2021-02-02 15:20:34.000000000 +0100
++++ b/mysql-test/suite/innodb_fts/r/innodb_fts_index_table.result	2022-11-11 18:25:54.000000000 +0100
+@@ -16,110 +16,110 @@
+ SET GLOBAL innodb_ft_aux_table="test/articles";
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_CACHE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-1001	5	5	1	5	0
+-after	3	3	1	3	22
+-database	2	2	1	2	37
+-dbms	2	2	1	2	15
+-engine	5	6	2	5	46
+-engine	5	6	2	6	44
+-full	5	6	2	5	29
+-full	5	6	2	6	27
+-mysql	2	6	5	2	0
+-mysql	2	6	5	2	31
+-mysql	2	6	5	3	11
+-mysql	2	6	5	4	11
+-mysql	2	6	5	5	5
+-mysql	2	6	5	6	3
+-optimizing	4	4	1	4	0
+-search	5	6	2	5	39
+-search	5	6	2	6	37
+-show	4	4	1	4	42
+-stands	2	2	1	2	20
+-text	5	6	2	5	34
+-text	5	6	2	6	32
+-through	3	3	1	3	37
+-tricks	5	6	2	5	11
+-tricks	5	6	2	6	9
+-tutorial	2	4	2	2	6
+-tutorial	2	4	2	4	25
+-use	3	6	3	3	7
+-use	3	6	3	5	25
+-use	3	6	3	6	23
+-well	3	3	1	3	17
+-went	3	3	1	3	32
+-you	3	3	1	3	28
++1001	6	6	1	6	0
++after	4	4	1	4	22
++database	3	3	1	3	37
++dbms	3	3	1	3	15
++engine	6	7	2	6	46
++engine	6	7	2	7	44
++full	6	7	2	6	29
++full	6	7	2	7	27
++mysql	3	7	5	3	0
++mysql	3	7	5	3	31
++mysql	3	7	5	4	11
++mysql	3	7	5	5	11
++mysql	3	7	5	6	5
++mysql	3	7	5	7	3
++optimizing	5	5	1	5	0
++search	6	7	2	6	39
++search	6	7	2	7	37
++show	5	5	1	5	42
++stands	3	3	1	3	20
++text	6	7	2	6	34
++text	6	7	2	7	32
++through	4	4	1	4	37
++tricks	6	7	2	6	11
++tricks	6	7	2	7	9
++tutorial	3	5	2	3	6
++tutorial	3	5	2	5	25
++use	4	7	3	4	7
++use	4	7	3	6	25
++use	4	7	3	7	23
++well	4	4	1	4	17
++went	4	4	1	4	32
++you	4	4	1	4	28
+ OPTIMIZE TABLE articles;
+ Table	Op	Msg_type	Msg_text
+ test.articles	optimize	status	OK
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-1001	5	5	1	5	0
+-after	3	3	1	3	22
+-database	2	2	1	2	37
+-dbms	2	2	1	2	15
+-engine	5	6	2	5	46
+-engine	5	6	2	6	44
+-full	5	6	2	5	29
+-full	5	6	2	6	27
+-mysql	2	6	5	2	0
+-mysql	2	6	5	2	31
+-mysql	2	6	5	3	11
+-mysql	2	6	5	4	11
+-mysql	2	6	5	5	5
+-mysql	2	6	5	6	3
+-optimizing	4	4	1	4	0
+-search	5	6	2	5	39
+-search	5	6	2	6	37
+-show	4	4	1	4	42
+-stands	2	2	1	2	20
+-text	5	6	2	5	34
+-text	5	6	2	6	32
+-through	3	3	1	3	37
+-tricks	5	6	2	5	11
+-tricks	5	6	2	6	9
+-tutorial	2	4	2	2	6
+-tutorial	2	4	2	4	25
+-use	3	6	3	3	7
+-use	3	6	3	5	25
+-use	3	6	3	6	23
+-well	3	3	1	3	17
+-went	3	3	1	3	32
+-you	3	3	1	3	28
++1001	6	6	1	6	0
++after	4	4	1	4	22
++database	3	3	1	3	37
++dbms	3	3	1	3	15
++engine	6	7	2	6	46
++engine	6	7	2	7	44
++full	6	7	2	6	29
++full	6	7	2	7	27
++mysql	3	7	5	3	0
++mysql	3	7	5	3	31
++mysql	3	7	5	4	11
++mysql	3	7	5	5	11
++mysql	3	7	5	6	5
++mysql	3	7	5	7	3
++optimizing	5	5	1	5	0
++search	6	7	2	6	39
++search	6	7	2	7	37
++show	5	5	1	5	42
++stands	3	3	1	3	20
++text	6	7	2	6	34
++text	6	7	2	7	32
++through	4	4	1	4	37
++tricks	6	7	2	6	11
++tricks	6	7	2	7	9
++tutorial	3	5	2	3	6
++tutorial	3	5	2	5	25
++use	4	7	3	4	7
++use	4	7	3	6	25
++use	4	7	3	7	23
++well	4	4	1	4	17
++went	4	4	1	4	32
++you	4	4	1	4	28
+ SET SESSION debug="+d,fts_instrument_result_cache_limit";
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-1001	5	5	1	5	0
+-after	3	3	1	3	22
+-database	2	2	1	2	37
+-dbms	2	2	1	2	15
+-engine	5	6	2	5	46
+-engine	5	6	2	6	44
+-full	5	6	2	5	29
+-full	5	6	2	6	27
+-mysql	2	6	5	2	0
+-mysql	2	6	5	2	31
+-mysql	2	6	5	3	11
+-mysql	2	6	5	4	11
+-mysql	2	6	5	5	5
+-mysql	2	6	5	6	3
+-optimizing	4	4	1	4	0
+-search	5	6	2	5	39
+-search	5	6	2	6	37
+-show	4	4	1	4	42
+-stands	2	2	1	2	20
+-text	5	6	2	5	34
+-text	5	6	2	6	32
+-through	3	3	1	3	37
+-tricks	5	6	2	5	11
+-tricks	5	6	2	6	9
+-tutorial	2	4	2	2	6
+-tutorial	2	4	2	4	25
+-use	3	6	3	3	7
+-use	3	6	3	5	25
+-use	3	6	3	6	23
+-well	3	3	1	3	17
+-went	3	3	1	3	32
+-you	3	3	1	3	28
++1001	6	6	1	6	0
++after	4	4	1	4	22
++database	3	3	1	3	37
++dbms	3	3	1	3	15
++engine	6	7	2	6	46
++engine	6	7	2	7	44
++full	6	7	2	6	29
++full	6	7	2	7	27
++mysql	3	7	5	3	0
++mysql	3	7	5	3	31
++mysql	3	7	5	4	11
++mysql	3	7	5	5	11
++mysql	3	7	5	6	5
++mysql	3	7	5	7	3
++optimizing	5	5	1	5	0
++search	6	7	2	6	39
++search	6	7	2	7	37
++show	5	5	1	5	42
++stands	3	3	1	3	20
++text	6	7	2	6	34
++text	6	7	2	7	32
++through	4	4	1	4	37
++tricks	6	7	2	6	11
++tricks	6	7	2	7	9
++tutorial	3	5	2	3	6
++tutorial	3	5	2	5	25
++use	4	7	3	4	7
++use	4	7	3	6	25
++use	4	7	3	7	23
++well	4	4	1	4	17
++went	4	4	1	4	32
++you	4	4	1	4	28
+ SET SESSION debug="-d,fts_instrument_result_cache_limit";
+ DROP TABLE articles;
+ SET GLOBAL innodb_ft_result_cache_limit=default;
+@@ -140,76 +140,76 @@
+ ('Go MySQL Tricks','How to use full text search engine');
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_CACHE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-1001	5	5	1	5	0
+-mysql	2	6	5	2	0
+-mysql	2	6	5	3	11
+-mysql	2	6	5	4	11
+-mysql	2	6	5	5	5
+-mysql	2	6	5	6	3
+-optimizing	4	4	1	4	0
+-tricks	5	6	2	5	11
+-tricks	5	6	2	6	9
+-tutorial	2	2	1	2	6
+-use	3	3	1	3	7
+-well	3	3	1	3	17
+-after	3	3	1	3	0
+-database	2	2	1	2	22
+-dbms	2	2	1	2	0
+-engine	5	6	2	5	28
+-engine	5	6	2	6	28
+-full	5	6	2	5	11
+-full	5	6	2	6	11
+-mysql	2	2	1	2	16
+-search	5	6	2	5	21
+-search	5	6	2	6	21
+-show	4	4	1	4	25
+-stands	2	2	1	2	5
+-text	5	6	2	5	16
+-text	5	6	2	6	16
+-through	3	3	1	3	15
+-tutorial	4	4	1	4	8
+-use	5	6	2	5	7
+-use	5	6	2	6	7
+-went	3	3	1	3	10
+-you	3	3	1	3	6
++1001	6	6	1	6	0
++mysql	3	7	5	3	0
++mysql	3	7	5	4	11
++mysql	3	7	5	5	11
++mysql	3	7	5	6	5
++mysql	3	7	5	7	3
++optimizing	5	5	1	5	0
++tricks	6	7	2	6	11
++tricks	6	7	2	7	9
++tutorial	3	3	1	3	6
++use	4	4	1	4	7
++well	4	4	1	4	17
++after	4	4	1	4	0
++database	3	3	1	3	22
++dbms	3	3	1	3	0
++engine	6	7	2	6	28
++engine	6	7	2	7	28
++full	6	7	2	6	11
++full	6	7	2	7	11
++mysql	3	3	1	3	16
++search	6	7	2	6	21
++search	6	7	2	7	21
++show	5	5	1	5	25
++stands	3	3	1	3	5
++text	6	7	2	6	16
++text	6	7	2	7	16
++through	4	4	1	4	15
++tutorial	5	5	1	5	8
++use	6	7	2	6	7
++use	6	7	2	7	7
++went	4	4	1	4	10
++you	4	4	1	4	6
+ SET GLOBAL innodb_ft_aux_table="test/articles";
+ OPTIMIZE TABLE articles;
+ Table	Op	Msg_type	Msg_text
+ test.articles	optimize	status	OK
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-1001	5	5	1	5	0
+-mysql	2	6	5	2	0
+-mysql	2	6	5	3	11
+-mysql	2	6	5	4	11
+-mysql	2	6	5	5	5
+-mysql	2	6	5	6	3
+-optimizing	4	4	1	4	0
+-tricks	5	6	2	5	11
+-tricks	5	6	2	6	9
+-tutorial	2	2	1	2	6
+-use	3	3	1	3	7
+-well	3	3	1	3	17
+-after	3	3	1	3	0
+-database	2	2	1	2	22
+-dbms	2	2	1	2	0
+-engine	5	6	2	5	28
+-engine	5	6	2	6	28
+-full	5	6	2	5	11
+-full	5	6	2	6	11
+-mysql	2	2	1	2	16
+-search	5	6	2	5	21
+-search	5	6	2	6	21
+-show	4	4	1	4	25
+-stands	2	2	1	2	5
+-text	5	6	2	5	16
+-text	5	6	2	6	16
+-through	3	3	1	3	15
+-tutorial	4	4	1	4	8
+-use	5	6	2	5	7
+-use	5	6	2	6	7
+-went	3	3	1	3	10
+-you	3	3	1	3	6
++1001	6	6	1	6	0
++mysql	3	7	5	3	0
++mysql	3	7	5	4	11
++mysql	3	7	5	5	11
++mysql	3	7	5	6	5
++mysql	3	7	5	7	3
++optimizing	5	5	1	5	0
++tricks	6	7	2	6	11
++tricks	6	7	2	7	9
++tutorial	3	3	1	3	6
++use	4	4	1	4	7
++well	4	4	1	4	17
++after	4	4	1	4	0
++database	3	3	1	3	22
++dbms	3	3	1	3	0
++engine	6	7	2	6	28
++engine	6	7	2	7	28
++full	6	7	2	6	11
++full	6	7	2	7	11
++mysql	3	3	1	3	16
++search	6	7	2	6	21
++search	6	7	2	7	21
++show	5	5	1	5	25
++stands	3	3	1	3	5
++text	6	7	2	6	16
++text	6	7	2	7	16
++through	4	4	1	4	15
++tutorial	5	5	1	5	8
++use	6	7	2	6	7
++use	6	7	2	7	7
++went	4	4	1	4	10
++you	4	4	1	4	6
+ DROP TABLE articles;
+ SET NAMES utf8;
+ CREATE TABLE articles (
+@@ -224,19 +224,19 @@
+ SET GLOBAL innodb_ft_aux_table="test/articles";
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_CACHE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-充满可爱	4	4	1	4	0
+-怜香惜爱	3	3	1	3	0
+-爱恨交织	5	5	1	5	0
+-相亲相爱	2	2	1	2	0
++充满可爱	5	5	1	5	0
++怜香惜爱	4	4	1	4	0
++爱恨交织	6	6	1	6	0
++相亲相爱	3	3	1	3	0
+ OPTIMIZE TABLE articles;
+ Table	Op	Msg_type	Msg_text
+ test.articles	optimize	status	OK
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-充满可爱	4	4	1	4	0
+-怜香惜爱	3	3	1	3	0
+-爱恨交织	5	5	1	5	0
+-相亲相爱	2	2	1	2	0
++充满可爱	5	5	1	5	0
++怜香惜爱	4	4	1	4	0
++爱恨交织	6	6	1	6	0
++相亲相爱	3	3	1	3	0
+ DROP TABLE articles;
+ CREATE TABLE articles (
+ id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+@@ -250,19 +250,19 @@
+ SET GLOBAL innodb_ft_aux_table="test/articles";
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_CACHE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-爱恨交织	5	5	1	5	0
+-充满可爱	4	4	1	4	0
+-怜香惜爱	3	3	1	3	0
+-相亲相爱	2	2	1	2	0
++爱恨交织	6	6	1	6	0
++充满可爱	5	5	1	5	0
++怜香惜爱	4	4	1	4	0
++相亲相爱	3	3	1	3	0
+ OPTIMIZE TABLE articles;
+ Table	Op	Msg_type	Msg_text
+ test.articles	optimize	status	OK
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-爱恨交织	5	5	1	5	0
+-充满可爱	4	4	1	4	0
+-怜香惜爱	3	3	1	3	0
+-相亲相爱	2	2	1	2	0
++爱恨交织	6	6	1	6	0
++充满可爱	5	5	1	5	0
++怜香惜爱	4	4	1	4	0
++相亲相爱	3	3	1	3	0
+ DROP TABLE articles;
+ SET GLOBAL innodb_ft_aux_table=default;
+ SET GLOBAL INNODB_OPTIMIZE_FULLTEXT_ONLY=default;
+--- a/mysql-test/suite/innodb_fts/r/phrase.result	2021-02-02 15:20:34.000000000 +0100
++++ b/mysql-test/suite/innodb_fts/r/phrase.result	2022-11-11 18:25:54.000000000 +0100
+@@ -18,36 +18,36 @@
+ SET GLOBAL innodb_ft_aux_table="test/articles";
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_CACHE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-database	1	10	10	1	11
+-database	1	10	10	2	12
+-database	1	10	10	3	11
+-database	1	10	10	4	12
+-database	1	10	10	5	13
+-database	1	10	10	6	11
+-database	1	10	10	7	12
+-database	1	10	10	8	12
+-database	1	10	10	9	11
+-database	1	10	10	10	11
+-good	1	10	10	1	6
+-good	1	10	10	2	7
+-good	1	10	10	3	6
+-good	1	10	10	4	7
+-good	1	10	10	5	8
+-good	1	10	10	6	6
+-good	1	10	10	7	7
+-good	1	10	10	8	7
+-good	1	10	10	9	6
+-good	1	10	10	10	6
+-mysql	1	10	10	1	0
+-mysql	1	10	10	2	1
+-mysql	1	10	10	3	0
+-mysql	1	10	10	4	1
+-mysql	1	10	10	5	2
+-mysql	1	10	10	6	0
+-mysql	1	10	10	7	0
+-mysql	1	10	10	8	0
+-mysql	1	10	10	9	0
+-mysql	1	10	10	10	0
++database	2	11	10	2	11
++database	2	11	10	3	12
++database	2	11	10	4	11
++database	2	11	10	5	12
++database	2	11	10	6	13
++database	2	11	10	7	11
++database	2	11	10	8	12
++database	2	11	10	9	12
++database	2	11	10	10	11
++database	2	11	10	11	11
++good	2	11	10	2	6
++good	2	11	10	3	7
++good	2	11	10	4	6
++good	2	11	10	5	7
++good	2	11	10	6	8
++good	2	11	10	7	6
++good	2	11	10	8	7
++good	2	11	10	9	7
++good	2	11	10	10	6
++good	2	11	10	11	6
++mysql	2	11	10	2	0
++mysql	2	11	10	3	1
++mysql	2	11	10	4	0
++mysql	2	11	10	5	1
++mysql	2	11	10	6	2
++mysql	2	11	10	7	0
++mysql	2	11	10	8	0
++mysql	2	11	10	9	0
++mysql	2	11	10	10	0
++mysql	2	11	10	11	0
+ SET GLOBAL innodb_ft_aux_table=default;
+ SELECT * FROM articles;
+ id	title	body
+--- a/mysql-test/suite/innodb_fts/r/sync_ddl.result	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/suite/innodb_fts/r/sync_ddl.result	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,116 @@
++CREATE TABLE t1 (
++id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
++value VARCHAR(1024)
++) ENGINE=InnoDB;
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++Warnings:
++Warning	124	InnoDB rebuilding table to add column FTS_DOC_ID
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_sync_before_syncing,ib_trunc_sleep_before_fts_cache_clear";
++INSERT INTO t1 (value) VALUES
++('By default or with the IN NATURAL LANGUAGE MODE modifier')
++;
++TRUNCATE TABLE t1;
++DROP TABLE t1;
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_sync_before_syncing,ib_trunc_sleep_before_fts_cache_clear";
++CREATE TABLE t1 (
++id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
++value VARCHAR(1024)
++) ENGINE=InnoDB;
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++Warnings:
++Warning	124	InnoDB rebuilding table to add column FTS_DOC_ID
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_write_words_before_select_index,ib_trunc_sleep_before_fts_cache_clear";
++INSERT INTO t1 (value) VALUES
++('By default or with the IN NATURAL LANGUAGE MODE modifier'),
++('performs a natural language search for a string'),
++('collection is a set of one or more columns included'),
++('returns a relevance value; that is, a similarity measure'),
++('and the text in that row in the columns named in'),
++('By default, the search is performed in case-insensitive'),
++('sensitive full-text search, use a binary collation '),
++('example, a column that uses the latin1 character'),
++('collation of latin1_bin to make it case sensitive')
++;
++TRUNCATE TABLE t1;
++DROP TABLE t1;
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_write_words_before_select_index,ib_trunc_sleep_before_fts_cache_clear";
++CREATE TABLE t1 (
++value VARCHAR(1024)
++) ENGINE=InnoDB;
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++Warnings:
++Warning	124	InnoDB rebuilding table to add column FTS_DOC_ID
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++INSERT INTO t1 (value) VALUES
++('By default or with the IN NATURAL LANGUAGE MODE modifier'),
++('performs a natural language search for a string'),
++('collection is a set of one or more columns included'),
++('returns a relevance value; that is, a similarity measure'),
++('and the text in that row in the columns named in'),
++('By default, the search is performed in case-insensitive'),
++('sensitive full-text search, use a binary collation '),
++('example, a column that uses the latin1 character'),
++('collation of latin1_bin to make it case sensitive')
++;
++DROP INDEX idx1 ON t1;
++DROP TABLE t1;
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++CREATE TABLE t1 (
++value VARCHAR(1024)
++) ENGINE=InnoDB;
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++Warnings:
++Warning	124	InnoDB rebuilding table to add column FTS_DOC_ID
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++INSERT INTO t1 (value) VALUES
++('By default or with the IN NATURAL LANGUAGE MODE modifier'),
++('performs a natural language search for a string'),
++('collection is a set of one or more columns included'),
++('returns a relevance value; that is, a similarity measure'),
++('and the text in that row in the columns named in'),
++('By default, the search is performed in case-insensitive'),
++('sensitive full-text search, use a binary collation '),
++('example, a column that uses the latin1 character'),
++('collation of latin1_bin to make it case sensitive')
++;
++ALTER TABLE t1
++DROP INDEX idx1,
++ALGORITHM=INPLACE;
++DROP TABLE t1;
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++CREATE TABLE t1 (
++value VARCHAR(1024)
++) ENGINE=InnoDB;
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++Warnings:
++Warning	124	InnoDB rebuilding table to add column FTS_DOC_ID
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++INSERT INTO t1 (value) VALUES
++('example, a column that uses the latin1 character'),
++('collation of latin1_bin to make it case sensitive')
++;
++ALTER TABLE t1
++DROP INDEX idx1,
++ALGORITHM=COPY;
++DROP TABLE t1;
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++CREATE TABLE t1 (
++id1 INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
++value VARCHAR(1024)
++) ENGINE=InnoDB;
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++Warnings:
++Warning	124	InnoDB rebuilding table to add column FTS_DOC_ID
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++INSERT INTO t1 (value) VALUES
++('example, a column that uses the latin1 character'),
++('collation of latin1_bin to make it case sensitive')
++;
++ALTER TABLE t1
++DROP COLUMN id1,
++ADD COLUMN id2 INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
++DROP INDEX idx1,
++ADD FULLTEXT INDEX idx2(value),
++ALGORITHM=INPLACE;
++DROP TABLE t1;
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
+--- a/mysql-test/suite/innodb_fts/r/sync.result	2021-02-02 15:20:34.000000000 +0100
++++ b/mysql-test/suite/innodb_fts/r/sync.result	2022-11-11 18:25:54.000000000 +0100
+@@ -119,9 +119,9 @@
+ SET GLOBAL innodb_ft_aux_table="test/t1";
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+-database	2	2	1	2	0
+-good	3	3	1	3	0
+-mysql	1	1	1	1	0
++database	4	4	1	4	0
++good	5	5	1	5	0
++mysql	2	2	1	2	0
+ SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_CACHE;
+ WORD	FIRST_DOC_ID	LAST_DOC_ID	DOC_COUNT	DOC_ID	POSITION
+ SET GLOBAL innodb_ft_aux_table=default;
+--- a/mysql-test/suite/innodb_fts/t/bug_32831765.test	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/suite/innodb_fts/t/bug_32831765.test	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,196 @@
++--echo #
++--echo # Bug#32831765 SERVER HITS OOM CONDITION WHEN LOADING TWO
++--echo # INNODB TABLES WITH FTS INDEXES
++--echo #
++
++--source include/have_debug.inc
++
++create table t1 ( `id` int unsigned NOT NULL AUTO_INCREMENT, `col01` text,
++`col02` text, `col03` text, `col04` text, `col05` text, `col06` text, `col07`
++text, `col08` text, `col09` text, `col10` text, `col11` text, `col12` text,
++`col13` text, `col14` text, `col15` text, `col16` text, `col17` text, `col18`
++text, `col19` text, `col20` text, `col21` text, `col22` text, `col23` text,
++`col24` text, `col25` text, `col26` text, `col27` text, `col28` text, `col29`
++text, `col30` text, PRIMARY KEY (`id`), FULLTEXT KEY (`col01`), FULLTEXT KEY
++(`col02`), FULLTEXT KEY (`col03`), FULLTEXT KEY (`col04`), FULLTEXT KEY
++(`col05`), FULLTEXT KEY (`col06`), FULLTEXT KEY (`col07`), FULLTEXT KEY
++(`col08`), FULLTEXT KEY (`col09`), FULLTEXT KEY (`col10`), FULLTEXT KEY
++(`col11`), FULLTEXT KEY (`col12`), FULLTEXT KEY (`col13`), FULLTEXT KEY
++(`col14`), FULLTEXT KEY (`col15`), FULLTEXT KEY (`col16`), FULLTEXT KEY
++(`col17`), FULLTEXT KEY (`col18`), FULLTEXT KEY (`col19`), FULLTEXT KEY
++(`col20`), FULLTEXT KEY (`col21`), FULLTEXT KEY (`col22`), FULLTEXT KEY
++(`col23`), FULLTEXT KEY (`col24`), FULLTEXT KEY (`col25`), FULLTEXT KEY
++(`col26`), FULLTEXT KEY (`col27`), FULLTEXT KEY (`col28`), FULLTEXT KEY
++(`col29`), FULLTEXT KEY (`col30`)) engine=innodb;
++
++create table t2 ( `id` int unsigned NOT NULL AUTO_INCREMENT, `col01` text,
++`col02` text, `col03` text, `col04` text, `col05` text, `col06` text, `col07`
++text, `col08` text, `col09` text, `col10` text, `col11` text, `col12` text,
++`col13` text, `col14` text, `col15` text, `col16` text, `col17` text, `col18`
++text, `col19` text, `col20` text, `col21` text, `col22` text, `col23` text,
++`col24` text, `col25` text, `col26` text, `col27` text, `col28` text, `col29`
++text, `col30` text, PRIMARY KEY (`id`), FULLTEXT KEY (`col01`), FULLTEXT KEY
++(`col02`), FULLTEXT KEY (`col03`), FULLTEXT KEY (`col04`), FULLTEXT KEY
++(`col05`), FULLTEXT KEY (`col06`), FULLTEXT KEY (`col07`), FULLTEXT KEY
++(`col08`), FULLTEXT KEY (`col09`), FULLTEXT KEY (`col10`), FULLTEXT KEY
++(`col11`), FULLTEXT KEY (`col12`), FULLTEXT KEY (`col13`), FULLTEXT KEY
++(`col14`), FULLTEXT KEY (`col15`), FULLTEXT KEY (`col16`), FULLTEXT KEY
++(`col17`), FULLTEXT KEY (`col18`), FULLTEXT KEY (`col19`), FULLTEXT KEY
++(`col20`), FULLTEXT KEY (`col21`), FULLTEXT KEY (`col22`), FULLTEXT KEY
++(`col23`), FULLTEXT KEY (`col24`), FULLTEXT KEY (`col25`), FULLTEXT KEY
++(`col26`), FULLTEXT KEY (`col27`), FULLTEXT KEY (`col28`), FULLTEXT KEY
++(`col29`), FULLTEXT KEY (`col30`)) engine=innodb;
++
++
++create table t3 ( `id` int unsigned NOT NULL AUTO_INCREMENT, `col01` text,
++`col02` text, `col03` text, `col04` text, `col05` text, `col06` text, `col07`
++text, `col08` text, `col09` text, `col10` text, `col11` text, `col12` text,
++`col13` text, `col14` text, `col15` text, `col16` text, `col17` text, `col18`
++text, `col19` text, `col20` text, `col21` text, `col22` text, `col23` text,
++`col24` text, `col25` text, `col26` text, `col27` text, `col28` text, `col29`
++text, `col30` text, PRIMARY KEY (`id`), FULLTEXT KEY (`col01`), FULLTEXT KEY
++(`col02`), FULLTEXT KEY (`col03`), FULLTEXT KEY (`col04`), FULLTEXT KEY
++(`col05`), FULLTEXT KEY (`col06`), FULLTEXT KEY (`col07`), FULLTEXT KEY
++(`col08`), FULLTEXT KEY (`col09`), FULLTEXT KEY (`col10`), FULLTEXT KEY
++(`col11`), FULLTEXT KEY (`col12`), FULLTEXT KEY (`col13`), FULLTEXT KEY
++(`col14`), FULLTEXT KEY (`col15`), FULLTEXT KEY (`col16`), FULLTEXT KEY
++(`col17`), FULLTEXT KEY (`col18`), FULLTEXT KEY (`col19`), FULLTEXT KEY
++(`col20`), FULLTEXT KEY (`col21`), FULLTEXT KEY (`col22`), FULLTEXT KEY
++(`col23`), FULLTEXT KEY (`col24`), FULLTEXT KEY (`col25`), FULLTEXT KEY
++(`col26`), FULLTEXT KEY (`col27`), FULLTEXT KEY (`col28`), FULLTEXT KEY
++(`col29`), FULLTEXT KEY (`col30`)) engine=innodb;
++
++create table t4 ( `id` int unsigned NOT NULL AUTO_INCREMENT, `col01` text,
++`col02` text, `col03` text, `col04` text, `col05` text, `col06` text, `col07`
++text, `col08` text, `col09` text, `col10` text, `col11` text, `col12` text,
++`col13` text, `col14` text, `col15` text, `col16` text, `col17` text, `col18`
++text, `col19` text, `col20` text, `col21` text, `col22` text, `col23` text,
++`col24` text, `col25` text, `col26` text, `col27` text, `col28` text, `col29`
++text, `col30` text, PRIMARY KEY (`id`), FULLTEXT KEY (`col01`), FULLTEXT KEY
++(`col02`), FULLTEXT KEY (`col03`), FULLTEXT KEY (`col04`), FULLTEXT KEY
++(`col05`), FULLTEXT KEY (`col06`), FULLTEXT KEY (`col07`), FULLTEXT KEY
++(`col08`), FULLTEXT KEY (`col09`), FULLTEXT KEY (`col10`), FULLTEXT KEY
++(`col11`), FULLTEXT KEY (`col12`), FULLTEXT KEY (`col13`), FULLTEXT KEY
++(`col14`), FULLTEXT KEY (`col15`), FULLTEXT KEY (`col16`), FULLTEXT KEY
++(`col17`), FULLTEXT KEY (`col18`), FULLTEXT KEY (`col19`), FULLTEXT KEY
++(`col20`), FULLTEXT KEY (`col21`), FULLTEXT KEY (`col22`), FULLTEXT KEY
++(`col23`), FULLTEXT KEY (`col24`), FULLTEXT KEY (`col25`), FULLTEXT KEY
++(`col26`), FULLTEXT KEY (`col27`), FULLTEXT KEY (`col28`), FULLTEXT KEY
++(`col29`), FULLTEXT KEY (`col30`)) engine=innodb;
++
++delimiter |;
++
++--echo #create procedure to inset into the table.
++CREATE  PROCEDURE `proc_insert`(IN tab_name VARCHAR(40))
++BEGIN
++	DECLARE i INT DEFAULT 1;
++	SET @insert_tbl =CONCAT('INSERT INTO ', tab_name, '( `col01`, `col02`,
++	`col03`, `col04`, `col05`, `col06`, `col07`, `col08`, `col09`, `col10`,
++	`col11`, `col12`, `col13`, `col14`, `col15`, `col16`, `col17`, `col18`,
++	`col19`, `col20`, `col21`, `col22`, `col23`, `col24`, `col25`, `col26`,
++	`col27`, `col28`, `col29`, `col30`)
++	VALUES ( MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()), MD5(RAND()),
++	MD5(RAND()))');
++	PREPARE ins_stmt FROM @insert_tbl;
++	while (i <= 2000) DO
++		EXECUTE ins_stmt;
++		SET i = i + 1;
++	END WHILE;
++	DEALLOCATE PREPARE ins_stmt;
++END |
++
++delimiter ;|
++
++connect (con1,localhost,root,,);
++connect (con2,localhost,root,,);
++connect (con3,localhost,root,,);
++connect (con4,localhost,root,,);
++connect (con5,localhost,root,,);
++connect (con6,localhost,root,,);
++connect (con7,localhost,root,,);
++connect (con8,localhost,root,,);
++
++connection con1;
++--send call proc_insert('t1');
++
++connection con2;
++--send call proc_insert('t1');
++
++connection con3;
++--send call proc_insert('t2');
++
++connection con4;
++--send call proc_insert('t2');
++
++connection con5;
++--send call proc_insert('t3');
++
++connection con6;
++--send call proc_insert('t3');
++
++connection con7;
++--send call proc_insert('t4');
++
++connection con8;
++--send call proc_insert('t4');
++
++connection default;
++
++# Check if number of SYNC requests are more than 1000.
++SET GLOBAL DEBUG="+d,fts_optimize_wq_count_check";
++
++# Wait for 1 minute to make sure INSERTs into FTS table will trigger
++# FTS_SYNC request
++let $loop=60;
++while($loop > 1)
++{
++  sleep 1;
++  dec $loop;
++}
++
++SET GLOBAL DEBUG="-d,fts_optimize_wq_count_check";
++
++connection con1;
++reap;
++disconnect con1;
++
++connection con2;
++reap;
++disconnect con2;
++
++connection con3;
++reap;
++disconnect con3;
++
++connection con4;
++reap;
++disconnect con4;
++
++connection con5;
++reap;
++disconnect con5;
++
++connection con6;
++reap;
++disconnect con6;
++
++connection con7;
++reap;
++disconnect con7;
++
++connection con8;
++reap;
++disconnect con8;
++
++connection default;
++--echo # clean up
++DROP TABLE t1;
++DROP TABLE t2;
++DROP TABLE t3;
++DROP TABLE t4;
++DROP PROCEDURE proc_insert;
+--- a/mysql-test/suite/innodb_fts/t/sync_ddl.test	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/suite/innodb_fts/t/sync_ddl.test	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,176 @@
++#
++# BUG#27082268 FTS synchronization issues
++#
++
++--source include/have_innodb.inc
++--source include/have_debug_sync.inc
++
++#--------------------------------------
++# Check FTS_sync vs TRUNCATE (1)
++#--------------------------------------
++
++CREATE TABLE t1 (
++    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
++    value VARCHAR(1024)
++    ) ENGINE=InnoDB;
++
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_sync_before_syncing,ib_trunc_sleep_before_fts_cache_clear";
++
++INSERT INTO t1 (value) VALUES
++    ('By default or with the IN NATURAL LANGUAGE MODE modifier')
++    ;
++
++TRUNCATE TABLE t1;
++
++DROP TABLE t1;
++
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_sync_before_syncing,ib_trunc_sleep_before_fts_cache_clear";
++
++#--------------------------------------
++# Check FTS sync vs DROP INDEX (2)
++#--------------------------------------
++
++CREATE TABLE t1 (
++    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
++    value VARCHAR(1024)
++    ) ENGINE=InnoDB;
++
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_write_words_before_select_index,ib_trunc_sleep_before_fts_cache_clear";
++
++INSERT INTO t1 (value) VALUES
++    ('By default or with the IN NATURAL LANGUAGE MODE modifier'),
++    ('performs a natural language search for a string'),
++    ('collection is a set of one or more columns included'),
++    ('returns a relevance value; that is, a similarity measure'),
++    ('and the text in that row in the columns named in'),
++    ('By default, the search is performed in case-insensitive'),
++    ('sensitive full-text search, use a binary collation '),
++    ('example, a column that uses the latin1 character'),
++    ('collation of latin1_bin to make it case sensitive')
++    ;
++
++TRUNCATE TABLE t1;
++
++DROP TABLE t1;
++
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_write_words_before_select_index,ib_trunc_sleep_before_fts_cache_clear";
++
++#--------------------------------------
++# Check FTS sync vs DROP INDEX
++#--------------------------------------
++
++CREATE TABLE t1 (
++    value VARCHAR(1024)
++    ) ENGINE=InnoDB;
++
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++
++INSERT INTO t1 (value) VALUES
++    ('By default or with the IN NATURAL LANGUAGE MODE modifier'),
++    ('performs a natural language search for a string'),
++    ('collection is a set of one or more columns included'),
++    ('returns a relevance value; that is, a similarity measure'),
++    ('and the text in that row in the columns named in'),
++    ('By default, the search is performed in case-insensitive'),
++    ('sensitive full-text search, use a binary collation '),
++    ('example, a column that uses the latin1 character'),
++    ('collation of latin1_bin to make it case sensitive')
++    ;
++
++DROP INDEX idx1 ON t1;
++
++DROP TABLE t1;
++
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++
++#--------------------------------------
++# Check FTS sync vs ALTER TABLE DROP INDEX (INPLACE)
++#--------------------------------------
++
++CREATE TABLE t1 (
++    value VARCHAR(1024)
++    ) ENGINE=InnoDB;
++
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++
++INSERT INTO t1 (value) VALUES
++    ('By default or with the IN NATURAL LANGUAGE MODE modifier'),
++    ('performs a natural language search for a string'),
++    ('collection is a set of one or more columns included'),
++    ('returns a relevance value; that is, a similarity measure'),
++    ('and the text in that row in the columns named in'),
++    ('By default, the search is performed in case-insensitive'),
++    ('sensitive full-text search, use a binary collation '),
++    ('example, a column that uses the latin1 character'),
++    ('collation of latin1_bin to make it case sensitive')
++    ;
++
++ALTER TABLE t1
++    DROP INDEX idx1,
++    ALGORITHM=INPLACE;
++
++DROP TABLE t1;
++
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++
++#--------------------------------------
++# Check FTS sync vs ALTER TABLE DROP INDEX (COPY)
++#--------------------------------------
++
++CREATE TABLE t1 (
++    value VARCHAR(1024)
++    ) ENGINE=InnoDB;
++
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++
++INSERT INTO t1 (value) VALUES
++    ('example, a column that uses the latin1 character'),
++    ('collation of latin1_bin to make it case sensitive')
++    ;
++
++ALTER TABLE t1
++    DROP INDEX idx1,
++    ALGORITHM=COPY;
++
++DROP TABLE t1;
++
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++
++#--------------------------------------
++# Check FTS sync vs ALTER TABLE (INPLACE, new cluster)
++#--------------------------------------
++
++CREATE TABLE t1 (
++    id1 INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
++    value VARCHAR(1024)
++    ) ENGINE=InnoDB;
++
++CREATE FULLTEXT INDEX idx1 ON t1(value);
++
++SET GLOBAL debug="+d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
++
++INSERT INTO t1 (value) VALUES
++    ('example, a column that uses the latin1 character'),
++    ('collation of latin1_bin to make it case sensitive')
++    ;
++
++ALTER TABLE t1
++    DROP COLUMN id1,
++    ADD COLUMN id2 INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
++    DROP INDEX idx1,
++    ADD FULLTEXT INDEX idx2(value),
++    ALGORITHM=INPLACE;
++
++DROP TABLE t1;
++
++SET GLOBAL debug="-d,fts_instrument_sync_request,fts_instrument_msg_sync_sleep";
+--- a/mysql-test/t/audit_log_xml_escape-master.opt	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/t/audit_log_xml_escape-master.opt	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,6 @@
++$AUDIT_LOG_OPT
++$AUDIT_LOG_LOAD
++--audit_log_file=test_audit.log
++--audit_log_policy=QUERIES
++--audit-log-format=NEW
++--audit_log_strategy=SEMISYNCHRONOUS
+--- a/mysql-test/t/audit_log_xml_escape.test	1970-01-01 01:00:00.000000000 +0100
++++ b/mysql-test/t/audit_log_xml_escape.test	2022-11-11 18:25:54.000000000 +0100
+@@ -0,0 +1,64 @@
++--source include/not_embedded.inc
++
++--let $MYSQL_TMP_DIR = `select @@tmpdir`
++--let $MYSQLD_DATADIR = `select @@datadir`
++--let $TMP_QUERY_FILE = $MYSQL_TMP_DIR/tmp_query
++
++--let MYSQLD_DATADIR = $MYSQLD_DATADIR
++--let TMP_QUERY_FILE = $TMP_QUERY_FILE
++
++--perl
++  use strict;
++  use warnings;
++
++  my $query_file = $ENV{'TMP_QUERY_FILE'} or die "TMP_QUERY_FILE not set";
++  open(my $fh, ">", $query_file) or die "Can't open < $query_file: $!";
++
++  print $fh "CREATE TABLE a (id int) ENGINE = InnoDB;\n";
++  print $fh "INSERT INTO a \nVALUES (1);\n";
++  print $fh "INSERT INTO a \tVALUES (2);\n";
++  print $fh "INSERT INTO a \rVALUES (3);\n";
++
++  close($fh);
++EOF
++
++SET GLOBAL audit_log_flush=ON;
++--remove_file $MYSQLD_DATADIR/test_audit.log
++SET GLOBAL audit_log_flush=ON;
++
++--source $TMP_QUERY_FILE
++--move_file $MYSQLD_DATADIR/test_audit.log $MYSQLD_DATADIR/test_audit_new.log
++set global audit_log_flush= ON;
++
++perl;
++  use strict;
++  use warnings;
++
++  my $log_file = "$ENV{MYSQLD_DATADIR}/test_audit_new.log";
++  open(my $fh, "<", $log_file) or die "Can't open < $log_file: $!";
++
++  my $escape_seq_count = 0;
++  my $expected_escape_seq_count = 3;
++
++  while (my $line = <$fh>) {
++    if ($line =~ m/INSERT\sINTO\sa\s&#10;VALUES\s\(1\)/
++          || $line =~ m/INSERT\sINTO\sa\s&#9;VALUES\s\(2\)/
++          || $line =~ m/INSERT\sINTO\sa\s&#13;VALUES\s\(3\)/) {
++      ++$escape_seq_count;
++    }
++  }
++
++  if ($escape_seq_count == $expected_escape_seq_count) {
++    print "Escape rules Ok\n";
++  }
++  else {
++    print "Found $escape_seq_count escape sequences, expected $expected_escape_seq_count\n";
++  }
++
++  close($fh);
++EOF
++
++--remove_file $MYSQLD_DATADIR/test_audit.log
++--remove_file $MYSQLD_DATADIR/test_audit_new.log
++
++DROP TABLE a;
+--- a/mysql-test/t/func_group.test	2021-02-02 15:20:34.000000000 +0100
++++ b/mysql-test/t/func_group.test	2022-11-11 18:25:54.000000000 +0100
+@@ -1211,3 +1211,38 @@
+            FROM t1 t GROUP BY t1.a)
+ ;
+ DROP TABLE t1;
++
++--echo #
++--echo # Bug#32552332 - CAN'T WRITE; DUPLICATE KEY IN TABLE '/TMP/#SQL...'
++--echo #
++
++CREATE TABLE tr (c1 INT);
++INSERT INTO tr VALUES (1);
++
++# Generates a integer sequence from 1 to 2 and repeats
++DELIMITER |;
++CREATE FUNCTION seq_1_to_2() RETURNS INT
++BEGIN
++  DECLARE limit_value, return_value INT;
++  SET limit_value = 2;
++  SELECT c1 INTO return_value FROM tr;
++  IF (return_value < limit_value) THEN
++     UPDATE tr SET c1 = c1 + 1;
++  ELSE
++     UPDATE tr SET c1 = 1;
++  END IF;
++  RETURN (return_value);
++END|
++DELIMITER ;|
++
++CREATE TABLE t1 (c1 INT);
++INSERT INTO t1 VALUES (10);
++INSERT INTO t1 VALUES (11);
++
++SELECT seq_1_to_2() as seq, COUNT(*) FROM t1 GROUP BY seq;
++SELECT FLOOR(seq_1_to_2() * 2) AS val, COUNT(*) FROM t1 GROUP BY val;
++SELECT val, COUNT(*) FROM (SELECT FLOOR(seq_1_to_2())+1 val FROM t1) x
++  GROUP BY x.val;
++
++DROP TABLE t1, tr;
++DROP FUNCTION seq_1_to_2;
+--- a/mysys/my_conio.c	2021-02-02 15:20:34.000000000 +0100
++++ b/mysys/my_conio.c	2022-11-11 18:25:54.000000000 +0100
+@@ -1,4 +1,5 @@
+ /* Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
++   Copyright (c) 2021, Percona and/or its affiliates. All rights reserved.
+ 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2.0,
+@@ -210,8 +211,8 @@
+ my_win_console_write(const CHARSET_INFO *cs, const char *data, size_t datalen)
+ {
+   static wchar_t u16buf[MAX_CONSOLE_LINE_SIZE + 1];
+-  size_t nchars= my_mbstou16s(cs, (const uchar *) data, datalen,
+-                              u16buf, sizeof(u16buf));
++  size_t nchars= my_mbstou16s(cs, (const uchar *) data, datalen, u16buf,
++                              sizeof(u16buf) / sizeof(u16buf[0]));
+   DWORD nwritten;
+   WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE),
+                 u16buf, (DWORD) nchars, &nwritten, NULL);
+--- a/plugin/audit_log/audit_log.c	2021-02-02 15:20:34.000000000 +0100
++++ b/plugin/audit_log/audit_log.c	2022-11-11 18:25:54.000000000 +0100
+@@ -35,6 +35,7 @@
+ #include "audit_handler.h"
+ #include "filter.h"
+ #include "security_context_wrapper.h"
++#include "sql_const.h"
+ 
+ #define PLUGIN_VERSION 0x0002
+ 
+@@ -236,12 +237,12 @@
+     { 0,  0, NULL },
+     { 0,  0, NULL },
+     { 0,  0, NULL },
++    { '\b',  0, NULL },
++    { '\t', 4, "&#9;" },
++    { '\n', 5, "&#10;" },
+     { 0,  0, NULL },
+-    { '\t', 5, "&#9;" },
+-    { '\n', 6, "&#10;" },
+-    { 0,  0, NULL },
+-    { 0,  0, NULL },
+-    { '\r', 6, "&#13;" },
++    { '\f',  0, NULL },
++    { '\r', 5, "&#13;" },
+     { 0,  0, NULL },
+     { 0,  0, NULL },
+     { 0,  0, NULL },
+@@ -1437,24 +1438,31 @@
+                         PLUGIN_VAR_NOSYSVAR | PLUGIN_VAR_NOCMDOPT,
+                         "Buffer for query formatting.", NULL, NULL, "");
+ 
++static const char *val_strmake(MYSQL_THD              thd,
++                               struct st_mysql_value *mysql_val)
++{
++  char        buf[STRING_BUFFER_USUAL_SIZE];
++  int         len= sizeof(buf);
++  const char *val= mysql_val->val_str(mysql_val, buf, &len);
++
++  if (val != NULL)
++    val= thd_strmake(thd, val, len);
++
++  return val;
++}
++
+ static
+ int
+ audit_log_exclude_accounts_validate(
+-          MYSQL_THD thd MY_ATTRIBUTE((unused)),
++          MYSQL_THD thd,
+           struct st_mysql_sys_var *var MY_ATTRIBUTE((unused)),
+           void *save,
+           struct st_mysql_value *value)
+ {
+-  const char *new_val;
+-  char buf[80];
+-  int len= sizeof(buf);
+-
+   if (audit_log_include_accounts)
+     return 1;
+ 
+-  new_val = value->val_str(value, buf, &len);
+-
+-  *(const char **)(save) = new_val;
++  *(const char **)(save)= val_strmake(thd, value);
+ 
+   return 0;
+ }
+@@ -1494,21 +1502,15 @@
+ static
+ int
+ audit_log_include_accounts_validate(
+-          MYSQL_THD thd MY_ATTRIBUTE((unused)),
++          MYSQL_THD thd,
+           struct st_mysql_sys_var *var MY_ATTRIBUTE((unused)),
+           void *save,
+           struct st_mysql_value *value)
+ {
+-  const char *new_val;
+-  char buf[80];
+-  int len= sizeof(buf);
+-
+   if (audit_log_exclude_accounts)
+     return 1;
+ 
+-  new_val = value->val_str(value, buf, &len);
+-
+-  *(const char **)(save) = new_val;
++  *(const char **)(save)= val_strmake(thd, value);
+ 
+   return 0;
+ }
+@@ -1552,16 +1554,10 @@
+           void *save,
+           struct st_mysql_value *value)
+ {
+-  const char *new_val;
+-  char buf[80];
+-  int len= sizeof(buf);
+-
+   if (audit_log_include_commands)
+     return 1;
+ 
+-  new_val = value->val_str(value, buf, &len);
+-
+-  *(const char **)(save) = new_val;
++  *(const char **)(save)= val_strmake(thd, value);
+ 
+   return 0;
+ }
+@@ -1601,21 +1597,15 @@
+ static
+ int
+ audit_log_include_commands_validate(
+-          MYSQL_THD thd MY_ATTRIBUTE((unused)),
++          MYSQL_THD thd,
+           struct st_mysql_sys_var *var MY_ATTRIBUTE((unused)),
+           void *save,
+           struct st_mysql_value *value)
+ {
+-  const char *new_val;
+-  char buf[80];
+-  int len= sizeof(buf);
+-
+   if (audit_log_exclude_commands)
+     return 1;
+ 
+-  new_val = value->val_str(value, buf, &len);
+-
+-  *(const char **)(save) = new_val;
++  *(const char **)(save)= val_strmake(thd, value);
+ 
+   return 0;
+ }
+--- a/plugin/innodb_memcached/daemon_memcached/daemon/memcached.c	2021-02-02 15:20:34.000000000 +0100
++++ b/plugin/innodb_memcached/daemon_memcached/daemon/memcached.c	2022-11-11 18:25:54.000000000 +0100
+@@ -2171,6 +2171,8 @@
+     int nkey = c->binary_header.request.keylen;
+     int vlen = c->binary_header.request.bodylen - nkey;
+ 
++    assert(vlen >= 0);
++
+     if (nkey > MAX_SASL_MECH_LEN) {
+         write_bin_packet(c, PROTOCOL_BINARY_RESPONSE_EINVAL, vlen);
+         c->write_and_go = conn_swallow;
+@@ -2903,10 +2905,16 @@
+ static void dispatch_bin_command(conn *c) {
+     int protocol_error = 0;
+ 
+-    int extlen = c->binary_header.request.extlen;
++    uint8_t extlen = c->binary_header.request.extlen;
+     uint16_t keylen = c->binary_header.request.keylen;
+     uint32_t bodylen = c->binary_header.request.bodylen;
+ 
++    if (keylen > bodylen || keylen + extlen > bodylen) {
++        write_bin_packet(c, PROTOCOL_BINARY_RESPONSE_UNKNOWN_COMMAND, 0);
++        c->write_and_go = conn_closing;
++        return;
++    }
++
+     if (settings.require_sasl && !authenticated(c)) {
+         write_bin_packet(c, PROTOCOL_BINARY_RESPONSE_AUTH_ERROR, 0);
+         c->write_and_go = conn_closing;
+@@ -3239,6 +3247,8 @@
+     nkey = c->binary_header.request.keylen;
+     vlen = c->binary_header.request.bodylen - nkey;
+ 
++    assert(vlen >= 0);
++
+     if (settings.verbose > 1) {
+         settings.extensions.logger->log(EXTENSION_LOG_DEBUG, c,
+                                         "Value len is %d\n", vlen);
+--- a/plugin/innodb_memcached/innodb_memcache/cache-src/items.c	2021-02-02 15:20:34.000000000 +0100
++++ b/plugin/innodb_memcached/innodb_memcache/cache-src/items.c	2022-11-11 18:25:54.000000000 +0100
+@@ -90,6 +90,10 @@
+                          const int nbytes,
+                          const void *cookie) {
+     hash_item *it = NULL;
++    // Avoid potential underflows.
++    if (nbytes < 0)
++        return 0;
++
+     size_t ntotal = sizeof(hash_item) + nkey + nbytes;
+     if (engine->config.use_cas) {
+         ntotal += sizeof(uint64_t);
+@@ -131,6 +135,10 @@
+                          const int nbytes,
+                          const void *cookie) {
+     hash_item *it = NULL;
++    // Avoid potential underflows.
++    if (nbytes < 0)
++        return 0;
++
+     size_t ntotal = sizeof(hash_item) + nkey + nbytes;
+     if (engine->config.use_cas) {
+         ntotal += sizeof(uint64_t);
+--- a/sql/binlog.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/binlog.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -3071,7 +3071,7 @@
+ bool MYSQL_BIN_LOG::find_first_log_not_in_gtid_set(char *binlog_file_name,
+                                                    const Gtid_set *gtid_set,
+                                                    Gtid *first_gtid,
+-                                                   const char **errmsg)
++                                                   std::string &errmsg)
+ {
+   DBUG_ENTER("MYSQL_BIN_LOG::gtid_read_start_binlog");
+   /*
+@@ -3094,18 +3094,20 @@
+   mysql_mutex_unlock(&LOCK_index);
+   if (error != LOG_INFO_EOF)
+   {
+-    *errmsg= "Failed to read the binary log index file while "
++    errmsg.assign(
++      "Failed to read the binary log index file while "
+       "looking for the oldest binary log that contains any GTID "
+-      "that is not in the given gtid set";
++      "that is not in the given gtid set");
+     error= -1;
+     goto end;
+   }
+ 
+   if (filename_list.empty())
+   {
+-    *errmsg= "Could not find first log file name in binary log index file "
++    errmsg.assign(
++      "Could not find first log file name in binary log index file "
+       "while looking for the oldest binary log that contains any GTID "
+-      "that is not in the given gtid set";
++      "that is not in the given gtid set");
+     error= -2;
+     goto end;
+   }
+@@ -3136,15 +3138,17 @@
+                                    opt_master_verify_checksum))
+     {
+     case ERROR:
+-      *errmsg= "Error reading header of binary log while looking for "
++      errmsg.assign(
++        "Error reading header of binary log while looking for "
+         "the oldest binary log that contains any GTID that is not in "
+-        "the given gtid set";
++        "the given gtid set");
+       error= -3;
+       goto end;
+     case NO_GTIDS:
+-      *errmsg= "Found old binary log without GTIDs while looking for "
++    errmsg.assign(
++        "Found old binary log without GTIDs while looking for "
+         "the oldest binary log that contains any GTID that is not in "
+-        "the given gtid set";
++        "the given gtid set");
+       error= -4;
+       goto end;
+     case GOT_GTIDS:
+@@ -3175,7 +3179,7 @@
+ 
+ end:
+   if (error)
+-    DBUG_PRINT("error", ("'%s'", *errmsg));
++    DBUG_PRINT("error", ("'%s'", errmsg.c_str()));
+   filename_list.clear();
+   DBUG_PRINT("info", ("returning %d", error));
+   DBUG_RETURN(error != 0 ? true : false);
+@@ -8083,7 +8087,7 @@
+ }
+ 
+ void MYSQL_BIN_LOG::report_missing_purged_gtids(const Gtid_set* slave_executed_gtid_set,
+-                                         const char** errmsg)
++                                         std::string &errmsg)
+ {
+   DBUG_ENTER("MYSQL_BIN_LOG::report_missing_purged_gtids");
+   THD *thd= current_thd;
+@@ -8140,11 +8144,11 @@
+   std::ostringstream gtid_info;
+   gtid_info << "The GTID set sent by the slave is '" << slave_executed_gtids
+             << "', and the missing transactions are '"<< missing_gtids <<"'";
+-  *errmsg= ER_THD(thd, ER_MASTER_HAS_PURGED_REQUIRED_GTIDS);
++  errmsg.assign(ER_THD(thd, ER_MASTER_HAS_PURGED_REQUIRED_GTIDS));
+ 
+   /* Don't consider the "%s" in the format string. Subtract 2 from the
+      total length */
+-  total_length= (strlen(*errmsg) - 2 + gtid_info.str().length());
++  total_length= (errmsg.length() - 2 + gtid_info.str().length());
+ 
+   DBUG_EXECUTE_IF("simulate_long_missing_gtids",
+                   { total_length= MYSQL_ERRMSG_SIZE + 1;});
+@@ -8156,9 +8160,9 @@
+                   " GTID_SUBTRACT");
+ 
+   /* Buffer for formatting the message about the missing GTIDs. */
+-  static char buff[MYSQL_ERRMSG_SIZE];
+-  my_snprintf(buff, MYSQL_ERRMSG_SIZE, *errmsg, gtid_info.str().c_str());
+-  *errmsg= const_cast<const char*>(buff);
++  char buff[MYSQL_ERRMSG_SIZE];
++  my_snprintf(buff, MYSQL_ERRMSG_SIZE, errmsg.c_str(), gtid_info.str().c_str());
++  errmsg.assign(const_cast<const char*>(buff));
+ 
+   my_free(missing_gtids);
+   my_free(slave_executed_gtids);
+@@ -8167,7 +8171,7 @@
+ 
+ void MYSQL_BIN_LOG::report_missing_gtids(const Gtid_set* previous_gtid_set,
+                                          const Gtid_set* slave_executed_gtid_set,
+-                                         const char** errmsg)
++                                         std::string &errmsg)
+ {
+   DBUG_ENTER("MYSQL_BIN_LOG::report_missing_gtids");
+   THD *thd=current_thd;
+@@ -8176,8 +8180,8 @@
+   Gtid_set gtid_missing(slave_executed_gtid_set->get_sid_map());
+   gtid_missing.add_gtid_set(slave_executed_gtid_set);
+   gtid_missing.remove_gtid_set(previous_gtid_set);
+-  gtid_missing.to_string(&missing_gtids, NULL);
+-  slave_executed_gtid_set->to_string(&slave_executed_gtids, NULL);
++  gtid_missing.to_string(&missing_gtids);
++  slave_executed_gtid_set->to_string(&slave_executed_gtids);
+ 
+   String tmp_uuid;
+   uchar name[]= "slave_uuid";
+@@ -8220,19 +8224,19 @@
+   std::ostringstream gtid_info;
+   gtid_info << "The GTID set sent by the slave is '" << slave_executed_gtids
+             << "', and the missing transactions are '"<< missing_gtids <<"'";
+-  *errmsg= ER_THD(thd, ER_MASTER_HAS_PURGED_REQUIRED_GTIDS);
++  errmsg.assign(ER_THD(thd, ER_MASTER_HAS_PURGED_REQUIRED_GTIDS));
+ 
+   /* Don't consider the "%s" in the format string. Subtract 2 from the
+      total length */
+-  if ((strlen(*errmsg) - 2 + gtid_info.str().length()) > MYSQL_ERRMSG_SIZE)
++  if ((errmsg.length() - 2 + gtid_info.str().length()) > MYSQL_ERRMSG_SIZE)
+     gtid_info.str("The GTID sets and the missing purged transactions are too"
+                   " long to print in this message. For more information,"
+                   " please see the master's error log or the manual for"
+                   " GTID_SUBTRACT");
+   /* Buffer for formatting the message about the missing GTIDs. */
+-  static char buff[MYSQL_ERRMSG_SIZE];
+-  my_snprintf(buff, MYSQL_ERRMSG_SIZE, *errmsg, gtid_info.str().c_str());
+-  *errmsg= const_cast<const char*>(buff);
++  char buff[MYSQL_ERRMSG_SIZE];
++  my_snprintf(buff, MYSQL_ERRMSG_SIZE, errmsg.c_str(), gtid_info.str().c_str());
++  errmsg.assign(const_cast<const char*>(buff));
+ 
+   my_free(missing_gtids);
+   my_free(slave_executed_gtids);
+--- a/sql/binlog.h	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/binlog.h	2022-11-11 18:25:54.000000000 +0100
+@@ -27,6 +27,8 @@
+ #include "log_event.h"
+ #include "log.h"
+ 
++#include <string>
++
+ class Relay_log_info;
+ class Master_info;
+ 
+@@ -481,7 +483,7 @@
+   bool find_first_log_not_in_gtid_set(char *binlog_file_name,
+                                       const Gtid_set *gtid_set,
+                                       Gtid *first_gtid,
+-                                      const char **errmsg);
++                                      std::string &errmsg);
+ 
+   /**
+     Reads the set of all GTIDs in the binary log, and the set of all
+@@ -726,7 +728,7 @@
+     @return void
+   */
+   void report_missing_purged_gtids(const Gtid_set* slave_executed_gtid_set,
+-                                   const char** errmsg);
++                                   std::string &errmsg);
+ 
+   /**
+     Function to report the missing GTIDs.
+@@ -752,7 +754,7 @@
+   */
+   void report_missing_gtids(const Gtid_set* previous_gtid_set,
+                             const Gtid_set* slave_executed_gtid_set,
+-                            const char** errmsg);
++                            std::string &errmsg);
+   static const int MAX_RETRIES_FOR_DELETE_RENAME_FAILURE = 5;
+ private:
+   void publish_coordinates_for_global_status(void) const;
+--- a/sql/ha_partition.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/ha_partition.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -4273,7 +4273,9 @@
+   {
+     if (!part_share->auto_inc_initialized)
+       info(HA_STATUS_AUTO);
++    my_bitmap_map *old_map = dbug_tmp_use_all_columns(table, table->read_set);
+     set_auto_increment_if_higher(table->found_next_number_field);
++    dbug_tmp_restore_column_map(table->read_set, old_map);
+   }
+   DBUG_RETURN(error);
+ }
+--- a/sql/item.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/item.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -1,5 +1,6 @@
+ /*
+    Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
++   Copyright (c) 2021, Percona and/or its affiliates. All rights reserved.
+ 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2.0,
+@@ -2919,7 +2920,7 @@
+ 
+ table_map Item_field::used_tables() const
+ {
+-  if (field->table->const_table)
++  if (!field || !field->table || field->table->const_table)
+     return 0;					// const item
+   return (depended_from ? OUTER_REF_TABLE_BIT : field->table->map);
+ }
+--- a/sql/item.h	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/item.h	2022-11-11 18:25:54.000000000 +0100
+@@ -1265,6 +1265,13 @@
+   { return (used_tables() & ~PARAM_TABLE_BIT) == 0; }
+ 
+   /**
++    @returns true if this item is non-deterministic, which means that a
++             has a component that must be evaluated once per row in
++             execution of a JOIN query.
++  */
++  bool is_non_deterministic() const { return used_tables() & RAND_TABLE_BIT; }
++
++  /**
+     This method is used for to:
+       - to generate a view definition query (SELECT-statement);
+       - to generate a SQL-query for EXPLAIN EXTENDED;
+--- a/sql/rpl_master.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/rpl_master.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -870,6 +870,7 @@
+   bool time_for_hb_event= false;
+   int error= 0;
+   const char *errmsg = "Unknown error";
++  std::string bl_errmsg;
+   char error_text[MAX_SLAVE_ERRMSG]= {0}; // to be send to slave via my_message()
+   NET* net = &thd->net;
+   mysql_mutex_t *log_lock;
+@@ -1015,9 +1016,10 @@
+       */
+       if (!gtid_state->get_lost_gtids()->is_subset(slave_gtid_executed))
+       {
+-        mysql_bin_log.report_missing_purged_gtids(slave_gtid_executed, &errmsg);
++        mysql_bin_log.report_missing_purged_gtids(slave_gtid_executed, bl_errmsg);
+         my_errno= ER_MASTER_FATAL_ERROR_READING_BINLOG;
+         global_sid_lock->unlock();
++        errmsg = bl_errmsg.c_str();
+         GOTO_ERR;
+       }
+       global_sid_lock->unlock();
+@@ -1025,9 +1027,10 @@
+       if (mysql_bin_log.find_first_log_not_in_gtid_set(name,
+                                                        slave_gtid_executed,
+                                                        &first_gtid,
+-                                                       &errmsg))
++                                                       bl_errmsg))
+       {
+          my_errno= ER_MASTER_FATAL_ERROR_READING_BINLOG;
++         errmsg = bl_errmsg.c_str();
+          GOTO_ERR;
+       }
+     }
+--- a/sql/set_var.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/set_var.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -1,4 +1,5 @@
+ /* Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
++   Copyright (c) 2021, Percona and/or its affiliates. All rights reserved.
+ 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2.0,
+@@ -150,7 +151,8 @@
+   next(0),
+   binlog_status(binlog_status_arg),
+   flags(flags_arg), m_parse_flag(parse_flag), show_val_type(show_val_type_arg),
+-  guard(lock), offset(off), on_check(on_check_func), on_update(on_update_func),
++  guard(lock), offset(off), on_check(on_check_func),
++  pre_update(0), on_update(on_update_func),
+   deprecation_substitute(substitute),
+   is_os_charset(FALSE)
+ {
+@@ -186,6 +188,14 @@
+ 
+ bool sys_var::update(THD *thd, set_var *var)
+ {
++  /*
++    Invoke preparatory step for updating a system variable. Doing this action
++    before we have acquired any locks allows to invoke code which acquires other
++    locks without introducing deadlocks.
++  */
++  if (pre_update && pre_update(this, thd, var))
++    return true;
++
+   enum_var_type type= var->type;
+   if (type == OPT_GLOBAL || scope() == GLOBAL)
+   {
+--- a/sql/set_var.h	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/set_var.h	2022-11-11 18:25:54.000000000 +0100
+@@ -1,6 +1,7 @@
+ #ifndef SET_VAR_INCLUDED
+ #define SET_VAR_INCLUDED
+ /* Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
++   Copyright (c) 2021, Percona and/or its affiliates. All rights reserved.
+ 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2.0,
+@@ -76,6 +77,7 @@
+ 
+ protected:
+   typedef bool (*on_check_function)(sys_var *self, THD *thd, set_var *var);
++  typedef bool (*pre_update_function)(sys_var *self, THD *thd, set_var *var);
+   typedef bool (*on_update_function)(sys_var *self, THD *thd, enum_var_type type);
+ 
+   int flags;            ///< or'ed flag_enum values
+@@ -85,6 +87,11 @@
+   PolyLock *guard;      ///< *second* lock that protects the variable
+   ptrdiff_t offset;     ///< offset to the value from global_system_variables
+   on_check_function on_check;
++  /**
++    Pointer to function to be invoked before updating system variable (but
++    after calling on_check hook), while we do not hold any locks yet.
++  */
++  pre_update_function pre_update;
+   on_update_function on_update;
+   const char *const deprecation_substitute;
+   bool is_os_charset; ///< true if the value is in character_set_filesystem
+--- a/sql/sql_acl.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/sql_acl.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -966,21 +966,22 @@
+   }
+ 
+ 
+-  void print_grant(String *str)
++  void print_grant(THD *thd, String *str)
+   {
+-    str->append(STRING_WITH_LEN("GRANT PROXY ON '"));
+-    if (proxied_user)
+-      str->append(proxied_user, strlen(proxied_user));
+-    str->append(STRING_WITH_LEN("'@'"));
+-    if (proxied_host.get_host())
+-      str->append(proxied_host.get_host(), strlen(proxied_host.get_host()));
+-    str->append(STRING_WITH_LEN("' TO '"));
+-    if (user)
+-      str->append(user, strlen(user));
+-    str->append(STRING_WITH_LEN("'@'"));
+-    if (host.get_host())
+-      str->append(host.get_host(), strlen(host.get_host()));
+-    str->append(STRING_WITH_LEN("'"));
++    str->append(STRING_WITH_LEN("GRANT PROXY ON "));
++    String proxied_user_str(proxied_user, get_proxied_user_length(),
++                            system_charset_info);
++    append_query_string(thd, system_charset_info, &proxied_user_str, str);
++    str->append(STRING_WITH_LEN("@"));
++    String proxied_host_str(proxied_host.get_host(), proxied_host.get_host_len(),
++                            system_charset_info);
++    append_query_string(thd, system_charset_info, &proxied_host_str, str);
++    str->append(STRING_WITH_LEN(" TO "));
++    String user_str(user, get_user_length(), system_charset_info);
++    append_query_string(thd, system_charset_info, &user_str, str);
++    str->append(STRING_WITH_LEN("@"));
++    String host_str(host.get_host(), host.get_host_len(), system_charset_info);
++    append_query_string(thd, system_charset_info, &host_str, str);
+     if (with_grant)
+       str->append(STRING_WITH_LEN(" WITH GRANT OPTION"));
+   }
+@@ -1044,6 +1045,12 @@
+ 
+     DBUG_RETURN(FALSE);
+   }
++
++  size_t get_user_length() const { return user ? strlen(user) : 0; }
++
++  size_t get_proxied_user_length() const {
++    return proxied_user ? strlen(proxied_user) : 0;
++  }
+ };
+ 
+ #define FIRST_NON_YN_FIELD 26
+@@ -7214,13 +7221,14 @@
+ 	}
+       }
+     }
+-    global.append (STRING_WITH_LEN(" ON *.* TO '"));
+-    global.append(lex_user->user.str, lex_user->user.length,
+-		  system_charset_info);
+-    global.append (STRING_WITH_LEN("'@'"));
+-    global.append(lex_user->host.str,lex_user->host.length,
+-		  system_charset_info);
+-    global.append ('\'');
++    global.append (STRING_WITH_LEN(" ON *.* TO "));
++    String user_str(lex_user->user.str, lex_user->user.length,
++                    system_charset_info);
++    append_query_string(thd, system_charset_info, &user_str, &global);
++    global.append(STRING_WITH_LEN("@"));
++    String host_str(lex_user->host.str, lex_user->host.length,
++                    system_charset_info);
++    append_query_string(thd, system_charset_info, &host_str, &global);
+ #if defined(HAVE_OPENSSL)
+     if (acl_user->plugin.str == sha256_password_plugin_name.str &&
+         acl_user->auth_string.length > 0)
+@@ -7364,13 +7372,14 @@
+ 	}
+ 	db.append (STRING_WITH_LEN(" ON "));
+ 	append_identifier(thd, &db, acl_db->db, strlen(acl_db->db));
+-	db.append (STRING_WITH_LEN(".* TO '"));
+-	db.append(lex_user->user.str, lex_user->user.length,
+-		  system_charset_info);
+-	db.append (STRING_WITH_LEN("'@'"));
++	db.append (STRING_WITH_LEN(".* TO "));
++	String user_str(lex_user->user.str, lex_user->user.length,
++					system_charset_info);
++	append_query_string(thd, system_charset_info, &user_str, &db);
++	db.append(STRING_WITH_LEN("@"));
+ 	// host and lex_user->host are equal except for case
+-	db.append(host, strlen(host), system_charset_info);
+-	db.append ('\'');
++	String host_str(host, strlen(host), system_charset_info);
++	append_query_string(thd, system_charset_info, &host_str, &db);
+ 	if (want_access & GRANT_ACL)
+ 	  db.append(STRING_WITH_LEN(" WITH GRANT OPTION"));
+ 	protocol->prepare_for_resend();
+@@ -7480,13 +7489,14 @@
+ 	global.append('.');
+ 	append_identifier(thd, &global, grant_table->tname,
+ 			  strlen(grant_table->tname));
+-	global.append(STRING_WITH_LEN(" TO '"));
+-	global.append(lex_user->user.str, lex_user->user.length,
+-		      system_charset_info);
+-	global.append(STRING_WITH_LEN("'@'"));
++	global.append(STRING_WITH_LEN(" TO "));
++	String user_str(lex_user->user.str, lex_user->user.length,
++					system_charset_info);
++	append_query_string(thd, system_charset_info, &user_str, &global);
++	global.append(STRING_WITH_LEN("@"));
+ 	// host and lex_user->host are equal except for case
+-	global.append(host, strlen(host), system_charset_info);
+-	global.append('\'');
++	String host_str(host, strlen(host), system_charset_info);
++	append_query_string(thd, system_charset_info, &host_str, &global);
+ 	if (table_access & GRANT_ACL)
+ 	  global.append(STRING_WITH_LEN(" WITH GRANT OPTION"));
+ 	protocol->prepare_for_resend();
+@@ -7593,13 +7603,14 @@
+ 	global.append('.');
+ 	append_identifier(thd, &global, grant_proc->tname,
+ 			  strlen(grant_proc->tname));
+-	global.append(STRING_WITH_LEN(" TO '"));
+-	global.append(lex_user->user.str, lex_user->user.length,
+-		      system_charset_info);
+-	global.append(STRING_WITH_LEN("'@'"));
++	global.append(STRING_WITH_LEN(" TO "));
++	String user_str(lex_user->user.str, lex_user->user.length,
++					system_charset_info);
++	append_query_string(thd, system_charset_info, &user_str, &global);
++	global.append(STRING_WITH_LEN("@"));
+ 	// host and lex_user->host are equal except for case
+-	global.append(host, strlen(host), system_charset_info);
+-	global.append('\'');
++	String host_str(host, strlen(host), system_charset_info);
++	append_query_string(thd, system_charset_info, &host_str, &global);
+ 	if (proc_access & GRANT_ACL)
+ 	  global.append(STRING_WITH_LEN(" WITH GRANT OPTION"));
+ 	protocol->prepare_for_resend();
+@@ -9589,7 +9600,7 @@
+     {
+       String global(buff, buffsize, system_charset_info);
+       global.length(0);
+-      proxy->print_grant(&global);
++      proxy->print_grant(thd, &global);
+       protocol->prepare_for_resend();
+       protocol->store(global.ptr(), global.length(), global.charset());
+       if (protocol->write())
+@@ -10844,6 +10855,8 @@
+   {
+     if (mpvio->charset_adapter->init_client_charset(uint2korr(ptr)))
+       DBUG_RETURN(1);
++    // skip over the charset's 2 bytes
++    ptr += 2;
+   }
+ 
+   /* Convert database and user names to utf8 */
+@@ -10886,12 +10899,14 @@
+   char *client_plugin;
+   if (mpvio->client_capabilities & CLIENT_PLUGIN_AUTH)
+   {
+-    client_plugin= ptr + 2;
++    client_plugin= ptr;
+     if (client_plugin >= end)
+     {
+       my_message(ER_UNKNOWN_COM_ERROR, ER(ER_UNKNOWN_COM_ERROR), MYF(0));
+       DBUG_RETURN(1);
+     }
++    // Skip over the client plugin
++    ptr += strlen(client_plugin) + 1;
+   }
+   else
+   {
+@@ -10911,6 +10926,12 @@
+     }
+   }
+ 
++  if (ptr > end)
++  {
++    my_message(ER_UNKNOWN_COM_ERROR, ER(ER_UNKNOWN_COM_ERROR), MYF(0));
++    DBUG_RETURN (1);
++  }
++
+   size_t bytes_remaining_in_packet= end - ptr;
+ 
+   if ((mpvio->client_capabilities & CLIENT_CONNECT_ATTRS) &&
+--- a/sql/sql_prepare.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/sql_prepare.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -4118,6 +4118,14 @@
+   thd->set_statement(&stmt_backup);
+   thd->stmt_arena= old_stmt_arena;
+ 
++  /*
++    Use alloc_query() to make sure the query is allocated on
++    the correct MEM_ROOT, since otherwise THD::query_string could end
++    up as a dangling pointer (i.e. pointer to freed memory) once the PS
++    MEM_ROOT is freed.
++  */
++  alloc_query(thd, thd->query(), thd->query_length());
++
+   if (state == Query_arena::STMT_PREPARED)
+     state= Query_arena::STMT_EXECUTED;
+ 
+--- a/sql/sql_tmp_table.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/sql_tmp_table.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -536,8 +536,15 @@
+       (*tmp->item)->marker= 4;
+       const uint char_len=
+         (*tmp->item)->max_length / (*tmp->item)->collation.collation->mbmaxlen;
+-      if (char_len > CONVERT_IF_BIGGER_TO_BLOB)
++      /*
++        Use hash key as the unique constraint if the group-by key is
++        big or if it is non-deterministic. Group-by items get evaluated
++        twice and a non-deterministic function would cause a discrepancy.
++      */
++      if (char_len > CONVERT_IF_BIGGER_TO_BLOB ||
++          (*tmp->item)->is_non_deterministic()) {
+         using_unique_constraint= true;
++      }
+     }
+     if (param->group_length >= MAX_BLOB_WIDTH)
+       using_unique_constraint= true;
+--- a/sql/sql_udf.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/sql_udf.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -1,4 +1,5 @@
+ /* Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
++   Copyright (c) 2021, Percona and/or its affiliates. All rights reserved.
+ 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2.0,
+@@ -185,8 +186,24 @@
+     DBUG_PRINT("info",("init udf record"));
+     LEX_STRING name;
+     name.str=get_field(&mem, table->field[0]);
++
++    // Check the name.str is NULL or not.
++    if (name.str == NULL)
++    {
++      sql_print_error("Invalid row in mysql.func table for column 'name'");
++      continue;
++    }
++
+     name.length = (uint) strlen(name.str);
+     char *dl_name= get_field(&mem, table->field[2]);
++
++    if (dl_name == NULL)
++    {
++      sql_print_error("Invalid row in mysql.func table for function '%.64s'",
++                      name.str);
++      continue;
++    }
++
+     bool new_dl=0;
+     Item_udftype udftype=UDFTYPE_FUNCTION;
+     if (table->s->fields >= 4)			// New func table
+--- a/sql/sql_yacc.yy	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/sql_yacc.yy	2022-11-11 18:25:54.000000000 +0100
+@@ -1,5 +1,6 @@
+ /*
+    Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
++   Copyright (c) 2021, Percona and/or its affiliates. All rights reserved.
+ 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2.0,
+@@ -3117,10 +3118,21 @@
+             uint num_vars= pctx->context_var_count();
+             enum enum_field_types var_type= (enum enum_field_types) $4;
+             Item *dflt_value_item= $5;
++            const bool has_default_clause = (dflt_value_item != NULL);
++            bool is_const_item = false;
+             LEX_STRING dflt_value_query= EMPTY_STR;
+ 
+-            if (dflt_value_item)
+-            {
++            if (has_default_clause) {
++              // Handling a NEG_FUNC wrapping a constant.
++              if (dflt_value_item->type() == Item::FUNC_ITEM) {
++                Item_func *func_item = (Item_func *) dflt_value_item;
++                if (func_item->functype() == Item_func::NEG_FUNC) {
++                  is_const_item = true;
++                }
++              } else if (dflt_value_item->const_item()) {
++                is_const_item = true;
++              }
++
+               // sp_opt_default only pushes start ptr for DEFAULT clause.
+               const char *expr_start_ptr=
+                 sp->m_parser_data.pop_expr_start_ptr();
+@@ -3140,10 +3152,13 @@
+                 MYSQL_YYABORT;
+             }
+ 
++            sp_variable *first_spvar = NULL;
++            const uint first_var_num = num_vars - $2;
++
+             // We can have several variables in DECLARE statement.
+             // We need to create an sp_instr_set instruction for each variable.
+ 
+-            for (uint i = num_vars-$2 ; i < num_vars ; i++)
++            for (uint i = first_var_num ; i < num_vars ; i++)
+             {
+               uint var_idx= pctx->var_context2runtime(i);
+               sp_variable *spvar= pctx->find_variable(var_idx);
+@@ -3152,8 +3167,34 @@
+                 MYSQL_YYABORT;
+ 
+               spvar->type= var_type;
++
++              // Transforming the following declare statements having non-const
++              // expressions:
++              // DECLARE a, b, c type DEFAULT expr;
++              //              to
++              // DECLARE a type DEFAULT expr, b type DEFAULT a,
++              //         c type DEFAULT a;
++
++              if (i == first_var_num) {
++                first_spvar = spvar;
++              } else if (has_default_clause && !is_const_item) {
++                Item_splocal *item =
++                  new (thd->mem_root)
++                    Item_splocal(first_spvar->name, first_spvar->offset,
++                                       first_spvar->type, 0, 0);
++                if (item == NULL)
++                  MYSQL_YYABORT; // OOM
++#ifndef DBUG_OFF
++                item->m_sp = lex->sphead;
++#endif
++                dflt_value_item = item;
++              }
+               spvar->default_value= dflt_value_item;
+ 
++              if (has_default_clause && !is_const_item && (i > first_var_num)) {
++                dflt_value_query = first_spvar->name;
++              }
++
+               if (fill_field_definition(thd, sp, var_type, &spvar->field_def))
+                 MYSQL_YYABORT;
+ 
+--- a/sql/sys_vars.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/sys_vars.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -1,4 +1,5 @@
+ /* Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
++   Copyright (c) 2021, Percona and/or its affiliates. All rights reserved.
+ 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2.0,
+@@ -3636,6 +3637,35 @@
+        NO_MUTEX_GUARD, NOT_IN_BINLOG, ON_CHECK(0), ON_UPDATE(0),
+        DEPRECATED(""));
+ 
++/**
++  Pre-update function to commit connection's active transactions when autocommit
++  is enabled.
++
++  @note This hook relies on the fact that it is called while not holding any
++        locks. Breaking this assumption might result in deadlocks as commit
++        acquires many different locks in its process (e.g. to open GTID-related
++        tables).
++
++  @param[in] self   A pointer to the sys_var, i.e. Sys_autocommit.
++  @param[in] thd    A reference to THD object.
++  @param[in] var    A pointer to the set_var created by the parser.
++
++  @retval true   Error during commit
++  @retval false  Otherwise
++*/
++static bool pre_autocommit(sys_var *self, THD *thd, set_var *var)
++{
++  if (!(var->type == OPT_GLOBAL) &&
++      (thd->variables.option_bits & OPTION_NOT_AUTOCOMMIT) &&
++       var->save_result.ulonglong_value)
++  {
++    // Autocommit mode is about to be activated.
++    if (trans_commit_stmt(thd) || trans_commit(thd))
++      return true;
++  }
++  return false;
++}
++
+ static bool fix_autocommit(sys_var *self, THD *thd, enum_var_type type)
+ {
+   if (type == OPT_GLOBAL)
+@@ -3650,12 +3680,6 @@
+   if (thd->variables.option_bits & OPTION_AUTOCOMMIT &&
+       thd->variables.option_bits & OPTION_NOT_AUTOCOMMIT)
+   { // activating autocommit
+-
+-    if (trans_commit_stmt(thd) || trans_commit(thd))
+-    {
+-      thd->variables.option_bits&= ~OPTION_AUTOCOMMIT;
+-      return true;
+-    }
+     /*
+       Don't close thread tables or release metadata locks: if we do so, we
+       risk releasing locks/closing tables of expressions used to assign
+@@ -3688,7 +3712,8 @@
+ static Sys_var_bit Sys_autocommit(
+        "autocommit", "autocommit",
+        SESSION_VAR(option_bits), NO_CMD_LINE, OPTION_AUTOCOMMIT, DEFAULT(TRUE),
+-       NO_MUTEX_GUARD, NOT_IN_BINLOG, ON_CHECK(0), ON_UPDATE(fix_autocommit));
++       NO_MUTEX_GUARD, NOT_IN_BINLOG, ON_CHECK(0),
++       PRE_UPDATE(pre_autocommit), ON_UPDATE(fix_autocommit));
+ export sys_var *Sys_autocommit_ptr= &Sys_autocommit; // for sql_yacc.yy
+ 
+ static Sys_var_mybool Sys_big_tables(
+@@ -3822,7 +3847,7 @@
+        "profiling", "profiling",
+        SESSION_VAR(option_bits), NO_CMD_LINE, OPTION_PROFILING,
+        DEFAULT(FALSE), NO_MUTEX_GUARD, NOT_IN_BINLOG, ON_CHECK(0),
+-       ON_UPDATE(0), DEPRECATED(""));
++       PRE_UPDATE(0), ON_UPDATE(0), DEPRECATED(""));
+ 
+ static Sys_var_ulong Sys_profiling_history_size(
+        "profiling_history_size", "Limit of query profiling memory",
+--- a/sql/sys_vars.h	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/sys_vars.h	2022-11-11 18:25:54.000000000 +0100
+@@ -1,4 +1,5 @@
+ /* Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
++   Copyright (c) 2021, Percona and/or its affiliates. All rights reserved.
+ 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2.0,
+@@ -58,6 +59,7 @@
+ #define NOT_IN_BINLOG sys_var::VARIABLE_NOT_IN_BINLOG
+ #define ON_READ(X) X
+ #define ON_CHECK(X) X
++#define PRE_UPDATE(X) X
+ #define ON_UPDATE(X) X
+ #define READ_ONLY sys_var::READONLY+
+ #define NOT_VISIBLE sys_var::INVISIBLE+
+@@ -1511,6 +1513,7 @@
+           ulonglong bitmask_arg, my_bool def_val, PolyLock *lock=0,
+           enum binlog_status_enum binlog_status_arg=VARIABLE_NOT_IN_BINLOG,
+           on_check_function on_check_func=0,
++          pre_update_function pre_update_func=0,
+           on_update_function on_update_func=0,
+           const char *substitute=0)
+     : Sys_var_typelib(name_arg, comment, flag_args, off, getopt,
+@@ -1519,6 +1522,7 @@
+                       substitute)
+   {
+     option.var_type= GET_BOOL;
++    pre_update= pre_update_func;
+     reverse_semantics= my_count_bits(bitmask_arg) > 1;
+     bitmask= reverse_semantics ? ~bitmask_arg : bitmask_arg;
+     set(global_var_ptr(), def_val);
+--- a/sql/threadpool_unix.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/sql/threadpool_unix.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -1704,7 +1704,6 @@
+       if(!success)
+       {
+         sql_print_error("io_poll_create() failed, errno=%d\n", errno);
+-        break;
+       }
+     }  
+     mysql_mutex_unlock(&all_groups[i].mutex);
+--- a/storage/federated/ha_federated.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/federated/ha_federated.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -3478,6 +3478,23 @@
+   DBUG_RETURN(0);
+ }
+ 
++
++int ha_federated::rnd_pos_by_record(uchar *record) {
++  int error;
++  assert(table_flags() & HA_PRIMARY_KEY_REQUIRED_FOR_POSITION);
++
++  error = ha_rnd_init(false);
++  if (error != 0) return error;
++
++  if (stored_result) {
++    position(record);
++    error = ha_rnd_pos(record, ref);
++  }
++
++  ha_rnd_end();
++  return error;
++}
++
+ struct st_mysql_storage_engine federated_storage_engine=
+ { MYSQL_HANDLERTON_INTERFACE_VERSION };
+ 
+--- a/storage/federated/ha_federated.h	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/federated/ha_federated.h	2022-11-11 18:25:54.000000000 +0100
+@@ -276,5 +276,6 @@
+   int connection_autocommit(bool state);
+   int execute_simple_query(const char *query, int len);
+   int reset(void);
++  int rnd_pos_by_record(uchar *record);
+ };
+ 
+--- a/storage/innobase/fts/fts0fts.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/fts/fts0fts.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -602,6 +602,7 @@
+ 	cache->sync_heap->arg = mem_heap_create(1024);
+ 
+ 	cache->total_size = 0;
++	cache->total_size_before_sync = 0;
+ 
+ 	mutex_enter((ib_mutex_t*) &cache->deleted_lock);
+ 	cache->deleted_doc_ids = ib_vector_create(
+@@ -1372,6 +1373,9 @@
+ 		ptr = ilist + node->ilist_size;
+ 
+ 		node->ilist_size_alloc = new_size;
++		if (cache) {
++			cache->total_size += new_size;
++		}
+ 	}
+ 
+ 	ptr_start = ptr;
+@@ -1398,6 +1402,9 @@
+ 		if (node->ilist_size > 0) {
+ 			memcpy(ilist, node->ilist, node->ilist_size);
+ 			ut_free(node->ilist);
++			if (cache) {
++				cache->total_size -= node->ilist_size;
++			}
+ 		}
+ 
+ 		node->ilist = ilist;
+@@ -1405,10 +1412,6 @@
+ 
+ 	node->ilist_size += enc_len;
+ 
+-	if (cache) {
+-		cache->total_size += enc_len;
+-	}
+-
+ 	if (node->first_doc_id == FTS_NULL_DOC_ID) {
+ 		node->first_doc_id = doc_id;
+ 	}
+@@ -2663,23 +2666,19 @@
+ 	/* If the Doc ID system has not yet been initialized, we
+ 	will consult the CONFIG table and user table to re-establish
+ 	the initial value of the Doc ID */
++	if (cache->first_doc_id == FTS_NULL_DOC_ID) {
++		fts_init_doc_id(table);
++	}
+ 
+-	if (cache->first_doc_id != 0 || !fts_init_doc_id(table)) {
+-		if (!DICT_TF2_FLAG_IS_SET(table, DICT_TF2_FTS_HAS_DOC_ID)) {
+-			*doc_id = FTS_NULL_DOC_ID;
+-			return(DB_SUCCESS);
+-		}
+-
+-		/* Otherwise, simply increment the value in cache */
+-		mutex_enter(&cache->doc_id_lock);
+-		*doc_id = ++cache->next_doc_id;
+-		mutex_exit(&cache->doc_id_lock);
+-	} else {
+-		mutex_enter(&cache->doc_id_lock);
+-		*doc_id = cache->next_doc_id;
+-		mutex_exit(&cache->doc_id_lock);
++	if (!DICT_TF2_FLAG_IS_SET(table, DICT_TF2_FTS_HAS_DOC_ID)) {
++		*doc_id = FTS_NULL_DOC_ID;
++		return(DB_SUCCESS);
+ 	}
+ 
++	mutex_enter(&cache->doc_id_lock);
++	*doc_id = ++cache->next_doc_id;
++	mutex_exit(&cache->doc_id_lock);
++
+ 	return(DB_SUCCESS);
+ }
+ 
+@@ -3576,10 +3575,13 @@
+ 					doc_id, doc.tokens);
+ 
+ 				bool	need_sync = false;
+-				if ((cache->total_size > fts_max_cache_size / 10
+-				     || fts_need_sync)
++				if ((cache->total_size -
++				    cache->total_size_before_sync >
++				    fts_max_cache_size / 10 || fts_need_sync)
+ 				    && !cache->sync->in_progress) {
+ 					need_sync = true;
++					cache->total_size_before_sync =
++					    cache->total_size;
+ 				}
+ 
+ 				rw_lock_x_unlock(&table->fts->cache->lock);
+@@ -4030,6 +4032,9 @@
+ 
+ 		word = rbt_value(fts_tokenizer_word_t, rbt_node);
+ 
++		DBUG_EXECUTE_IF("fts_instrument_write_words_before_select_index",
++				os_thread_sleep(300000););
++
+ 		selected = fts_select_index(
+ 			index_cache->charset, word->text.f_str,
+ 			word->text.f_len);
+@@ -4617,6 +4622,36 @@
+ 	trx_free_for_background(trx);
+ }
+ 
++/** Check that all indexes are synced.
++@param[in,out]	sync		sync state
++@return true if all indexes are synced, false otherwise. */
++static
++bool
++fts_check_all_indexes_synced(
++	fts_sync_t*	sync)
++{
++	ulint i;
++	fts_cache_t*	cache = sync->table->fts->cache;
++
++	/* Make sure all the caches are synced. */
++	for (i = 0; i < ib_vector_size(cache->indexes); ++i) {
++		fts_index_cache_t*	index_cache;
++
++		index_cache = static_cast<fts_index_cache_t*>(
++			ib_vector_get(cache->indexes, i));
++
++		if (index_cache->index->to_be_dropped
++		    || index_cache->index->table->to_be_dropped
++		    || fts_sync_index_check(index_cache)) {
++			continue;
++		}
++
++		return false;
++	}
++
++	return true;
++}
++
+ /** Run SYNC on the table, i.e., write out data from the cache to the
+ FTS auxiliary INDEX table and clear the cache at the end.
+ @param[in,out]	sync		sync state
+@@ -4704,17 +4739,7 @@
+ 	);
+ 
+ 	/* Make sure all the caches are synced. */
+-	for (i = 0; i < ib_vector_size(cache->indexes); ++i) {
+-		fts_index_cache_t*	index_cache;
+-
+-		index_cache = static_cast<fts_index_cache_t*>(
+-			ib_vector_get(cache->indexes, i));
+-
+-		if (index_cache->index->to_be_dropped
+-		    || fts_sync_index_check(index_cache)) {
+-			continue;
+-		}
+-
++	if (!fts_check_all_indexes_synced(sync)) {
+ 		goto begin_sync;
+ 	}
+ 
+--- a/storage/innobase/fts/fts0opt.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/fts/fts0opt.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -2687,6 +2687,9 @@
+ 	msg->ptr = table_id;
+ 
+ 	ib_wqueue_add(fts_optimize_wq, msg, msg->heap);
++	DBUG_EXECUTE_IF("fts_optimize_wq_count_check",
++	    if (ib_wqueue_get_count(fts_optimize_wq) > 1000) {
++	    DBUG_SUICIDE(); });
+ }
+ 
+ /**********************************************************************//**
+@@ -3111,6 +3114,10 @@
+ 				break;
+ 
+ 			case FTS_MSG_SYNC_TABLE:
++				DBUG_EXECUTE_IF("fts_instrument_msg_sync_sleep",
++					os_thread_sleep(300000);
++				);
++
+ 				fts_optimize_sync_table(
+ 					*static_cast<table_id_t*>(msg->ptr));
+ 				break;
+--- a/storage/innobase/handler/ha_innodb.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/handler/ha_innodb.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -2,7 +2,7 @@
+ 
+ Copyright (c) 2000, 2020, Oracle and/or its affiliates. All Rights Reserved.
+ Copyright (c) 2008, 2009 Google Inc.
+-Copyright (c) 2009, Percona Inc.
++Copyright (c) 2009, 2021, Percona Inc.
+ Copyright (c) 2012, Facebook Inc.
+ 
+ Portions of this file contain modifications contributed and copyrighted by
+@@ -1047,6 +1047,17 @@
+ /*=======*/
+ 	INNOBASE_SHARE*	share);		/*!< in/own: share to free */
+ 
++
++/************************************************************************/ /**
++Calls free_share and assign NULL to share. */
++static void
++free_share_and_nullify(
++    INNOBASE_SHARE **share) /*!< in/own: table share to free */
++{
++	free_share(*share);
++	*share = NULL;
++}
++
+ /*****************************************************************//**
+ Frees a possible InnoDB trx object associated with the current THD.
+ @return	0 or error number */
+@@ -5913,18 +5924,7 @@
+ 	normalize_table_name(norm_name, name);
+ 
+ 	user_thd = NULL;
+-
+-	if (!(share=get_share(name))) {
+-
+-		DBUG_RETURN(1);
+-	}
+-
+-	if (UNIV_UNLIKELY(share->ib_table && share->ib_table->is_corrupt &&
+-			  srv_pass_corrupt_table <= 1)) {
+-		free_share(share);
+-
+-		DBUG_RETURN(HA_ERR_CRASHED_ON_USAGE);
+-	}
++	share = NULL;
+ 
+ 	/* Will be allocated if it is needed in ::update_row() */
+ 	upd_buf = NULL;
+@@ -5948,6 +5948,25 @@
+ 	/* Get pointer to a table object in InnoDB dictionary cache */
+ 	ib_table = dict_table_open_on_name(norm_name, FALSE, TRUE, ignore_err);
+ 
++	/* share might hold pointers to dict table indexes without any pin.
++	We must always allocate m_share after opening the dict_table_t object
++	and free it before de-allocating dict_table_t to avoid race. */
++	if (ib_table != NULL) {
++		share = get_share(name);
++		if (share == NULL) {
++			dict_table_close(ib_table, FALSE, FALSE);
++			DBUG_RETURN(HA_ERR_CRASHED_ON_USAGE);
++		}
++
++		if (UNIV_UNLIKELY(share->ib_table && share->ib_table->is_corrupt &&
++			  srv_pass_corrupt_table <= 1)) {
++			free_share_and_nullify(&share);
++			dict_table_close(ib_table, FALSE, FALSE);
++
++			DBUG_RETURN(HA_ERR_CRASHED_ON_USAGE);
++		}
++	}
++
+ 	if (ib_table
+ 	    && ((!DICT_TF2_FLAG_IS_SET(ib_table, DICT_TF2_FTS_HAS_DOC_ID)
+ 		 && table->s->fields != dict_table_get_n_user_cols(ib_table))
+@@ -5966,6 +5985,7 @@
+ 		/* Mark this table as corrupted, so the drop table
+ 		or force recovery can still use it, but not others. */
+ 		ib_table->corrupted = true;
++		free_share_and_nullify(&share);
+ 		dict_table_close(ib_table, FALSE, FALSE);
+ 		ib_table = NULL;
+ 		is_part = NULL;
+@@ -5973,7 +5993,7 @@
+ 
+ 	if (UNIV_UNLIKELY(ib_table && ib_table->is_corrupt &&
+ 			  srv_pass_corrupt_table <= 1)) {
+-		free_share(share);
++		free_share_and_nullify(&share);
+ 		my_free(upd_buf);
+ 		upd_buf = NULL;
+ 		upd_buf_size = 0;
+@@ -5981,7 +6001,9 @@
+ 		DBUG_RETURN(HA_ERR_CRASHED_ON_USAGE);
+ 	}
+ 
+-	share->ib_table = ib_table;
++	if (share) {
++		share->ib_table = ib_table;
++	}
+ 
+ 	if (NULL == ib_table) {
+ 		if (is_part) {
+@@ -6025,6 +6047,25 @@
+ 				ib_table = dict_table_open_on_name(
+ 					par_case_name, FALSE, TRUE,
+ 					ignore_err);
++
++				/* share might hold pointers to dict table indexes without any pin.
++				We must always allocate m_share after opening the dict_table_t object
++				and free it before de-allocating dict_table_t to avoid race. */
++				if (ib_table != NULL) {
++					share = get_share(name);
++					if (share == NULL) {
++						dict_table_close(ib_table, FALSE, FALSE);
++						DBUG_RETURN(HA_ERR_CRASHED_ON_USAGE);
++					}
++
++					if (UNIV_UNLIKELY(share->ib_table && share->ib_table->is_corrupt &&
++						  srv_pass_corrupt_table <= 1)) {
++						free_share_and_nullify(&share);
++						dict_table_close(ib_table, FALSE, FALSE);
++
++						DBUG_RETURN(HA_ERR_CRASHED_ON_USAGE);
++					}
++				}
+ 			}
+ 
+ 			if (ib_table) {
+@@ -6064,7 +6105,6 @@
+ 			REFMAN "innodb-troubleshooting.html for how "
+ 			"you can resolve the problem.", norm_name);
+ 
+-		free_share(share);
+ 		my_errno = ENOENT;
+ 
+ 		DBUG_RETURN(HA_ERR_NO_SUCH_TABLE);
+@@ -6108,7 +6148,7 @@
+ 	}
+ 
+ 	if (!thd_tablespace_op(thd) && no_tablespace) {
+-		free_share(share);
++		free_share_and_nullify(&share);
+ 		my_errno = ENOENT;
+ 
+ 		dict_table_close(ib_table, FALSE, FALSE);
+@@ -6336,6 +6376,8 @@
+ 	/* No-op in XtraDB */
+ 	innobase_release_temporary_latches(ht, thd);
+ 
++	free_share_and_nullify(&share);
++
+ 	row_prebuilt_free(prebuilt, FALSE);
+ 
+ 	if (upd_buf != NULL) {
+@@ -6345,8 +6387,6 @@
+ 		upd_buf_size = 0;
+ 	}
+ 
+-	free_share(share);
+-
+ 	MONITOR_INC(MONITOR_TABLE_CLOSE);
+ 
+ 	/* Tell InnoDB server that there might be work for
+@@ -14402,6 +14442,10 @@
+ /*=======*/
+ 	INNOBASE_SHARE*	share)	/*!< in/own: table share to free */
+ {
++	if (!share) {
++		return;
++	}
++
+ 	mysql_mutex_lock(&innobase_share_mutex);
+ 
+ #ifdef UNIV_DEBUG
+--- a/storage/innobase/handler/handler0alter.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/handler/handler0alter.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -5648,24 +5648,24 @@
+ 	trx_t*		trx		= ctx0->trx;
+ 	bool		fail		= false;
+ 
+-	if (new_clustered) {
+-		for (inplace_alter_handler_ctx** pctx = ctx_array;
+-		     *pctx; pctx++) {
+-			ha_innobase_inplace_ctx*	ctx
+-				= static_cast<ha_innobase_inplace_ctx*>(*pctx);
+-			DBUG_ASSERT(ctx->need_rebuild());
++	/* Stop background FTS operations. */
++	for (inplace_alter_handler_ctx** pctx = ctx_array;
++			 *pctx; pctx++) {
++		ha_innobase_inplace_ctx*	ctx
++			= static_cast<ha_innobase_inplace_ctx*>(*pctx);
+ 
++		DBUG_ASSERT(new_clustered == ctx->need_rebuild());
++
++		if (new_clustered) {
+ 			if (ctx->old_table->fts) {
+ 				ut_ad(!ctx->old_table->fts->add_wq);
+-				fts_optimize_remove_table(
+-					ctx->old_table);
++				fts_optimize_remove_table(ctx->old_table);
+ 			}
++		}
+ 
+-			if (ctx->new_table->fts) {
+-				ut_ad(!ctx->new_table->fts->add_wq);
+-				fts_optimize_remove_table(
+-					ctx->new_table);
+-			}
++		if (ctx->new_table->fts) {
++			ut_ad(!ctx->new_table->fts->add_wq);
++			fts_optimize_remove_table(ctx->new_table);
+ 		}
+ 	}
+ 
+@@ -5710,39 +5710,37 @@
+ 
+ 	/* Make a concurrent Drop fts Index to wait until sync of that
+ 	fts index is happening in the background */
+-	for (;;) {
+-		bool    retry = false;
++	for (int retry_count = 0;;) {
++		bool	retry = false;
+ 
+-		for (inplace_alter_handler_ctx** pctx = ctx_array;
+-		    *pctx; pctx++) {
+-			int count =0;
+-			ha_innobase_inplace_ctx*        ctx
++		for (inplace_alter_handler_ctx** pctx = ctx_array; *pctx; pctx++) {
++			ha_innobase_inplace_ctx* ctx
+ 				= static_cast<ha_innobase_inplace_ctx*>(*pctx);
++
+ 			DBUG_ASSERT(new_clustered == ctx->need_rebuild());
+ 
+ 			if (dict_fts_index_syncing(ctx->old_table)) {
+-				count++;
+-				if (count == 100) {
+-					fprintf(stderr,
+-					"Drop index waiting for background sync"
+-					"to finish\n");
+-				}
+ 				retry = true;
++				break;
+ 			}
+ 
+ 			if (new_clustered && dict_fts_index_syncing(ctx->new_table)) {
+-				count++;
+-				if (count == 100) {
+-					fprintf(stderr,
+-                                        "Drop index waiting for background sync"
+-                                        "to finish\n");
+-				}
+ 				retry = true;
++				break;
+ 			}
+ 		}
+ 
+-		 if (!retry) {
+-			 break;
++		if (!retry) {
++			break;
++		}
++
++		/* Print a message if waiting for a long time. */
++		if (retry_count < 100) {
++			retry_count++;
++		} else {
++			//ib::info() <<
++			//	"Drop index waiting for background sync to finish\n";
++			retry_count = 0;
+ 		}
+ 
+ 		DICT_BG_YIELD(trx);
+@@ -6012,6 +6010,11 @@
+ 			ut_a(fts_check_cached_index(ctx->old_table));
+ 			DBUG_INJECT_CRASH("ib_commit_inplace_crash_fail",
+ 					  crash_fail_inject_count++);
++
++			/* Restart the FTS background operations. */
++			if (ctx->old_table->fts) {
++				fts_optimize_add_table(ctx->old_table);
++			}
+ 		}
+ 
+ 		row_mysql_unlock_data_dictionary(trx);
+@@ -6039,8 +6042,6 @@
+ 			dict_table_autoinc_unlock(t);
+ 		}
+ 
+-		bool	add_fts	= false;
+-
+ 		/* Publish the created fulltext index, if any.
+ 		Note that a fulltext index can be created without
+ 		creating the clustered index, if there already exists
+@@ -6055,14 +6056,14 @@
+ 				is left unset when a drop proceeds the add. */
+ 				DICT_TF2_FLAG_SET(ctx->new_table, DICT_TF2_FTS);
+ 				fts_add_index(index, ctx->new_table);
+-				add_fts = true;
+ 			}
+ 		}
+ 
+ 		ut_d(dict_table_check_for_dup_indexes(
+ 			     ctx->new_table, CHECK_ALL_COMPLETE));
+ 
+-		if (add_fts) {
++		/* Start/Restart the FTS background operations. */
++		if (ctx->new_table->fts) {
+ 			fts_optimize_add_table(ctx->new_table);
+ 		}
+ 
+--- a/storage/innobase/include/fts0fts.h	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/include/fts0fts.h	2022-11-11 18:25:54.000000000 +0100
+@@ -731,6 +731,15 @@
+ 	MY_ATTRIBUTE((nonnull, warn_unused_result));
+ 
+ /******************************************************************//**
++Add the table to add to the OPTIMIZER's list. */
++UNIV_INTERN
++void
++fts_optimize_add_table(
++/*===================*/
++	dict_table_t*	table)		/*!< in: table to add */
++	MY_ATTRIBUTE((nonnull));
++
++/******************************************************************//**
+ Remove the table from the OPTIMIZER's list. We do wait for
+ acknowledgement from the consumer of the message. */
+ UNIV_INTERN
+--- a/storage/innobase/include/fts0priv.h	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/include/fts0priv.h	2022-11-11 18:25:54.000000000 +0100
+@@ -606,14 +606,6 @@
+ 					long */
+ 	MY_ATTRIBUTE((nonnull, warn_unused_result));
+ /******************************************************************//**
+-Add the table to add to the OPTIMIZER's list. */
+-UNIV_INTERN
+-void
+-fts_optimize_add_table(
+-/*===================*/
+-	dict_table_t*	table)		/*!< in: table to add */
+-	MY_ATTRIBUTE((nonnull));
+-/******************************************************************//**
+ Optimize a table. */
+ UNIV_INTERN
+ void
+--- a/storage/innobase/include/fts0types.h	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/include/fts0types.h	2022-11-11 18:25:54.000000000 +0100
+@@ -170,6 +170,8 @@
+ 	ulint		total_size;	/*!< total size consumed by the ilist
+ 					field of all nodes. SYNC is run
+ 					whenever this gets too big */
++	uint64_t	total_size_before_sync;
++	/*!< total size of fts cache, when last SYNC request was sent */
+ 	fts_sync_t*	sync;		/*!< sync structure to sync data to
+ 					disk */
+ 	ib_alloc_t*	sync_heap;	/*!< The heap allocator, for indexes
+--- a/storage/innobase/include/univ.i	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/include/univ.i	2022-11-11 18:25:54.000000000 +0100
+@@ -55,7 +55,7 @@
+ #define INNODB_VERSION_BUGFIX	MYSQL_VERSION_PATCH
+ 
+ #ifndef PERCONA_INNODB_VERSION
+-#define PERCONA_INNODB_VERSION 91.0
++#define PERCONA_INNODB_VERSION 93.0
+ #endif
+ 
+ /* Enable UNIV_LOG_ARCHIVE in XtraDB */
+--- a/storage/innobase/include/ut0wqueue.h	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/include/ut0wqueue.h	2022-11-11 18:25:54.000000000 +0100
+@@ -73,7 +73,13 @@
+ 	void*		item,	/*!< in: work item */
+ 	mem_heap_t*	heap);	/*!< in: memory heap to use for allocating the
+ 				list node */
+-
++/****************************************************************//**
++read total number of work item to the queue.
++@return total count of work item in the queue */
++uint64_t
++ib_wqueue_get_count(
++/*==========*/
++	ib_wqueue_t *wq);		/*!< in: work queue */
+ /********************************************************************
+ Check if queue is empty. */
+ 
+@@ -107,6 +113,7 @@
+ struct ib_wqueue_t {
+ 	ib_mutex_t		mutex;	/*!< mutex protecting everything */
+ 	ib_list_t*	items;	/*!< work item list */
++	uint64_t	count;	/*!< total number of work items */
+ 	os_event_t	event;	/*!< event we use to signal additions to list */
+ };
+ 
+--- a/storage/innobase/row/row0mysql.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/row/row0mysql.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -3891,6 +3891,13 @@
+ #endif /* UNIV_SYNC_DEBUG */
+ 
+ 	dict_stats_wait_bg_to_stop_using_table(table, trx);
++	if (table->fts) {
++		/* Remove from FTS optimize thread. Unlock is needed to allow
++		finishing background operations in progress. */
++		row_mysql_unlock_data_dictionary(trx);
++		fts_optimize_remove_table(table);
++		row_mysql_lock_data_dictionary(trx);
++	}
+ 
+ 	/* Check if the table is referenced by foreign key constraints from
+ 	some other table (not the table itself) */
+@@ -4282,6 +4289,9 @@
+ 
+ 		/* Reset the Doc ID in cache to 0 */
+ 		if (has_internal_doc_id && table->fts->cache) {
++			DBUG_EXECUTE_IF("ib_trunc_sleep_before_fts_cache_clear",
++					os_thread_sleep(10000000););
++
+ 			table->fts->fts_status |= TABLE_DICT_LOCKED;
+ 			fts_update_next_doc_id(trx, table, NULL, 0);
+ 			fts_cache_clear(table->fts->cache);
+@@ -4305,6 +4315,11 @@
+                 table->memcached_sync_count = 0;
+         }
+ 
++  /* Add the table back to FTS optimize background thread. */
++	if (table->fts) {
++		fts_optimize_add_table(table);
++	}
++
+ 	row_mysql_unlock_data_dictionary(trx);
+ 
+ 	dict_stats_update(table, DICT_STATS_EMPTY_TABLE);
+--- a/storage/innobase/ut/ut0wqueue.cc	2021-02-02 15:20:34.000000000 +0100
++++ b/storage/innobase/ut/ut0wqueue.cc	2022-11-11 18:25:54.000000000 +0100
+@@ -49,6 +49,7 @@
+ 
+ 	wq->items = ib_list_create();
+ 	wq->event = os_event_create();
++	wq->count = 0;
+ 
+ 	return(wq);
+ }
+@@ -82,6 +83,7 @@
+ 	mutex_enter(&wq->mutex);
+ 
+ 	ib_list_add_last(wq->items, item, heap);
++	wq->count++;
+ 	os_event_set(wq->event);
+ 
+ 	mutex_exit(&wq->mutex);
+@@ -107,7 +109,7 @@
+ 
+ 		if (node) {
+ 			ib_list_remove(wq->items, node);
+-
++			wq->count--;
+ 			if (!ib_list_get_first(wq->items)) {
+ 				/* We must reset the event when the list
+ 				gets emptied. */
+@@ -125,6 +127,20 @@
+ 	return(node->data);
+ }
+ 
++/********************************************************************
++read total number of work item to the queue.
++@return total count of work item in the queue */
++uint64_t
++ib_wqueue_get_count(
++/*==========*/
++	ib_wqueue_t *wq)		/*!< in: work queue */
++{
++	uint64_t count;
++	mutex_enter(&wq->mutex);
++	count = wq->count;
++	mutex_exit(&wq->mutex);
++	return count;
++}
+ 
+ /********************************************************************
+ Wait for a work item to appear in the queue for specified time. */
+@@ -148,7 +164,7 @@
+ 
+ 		if (node) {
+ 			ib_list_remove(wq->items, node);
+-
++			wq->count--;
+ 			mutex_exit(&wq->mutex);
+ 			break;
+ 		}
+--- a/tests/mysql_client_test.c	2021-02-02 15:20:34.000000000 +0100
++++ b/tests/mysql_client_test.c	2022-11-11 18:25:54.000000000 +0100
+@@ -19654,6 +19654,66 @@
+   mysql_stmt_close(stmt1);
+ }
+ 
++static void test_bug32391415()
++{
++  MYSQL *lmysql;
++  MYSQL_ROW row;
++  MYSQL_RES *res;
++  int rc;
++
++  myheader("test_bug32391415");
++
++  lmysql= mysql_client_init(NULL);
++  DIE_UNLESS(lmysql != NULL);
++
++  lmysql= mysql_real_connect(lmysql, opt_host, opt_user,
++                         opt_password, current_db, opt_port,
++                         opt_unix_socket, 0);
++  DIE_UNLESS(lmysql != 0);
++  if (!opt_silent)
++    fprintf(stdout, "Established a test connection\n");
++
++  rc= mysql_query(lmysql, "CREATE USER b32391415@localhost");
++  myquery2(lmysql, rc);
++  rc= mysql_query(lmysql, "GRANT ALL PRIVILEGES ON *.* TO b32391415@localhost");
++  myquery2(lmysql, rc);
++
++  if (!opt_silent)
++    fprintf(stdout, "Created the user\n");
++
++  /* put in an attr */
++  rc= mysql_options4(lmysql, MYSQL_OPT_CONNECT_ATTR_ADD,
++                     "key1", "value1");
++  DIE_UNLESS(rc == 0);
++
++  rc= mysql_change_user(lmysql, "b32391415", NULL, NULL);
++  myquery2(lmysql, rc);
++
++  /* success: the query attribute should be present */
++  rc= mysql_query(lmysql,
++                  "SELECT ATTR_NAME, ATTR_VALUE "
++                  " FROM performance_schema.session_account_connect_attrs"
++                  " WHERE ATTR_NAME IN ('key1') AND"
++                  "  PROCESSLIST_ID = CONNECTION_ID() ORDER BY ATTR_NAME");
++  myquery2(lmysql,rc);
++  res = mysql_use_result(lmysql);
++  DIE_UNLESS(res);
++
++  row= mysql_fetch_row(res);
++  DIE_UNLESS(row);
++  DIE_UNLESS(0 == strcmp(row[0], "key1"));
++  DIE_UNLESS(0 == strcmp(row[1], "value1"));
++  if (!opt_silent)
++    fprintf(stdout, "Checked the query attribute\n");
++
++  mysql_free_result(res);
++
++  mysql_close(lmysql);
++
++  rc= mysql_query(mysql, "DROP USER b32391415@localhost");
++  myquery2(mysql, rc);
++}
++
+ static struct my_tests_st my_tests[]= {
+   { "disable_query_logs", disable_query_logs },
+   { "test_view_sp_list_fields", test_view_sp_list_fields },
+@@ -19933,6 +19993,7 @@
+   { "test_bug17883203", test_bug17883203 },
+   { "test_bug22559575", test_bug22559575 },
+   { "test_bug19894382", test_bug19894382 },
++  { "test_bug32391415", test_bug32391415 },
+   { 0, 0 }
+ };
+ 
+--- a/VERSION	2021-02-02 15:20:34.000000000 +0100
++++ b/VERSION	2022-11-11 18:25:54.000000000 +0100
+@@ -1,4 +1,4 @@
+ MYSQL_VERSION_MAJOR=5
+ MYSQL_VERSION_MINOR=6
+ MYSQL_VERSION_PATCH=51
+-MYSQL_VERSION_EXTRA=-91.0
++MYSQL_VERSION_EXTRA=-93.0

@@ -1,0 +1,104 @@
+DELETE on a table with a self-referencing cascading foreign key and a
+FULLTEXT index marked the doc id deleted twice and hit
+ut_a(result != FTS_INVALID) (Bug#36234681).
+https://github.com/percona/percona-server/commit/e87c07230b (https://github.com/mysql/mysql-server/commit/a8c96ce81ab)
+
+--- percona-server-5.6.51-91.0.orig/storage/innobase/row/row0ins.cc
++++ percona-server-5.6.51-91.0/storage/innobase/row/row0ins.cc
+@@ -460,6 +460,37 @@ row_ins_cascade_n_ancestors(
+ 	return(n_ancestors);
+ }
+ 
++/*********************************************************************//**
++Checks whether a foreign key constraint contains a column with a full text
++index on it, in the context of a cascading DML operation.
++A self-referential constraint is skipped: the cascaded row operation on the
++same table marks the FTS doc id itself, marking it here as well deletes it
++twice and trips ut_a(result != FTS_INVALID) (Bug#36234681).
++@return true if an FTS indexed column of the child table is affected */
++static
++bool
++row_ins_foreign_fts_col_affected(
++/*=============================*/
++	const dict_foreign_t*	foreign)	/*!< in: foreign key */
++{
++	const dict_table_t*	table = foreign->foreign_table;
++
++	if (!table->fts || table == foreign->referenced_table) {
++		return(false);
++	}
++
++	for (ulint i = 0; i < foreign->n_fields; i++) {
++		if (dict_table_is_fts_column(
++			table->fts->indexes,
++			dict_index_get_nth_col_no(foreign->foreign_index, i))
++		    != ULINT_UNDEFINED) {
++			return(true);
++		}
++	}
++
++	return(false);
++}
++
+ /******************************************************************//**
+ Calculates the update vector node->cascade->update for a child table in
+ a cascaded update.
+@@ -518,7 +549,7 @@ row_ins_cascade_calc_update_vec(
+ 
+ 	n_fields_updated = 0;
+ 
+-	*fts_col_affected = FALSE;
++	*fts_col_affected = row_ins_foreign_fts_col_affected(foreign);
+ 
+ 	if (table->fts) {
+ 		doc_id_pos = dict_table_get_nth_col_pos(
+@@ -638,16 +669,6 @@ row_ins_cascade_calc_update_vec(
+ 							padded_data, min_size);
+ 				}
+ 
+-				/* Check whether the current column has
+-				FTS index on it */
+-				if (table->fts
+-				    && dict_table_is_fts_column(
+-					table->fts->indexes,
+-					dict_col_get_no(col))
+-					!= ULINT_UNDEFINED) {
+-					*fts_col_affected = TRUE;
+-				}
+-
+ 				/* If Doc ID is updated, check whether the
+ 				Doc ID is valid */
+ 				if (table->fts
+@@ -1196,30 +1217,14 @@ row_ins_foreign_check_on_constraint(
+ 			ufield->orig_len = 0;
+ 			ufield->exp = NULL;
+ 			dfield_set_null(&ufield->new_val);
+-
+-			if (table->fts && dict_table_is_fts_column(
+-				table->fts->indexes,
+-				dict_index_get_nth_col_no(index, i))
+-				!= ULINT_UNDEFINED) {
+-				fts_col_affacted = TRUE;
+-			}
+ 		}
+ 
+-		if (fts_col_affacted) {
++		if (row_ins_foreign_fts_col_affected(foreign)) {
+ 			fts_trx_add_op(trx, table, doc_id, FTS_DELETE, NULL);
+ 		}
+ 	} else if (table->fts && cascade->is_delete) {
+ 		/* DICT_FOREIGN_ON_DELETE_CASCADE case */
+-		for (i = 0; i < foreign->n_fields; i++) {
+-			if (table->fts && dict_table_is_fts_column(
+-				table->fts->indexes,
+-				dict_index_get_nth_col_no(index, i))
+-				!= ULINT_UNDEFINED) {
+-				fts_col_affacted = TRUE;
+-			}
+-		}
+-
+-		if (fts_col_affacted) {
++		if (row_ins_foreign_fts_col_affected(foreign)) {
+ 			fts_trx_add_op(trx, table, doc_id, FTS_DELETE, NULL);
+ 		}
+ 	}

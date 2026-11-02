@@ -1,0 +1,22 @@
+Release builds went on executing when the join optimizer found no plan
+(Bug#35634700).
+https://github.com/percona/percona-server/commit/cdffad6ffc (https://github.com/mysql/mysql-server/commit/8d1aad6b5a7)
+
+--- percona-server-5.6.51-91.0.orig/sql/sql_planner.cc
++++ percona-server-5.6.51-91.0/sql/sql_planner.cc
+@@ -1505,7 +1505,14 @@ bool Optimize_table_order::greedy_search(table_map remaining_tables)
+       'best_read < DBL_MAX' means that optimizer managed to find
+       some plan and updated 'best_positions' array accordingly.
+     */
+-    DBUG_ASSERT(join->best_read < DBL_MAX); 
++    if (join->best_read >= DBL_MAX)
++    {
++      /* no plan found: an error in release builds instead of a server exit */
++      DBUG_ASSERT(false);
++      my_error(ER_INTERNAL_ERROR, MYF(0),
++               "Optimizer failed to find a plan to execute the query.");
++      DBUG_RETURN(true);
++    }
+ 
+     if (size_remain <= search_depth)
+     {

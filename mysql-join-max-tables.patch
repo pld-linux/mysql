@@ -1,0 +1,19 @@
+A join of tens of thousands of tables kept the parser busy for minutes
+before failing with ER_TOO_MANY_TABLES (Bug#38573285).
+https://github.com/percona/percona-server/commit/af1a0e0601 (https://github.com/mysql/mysql-server/commit/b56c64b)
+
+--- percona-server-5.6.51-91.0.orig/sql/sql_yacc.yy
++++ percona-server-5.6.51-91.0/sql/sql_yacc.yy
+@@ -11010,6 +11010,12 @@ table_factor:
+           }
+           table_ident opt_use_partition opt_table_alias opt_key_definition
+           {
++            /* fail before add_table_to_list(), which is O(n) per table */
++            if (Select->table_list.elements >= MAX_TABLES)
++            {
++              my_error(ER_TOO_MANY_TABLES, MYF(0), static_cast<int>(MAX_TABLES));
++              MYSQL_YYABORT;
++            }
+             if (!($$= Select->add_table_to_list(YYTHD, $2, $4,
+                                                 Select->get_table_join_options(),
+                                                 YYPS->m_lock_type,

@@ -1,0 +1,28 @@
+A Table_map event with a database or table name longer than NAME_LEN
+overflowed the name buffers on the replica and in mysqlbinlog
+(Bug#39253383).
+https://github.com/percona/percona-server/commit/f3a20570b1 (https://github.com/mysql/mysql-server/commit/2df704674af)
+
+--- percona-server-5.6.51-91.0.orig/sql/log_event.cc
++++ percona-server-5.6.51-91.0/sql/log_event.cc
+@@ -12333,10 +12333,20 @@ Table_map_log_event::Table_map_log_event(const char *buf, uint event_len,
+   /* Extract the length of the various parts from the buffer */
+   uchar const *const ptr_dblen= (uchar const*)vpart + 0;
+   m_dblen= *(uchar*) ptr_dblen;
++  if (m_dblen > NAME_LEN)
++  {
++    /* Invalid database name length; m_memory stays NULL, so !is_valid() */
++    DBUG_VOID_RETURN;
++  }
+ 
+   /* Length of database name + counter + terminating null */
+   uchar const *const ptr_tbllen= ptr_dblen + m_dblen + 2;
+   m_tbllen= *(uchar*) ptr_tbllen;
++  if (m_tbllen > NAME_LEN)
++  {
++    /* Invalid table name length */
++    DBUG_VOID_RETURN;
++  }
+ 
+   /* Length of table name + counter + terminating null */
+   uchar const *const ptr_colcnt= ptr_tbllen + m_tbllen + 2;

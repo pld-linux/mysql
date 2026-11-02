@@ -1,0 +1,25 @@
+Before authentication, the handshake parser read a connect attribute length
+of up to 9 bytes before checking it fits in the packet (Bug#39116965).
+https://github.com/percona/percona-server/commit/bd96420711 (https://github.com/mysql/mysql-server/commit/5417e736ad9)
+
+--- percona-server-5.6.51-91.0.orig/sql/sql_acl.cc
++++ percona-server-5.6.51-91.0/sql/sql_acl.cc
+@@ -10770,10 +10770,17 @@ read_client_connect_attrs(char **ptr, size_t *max_bytes_available,
+ {
+   size_t length, length_length;
+   char *ptr_save;
+-  /* not enough bytes to hold the length */
++  /* Need one byte to determine the length-encoded field size. */
+   if (*max_bytes_available < 1)
+     return true;
+ 
++  /* net_field_length_ll() reads up to 9 bytes, check they are in the packet */
++  const uchar first= *(uchar *) *ptr;
++  const size_t required_length= first < 252 ? 1 : first == 252 ? 3 :
++                                first == 253 ? 4 : 9;
++  if (*max_bytes_available < required_length)
++    return true;
++
+   /* read the length */
+   ptr_save= *ptr;
+   length= net_field_length_ll((uchar **) ptr);

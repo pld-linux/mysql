@@ -1,0 +1,48 @@
+FTS doc id comparators returned the difference of two 64-bit doc ids
+truncated to int, misordering doc ids more than 2^31 apart.
+https://github.com/percona/percona-server/commit/d131e82d5c
+
+--- percona-server-5.6.51-91.0.orig/storage/innobase/fts/fts0que.cc
++++ percona-server-5.6.51-91.0/storage/innobase/fts/fts0que.cc
+@@ -358,7 +358,8 @@ fts_freq_doc_id_cmp(
+ 	const fts_doc_freq_t*	fq1 = (const fts_doc_freq_t*) p1;
+ 	const fts_doc_freq_t*	fq2 = (const fts_doc_freq_t*) p2;
+ 
+-	return((int) (fq1->doc_id - fq2->doc_id));
++	/* doc ids are 64-bit, their difference does not fit in int */
++	return(fq1->doc_id < fq2->doc_id ? -1 : fq1->doc_id > fq2->doc_id ? 1 : 0);
+ }
+ 
+ #if 0
+--- percona-server-5.6.51-91.0.orig/storage/innobase/include/fts0types.ic
++++ percona-server-5.6.51-91.0/storage/innobase/include/fts0types.ic
+@@ -76,7 +76,8 @@ fts_trx_row_doc_id_cmp(
+ 	const fts_trx_row_t*	tr1 = (const fts_trx_row_t*) p1;
+ 	const fts_trx_row_t*	tr2 = (const fts_trx_row_t*) p2;
+ 
+-	return((int)(tr1->doc_id - tr2->doc_id));
++	/* doc ids are 64-bit, their difference does not fit in int */
++	return(tr1->doc_id < tr2->doc_id ? -1 : tr1->doc_id > tr2->doc_id ? 1 : 0);
+ }
+ 
+ /******************************************************************//**
+@@ -92,7 +93,8 @@ fts_ranking_doc_id_cmp(
+ 	const fts_ranking_t*	rk1 = (const fts_ranking_t*) p1;
+ 	const fts_ranking_t*	rk2 = (const fts_ranking_t*) p2;
+ 
+-	return((int)(rk1->doc_id - rk2->doc_id));
++	/* doc ids are 64-bit, their difference does not fit in int */
++	return(rk1->doc_id < rk2->doc_id ? -1 : rk1->doc_id > rk2->doc_id ? 1 : 0);
+ }
+ 
+ /******************************************************************//**
+@@ -108,7 +110,8 @@ fts_update_doc_id_cmp(
+ 	const fts_update_t*	up1 = (const fts_update_t*) p1;
+ 	const fts_update_t*	up2 = (const fts_update_t*) p2;
+ 
+-	return((int)(up1->doc_id - up2->doc_id));
++	/* doc ids are 64-bit, their difference does not fit in int */
++	return(up1->doc_id < up2->doc_id ? -1 : up1->doc_id > up2->doc_id ? 1 : 0);
+ }
+ 
+ 

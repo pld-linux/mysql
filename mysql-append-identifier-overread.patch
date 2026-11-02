@@ -1,0 +1,18 @@
+append_identifier() copied a whole multibyte character past the end of an
+identifier ending in a truncated one, e.g. NAME_CONST(0xE0,..) in a view
+(Bug#22958632).
+https://github.com/percona/percona-server/commit/b3d19a5392 (https://github.com/mysql/mysql-server/commit/5f3490aea8c)
+
+--- percona-server-5.6.51-91.0.orig/sql/sql_show.cc
++++ percona-server-5.6.51-91.0/sql/sql_show.cc
+@@ -1195,7 +1195,9 @@ append_identifier(THD *thd, String *packet, const char *name, uint length,
+       to_length= 1;
+     if (to_length == 1 && chr == (uchar) quote_char)
+       packet->append(&quote_char, 1, system_charset_info);
+-    packet->append(to_name, to_length, system_charset_info);
++    packet->append(to_name,
++                   min(to_length, static_cast<size_t>(name_end - to_name)),
++                   system_charset_info);
+   }
+   packet->append(&quote_char, 1, system_charset_info);
+ }

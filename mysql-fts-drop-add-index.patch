@@ -1,0 +1,87 @@
+An in-place ALTER TABLE dropping the last FULLTEXT index and adding another
+removed the FTS infrastructure the new index needs (Bug#36559642).
+https://github.com/percona/percona-server/commit/03f112e255 (https://github.com/mysql/mysql-server/commit/5484c73368a)
+
+--- percona-server-5.6.51-91.0.orig/storage/innobase/fts/fts0fts.cc
++++ percona-server-5.6.51-91.0/storage/innobase/fts/fts0fts.cc
+@@ -845,17 +845,23 @@ fts_drop_index(
+ /*===========*/
+ 	dict_table_t*	table,	/*!< in: Table where indexes are dropped */
+ 	dict_index_t*	index,	/*!< in: Index to be dropped */
+-	trx_t*		trx)	/*!< in: Transaction for the drop */
++	trx_t*		trx,	/*!< in: Transaction for the drop */
++	bool		adding_another)	/*!< in: another FTS index is added
++					in the same transaction */
+ {
+ 	ib_vector_t*	indexes = table->fts->indexes;
+ 	dberr_t		err = DB_SUCCESS;
+ 
+ 	ut_a(indexes);
+ 
+-	if ((ib_vector_size(indexes) == 1
++	const bool	last_index = (ib_vector_size(indexes) == 1
+ 	    && (index == static_cast<dict_index_t*>(
+ 			ib_vector_getp(table->fts->indexes, 0))))
+-	   || ib_vector_is_empty(indexes)) {
++	   || ib_vector_is_empty(indexes);
++
++	/* An FTS index added by the same in-place ALTER is not yet in
++	table->fts->indexes, but needs the common FTS infrastructure */
++	if (last_index && !adding_another) {
+ 		doc_id_t	current_doc_id;
+ 		doc_id_t	first_doc_id;
+ 
+--- percona-server-5.6.51-91.0.orig/storage/innobase/handler/handler0alter.cc
++++ percona-server-5.6.51-91.0/storage/innobase/handler/handler0alter.cc
+@@ -5350,12 +5350,18 @@ commit_cache_norebuild(
+ 		}
+ 	}
+ 
++	bool	adding_fts_index = false;
++
+ 	for (ulint i = 0; i < ctx->num_to_add_index; i++) {
+ 		dict_index_t*	index = ctx->add_index[i];
+ 		DBUG_ASSERT(dict_index_get_online_status(index)
+ 			    == ONLINE_INDEX_COMPLETE);
+ 		DBUG_ASSERT(*index->name == TEMP_INDEX_PREFIX);
+ 		index->name++;
++
++		if (index->type & DICT_FTS) {
++			adding_fts_index = true;
++		}
+ 	}
+ 
+ 	if (ctx->num_to_drop_index) {
+@@ -5402,7 +5408,8 @@ commit_cache_norebuild(
+ 					    || (index->type
+ 						& DICT_CORRUPT));
+ 				DBUG_ASSERT(index->table->fts);
+-				fts_drop_index(index->table, index, trx);
++				fts_drop_index(index->table, index, trx,
++					       adding_fts_index);
+ 			}
+ 
+ 			dict_index_remove_from_cache(index->table, index);
+@@ -6052,9 +6059,6 @@ foreign_fail:
+ 
+ 			if (index->type & DICT_FTS) {
+ 				DBUG_ASSERT(index->type == DICT_FTS);
+-				/* We reset DICT_TF2_FTS here because the bit
+-				is left unset when a drop proceeds the add. */
+-				DICT_TF2_FLAG_SET(ctx->new_table, DICT_TF2_FTS);
+ 				fts_add_index(index, ctx->new_table);
+ 			}
+ 		}
+--- percona-server-5.6.51-91.0.orig/storage/innobase/include/fts0fts.h
++++ percona-server-5.6.51-91.0/storage/innobase/include/fts0fts.h
+@@ -1056,7 +1056,9 @@ fts_drop_index(
+ /*===========*/
+ 	dict_table_t*	table,	/*!< in: Table where indexes are dropped */
+ 	dict_index_t*	index,	/*!< in: Index to be dropped */
+-	trx_t*		trx)	/*!< in: Transaction for the drop */
++	trx_t*		trx,	/*!< in: Transaction for the drop */
++	bool		adding_another = false)	/*!< in: another FTS index
++					is added in the same transaction */
+ 	MY_ATTRIBUTE((nonnull));
+ 
+ /****************************************************************//**

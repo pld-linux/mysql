@@ -1,0 +1,16 @@
+A ';' inside a version comment, sent with a non-default client delimiter,
+ended the statement for the parser, so a truncated statement was
+binlogged and broke replicas (Bug#37117875).
+https://github.com/percona/percona-server/commit/4060e62647 (https://github.com/mysql/mysql-server/commit/9d4ead06951)
+
+--- percona-server-5.6.51-91.0.orig/sql/sql_lex.cc
++++ percona-server-5.6.51-91.0/sql/sql_lex.cc
+@@ -1657,6 +1657,8 @@ static int lex_one_token(YYSTYPE *yylval, THD *thd)
+       state=MY_LEX_CHAR;
+       break;
+     case MY_LEX_END:
++      /* Unclosed special comments result in a syntax error */
++      if (lip->in_comment == DISCARD_COMMENT) return (ABORT_SYM);
+       lip->next_state=MY_LEX_END;
+       return(0);			// We found end of input last time
+ 

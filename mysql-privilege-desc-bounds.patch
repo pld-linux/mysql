@@ -1,0 +1,14 @@
+get_privilege_desc() indexed command_lengths[] by any bit set in the access
+mask (Bug#35507223).
+https://github.com/percona/percona-server/commit/d71d742d09 (https://github.com/mysql/mysql-server/commit/3a27636ac1b)
+
+--- percona-server-5.6.51-91.0.orig/sql/sql_acl.cc
++++ percona-server-5.6.51-91.0/sql/sql_acl.cc
+@@ -7641,6 +7641,7 @@ void get_privilege_desc(char *to, uint max_length, ulong access)
+     max_length--;				// Reserve place for end-zero
+     for (pos=0 ; access ; pos++, access>>=1)
+     {
++      if (pos >= array_elements(command_lengths)) break;
+       if ((access & 1) &&
+ 	  command_lengths[pos] + (uint) (to-start) < max_length)
+       {

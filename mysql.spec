@@ -30,8 +30,8 @@
 %undefine	with_tokudb
 %endif
 
-%define		rel	3
-%define		percona_rel	91.0
+%define		rel	1
+%define		percona_rel	93.0
 Summary:	MySQL: a very fast and reliable SQL database engine
 Summary(de.UTF-8):	MySQL: ist eine SQL-Datenbank
 Summary(fr.UTF-8):	MySQL: un serveur SQL rapide et fiable
@@ -47,9 +47,10 @@ License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-Source0:	http://www.percona.com/downloads/Percona-Server-5.6/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
+# last Percona 5.6 source tarball; 92.0 and 93.0 were published as git tags only, see Patch100
+Source0:	https://downloads.percona.com/downloads/Percona-Server-5.6/Percona-Server-%{version}-91.0/source/tarball/percona-server-%{version}-91.0.tar.gz
 # Source0-md5:	05f0f2fbba5dec1d78bb56998a6749c7
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
+Source100:	https://sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -89,16 +90,44 @@ Patch24:	%{name}-cmake.patch
 
 Patch26:	mysqldumpslow-clusters.patch
 Patch27:	x32.patch
+Patch100:	percona-server-%{version}-%{percona_rel}.patch
+# fixes Percona carried in 5.7.44-48..60 (post-EOL), ported to 5.6; see each patch
+Patch101:	%{name}-getopt-help-overrun.patch
+Patch102:	%{name}-md5-length.patch
+Patch103:	%{name}-client-table-leak.patch
+Patch104:	%{name}-append-identifier-overread.patch
+Patch105:	%{name}-subselect-null-name.patch
+Patch106:	%{name}-privilege-desc-bounds.patch
+Patch107:	%{name}-updatexml-root-copy.patch
+Patch108:	%{name}-connect-attrs-oob.patch
+Patch109:	%{name}-table-map-name-length.patch
+Patch110:	%{name}-drop-user-acl-cache.patch
+Patch111:	%{name}-xml-parse-slash.patch
+Patch112:	%{name}-avg-decimal-scale.patch
+Patch113:	%{name}-dump-server-version.patch
+Patch114:	%{name}-lex-end-comment-delimiter.patch
+Patch115:	%{name}-fts-optimize-last-word.patch
+Patch116:	%{name}-btr-merge-backward-scan.patch
+Patch117:	%{name}-dump-tablespace-escape.patch
+Patch118:	%{name}-dump-view-query-escape.patch
+Patch119:	%{name}-join-max-tables.patch
+Patch120:	%{name}-blob-prefix-key-field.patch
+Patch121:	%{name}-fts-doc-id-cmp.patch
+Patch122:	%{name}-greedy-search-no-plan.patch
+Patch123:	%{name}-make-set-pullout.patch
+Patch124:	%{name}-dump-comment-buffer-reuse.patch
+Patch125:	%{name}-fts-self-fk-cascade.patch
+Patch126:	%{name}-fts-drop-add-index.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 BuildRequires:	cmake >= 2.6
+BuildRequires:	libaio-devel
 BuildRequires:	readline-devel >= 6.2
 %if "%{pld_release}" == "ac"
 BuildRequires:	libstdc++4-devel >= 5:4.0
 %else
 BuildRequires:	libstdc++-devel >= 5:4.0
 %endif
-BuildRequires:	automake
 %{?with_system_hsclient:BuildRequires:	libhsclient-devel}
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
@@ -106,7 +135,6 @@ BuildRequires:	ncurses-devel >= 4.2
 BuildRequires:	pam-devel
 %{?with_autodeps:BuildRequires:	perl-DBI}
 BuildRequires:	perl-devel >= 1:5.6.1
-BuildRequires:	python-modules
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.597
 BuildRequires:	sed >= 4.0
@@ -508,7 +536,8 @@ This package contains the standard MySQL NDB CPC Daemon.
 Ten pakiet zawiera standardowego demona MySQL NDB CPC.
 
 %prep
-%setup -q -n percona-server-%{version}-%{percona_rel} %{?with_sphinx:-a100}
+%setup -q -n percona-server-%{version}-91.0 %{?with_sphinx:-a100}
+%patch -P100 -p1
 
 # we want to use old, mysql compatible client library name
 find . -name CMakeLists.txt -exec sed -i -e 's#perconaserverclient#mysqlclient#g' "{}" ";"
@@ -544,6 +573,33 @@ mv sphinx-*/mysqlse storage/sphinx
 # of scripts/mysqldumpslow.sh
 #%patch26 -p1
 %patch -P27 -p1
+
+%patch -P101 -p1
+%patch -P102 -p1
+%patch -P103 -p1
+%patch -P104 -p1
+%patch -P105 -p1
+%patch -P106 -p1
+%patch -P107 -p1
+%patch -P108 -p1
+%patch -P109 -p1
+%patch -P110 -p1
+%patch -P111 -p1
+%patch -P112 -p1
+%patch -P113 -p1
+%patch -P114 -p1
+%patch -P115 -p1
+%patch -P116 -p1
+%patch -P117 -p1
+%patch -P118 -p1
+%patch -P119 -p1
+%patch -P120 -p1
+%patch -P121 -p1
+%patch -P122 -p1
+%patch -P123 -p1
+%patch -P124 -p1
+%patch -P125 -p1
+%patch -P126 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && %{__rm} sql/sql_yacc.cc
@@ -708,6 +764,12 @@ mv $RPM_BUILD_ROOT{%{_bindir},%{_sbindir}}/mysqlcheck
 # not needed
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/libdaemon_example.*
 %{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/daemon_example.ini
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/%{name}/plugin/{udf_example,test_udf_services}.so
+%if %{with tokudb}
+# PerconaFT and TokuBackup install their docs and API header into the prefix
+%{__rm} $RPM_BUILD_ROOT%{_prefix}/{COPYING.AGPLv3,COPYING.GPLv2,PATENTS,README.md}
+%{__rm} $RPM_BUILD_ROOT%{_includedir}/backup.h
+%endif
 
 # not an .info file
 %{__rm} $RPM_BUILD_ROOT%{_infodir}/mysql.info

@@ -1,0 +1,35 @@
+mysqldump put view and database names unescaped into its
+INFORMATION_SCHEMA.VIEWS query (Bug#37540722); single-quoted literals
+keep the escaping valid under ANSI_QUOTES too.
+https://github.com/percona/percona-server/commit/0ec1728204 (https://github.com/mysql/mysql-server/commit/2fafb0f1573)
+
+--- percona-server-5.6.51-91.0.orig/client/mysqldump.c
++++ percona-server-5.6.51-91.0/client/mysqldump.c
+@@ -6656,6 +6656,8 @@ static my_bool get_view_structure(char *table, char* db)
+   char       *result_table, *opt_quoted_table;
+   char       table_buff[NAME_LEN*2+3];
+   char       table_buff2[NAME_LEN*2+3];
++  char       table_string_buff[NAME_LEN * 2 + 3];
++  char       db_string_buff[NAME_LEN * 2 + 3];
+   char       query[QUERY_LENGTH];
+   FILE       *sql_file= md_result_file;
+   my_bool    freemem= FALSE;
+@@ -6674,6 +6676,8 @@ static my_bool get_view_structure(char *table, char* db)
+ 
+   result_table=     quote_name(table, table_buff, 1);
+   opt_quoted_table= quote_name(table, table_buff2, 0);
++  mysql_real_escape_string(mysql, table_string_buff, table, strlen(table));
++  mysql_real_escape_string(mysql, db_string_buff, db, strlen(db));
+ 
+   if (switch_character_set_results(mysql, "binary"))
+     DBUG_RETURN(1);
+@@ -6721,7 +6725,8 @@ static my_bool get_view_structure(char *table, char* db)
+               "SELECT CHECK_OPTION, DEFINER, SECURITY_TYPE, "
+               "       CHARACTER_SET_CLIENT, COLLATION_CONNECTION "
+               "FROM information_schema.views "
+-              "WHERE table_name=\"%s\" AND table_schema=\"%s\"", table, db);
++              "WHERE table_name='%s' AND table_schema='%s'",
++              table_string_buff, db_string_buff);
+ 
+   if (mysql_query(mysql, query))
+   {
