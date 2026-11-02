@@ -14,7 +14,6 @@
 #
 # Conditional build:
 %bcond_without	ssl		# OpenSSL support
-%bcond_without	systemtap	# systemtap/dtrace probes
 %bcond_without	tcpd		# libwrap (tcp_wrappers) support
 %bcond_with	tests		# run test suite (doesn't run cleanly for ages)
 %bcond_with	ldap		# LDAP (server) auth support (requires MIT Kerberos)
@@ -31,7 +30,7 @@ Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql%{majorver}
 # keep stable (and not "innovation") line here
 Version:	9.7.4
-Release:	1
+Release:	2
 License:	GPL v2 + MySQL FOSS License Exception
 Group:		Applications/Databases
 #Source0Download: https://dev.mysql.com/downloads/mysql/%{majorver}.html#downloads
@@ -76,7 +75,6 @@ BuildRequires:	rpm-build >= 4.6
 BuildRequires:	rpm-perlprov >= 4.1-13
 BuildRequires:	rpmbuild(macros) >= 1.745
 BuildRequires:	sed >= 4.0
-%{?with_systemtap:BuildRequires:	systemtap-sdt-devel}
 BuildRequires:	zlib-devel >= 1.2.12
 BuildRequires:	zstd-devel
 Requires(post):	sed >= 4.0
@@ -454,6 +452,7 @@ Podręcznik MySQL-a w formacie HTML.
 # (it defaults to first cluster but user may change it to whatever
 # cluster it wants)
 
+# upstream discontinued MySQL Router for the 9.7 line, use a current Router release instead
 CPPFLAGS="%{rpmcppflags}" \
 %cmake -B build \
 %if "%{_lib}" != "lib64"
@@ -464,9 +463,6 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="%{rpmcxxflags} -DNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing" \
 	-DCMAKE_EXECUTABLE_SUFFIX:STRING="%{majorver}" \
 	-DCOMPILATION_COMMENT="PLD/Linux Distribution MySQL RPM" \
-	-DCURSES_INCLUDE_PATH=/usr/include/ncurses \
-	%{?with_systemtap:-DENABLE_DTRACE=ON} \
-	-DFEATURE_SET="community" \
 	-DINSTALL_LAYOUT=RPM \
 	-DINSTALL_LIBDIR=%{_lib} \
 	-DINSTALL_MYSQLSHAREDIR=share/%{name} \
@@ -474,11 +470,8 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DINSTALL_PLUGINDIR=%{_lib}/%{name}/plugin \
 	-DINSTALL_PRIV_LIBDIR=%{_libdir}/%{name}/private \
 	-DINSTALL_SECURE_FILE_PRIVDIR=/var/lib/%{name}-files \
-	-DINSTALL_SQLBENCHDIR=%{_datadir} \
 	-DINSTALL_SUPPORTFILESDIR=share/%{name}-support \
 	-DMYSQL_UNIX_ADDR=/var/lib/%{name}/mysql.sock \
-	-DROUTER_INSTALL_LIBDIR=%{_libdir}/%{name}router/private \
-	-DROUTER_INSTALL_PLUGINDIR=%{_libdir}/%{name}router \
 	-DWITH_AUTHENTICATION_CLIENT_PLUGINS=ON \
 	%{?with_ldap:-DWITH_AUTHENTICATION_LDAP=ON} \
 	-DWITH_AUTHENTICATION_WEBAUTHN=ON \
@@ -491,12 +484,11 @@ CPPFLAGS="%{rpmcppflags}" \
 	-DWITH_ICU=system \
 	%{?with_ldap:-DWITH_LDAP=system} \
 	-DWITH_MECAB=system \
-	-DWITH_LIBEVENT=system \
 	-DWITH_LIBWRAP=%{?with_tcpd:ON}%{!?with_tcpd:OFF} \
 	-DWITH_LZ4=system \
 	-DWITH_PERFSCHEMA_STORAGE_ENGINE=1 \
-	-DWITH_PIC=ON \
 	-DWITH_PROTOBUF=system \
+	-DWITH_ROUTER=OFF \
 	-DWITH_SASL=system \
 	-DWITH_SSL=%{?with_ssl:system}%{!?with_ssl:no} \
 	-DWITH_UNIT_TESTS=%{?with_tests:ON}%{!?with_tests:OFF} \
@@ -526,7 +518,6 @@ sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE4} > mysqld.conf
 sed -e 's#{MYSQL_MAJOR}#%{majorver}#g' %{SOURCE5} > $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/clusters.conf
 touch $RPM_BUILD_ROOT/var/log/%{name}/{mysqld,query,slow}.log
 
-%{__rm} $RPM_BUILD_ROOT/etc/logrotate.d/mysqlrouter
 
 cp -a mysqld.conf $RPM_BUILD_ROOT%{_datadir}/%{name}/mysqld.conf
 cp -a %{SOURCE13} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/mysql-client.conf
@@ -535,7 +526,6 @@ cp -a %{SOURCE14} $RPM_BUILD_ROOT/etc/skel/.my.cnf-%{majorver}
 
 sed -i -e 's,/usr//usr,%{_prefix},g' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 sed -i -e '/libs/s/$ldflags//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
-sed -i -e '/libs/s/-lprobes_mysql//' $RPM_BUILD_ROOT%{_bindir}/mysql_config
 
 # remove known unpackaged files
 %{__rm} -r $RPM_BUILD_ROOT%{_datadir}/%{name}-support
@@ -629,19 +619,11 @@ fi
 %files
 %defattr(644,root,root,755)
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}
-# don't package: no use for now and no mysqlrouter group
-#%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/logrotate.d/%{name}router
 %attr(754,root,root) /etc/rc.d/init.d/%{name}
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/%{name}
 %attr(640,root,mysql) %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/clusters.conf
 %attr(755,root,root) %{_bindir}/ibd2sdi%{majorver}
 %attr(755,root,root) %{_bindir}/mysql_migrate_keyring%{majorver}
-%attr(755,root,root) %{_bindir}/mysqlrouter%{majorver}
-%attr(755,root,root) %{_bindir}/mysqlrouter_bootstrap%{majorver}
-%attr(755,root,root) %{_bindir}/mysqlrouter_keyring%{majorver}
-%attr(755,root,root) %{_bindir}/mysqlrouter_mrs_client%{majorver}
-%attr(755,root,root) %{_bindir}/mysqlrouter_passwd%{majorver}
-%attr(755,root,root) %{_bindir}/mysqlrouter_plugin_info%{majorver}
 %attr(755,root,root) %{_sbindir}/innochecksum%{majorver}
 %attr(755,root,root) %{_sbindir}/my_print_defaults%{majorver}
 %attr(755,root,root) %{_sbindir}/myisamchk%{majorver}
@@ -695,29 +677,6 @@ fi
 %attr(755,root,root) %{_libdir}/%{name}/plugin/telemetry_client.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/thread_pool.so
 %attr(755,root,root) %{_libdir}/%{name}/plugin/validate_password.so
-%dir %{_libdir}/%{name}router
-%attr(755,root,root) %{_libdir}/%{name}router/connection_pool.so
-%attr(755,root,root) %{_libdir}/%{name}router/destination_status.so
-%attr(755,root,root) %{_libdir}/%{name}router/host_cache.so
-%attr(755,root,root) %{_libdir}/%{name}router/http_auth_backend.so
-%attr(755,root,root) %{_libdir}/%{name}router/http_auth_realm.so
-%attr(755,root,root) %{_libdir}/%{name}router/http_server.so
-%attr(755,root,root) %{_libdir}/%{name}router/io.so
-%attr(755,root,root) %{_libdir}/%{name}router/keepalive.so
-%attr(755,root,root) %{_libdir}/%{name}router/metadata_cache.so
-%attr(755,root,root) %{_libdir}/%{name}router/mysql_rest_service.so
-%attr(755,root,root) %{_libdir}/%{name}router/rest_api.so
-%attr(755,root,root) %{_libdir}/%{name}router/rest_connection_pool.so
-%attr(755,root,root) %{_libdir}/%{name}router/rest_host_cache.so
-%attr(755,root,root) %{_libdir}/%{name}router/rest_metadata_cache.so
-%attr(755,root,root) %{_libdir}/%{name}router/rest_router.so
-%attr(755,root,root) %{_libdir}/%{name}router/rest_routing.so
-%attr(755,root,root) %{_libdir}/%{name}router/router_openssl.so
-%attr(755,root,root) %{_libdir}/%{name}router/router_protobuf.so
-%attr(755,root,root) %{_libdir}/%{name}router/routing.so
-%dir %{_libdir}/%{name}router/private
-%attr(755,root,root) %{_libdir}/%{name}router/private/libmysqlharness*.so*
-%attr(755,root,root) %{_libdir}/%{name}router/private/libmysqlrouter*.so*
 %{_mandir}/man1/ibd2sdi%{majorver}.1*
 %{_mandir}/man1/innochecksum%{majorver}.1*
 %{_mandir}/man1/my_print_defaults%{majorver}.1*
@@ -725,9 +684,6 @@ fi
 %{_mandir}/man1/myisamlog%{majorver}.1*
 %{_mandir}/man1/myisampack%{majorver}.1*
 %{_mandir}/man1/mysqlcheck%{majorver}.1*
-%{_mandir}/man1/mysqlrouter%{majorver}.1*
-%{_mandir}/man1/mysqlrouter_passwd%{majorver}.1*
-%{_mandir}/man1/mysqlrouter_plugin_info%{majorver}.1*
 %{_mandir}/man8/mysqld%{majorver}.8*
 
 %if %{?debug:1}0
