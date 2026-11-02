@@ -34,14 +34,14 @@ Summary(uk.UTF-8):	MySQL - швидкий SQL-сервер
 Summary(zh_CN.UTF-8):	MySQL数据库服务器
 Name:		mysql
 Version:	5.5.62
-Release:	4
+Release:	5
 License:	GPL + MySQL FLOSS Exception
 Group:		Applications/Databases
 # Source0Download: http://dev.mysql.com/downloads/mysql/5.5.html#downloads
 # Source0:	http://vesta.informatik.rwth-aachen.de/mysql/Downloads/MySQL-5.5/%{name}-%{version}.tar.gz
-Source0:	http://www.percona.com/redir/downloads/Percona-Server-5.5/LATEST/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
+Source0:	https://downloads.percona.com/downloads/Percona-Server-5.5/Percona-Server-%{version}-%{percona_rel}/source/tarball/percona-server-%{version}-%{percona_rel}.tar.gz
 # Source0-md5:	45d793f1886528fa64675e1c12b54796
-Source100:	http://www.sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
+Source100:	https://sphinxsearch.com/files/sphinx-2.2.11-release.tar.gz
 # Source100-md5:	5cac34f3d78a9d612ca4301abfcbd666
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
@@ -74,19 +74,38 @@ Patch19:	%{name}-chain-certs.patch
 Patch20:	%{name}-dubious-exports.patch
 
 Patch22:	bug-66589.patch
+# Oracle ended 5.5 with 5.5.62; fixes MariaDB 5.5.63-5.5.68 took from MySQL 5.6 or wrote
+Patch100:	%{name}-client-plugin-name.patch
+Patch101:	%{name}-client-scramble-length.patch
+Patch102:	%{name}-client-unpack-fields.patch
+Patch103:	%{name}-strntoull10rnd-exponent.patch
+Patch104:	%{name}-union-subquery-fields.patch
+Patch105:	%{name}-updatexml-uaf.patch
+Patch106:	%{name}-yacc-stack-leak.patch
+Patch107:	%{name}-install-plugin-path.patch
+Patch108:	%{name}-plugin-empty-name.patch
+Patch109:	%{name}-user-table-columns.patch
+Patch110:	%{name}-rows-event-kill.patch
+Patch111:	%{name}-is-prepare-view-uaf.patch
+Patch112:	%{name}-binlog-index-strncmp.patch
+Patch113:	%{name}-event-scheduler-leak.patch
+Patch114:	%{name}-nested-comment-binlog.patch
+Patch115:	%{name}-register-slave-cleanup.patch
+Patch116:	%{name}-heartbeat-ident-len.patch
+Patch117:	%{name}-concat-off-by-one.patch
 URL:		http://www.mysql.com/products/community/
 BuildRequires:	bison >= 1.875
 BuildRequires:	cmake >= 2.6
-BuildRequires:	groff
+BuildRequires:	libaio-devel
 %if "%{pld_release}" == "ac"
 BuildRequires:	libstdc++4-devel >= 5:4.0
 %else
 BuildRequires:	libstdc++-devel >= 5:4.0
 %endif
-BuildRequires:	libtool
 %{?with_tcpd:BuildRequires:	libwrap-devel}
 BuildRequires:	ncurses-devel >= 4.2
 %{?with_ssl:BuildRequires:	openssl-devel >= 0.9.7d}
+BuildRequires:	pam-devel
 %{?with_autodeps:BuildRequires:	perl-DBI}
 BuildRequires:	perl-devel >= 1:5.6.1
 BuildRequires:	readline-devel >= 4.2
@@ -513,6 +532,25 @@ mv sphinx-*/mysqlse storage/sphinx
 %patch -P20 -p1
 
 %patch -P22 -p1
+
+%patch -P100 -p1
+%patch -P101 -p1
+%patch -P102 -p1
+%patch -P103 -p1
+%patch -P104 -p1
+%patch -P105 -p1
+%patch -P106 -p1
+%patch -P107 -p1
+%patch -P108 -p1
+%patch -P109 -p1
+%patch -P110 -p1
+%patch -P111 -p1
+%patch -P112 -p1
+%patch -P113 -p1
+%patch -P114 -p1
+%patch -P115 -p1
+%patch -P116 -p1
+%patch -P117 -p1
 
 # to get these files rebuild
 [ -f sql/sql_yacc.cc ] && rm sql/sql_yacc.cc

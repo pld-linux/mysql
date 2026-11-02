@@ -1,0 +1,15 @@
+CONCAT() treated an argument starting right after its work buffer as a
+substring of it and rewrote the buffer in place.
+https://github.com/MariaDB/server/commit/69bd73173d
+
+--- percona-server-5.5.62-38.14.orig/sql/item_strfunc.cc
++++ percona-server-5.5.62-38.14/sql/item_strfunc.cc
+@@ -540,7 +540,7 @@ String *Item_func_concat::val_str(String *str)
+ 	use_as_buff=str;			// Put next arg here
+       }
+       else if (tmp_value.is_alloced() && res2->ptr() >= tmp_value.ptr() &&
+-	       res2->ptr() <= tmp_value.ptr() + tmp_value.alloced_length())
++	       res2->ptr() < tmp_value.ptr() + tmp_value.alloced_length())
+       {
+ 	/*
+ 	  This happens really seldom:

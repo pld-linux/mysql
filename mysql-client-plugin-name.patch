@@ -1,0 +1,23 @@
+A server could make libmysqlclient dlopen() an arbitrary file by naming it
+as the authentication plugin, e.g. "../../tmp/evil".
+MariaDB MDEV-20110 (5.5.65):
+https://github.com/MariaDB/server/commit/82563c5fc0
+https://github.com/MariaDB/server/commit/cc37250a76
+
+--- percona-server-5.5.62-38.14.orig/sql-common/client_plugin.c
++++ percona-server-5.5.62-38.14/sql-common/client_plugin.c
+@@ -348,7 +348,13 @@ mysql_load_plugin_v(MYSQL *mysql, const char *name, int type,
+            mysql->options.extension && mysql->options.extension->plugin_dir ?
+            mysql->options.extension->plugin_dir : PLUGINDIR, "/",
+            name, SO_EXT, NullS);
+-   
++
++  if (strpbrk(name, "()[]!@#$%^&/*;.,'?\\"))
++  {
++    errmsg= "invalid plugin name";
++    goto err;
++  }
++
+   DBUG_PRINT ("info", ("dlopeninig %s", dlpath));
+   /* Open new dll handle */
+   if (!(dlhandle= dlopen(dlpath, RTLD_NOW)))

@@ -1,0 +1,28 @@
+A prepared CREATE VIEW over an INFORMATION_SCHEMA table kept a table name
+pointer into a freed temporary table; FLUSH PRIVILEGES before EXECUTE
+read freed memory (MDEV-15907).
+https://github.com/MariaDB/server/commit/e52a4ab693
+
+--- percona-server-5.5.62-38.14.orig/sql/sql_show.cc
++++ percona-server-5.5.62-38.14/sql/sql_show.cc
+@@ -7531,8 +7531,6 @@ int mysql_schema_table(THD *thd, LEX *lex, TABLE_LIST *table_list)
+     table->alias_name_used= my_strcasecmp(table_alias_charset,
+                                           table_list->schema_table_name,
+                                           table_list->alias);
+-  table_list->table_name= table->s->table_name.str;
+-  table_list->table_name_length= table->s->table_name.length;
+   table_list->table= table;
+   table->next= thd->derived_tables;
+   thd->derived_tables= table;
+--- percona-server-5.5.62-38.14.orig/sql/table.cc
++++ percona-server-5.5.62-38.14/sql/table.cc
+@@ -4587,7 +4587,8 @@ const char *Field_iterator_table_ref::get_table_name()
+     return natural_join_it.column_ref()->table_name();
+ 
+   DBUG_ASSERT(!strcmp(table_ref->table_name,
+-                      table_ref->table->s->table_name.str));
++                      table_ref->table->s->table_name.str) ||
++              table_ref->schema_table);
+   return table_ref->table_name;
+ }
+ 

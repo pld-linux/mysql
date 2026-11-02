@@ -1,0 +1,36 @@
+A nested comment inside a false version comment was binlogged as is and
+broke the statement on the slave (Bug#28388217).
+https://github.com/mysql/mysql-server/commit/60ce6d5998
+
+--- percona-server-5.5.62-38.14.orig/sql/sql_lex.cc
++++ percona-server-5.5.62-38.14/sql/sql_lex.cc
+@@ -830,17 +830,27 @@ static inline uint int_token(const char *str,uint length)
+ */
+ bool consume_comment(Lex_input_stream *lip, int remaining_recursions_permitted)
+ {
++  // only one level of nested comments are allowed
++  DBUG_ASSERT(remaining_recursions_permitted == 0 ||
++              remaining_recursions_permitted == 1);
+   uchar c;
+   while (! lip->eof())
+   {
+     c= lip->yyGet();
+ 
+-    if (remaining_recursions_permitted > 0)
++    if (remaining_recursions_permitted == 1)
+     {
+       if ((c == '/') && (lip->yyPeek() == '*'))
+       {
++        lip->yyUnput('(');  // Replace nested "/*..." with "(*..."
++        lip->yySkip();      // and skip "("
++
+         lip->yySkip(); /* Eat asterisk */
+-        consume_comment(lip, remaining_recursions_permitted-1);
++        if (consume_comment(lip, 0))
++          return true;
++
++        lip->yyUnput(')');  // Replace "...*/" with "...*)"
++        lip->yySkip();      // and skip ")"
+         continue;
+       }
+     }

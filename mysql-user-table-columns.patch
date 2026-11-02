@@ -1,0 +1,23 @@
+A mysql.user table without the Password column crashed FLUSH PRIVILEGES
+(Bug#28986737).
+https://github.com/mysql/mysql-server/commit/e02123c17c
+
+--- percona-server-5.5.62-38.14.orig/sql/sql_acl.cc
++++ percona-server-5.5.62-38.14/sql/sql_acl.cc
+@@ -1214,8 +1214,16 @@ static my_bool acl_load(THD *thd, TABLE_LIST *tables)
+ 
+   init_read_record(&read_record_info,thd,table=tables[1].table,NULL,1,0,FALSE);
+   table->use_all_columns();
++
++  if (table->s->fields <= MYSQL_USER_FIELD_PASSWORD)
++  {
++    sql_print_error("Fatal error: mysql.user table is damaged with missing "
++                   "password column.");
++    goto end;
++  }
+   password_length= table->field[2]->field_length /
+     table->field[2]->charset()->mbmaxlen;
++
+   if (password_length < SCRAMBLED_PASSWORD_CHAR_LENGTH_323)
+   {
+     sql_print_error("Fatal error: mysql.user table is damaged or in "

@@ -1,0 +1,34 @@
+COM_REGISTER_SLAVE without COM_BINLOG_DUMP left a stale entry with a
+dangling THD pointer in the slave list (Bug#29915479).
+https://github.com/MariaDB/server/commit/6bb28e0bc5
+
+--- percona-server-5.5.62-38.14.orig/sql/sql_class.cc
++++ percona-server-5.5.62-38.14/sql/sql_class.cc
+@@ -60,6 +60,7 @@
+ #include "debug_sync.h"
+ #include "sql_parse.h"                          // is_update_query
+ #include "sql_callback.h"
++#include "repl_failsafe.h"                      // unregister_slave
+ 
+ /*
+   The following is used to initialise Table_ident with a internal
+@@ -1608,6 +1609,9 @@ THD::~THD()
+   mysql_audit_free_thd(this);
+   if (rli_slave)
+     rli_slave->cleanup_after_session();
++#ifdef HAVE_REPLICATION
++  unregister_slave(this, true, true);
++#endif
+ #endif
+ 
+   free_root(&main_mem_root, MYF(0));
+--- percona-server-5.5.62-38.14.orig/sql/sql_parse.cc
++++ percona-server-5.5.62-38.14/sql/sql_parse.cc
+@@ -1319,7 +1319,6 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
+       general_log_print(thd, command, "Log: '%s'  Pos: %ld", packet+10,
+                       (long) pos);
+       mysql_binlog_send(thd, thd->strdup(packet + 10), (my_off_t) pos, flags);
+-      unregister_slave(thd,1,1);
+       /*  fake COM_QUIT -- if we get here, the thread needs to terminate */
+       error = TRUE;
+       break;

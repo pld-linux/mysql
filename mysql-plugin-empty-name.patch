@@ -1,0 +1,15 @@
+A row with an empty name in mysql.plugin crashed the server at startup
+(Bug#27302459).
+https://github.com/mysql/mysql-server/commit/8cd3cd8b07
+
+--- percona-server-5.5.62-38.14.orig/sql/sql_plugin.cc
++++ percona-server-5.5.62-38.14/sql/sql_plugin.cc
+@@ -672,7 +672,7 @@ static struct st_plugin_int *plugin_find_internal(const LEX_STRING *name, int ty
+ {
+   uint i;
+   DBUG_ENTER("plugin_find_internal");
+-  if (! initialized)
++  if (!initialized || !name->str)
+     DBUG_RETURN(0);
+ 
+   mysql_mutex_assert_owner(&LOCK_plugin);

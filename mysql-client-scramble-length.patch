@@ -1,0 +1,18 @@
+CVE-2020-2574: a handshake whose scramble length runs past the packet end
+made the client read uninitialised memory (Bug#29630767).
+https://github.com/MariaDB/server/commit/4d1c1b23e1
+
+--- percona-server-5.5.62-38.14.orig/sql-common/client.c
++++ percona-server-5.5.62-38.14/sql-common/client.c
+@@ -3847,7 +3847,10 @@ CLI_MYSQL_REAL_CONNECT(MYSQL *mysql,const char *host, const char *user,
+       scramble_data_len= pkt_scramble_len;
+       scramble_plugin= scramble_data + scramble_data_len;
+       if (scramble_data + scramble_data_len > pkt_end)
+-        scramble_data_len= pkt_end - scramble_data;
++      {
++        set_mysql_error(mysql, CR_MALFORMED_PACKET, unknown_sqlstate);
++        goto error;
++      }
+     }
+     else
+     {

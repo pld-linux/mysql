@@ -1,0 +1,34 @@
+CVE-2019-2740: the XPath parse tree kept pointers into a freed local buffer
+(Bug#27312862).
+https://github.com/MariaDB/server/commit/c5e9674300
+
+--- percona-server-5.5.62-38.14.orig/sql/item_xmlfunc.cc
++++ percona-server-5.5.62-38.14/sql/item_xmlfunc.cc
+@@ -2587,7 +2587,7 @@ my_xpath_parse(MY_XPATH *xpath, const char *str, const char *strend)
+ 
+ void Item_xml_str_func::fix_length_and_dec()
+ {
+-  String *xp, tmp;
++  String *xp;
+   MY_XPATH xpath;
+   int rc;
+ 
+@@ -2612,7 +2612,7 @@ void Item_xml_str_func::fix_length_and_dec()
+     return;
+   }
+ 
+-  if (!(xp= args[1]->val_str(&tmp)))
++  if (!(xp= args[1]->val_str(&xpath_tmp_value)))
+     return;
+   my_xpath_init(&xpath);
+   xpath.cs= collation.collation;
+--- percona-server-5.5.62-38.14.orig/sql/item_xmlfunc.h
++++ percona-server-5.5.62-38.14/sql/item_xmlfunc.h
+@@ -25,6 +25,7 @@ class Item_xml_str_func: public Item_str_func
+ protected:
+   String tmp_value, pxml;
+   Item *nodeset_func;
++  String xpath_tmp_value;
+ public:
+   Item_xml_str_func(Item *a, Item *b): 
+     Item_str_func(a,b) 

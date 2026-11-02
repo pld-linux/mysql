@@ -1,0 +1,31 @@
+CVE-2019-2805: the parser stack grown by my_yyoverflow() leaked when the
+parser state was reset (Bug#29419820).
+https://github.com/MariaDB/server/commit/7473a71a28
+
+--- percona-server-5.5.62-38.14.orig/sql/sql_lex.h
++++ percona-server-5.5.62-38.14/sql/sql_lex.h
+@@ -2694,15 +2694,18 @@ public:
+ class Yacc_state
+ {
+ public:
+-  Yacc_state()
+-  {
+-    reset();
+-  }
++  Yacc_state() : yacc_yyss(NULL), yacc_yyvs(NULL) { reset(); }
+ 
+   void reset()
+   {
+-    yacc_yyss= NULL;
+-    yacc_yyvs= NULL;
++    if (yacc_yyss != NULL) {
++      my_free(yacc_yyss);
++      yacc_yyss = NULL;
++    }
++    if (yacc_yyvs != NULL) {
++      my_free(yacc_yyvs);
++      yacc_yyvs = NULL;
++    }
+     m_set_signal_info.clear();
+     m_lock_type= TL_READ_DEFAULT;
+     m_mdl_type= MDL_SHARED_READ;

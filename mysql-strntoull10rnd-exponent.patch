@@ -1,0 +1,30 @@
+CVE-2019-2974: a huge exponent in a string converted to an integer
+overflowed the shift and crashed the server (Bug#29723340).
+https://github.com/MariaDB/server/commit/719ac0ad4a
+
+--- percona-server-5.5.62-38.14.orig/strings/ctype-simple.c
++++ percona-server-5.5.62-38.14/strings/ctype-simple.c
+@@ -1511,10 +1511,20 @@ exp:    /* [ E [ <sign> ] <unsigned integer> ] */
+         if (++str == end)
+           goto ret_sign;
+       }
+-      for (exponent= 0 ;
+-           str < end && (ch= (uchar) (*str - '0')) < 10;
+-           str++)
++      if (shift > 0 && !negative_exp)
++        goto ret_too_big;
++      for (exponent= 0 ; str < end && (ch= (uchar) (*str - '0')) < 10; str++)
+       {
++        if (negative_exp)
++        {
++          if (exponent - shift > DIGITS_IN_ULONGLONG)
++            goto ret_zero;
++        }
++        else
++        {
++          if (exponent + shift > DIGITS_IN_ULONGLONG)
++            goto ret_too_big;
++        }
+         exponent= exponent * 10 + ch;
+       }
+       shift+= negative_exp ? -exponent : exponent;

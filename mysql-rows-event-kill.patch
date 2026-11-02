@@ -1,0 +1,67 @@
+KILL of a slave SQL thread while a row event opened its tables closed them
+twice and crashed the server.
+https://github.com/mysql/mysql-server/commit/2f72a2a575
+
+--- percona-server-5.5.62-38.14.orig/sql/log_event.cc
++++ percona-server-5.5.62-38.14/sql/log_event.cc
+@@ -8051,23 +8051,20 @@ int Rows_log_event::do_apply_event(Relay_log_info const *rli)
+ 
+     if (open_and_lock_tables(thd, rli->tables_to_lock, FALSE, 0))
+     {
+-      uint actual_error= thd->stmt_da->sql_errno();
+-      if (thd->is_slave_error || thd->is_fatal_error)
++      if (thd->is_error())
+       {
+         /*
+           Error reporting borrowed from Query_log_event with many excessive
+-          simplifications. 
++          simplifications.
+           We should not honour --slave-skip-errors at this point as we are
+-          having severe errors which should not be skiped.
++          having severe errors which should not be skipped.
+         */
+-        rli->report(ERROR_LEVEL, actual_error,
++        rli->report(ERROR_LEVEL, thd->stmt_da->sql_errno(),
+                     "Error executing row event: '%s'",
+-                    (actual_error ? thd->stmt_da->message() :
+-                     "unexpected success or fatal error"));
++                     thd->stmt_da->message());
+         thd->is_slave_error= 1;
+       }
+-      const_cast<Relay_log_info*>(rli)->slave_close_thread_tables(thd);
+-      DBUG_RETURN(actual_error);
++      DBUG_RETURN(1);
+     }
+ 
+     /*
+--- percona-server-5.5.62-38.14.orig/sql/log_event_old.cc
++++ percona-server-5.5.62-38.14/sql/log_event_old.cc
+@@ -101,21 +101,20 @@ Old_rows_log_event::do_apply_event(Old_rows_log_event *ev, const Relay_log_info
+ 
+     if (open_and_lock_tables(ev_thd, rli->tables_to_lock, FALSE, 0))
+     {
+-      uint actual_error= ev_thd->stmt_da->sql_errno();
+-      if (ev_thd->is_slave_error || ev_thd->is_fatal_error)
++      if (ev_thd->is_error())
+       {
+         /*
+           Error reporting borrowed from Query_log_event with many excessive
+-          simplifications (we don't honour --slave-skip-errors)
++          simplifications.
++          We should not honour --slave-skip-errors at this point as we are
++          having severe errors which should not be skipped.
+         */
+-        rli->report(ERROR_LEVEL, actual_error,
++        rli->report(ERROR_LEVEL, ev_thd->stmt_da->sql_errno(),
+                     "Error '%s' on opening tables",
+-                    (actual_error ? ev_thd->stmt_da->message() :
+-                     "unexpected success or fatal error"));
++                    ev_thd->stmt_da->message());
+         ev_thd->is_slave_error= 1;
+       }
+-      const_cast<Relay_log_info*>(rli)->slave_close_thread_tables(thd);
+-      DBUG_RETURN(actual_error);
++      DBUG_RETURN(1);
+     }
+ 
+     /*
